@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>The Owner-Operator Play — AI value creation for private capital</title>
 <meta name="description" content="A confidential draft business plan: running the invaders' operating model on Deloitte's AI rails, aimed at private capital in Southeast Asia." />
 <meta name="robots" content="noindex" />
@@ -40,10 +40,13 @@ body{
   text-rendering:optimizeLegibility;
   overflow:hidden;
 }
-#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+/* The stage is laid out at a fixed 1280x720 and then placed by an explicit
+   translate+scale from the top-left. Nothing depends on flex overflow
+   behaviour, so a mis-measured viewport can never shift the deck off-screen. */
+#viewport{position:fixed;inset:0;overflow:hidden}
 #stage{
-  width:1280px;height:720px;position:relative;flex:none;
-  background:var(--paper);transform-origin:center center;
+  width:1280px;height:720px;position:absolute;left:0;top:0;
+  background:var(--paper);transform-origin:0 0;
   box-shadow:0 24px 70px rgba(10,10,10,.16);overflow:hidden;
 }
 
@@ -86,6 +89,10 @@ table.grid.stretch td{vertical-align:middle}
 .kicker{display:inline-flex;align-items:center;gap:12px;font-size:11px;font-weight:700;
   text-transform:uppercase;letter-spacing:.18em;color:var(--accent)}
 .kicker::before{content:"";width:34px;height:2px;background:var(--accent);flex:none}
+/* Act label — Threat / Opportunity / Approach — set in ink so the three-act
+   spine reads from the back of the room without extra chrome. */
+.kicker .act{color:var(--ink);font-weight:700}
+.dark .kicker .act{color:var(--paper)}
 .s-num{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.14em;
   color:var(--muted);text-transform:uppercase;flex:none}
 h1{font-weight:800;letter-spacing:-.042em;line-height:.94}
@@ -109,7 +116,7 @@ h2 .thin{font-weight:300}
 .cards.c3{grid-template-columns:1fr 1fr 1fr}
 .cards.c4{grid-template-columns:repeat(4,1fr)}
 .card{background:var(--paper);padding:18px 20px 20px;display:flex;flex-direction:column;gap:6px}
-.card .ct{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+.ct{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--accent)}
 .card h4{font-size:18px;font-weight:700;letter-spacing:-.025em;line-height:1.14}
 .card p{font-size:13px;line-height:1.46;color:var(--muted)}
@@ -140,6 +147,9 @@ table.grid.tight td{font-size:11.5px;padding:6px 12px;line-height:1.3}
 table.grid.tight th{font-size:9px;padding:6px 12px}
 tr.moat td{background:#fbeceb}
 tr.moat td.k{color:var(--accent)}
+/* Row-group label inside a table */
+tr.grp td{background:var(--ink);color:var(--paper);font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:9px;letter-spacing:.13em;text-transform:uppercase;padding:5px 12px;border-bottom:none}
 .moat-tag{display:inline-block;margin-left:8px;font-family:'JetBrains Mono',ui-monospace,monospace;
   font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--accent);
   padding:2px 6px;vertical-align:2px}
@@ -227,6 +237,7 @@ svg{display:block}
 #hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);
   font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.12em;
   text-transform:uppercase;color:#9a9a92;transition:opacity .5s;pointer-events:none}
+body.turned #hint{display:none}
 @media (prefers-reduced-motion:reduce){
   .slide,[data-step],.stagger>*,.bar,.bar-h,.fade,#progress{transition-duration:.01ms !important}
 }
@@ -252,10 +263,10 @@ svg{display:block}
         </p>
         <div data-step="1" class="stagger" style="margin-top:22px">
           <div>
-            <span class="pill pill-accent">Southeast Asia</span>
-            <span class="pill">Private capital</span>
-            <span class="pill">Outcome-priced</span>
-            <span class="pill">SGD 6M in three years</span>
+            <span class="pill">The squeeze</span>
+            <span class="pill">The asymmetry</span>
+            <span class="pill">The market</span>
+            <span class="pill">The operating model</span>
           </div>
         </div>
       </div>
@@ -265,7 +276,7 @@ svg{display:block}
     <!-- ══ 01 · THE SQUEEZE ════════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">01 · The squeeze</span><span class="s-num">01 / 11</span>
+        <span class="kicker"><b class="act">Threat</b> · 01 The squeeze</span><span class="s-num">01 / 12</span>
       </header>
       <div class="s-body">
         <h2>The mandate layer is being<br>invaded from <span class="thin">three directions.</span></h2>
@@ -278,8 +289,8 @@ svg{display:block}
               </div>
               <ul>
                 <li>Engagements from <strong>USD 10M</strong></li>
-                <li>Forward-deployed engineers inside client workflows</li>
-                <li>Deployment Company: <strong>USD 150M</strong> partner program, ~150 engineers</li>
+                <li>Deployment Company: <strong>~150</strong> forward-deployed engineers, via the Tomoro acquisition</li>
+                <li>Partner Network aiming to certify <strong>300,000 consultants</strong></li>
               </ul>
             </div>
             <div class="card">
@@ -288,9 +299,9 @@ svg{display:block}
                 <h4>Wonderful pairs agents<br>with boots on site</h4>
               </div>
               <ul>
-                <li>Stealth to <strong>USD 2B</strong> in 13 months</li>
+                <li><strong>USD 2B</strong> valuation, 13 months old</li>
                 <li><strong>80%</strong> autonomous resolution, published</li>
-                <li>Enters Asia Pacific this year</li>
+                <li>30 countries including Asia Pacific; headcount <strong>300 → 900</strong></li>
               </ul>
             </div>
             <div class="card">
@@ -315,14 +326,14 @@ svg{display:block}
       </div>
       <footer class="s-foot">
         <span>The Owner-Operator Play</span>
-        <span>OpenAI launch materials 2026 · TechCrunch, Mar 2026 · company announcements</span>
+        <span>OpenAI Deployment Company &amp; Partner Network, 2026 · TechCrunch, Mar 2026 · Accenture newsroom, 2025</span>
       </footer>
     </section>
 
     <!-- ══ 02 · THE ASYMMETRY ══════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">02 · The asymmetry</span><span class="s-num">02 / 11</span>
+        <span class="kicker"><b class="act">Opportunity</b> · 02 The asymmetry</span><span class="s-num">02 / 12</span>
       </header>
       <div class="s-body">
         <h2>OpenAI competes with consultants.<br><span class="thin">Anthropic</span> armed <span class="accent">one.</span></h2>
@@ -330,7 +341,7 @@ svg{display:block}
           <div class="stats c3">
             <div class="stat"><div class="v a">470,000</div><div class="l">Deloitte people with Claude deployed — Anthropic's largest enterprise deployment anywhere</div></div>
             <div class="stat"><div class="v">150</div><div class="l">Countries covered, backed by a Claude Center of Excellence</div></div>
-            <div class="stat"><div class="v">15,000</div><div class="l">People in the certification program already running</div></div>
+            <div class="stat"><div class="v">15,000</div><div class="l">People already in the certification programme</div></div>
           </div>
         </div>
         <div data-step="2" class="grow" style="margin-top:20px">
@@ -340,18 +351,17 @@ svg{display:block}
                 <div class="ct">Zora AI · the platform</div>
                 <h4>Subscription agents, already shipping</h4>
               </div>
-              <p>Finance, procurement, supply chain and customer service on the NVIDIA stack.
-                 Integrations across SAP Joule and Oracle Fusion Cloud. Deloitte's own finance
-                 function is first user — targeting <strong>25% cost reduction</strong> and
-                 <strong>40% productivity</strong>.</p>
+              <p>Finance, procurement and supply-chain agents on the NVIDIA stack, wired into
+                 SAP Joule and Oracle Fusion. Deloitte's own finance function is first user —
+                 targeting <strong>25% cost reduction</strong> and <strong>40% productivity</strong>.</p>
             </div>
             <div class="card">
               <div class="chead">
                 <div class="ct">10X Analyst · financial services</div>
-                <h4>Claude-powered, on AWS Bedrock</h4>
+                <h4>Claude-powered, on Amazon Bedrock</h4>
               </div>
-              <p>Fixed income, actuarial and campaign analysis — a working agentic platform
-                 for the sector that buys the most analyst hours.</p>
+              <p>Fixed income, actuarial and campaign analysis on Bedrock AgentCore — for the
+                 sector that buys the most analyst hours.</p>
             </div>
           </div>
         </div>
@@ -362,52 +372,14 @@ svg{display:block}
       </div>
       <footer class="s-foot">
         <span>The Owner-Operator Play</span>
-        <span>Anthropic &amp; Deloitte announcements, Oct 2025 · Zora AI press materials</span>
+        <span>Anthropic &amp; Deloitte, Oct 2025 · Deloitte–Oracle and Deloitte–SAP announcements · AWS Marketplace</span>
       </footer>
     </section>
 
-    <!-- ══ 03 · THE OPERATING MODEL ════════════════════════════ -->
+    <!-- ══ 03 · THE MARKET ═════════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">03 · The operating model</span><span class="s-num">03 / 11</span>
-      </header>
-      <div class="s-body">
-        <h2>Every component already exists.<br><span class="thin">The plan assembles them</span> under one owner.</h2>
-        <div data-step="1" class="grow" style="margin-top:22px">
-          <table class="grid stretch">
-            <colgroup><col style="width:200px"><col style="width:428px"><col></colgroup>
-            <thead><tr><th>Component</th><th>The invaders' version</th><th>The Deloitte rail</th></tr></thead>
-            <tbody>
-              <tr><td class="k">Product</td>
-                  <td>Wonderful's agent platform; OpenAI's models and AgentKit</td>
-                  <td>Zora AI agents plus the Claude enterprise stack; 10X Analyst for financial services</td></tr>
-              <tr><td class="k">Forward deployment</td>
-                  <td>FDEs and local deployment teams embedded on site</td>
-                  <td>T&amp;T delivery pods, supervised by this owner-operator seat</td></tr>
-              <tr class="moat"><td class="k">Distribution</td>
-                  <td>Direct sales; no trusted-advisor standing</td>
-                  <td>Monitor partner relationships at GP and C-suite level</td></tr>
-              <tr><td class="k">Pricing</td>
-                  <td>Per-resolution and outcome-referenced fees</td>
-                  <td>X percent fixed, Y percent on verified outcomes</td></tr>
-              <tr class="moat"><td class="k">Governance</td>
-                  <td>Thin; built as they go</td>
-                  <td>Trustworthy AI framework, MAS and IMDA aligned measurement</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div data-step="2" style="padding-top:20px">
-          <p class="callout">Distribution and governance are the two rows the invaders
-            <span class="big">cannot replicate.</span> <span class="accent big">That is the moat.</span></p>
-        </div>
-      </div>
-      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Shaded rows: the moat</span></footer>
-    </section>
-
-    <!-- ══ 04 · THE MARKET ═════════════════════════════════════ -->
-    <section class="slide">
-      <header class="s-head">
-        <span class="kicker">04 · The market</span><span class="s-num">04 / 11</span>
+        <span class="kicker"><b class="act">Opportunity</b> · 03 The market</span><span class="s-num">03 / 12</span>
       </header>
       <div class="s-body">
         <h2>No buyer needs EBITDA <span class="accent">more urgently.</span></h2>
@@ -420,7 +392,6 @@ svg{display:block}
             </div>
             <svg width="600" height="300" viewBox="0 0 600 300" role="img"
                  aria-label="Southeast Asia private equity: deal value fell from 15.9 to 14.3 billion US dollars, down 10 percent; exit value fell from 5.9 to 4.0 billion, down 32 percent.">
-              <!-- gridlines -->
               <line class="gridline" x1="48" y1="40"  x2="580" y2="40"></line>
               <line class="gridline" x1="48" y1="110" x2="580" y2="110"></line>
               <line class="gridline" x1="48" y1="181" x2="580" y2="181"></line>
@@ -429,7 +400,6 @@ svg{display:block}
               <text class="ax" x="40" y="185" text-anchor="end">6</text>
               <text class="ax" x="40" y="256" text-anchor="end">0</text>
               <line class="baseline" x1="48" y1="252" x2="580" y2="252"></line>
-              <!-- group 1 · deal value -->
               <rect class="bar" x="112" y="64.7"  width="60" height="187.3" fill="#2456c7" style="transition-delay:.10s"></rect>
               <rect class="bar" x="174" y="83.6"  width="60" height="168.4" fill="#e2231a" style="transition-delay:.18s"></rect>
               <text class="val fade" x="142" y="56"  text-anchor="middle">15.9</text>
@@ -437,7 +407,6 @@ svg{display:block}
               <text class="axl" x="173" y="272" text-anchor="middle">Deal value</text>
               <text class="axs" x="173" y="288" text-anchor="middle">84 transactions · Singapore USD 7B of it</text>
               <text class="delta fade" x="286" y="79" text-anchor="start">−10%</text>
-              <!-- group 2 · exit value -->
               <rect class="bar" x="386" y="182.5" width="60" height="69.5" fill="#2456c7" style="transition-delay:.26s"></rect>
               <rect class="bar" x="448" y="204.9" width="60" height="47.1" fill="#e2231a" style="transition-delay:.34s"></rect>
               <text class="val fade" x="416" y="174" text-anchor="middle">5.9</text>
@@ -450,22 +419,22 @@ svg{display:block}
           <div class="col" style="padding-top:18px">
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:14px">
               <div>
-                <div class="ct" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)">Hold periods</div>
-                <p style="font-size:14px;line-height:1.4;margin-top:4px">Stretched well past historical norms. Every unexited year makes EBITDA the only lever left.</p>
+                <div class="ct">Hold periods</div>
+                <p style="font-size:14px;line-height:1.4;margin-top:4px">Companies held more than five years are up <strong>18%</strong> on 2024. Every unexited year makes EBITDA the only lever left.</p>
               </div>
               <div>
-                <div class="ct" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)">Secondaries</div>
-                <p style="font-size:14px;line-height:1.4;margin-top:4px">Highest count since 2020 — GPs are manufacturing their own liquidity.</p>
+                <div class="ct">Liquidity</div>
+                <p style="font-size:14px;line-height:1.4;margin-top:4px">Secondaries are becoming a standard route out — GPs manufacturing their own liquidity.</p>
               </div>
               <div>
-                <div class="ct" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)">The gap</div>
+                <div class="ct">The gap</div>
                 <p style="font-size:14px;line-height:1.4;margin-top:4px">The buyer exists. The budget exists. The productised offering does not — yet.</p>
               </div>
             </div>
             <div data-step="2" style="margin-top:auto">
-              <p class="callout" style="font-size:16px">"Operational value creation is now the
-                <span class="accent big">primary driver of returns.</span>"</p>
-              <p class="src" style="margin-top:8px">Bain &amp; Company, Southeast Asia Private Equity Report 2026</p>
+              <p class="callout" style="font-size:16px">Bain's 2026 rule: <span class="accent big">12 is the new 5.</span>
+                Deals that once cleared their targets on 5% annual EBITDA growth now need about 12%.</p>
+              <p class="src" style="margin-top:8px">Bain &amp; Company, Global and Southeast Asia Private Equity Reports 2026</p>
             </div>
           </div>
         </div>
@@ -476,10 +445,48 @@ svg{display:block}
       </footer>
     </section>
 
+    <!-- ══ 04 · THE OPERATING MODEL ════════════════════════════ -->
+    <section class="slide">
+      <header class="s-head">
+        <span class="kicker"><b class="act">Approach</b> · 04 The operating model</span><span class="s-num">04 / 12</span>
+      </header>
+      <div class="s-body">
+        <h2>Every component already exists.<br><span class="thin">The plan assembles them</span> under one owner.</h2>
+        <div data-step="1" class="grow" style="margin-top:22px">
+          <table class="grid stretch">
+            <colgroup><col style="width:200px"><col style="width:420px"><col></colgroup>
+            <thead><tr><th>Component</th><th>The invaders' version</th><th>The Deloitte rail</th></tr></thead>
+            <tbody>
+              <tr><td class="k">Product</td>
+                  <td>Wonderful's agent platform; OpenAI models and AgentKit</td>
+                  <td>Zora AI agents, the Claude enterprise stack, 10X Analyst</td></tr>
+              <tr><td class="k">Forward deployment</td>
+                  <td>Engineers embedded on site</td>
+                  <td>T&amp;T delivery pods under this seat</td></tr>
+              <tr class="moat"><td class="k">Distribution</td>
+                  <td>Direct sales; no trusted-advisor standing</td>
+                  <td>Monitor partner relationships at GP and C-suite level</td></tr>
+              <tr><td class="k">Pricing</td>
+                  <td>Platform subscription is the main revenue line; outcome fees ride on top</td>
+                  <td>X percent fixed, Y percent on verified outcomes</td></tr>
+              <tr class="moat"><td class="k">Governance</td>
+                  <td>Thin; built as they go</td>
+                  <td>Trustworthy AI framework; MAS and IMDA aligned measurement</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div data-step="2" style="padding-top:20px">
+          <p class="callout">Distribution and governance are the two rows the invaders
+            <span class="big">cannot replicate.</span> <span class="accent big">That is the moat.</span></p>
+        </div>
+      </div>
+      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Shaded rows: the moat</span></footer>
+    </section>
+
     <!-- ══ 05 · THE CLIENTS ════════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">05 · The clients</span><span class="s-num">05 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 05 The clients</span><span class="s-num">05 / 12</span>
       </header>
       <div class="s-body">
         <h2>Sell once. <span class="thin">Deploy</span> <span class="accent">many.</span></h2>
@@ -487,17 +494,14 @@ svg{display:block}
           <div class="figure col mid">
             <svg width="650" height="300" viewBox="0 0 650 300" role="img"
                  aria-label="One general partner relationship reaches eight to twelve investee companies, each a deployment site and a reference.">
-              <!-- GP block -->
               <rect class="bar-h" x="0" y="60" width="190" height="120" fill="#0a0a0a"></rect>
               <text x="20" y="92"  fill="#f4f4f0" style="font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:.12em">THE BUYER</text>
               <text x="20" y="126" fill="#f4f4f0" style="font-size:30px;font-weight:800;letter-spacing:-.04em">The GP</text>
               <text x="20" y="150" fill="#8f8f88" style="font-size:12px">Operating partner or</text>
               <text x="20" y="166" fill="#8f8f88" style="font-size:12px">head of portfolio ops</text>
-              <!-- connector · label sits clear above the arrow -->
               <line class="fade" x1="200" y1="120" x2="272" y2="120" stroke="#e2231a" stroke-width="2"></line>
               <path class="fade" d="M272 114 l12 6 -12 6 z" fill="#e2231a"></path>
               <text class="fade" x="236" y="106" text-anchor="middle" style="font-size:9.5px;fill:#e2231a;font-family:'JetBrains Mono',monospace;letter-spacing:.06em">SIGNS ONCE</text>
-              <!-- investee grid: 12 tiles, 4 x 3 -->
               <g>
                 <rect class="bar-h" x="298" y="52"  width="82" height="50" fill="#e2231a" style="transition-delay:.20s"></rect>
                 <rect class="bar-h" x="386" y="52"  width="82" height="50" fill="#e2231a" style="transition-delay:.26s"></rect>
@@ -519,19 +523,20 @@ svg{display:block}
           </div>
           <div class="col" style="padding-top:18px">
             <div data-step="1">
-              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)">The worked example is already public</div>
-              <h4 style="font-size:21px;font-weight:700;letter-spacing:-.03em;margin-top:8px;line-height:1.12">Boardroom,<br>taken private</h4>
+              <div class="ct">The worked example is already public</div>
+              <h4 style="font-size:21px;font-weight:700;letter-spacing:-.03em;margin-top:8px;line-height:1.12">Boardroom,<br>bought at 312, shopped at a billion</h4>
               <p style="font-size:13.5px;line-height:1.45;color:#2a2a2a;margin-top:10px">
-                Temasek's <strong>65 Equity Partners</strong> (USD 3.3B FUM) and
-                <strong>Tower Capital Asia</strong> jointly took Boardroom private — corporate
-                secretarial, share registry, employee services.</p>
+                Temasek's <strong>65 Equity Partners</strong> (USD 4.2B+ AUM) and
+                <strong>Tower Capital Asia</strong> took Boardroom private in 2022 for
+                <strong>~S$312M</strong> — corporate secretarial, share registry, employee plans.</p>
               <p style="font-size:13.5px;line-height:1.45;color:#2a2a2a;margin-top:10px">
-                Document-heavy operations: precisely the back-office AI profile.</p>
+                In 2026 they appointed Goldman Sachs to explore a sale at around
+                <strong>US$1B</strong>. Advent, CVC, EQT and TPG reported as interested.</p>
             </div>
             <div data-step="2" style="margin-top:auto">
-              <p class="callout" style="font-size:16px">One GP relationship there reaches
-                <span class="accent big">eight-plus companies</span> plus the wider Temasek
-                private-capital ecosystem.</p>
+              <p class="callout" style="font-size:16px">Document-heavy operations, held through the cycle.
+                <span class="accent big">What is built in the hold is what the exit prices.</span></p>
+              <p class="src" style="margin-top:8px">Sale process early-stage, no certainty it proceeds. Uplift not attributed to AI.</p>
             </div>
           </div>
         </div>
@@ -539,29 +544,32 @@ svg{display:block}
       <footer class="s-foot"><span>The Owner-Operator Play</span><span>Two tiers: the GP is the buyer, the investee is the site</span></footer>
     </section>
 
-    <!-- ══ 06 · THE TARGET LIST ════════════════════════════════ -->
+    <!-- ══ 05 · THE TARGET LIST ════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">05 · The target list</span><span class="s-num">06 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 05 The target list</span><span class="s-num">06 / 12</span>
       </header>
       <div class="s-body">
-        <h2 style="font-size:34px">Twelve GPs that share <span class="accent">that shape.</span></h2>
-        <div data-step="1" style="margin-top:16px">
+        <h2 style="font-size:34px">Twelve GPs. <span class="accent">Nine doors.</span></h2>
+        <p class="muted" style="font-size:13px;margin-top:8px">Four of the twelve sit under one owner. That is one relationship, not four — and it is the thesis proved a level up.</p>
+        <div data-step="1" style="margin-top:14px">
           <table class="grid tight">
-            <colgroup><col style="width:168px"><col style="width:62px"><col style="width:104px"><col style="width:342px"><col></colgroup>
+            <colgroup><col style="width:168px"><col style="width:68px"><col style="width:116px"><col style="width:280px"><col></colgroup>
             <thead><tr><th>Target GP</th><th>Base</th><th>Scale</th><th>Focus</th><th>Back-office AI fit</th></tr></thead>
             <tbody>
-              <tr><td class="k">65 Equity Partners</td><td>SG</td><td>USD 3.3B FUM</td><td>Family and entrepreneur-led: consumer, business services, healthcare, industrials</td><td>Co-owns Boardroom; reach into Temasek ecosystem</td></tr>
-              <tr><td class="k">Tower Capital Asia</td><td>SG</td><td>Mid-market</td><td>SEA family-led buyouts, services</td><td>Co-owns Boardroom; document-rich investees</td></tr>
-              <tr><td class="k">Heliconia Capital</td><td>SG</td><td>Mid-market</td><td>Singapore SMEs and local champions (Temasek)</td><td>High-volume SME portfolio, natural pilot ground</td></tr>
-              <tr><td class="k">Novo Tellus Capital</td><td>SG</td><td>Mid-market</td><td>Industrial tech, precision manufacturing, semicon services</td><td>Ops-data-rich investees, ERP-adjacent automation</td></tr>
+              <tr class="grp"><td colspan="5">One relationship — the 65 Equity Partners group</td></tr>
+              <tr><td class="k">65 Equity Partners</td><td>SG</td><td>USD 4.2B+ AUM</td><td>Family and entrepreneur-led</td><td>Co-owns Boardroom; Temasek reach</td></tr>
+              <tr><td class="k">Heliconia Capital</td><td>SG</td><td>Mid-market</td><td>Singapore SMEs and champions</td><td>Wholly owned by 65EP; high-volume SME portfolio</td></tr>
+              <tr><td class="k">Tower Capital Asia</td><td>SG</td><td>Mid-market</td><td>SEA family-led buyouts</td><td>65EP stake; co-owns Boardroom</td></tr>
+              <tr><td class="k">Novo Tellus Capital</td><td>SG</td><td>Mid-market</td><td>Industrial tech, semicon services</td><td>65EP stake; ops-data-rich investees</td></tr>
+              <tr class="grp"><td colspan="5">Eight independent GPs</td></tr>
               <tr><td class="k">Dymon Asia PE</td><td>SG</td><td>Mid-market</td><td>SEA SME buyouts</td><td>Finance-function automation across holdings</td></tr>
-              <tr><td class="k">Growtheum Capital</td><td>SG</td><td>Mid-market</td><td>Consumer, healthcare, financial services</td><td>Growth investees scaling back offices</td></tr>
-              <tr><td class="k">Southern Capital</td><td>SG</td><td>Upper mid</td><td>Buyouts: services, education, healthcare</td><td>Document-heavy sectors, multi-entity groups</td></tr>
-              <tr><td class="k">Navis Capital</td><td>KL, SG</td><td>Upper mid</td><td>Control buyouts across SEA</td><td>Multi-country portfolio suits templated rollout</td></tr>
-              <tr><td class="k">Creador</td><td>KL, SG</td><td>Upper mid</td><td>Growth capital, SEA and India</td><td>Consumer and FS investees, CVM crossover</td></tr>
-              <tr><td class="k">Quadria Capital</td><td>SG</td><td>Upper mid</td><td>Healthcare across Asia</td><td>Claims and records extraction, regulatory monitoring</td></tr>
-              <tr><td class="k">KV Asia Capital</td><td>SG</td><td>Mid-market</td><td>SEA mid-market: consumer, healthcare, manufacturing, services</td><td>Multi-sector holdings; raising Fund III</td></tr>
+              <tr><td class="k">Growtheum Capital</td><td>SG</td><td>Mid-market</td><td>Consumer, healthcare, FS</td><td>Back offices scaling with growth</td></tr>
+              <tr><td class="k">Southern Capital</td><td>SG</td><td>Upper mid</td><td>Services, education, healthcare</td><td>Document-heavy, multi-entity groups</td></tr>
+              <tr><td class="k">Navis Capital</td><td>KL, SG</td><td>Upper mid</td><td>Control buyouts across SEA</td><td>Multi-country; suits templated rollout</td></tr>
+              <tr><td class="k">Creador</td><td>KL, SG</td><td>Upper mid</td><td>Growth capital, SEA and India</td><td>Consumer and FS; CVM crossover</td></tr>
+              <tr><td class="k">Quadria Capital</td><td>SG</td><td>US$1B Fund III</td><td>Healthcare across Asia</td><td>Claims and records extraction</td></tr>
+              <tr><td class="k">KV Asia Capital</td><td>SG</td><td>~US$280M fund</td><td>SEA mid-market</td><td>Multi-sector holdings; new fund closing</td></tr>
               <tr><td class="k">Ikhlas Capital</td><td>SG</td><td>Mid-market</td><td>ASEAN growth capital</td><td>Regional back-office standardisation</td></tr>
             </tbody>
           </table>
@@ -574,13 +582,13 @@ svg{display:block}
             to standard pricing instead. The partner map is the first onboarding task.</p>
         </div>
       </div>
-      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Deloitte PVC: Everest Group's highest Leader, PE IT Services</span></footer>
+      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Deloitte PVC: Leader and Star Performer, Everest Group PE Services PEAK Matrix 2026</span></footer>
     </section>
 
-    <!-- ══ 07 · WHERE AI LANDS ═════════════════════════════════ -->
+    <!-- ══ 06 · WHERE AI LANDS ═════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">06 · Where AI lands</span><span class="s-num">07 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 06 Where AI lands</span><span class="s-num">07 / 12</span>
       </header>
       <div class="s-body">
         <h2>AI attaches at every stage.<br><span class="thin">The hold period is</span> <span class="accent">the wedge.</span></h2>
@@ -588,7 +596,6 @@ svg{display:block}
           <div class="figure col mid">
             <svg width="700" height="300" viewBox="0 0 700 300" role="img"
                  aria-label="Illustrative fee bands by deal stage: diligence 80 to 150 thousand Singapore dollars per deal, first 100 days 100 to 200 thousand, hold 250 to 400 thousand per investee per year, exit 100 to 200 thousand.">
-              <!-- vertical gridlines -->
               <line class="gridline" x1="180" y1="18" x2="180" y2="256"></line>
               <line class="gridline" x1="290" y1="18" x2="290" y2="256"></line>
               <line class="gridline" x1="400" y1="18" x2="400" y2="256"></line>
@@ -602,31 +609,26 @@ svg{display:block}
               <text class="ax" x="620" y="274" text-anchor="middle">400</text>
               <text class="ax" x="620" y="292" text-anchor="end">SGD thousands per engagement</text>
 
-              <!-- row 1 · source -->
               <text class="axl" x="164" y="40" text-anchor="end">Source</text>
               <text class="axs" x="164" y="55" text-anchor="end">market scanning, theses</text>
               <rect class="bar-h" x="180" y="31" width="46" height="24" fill="#c9c9c2" style="transition-delay:.10s"></rect>
               <text class="axs fade" x="236" y="48">Low fee, high goodwill — the door opener</text>
 
-              <!-- row 2 · diligence -->
               <text class="axl" x="164" y="86" text-anchor="end">Diligence</text>
               <text class="axs" x="164" y="101" text-anchor="end">per deal, at deal speed</text>
               <rect class="bar-h" x="268" y="77" width="77" height="24" fill="#6b6b66" style="transition-delay:.18s"></rect>
               <text class="val fade" x="355" y="94" style="font-size:12px">80–150K</text>
 
-              <!-- row 3 · first 100 days -->
               <text class="axl" x="164" y="132" text-anchor="end">First 100 days</text>
               <text class="axs" x="164" y="147" text-anchor="end">sold alongside the PMI</text>
               <rect class="bar-h" x="290" y="123" width="110" height="24" fill="#6b6b66" style="transition-delay:.26s"></rect>
               <text class="val fade" x="410" y="140" style="font-size:12px">100–200K</text>
 
-              <!-- row 4 · hold — the wedge -->
               <text class="axl" x="164" y="178" text-anchor="end" style="fill:#e2231a">Hold</text>
               <text class="axs" x="164" y="193" text-anchor="end" style="fill:#e2231a">per investee, per year</text>
               <rect class="bar-h" x="455" y="165" width="165" height="30" fill="#e2231a" style="transition-delay:.34s"></rect>
               <text class="val val-w fade" x="470" y="185" style="font-size:14px">250–400K</text>
 
-              <!-- row 5 · exit -->
               <text class="axl" x="164" y="228" text-anchor="end">Exit</text>
               <text class="axs" x="164" y="243" text-anchor="end">vendor diligence readiness</text>
               <rect class="bar-h" x="290" y="219" width="110" height="24" fill="#6b6b66" style="transition-delay:.42s"></rect>
@@ -637,14 +639,11 @@ svg{display:block}
           <div class="col" style="padding-top:18px">
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:13px">
               <div>
-                <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)">What the wedge is</div>
-                <p style="font-size:13.5px;line-height:1.42;margin-top:5px">A back-office AI factory per investee: invoice extraction, three-way matching, regulatory monitoring, finance-close automation.</p>
+                <div class="ct">What the wedge is</div>
+                <p style="font-size:13.5px;line-height:1.42;margin-top:5px">A back-office AI factory per investee — invoice extraction, three-way matching, regulatory monitoring, finance-close automation — plus churn and cross-sell analytics for the consumer-facing ones.</p>
               </div>
               <div>
-                <p style="font-size:13.5px;line-height:1.42">Plus customer analytics — churn, cross-sell, lifetime value — for the consumer-facing investees.</p>
-              </div>
-              <div>
-                <p style="font-size:13.5px;line-height:1.42">Delivered by <strong>configuring</strong> Zora finance and procurement agents and the Claude stack — not building bespoke. Cost-to-serve falls with every deployment.</p>
+                <p style="font-size:13.5px;line-height:1.42">Delivered by <strong>configuring</strong> Zora and Claude assets, not building bespoke. Cost-to-serve falls with every deployment.</p>
               </div>
             </div>
             <div data-step="2" style="margin-top:auto">
@@ -657,10 +656,10 @@ svg{display:block}
       <footer class="s-foot"><span>The Owner-Operator Play</span><span>Illustrative fee bands, mid-market SEA</span></footer>
     </section>
 
-    <!-- ══ 08 · UNIT ECONOMICS ═════════════════════════════════ -->
+    <!-- ══ 07 · UNIT ECONOMICS ═════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">07 · Unit economics and ramp</span><span class="s-num">08 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 07 Unit economics and ramp</span><span class="s-num">08 / 12</span>
       </header>
       <div class="s-body">
         <h2>Year one is four to six engagements.<br><span class="thin">Not a</span> <span class="accent">moonshot.</span></h2>
@@ -672,7 +671,7 @@ svg{display:block}
                 <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">5–6</div><div class="l">live at steady state, SGD 300K average</div></div>
               </div>
               <p style="font-size:13.5px;line-height:1.42">That is <strong>SGD 1.5–1.8M per platform per year</strong> before diligence and exit work — and year one carries just two deployments.</p>
-              <p style="font-size:13.5px;line-height:1.42">Because the wedge is configured from Zora and Claude assets rather than built from scratch, cost-to-serve falls with each deployment and platform subscriptions ride alongside fees.</p>
+              <p style="font-size:13.5px;line-height:1.42">Configured from existing assets rather than built, so cost-to-serve falls with each deployment and platform subscriptions ride alongside fees.</p>
             </div>
             <div data-step="2" style="margin-top:auto">
               <p class="callout" style="font-size:16px">PE platform revenue is
@@ -696,28 +695,24 @@ svg{display:block}
               <text class="ax" x="40" y="256" text-anchor="end">0</text>
               <line class="baseline" x1="48" y1="252" x2="560" y2="252"></line>
 
-              <!-- Year 1 · total 1.5 -->
               <rect class="bar" x="96"  y="233.5" width="104" height="18.5" fill="#e2231a" style="transition-delay:.10s"></rect>
               <rect class="bar" x="96"  y="213.0" width="104" height="18.5" fill="#2456c7" style="transition-delay:.16s"></rect>
               <rect class="bar" x="96"  y="202.8" width="104" height="8.2"  fill="#0f8a6a" style="transition-delay:.22s"></rect>
               <text class="val fade" x="148" y="193" text-anchor="middle">1.5</text>
               <text class="axl" x="148" y="272" text-anchor="middle">Year 1</text>
 
-              <!-- Year 2 · total 3.0 -->
               <rect class="bar" x="252" y="195.9" width="104" height="56.1" fill="#e2231a" style="transition-delay:.20s"></rect>
               <rect class="bar" x="252" y="165.2" width="104" height="28.7" fill="#2456c7" style="transition-delay:.26s"></rect>
               <rect class="bar" x="252" y="151.5" width="104" height="11.7" fill="#0f8a6a" style="transition-delay:.32s"></rect>
               <text class="val fade" x="304" y="142" text-anchor="middle">3.0</text>
               <text class="axl" x="304" y="272" text-anchor="middle">Year 2</text>
 
-              <!-- Year 3 · total 6.0 -->
               <rect class="bar" x="408" y="131.0" width="104" height="121.0" fill="#e2231a" style="transition-delay:.30s"></rect>
               <rect class="bar" x="408" y="78.4"  width="104" height="50.6" fill="#2456c7" style="transition-delay:.36s"></rect>
               <rect class="bar" x="408" y="49.1"  width="104" height="27.3" fill="#0f8a6a" style="transition-delay:.42s"></rect>
               <text class="val fade" x="460" y="40" text-anchor="middle">6.0</text>
               <text class="axl" x="460" y="272" text-anchor="middle">Year 3</text>
 
-              <!-- inline series labels on the largest segments -->
               <text class="val val-w fade" x="460" y="196" text-anchor="middle" style="font-size:11px">PE 3.6</text>
               <text class="val val-w fade" x="460" y="108" text-anchor="middle" style="font-size:11px">1.6</text>
               <text class="ax" x="560" y="292" text-anchor="end">SGD millions, annual revenue</text>
@@ -725,13 +720,13 @@ svg{display:block}
           </div>
         </div>
       </div>
-      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Book ramp to the SGD 6M target</span></footer>
+      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Book ramp to the SGD 6M target · revenue only, before cost-to-serve</span></footer>
     </section>
 
-    <!-- ══ 09 · PRICING ════════════════════════════════════════ -->
+    <!-- ══ 08 · PRICING ════════════════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">08 · Pricing</span><span class="s-num">09 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 08 Pricing</span><span class="s-num">09 / 12</span>
       </header>
       <div class="s-body">
         <h2>Get paid for the outcome,<br><span class="thin">not for</span> <span class="accent">the effort.</span></h2>
@@ -762,14 +757,16 @@ svg{display:block}
         <div data-step="2">
           <div class="cards c2 spread">
             <div class="card">
-              <div class="ct">Why buyers already expect it</div>
-              <p>AI-native vendors like <strong>Sierra</strong> have built multi-billion valuations
-                 selling on successful resolutions rather than effort. Outcome pricing is no longer exotic.</p>
+              <div class="ct">Buyers already accept it</div>
+              <p><strong>Sierra</strong> is valued at <strong>USD 15.8B</strong> charging roughly
+                 <strong>USD 1.50</strong> per resolved conversation. Outcome-linked fees are no longer exotic.</p>
             </div>
             <div class="card">
-              <div class="ct">Why the invaders cannot match it</div>
-              <p>Deloitte can offer outcome pricing with an <strong>audit-grade measurement
-                 framework</strong>, aligned to MAS and IMDA guidance. They are building theirs as they go.</p>
+              <div class="ct">But theirs sits on a subscription</div>
+              <p>For the invaders, platform subscription is the main revenue line and outcome fees ride on top.
+                 Deloitte can put a larger share of fee genuinely at risk, because it can measure the outcome to
+                 audit standard — <strong>MAS AI Risk Management Toolkit</strong> and <strong>IMDA's agentic AI
+                 framework</strong>, both 2026.</p>
             </div>
           </div>
         </div>
@@ -778,10 +775,59 @@ svg{display:block}
       <footer class="s-foot"><span>The Owner-Operator Play</span><span>Outcome-linked pricing</span></footer>
     </section>
 
-    <!-- ══ 10 · FIRST 90 DAYS ══════════════════════════════════ -->
+    <!-- ══ 09 · WHAT HAS TO BE TRUE ════════════════════════════ -->
     <section class="slide">
       <header class="s-head">
-        <span class="kicker">09 · Execution</span><span class="s-num">10 / 11</span>
+        <span class="kicker"><b class="act">Approach</b> · 09 What has to be true</span><span class="s-num">10 / 12</span>
+      </header>
+      <div class="s-body">
+        <h2>Three things could <span class="accent">break this.</span><br><span class="thin">Here is how each one closes.</span></h2>
+        <div data-step="1" class="stagger grow" style="margin-top:24px">
+          <div class="cards c3 spread">
+            <div class="card">
+              <div class="chead">
+                <div class="ct">Risk 01 · Licensing</div>
+                <h4>Zora and 10X Analyst<br>must travel</h4>
+              </div>
+              <ul>
+                <li>Both must be licensable for client deployment in this region. The Product row depends on it.</li>
+                <li><strong>Answer:</strong> confirm in week one. The Claude enterprise stack is the fallback.</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="chead">
+                <div class="ct">Risk 02 · Independence</div>
+                <h4>Audit clients cannot<br>pay contingent fees</h4>
+              </div>
+              <ul>
+                <li>If most of the twelve are Deloitte-audited, the outcome-priced model narrows sharply.</li>
+                <li><strong>Answer:</strong> count the restricted names before pitching; route them to standard fees.</li>
+              </ul>
+            </div>
+            <div class="card">
+              <div class="chead">
+                <div class="ct">Risk 03 · Delivery</div>
+                <h4>The bench is an ask,<br>not a resource</h4>
+              </div>
+              <ul>
+                <li>Five to six live deployments per platform is a staffing commitment, not a sales one.</li>
+                <li><strong>Answer:</strong> a named T&amp;T pod committed before engagement two.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div data-step="2" style="padding-top:22px">
+          <p class="callout">None of these are unknowable.
+            <span class="accent big">All three are answerable before the first pitch.</span></p>
+        </div>
+      </div>
+      <footer class="s-foot"><span>The Owner-Operator Play</span><span>Assumptions the plan rests on</span></footer>
+    </section>
+
+    <!-- ══ 10 · EXECUTION ══════════════════════════════════════ -->
+    <section class="slide">
+      <header class="s-head">
+        <span class="kicker"><b class="act">Approach</b> · 10 Execution</span><span class="s-num">11 / 12</span>
       </header>
       <div class="s-body">
         <h2>The first <span class="accent">90 days.</span></h2>
@@ -792,26 +838,23 @@ svg{display:block}
               <div class="d">DAYS 1–30</div>
               <h4>Map the firm</h4>
               <ul>
-                <li>Partner relationship map across the twelve targets — audit, tax, deals, consulting</li>
-                <li>Confirm restricted-client screens</li>
-                <li>Confirm Zora AI and 10X Analyst licensing for SEA client deployment</li>
+                <li>Partner relationship map across the nine doors</li>
+                <li>Close out all three risks on the previous slide</li>
               </ul>
             </div>
             <div class="leg">
               <div class="d">DAYS 31–60</div>
               <h4>Open the pipe</h4>
               <ul>
-                <li><strong>20</strong> warm introductions</li>
-                <li><strong>6</strong> qualified pursuits</li>
-                <li>Stand up the T&amp;T delivery pod and the outcome-measurement framework</li>
+                <li><strong>20</strong> warm introductions, <strong>6</strong> qualified pursuits</li>
+                <li>Stand up the delivery pod and the measurement framework</li>
               </ul>
             </div>
             <div class="leg">
               <div class="d">DAYS 61–90</div>
               <h4>Sign and deploy</h4>
               <ul>
-                <li>Two signed engagements</li>
-                <li>First investee deployment underway</li>
+                <li>Two signed engagements, first investee deployment underway</li>
                 <li>Reference case in build for the next GP conversation</li>
               </ul>
             </div>
@@ -832,7 +875,7 @@ svg{display:block}
     <!-- ══ 11 · CLOSE ══════════════════════════════════════════ -->
     <section class="slide dark">
       <header class="s-head">
-        <span class="kicker">The play</span><span class="s-num">11 / 11</span>
+        <span class="kicker">The play</span><span class="s-num">12 / 12</span>
       </header>
       <div class="s-body" style="justify-content:center">
         <h1>Advice without deployment<br>loses the mandate.</h1>
@@ -850,9 +893,10 @@ svg{display:block}
       <footer class="s-foot" style="align-items:flex-end">
         <span>Lee Lim · Confidential draft</span>
         <span style="max-width:62ch;text-align:right;text-transform:none;letter-spacing:0;line-height:1.5;font-size:9.5px">
-          Sources: Bain SEA PE Report 2026 · Anthropic and Deloitte announcements, Oct 2025 ·
-          OpenAI Deployment Company launch, 2026 · TechCrunch on Wonderful, Mar 2026 ·
-          Deloitte Zora AI press materials · Fee bands illustrative · Prepared for discussion
+          Sources: Bain Global &amp; SEA Private Equity Reports 2026 · Anthropic and Deloitte, Oct 2025 ·
+          Deloitte–Oracle and Deloitte–SAP announcements · AWS Marketplace · OpenAI Deployment Company and
+          Partner Network, 2026 · TechCrunch on Wonderful, Mar 2026 · Everest Group PE Services PEAK Matrix 2026 ·
+          MAS and IMDA publications, 2026 · Fee bands illustrative · Prepared for discussion
         </span>
       </footer>
     </section>
@@ -944,13 +988,40 @@ svg{display:block}
     x0 = null;
   }, { passive: true });
 
-  // Scale the fixed 1280×720 stage to the viewport — identical layout everywhere.
+  // Place the fixed 1280×720 stage inside whatever space we actually have.
+  // Measured off the viewport element (not window.inner*), which is correct
+  // even where the visual viewport and layout viewport disagree.
   function fit() {
-    var pad = window.innerWidth < 700 ? 8 : 28;
-    var k = Math.min((window.innerWidth - pad * 2) / 1280, (window.innerHeight - pad * 2) / 720);
-    stage.style.transform = 'scale(' + k + ')';
+    var vp = document.getElementById('viewport').getBoundingClientRect();
+    var vw = vp.width || window.innerWidth;
+    var vh = vp.height || window.innerHeight;
+    var pad = vw < 700 ? 6 : 28;
+    var aw = Math.max(1, vw - pad * 2), ah = Math.max(1, vh - pad * 2);
+    // Tall, narrow screens (a phone held upright) get the deck turned on its
+    // side — 16:9 shrunk into a portrait width is unreadable otherwise.
+    var turn = vw < vh && vw < 700;
+    var k = turn ? Math.min(ah / 1280, aw / 720)
+                 : Math.min(aw / 1280, ah / 720);
+    if (turn) {
+      stage.style.transform =
+        'translate(' + ((vw + 720 * k) / 2) + 'px,' + ((vh - 1280 * k) / 2) + 'px)' +
+        ' rotate(90deg) scale(' + k + ')';
+    } else {
+      stage.style.transform =
+        'translate(' + ((vw - 1280 * k) / 2) + 'px,' + ((vh - 720 * k) / 2) + 'px)' +
+        ' scale(' + k + ')';
+    }
+    document.body.classList.toggle('turned', turn);
   }
   window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 60); });
+  window.addEventListener('load', fit);
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', fit);
+    visualViewport.addEventListener('scroll', fit);
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(document.getElementById('viewport'));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 
   window.addEventListener('hashchange', function () {
     var m = /^#\/(\d+)$/.exec(location.hash);
