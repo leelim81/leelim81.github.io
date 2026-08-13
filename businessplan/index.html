@@ -189,6 +189,8 @@ svg{display:block}
   letter-spacing:-.02em}
 .val-w{fill:#fff}
 .delta{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;fill:var(--accent)}
+.plat{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9.5px;letter-spacing:.04em;
+  fill:var(--accent);text-transform:uppercase}
 .gridline{stroke:var(--line);stroke-width:1}
 .baseline{stroke:var(--ink);stroke-width:1.5}
 
@@ -678,7 +680,7 @@ body.turned #hint{display:none}
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:12px">
               <div class="stats c3" style="grid-template-columns:1fr 1fr">
                 <div class="stat" style="padding:12px 16px 14px"><div class="v" style="font-size:34px">8–12</div><div class="l">investees reached per GP relationship</div></div>
-                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">5–6</div><div class="l">live at steady state, SGD 300K average</div></div>
+                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">5–6</div><div class="l">live per platform at steady state, SGD 300K average</div></div>
               </div>
               <p style="font-size:13.5px;line-height:1.42">That is <strong>SGD 1.5–1.8M per platform per year</strong> before diligence and exit work — and year one carries just two deployments.</p>
               <p style="font-size:13.5px;line-height:1.42">Configured from existing assets rather than built, so cost-to-serve falls with each deployment and platform subscriptions ride alongside fees.</p>
@@ -694,8 +696,8 @@ body.turned #hint{display:none}
               <span class="li"><span class="sw" style="background:var(--s2)"></span>Telco CVM</span>
               <span class="li"><span class="sw" style="background:var(--s3)"></span>Financial services</span>
             </div>
-            <svg width="580" height="300" viewBox="0 0 580 300" role="img"
-                 aria-label="Revenue ramp: year one 1.5 million Singapore dollars (0.6 PE, 0.6 telco, 0.3 financial services); year two 3.0 million (1.7, 0.9, 0.4); year three 6.0 million (3.6, 1.6, 0.8).">
+            <svg width="580" height="326" viewBox="0 0 580 326" role="img"
+                 aria-label="Revenue ramp: year one 1.5 million Singapore dollars (0.6 PE, 0.6 telco, 0.3 financial services) from one platform ramping; year two 3.0 million (1.7, 0.9, 0.4) from one platform at steady state; year three 6.0 million (3.6, 1.6, 0.8) from two platforms.">
               <line class="gridline" x1="48" y1="47"  x2="560" y2="47"></line>
               <line class="gridline" x1="48" y1="115" x2="560" y2="115"></line>
               <line class="gridline" x1="48" y1="184" x2="560" y2="184"></line>
@@ -725,7 +727,11 @@ body.turned #hint{display:none}
 
               <text class="val val-w fade" x="460" y="196" text-anchor="middle" style="font-size:11px">PE 3.6</text>
               <text class="val val-w fade" x="460" y="108" text-anchor="middle" style="font-size:11px">1.6</text>
-              <text class="ax" x="560" y="292" text-anchor="end">SGD millions, annual revenue</text>
+              <line class="gridline" x1="48" y1="284" x2="560" y2="284"></line>
+              <text class="plat fade" x="148" y="300" text-anchor="middle">1 platform, ramping</text>
+              <text class="plat fade" x="304" y="300" text-anchor="middle">1 at steady state</text>
+              <text class="plat fade" x="460" y="300" text-anchor="middle">2 platforms</text>
+              <text class="ax" x="560" y="320" text-anchor="end">SGD millions, annual revenue</text>
             </svg>
           </div>
         </div>
