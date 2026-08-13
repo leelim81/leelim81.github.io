@@ -679,12 +679,19 @@ body.turned #hint{display:none}
           <div class="col" style="padding-top:18px">
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:12px">
               <div class="stats c3" style="grid-template-columns:1fr 1fr">
-                <div class="stat" style="padding:12px 16px 14px"><div class="v" style="font-size:34px">8–12</div><div class="l">investees reached per GP relationship</div></div>
-                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">5–6</div><div class="l">live per GP at steady state, SGD 300K average</div></div>
+                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">30%</div><div class="l">of a typical 8–12 investee portfolio goes live — three per GP</div></div>
+                <div class="stat" style="padding:12px 16px 14px"><div class="v" style="font-size:34px">4</div><div class="l">GPs signed by year three, from a target list of twelve</div></div>
               </div>
-              <p style="font-size:13.5px;line-height:1.42">That is <strong>SGD 1.5–1.8M per GP per year</strong> before diligence and exit work — and year one carries just two deployments.</p>
-              <p style="font-size:13.5px;line-height:1.42">Two GP relationships reach <strong>16–24</strong> investees. Year three assumes <strong>12 live</strong> — below the bottom of that range, deliberately.</p>
-              <p style="font-size:13.5px;line-height:1.42">Configured from existing assets rather than built, so cost-to-serve falls with each deployment and platform subscriptions ride alongside fees.</p>
+              <table class="grid tight">
+                <colgroup><col style="width:54px"><col style="width:62px"><col style="width:120px"><col></colgroup>
+                <thead><tr><th>Year</th><th>GPs</th><th>Live investees</th><th>PE revenue</th></tr></thead>
+                <tbody>
+                  <tr><td class="k">1</td><td>1</td><td>2</td><td>SGD 0.6M</td></tr>
+                  <tr><td class="k">2</td><td>2</td><td>6</td><td>SGD 1.8M</td></tr>
+                  <tr><td class="k">3</td><td>4</td><td>12</td><td>SGD 3.6M</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:13.5px;line-height:1.42">Every live investee is <strong>SGD 300K a year</strong>. Configured from existing assets rather than built, so cost-to-serve falls with each deployment and platform subscriptions ride alongside fees.</p>
             </div>
             <div data-step="2" style="margin-top:auto">
               <p class="callout" style="font-size:16px">Private equity is
@@ -698,7 +705,7 @@ body.turned #hint{display:none}
               <span class="li"><span class="sw" style="background:var(--s3)"></span>Financial services</span>
             </div>
             <svg width="580" height="326" viewBox="0 0 580 326" role="img"
-                 aria-label="Revenue ramp: year one 1.5 million Singapore dollars (0.6 PE, 0.6 telco, 0.3 financial services) from one GP relationship ramping; year two 3.0 million (1.7, 0.9, 0.4) from one GP at steady state; year three 6.0 million (3.6, 1.6, 0.8) from two GPs.">
+                 aria-label="Revenue ramp at three live investees per GP and SGD 300K each: year one 1.5 million Singapore dollars (0.6 private equity, 0.6 telco, 0.3 financial services) from one GP; year two 3.0 million (1.8, 0.8, 0.4) from two GPs; year three 6.0 million (3.6, 1.6, 0.8) from four GPs.">
               <line class="gridline" x1="48" y1="47"  x2="560" y2="47"></line>
               <line class="gridline" x1="48" y1="115" x2="560" y2="115"></line>
               <line class="gridline" x1="48" y1="184" x2="560" y2="184"></line>
@@ -714,8 +721,8 @@ body.turned #hint{display:none}
               <text class="val fade" x="148" y="193" text-anchor="middle">1.5</text>
               <text class="axl" x="148" y="272" text-anchor="middle">Year 1</text>
 
-              <rect class="bar" x="252" y="195.9" width="104" height="56.1" fill="#e2231a" style="transition-delay:.20s"></rect>
-              <rect class="bar" x="252" y="165.2" width="104" height="28.7" fill="#2456c7" style="transition-delay:.26s"></rect>
+              <rect class="bar" x="252" y="192.5" width="104" height="59.5" fill="#e2231a" style="transition-delay:.20s"></rect>
+              <rect class="bar" x="252" y="165.2" width="104" height="25.3" fill="#2456c7" style="transition-delay:.26s"></rect>
               <rect class="bar" x="252" y="151.5" width="104" height="11.7" fill="#0f8a6a" style="transition-delay:.32s"></rect>
               <text class="val fade" x="304" y="142" text-anchor="middle">3.0</text>
               <text class="axl" x="304" y="272" text-anchor="middle">Year 2</text>
@@ -729,9 +736,9 @@ body.turned #hint{display:none}
               <text class="val val-w fade" x="460" y="196" text-anchor="middle" style="font-size:11px">PE 3.6</text>
               <text class="val val-w fade" x="460" y="108" text-anchor="middle" style="font-size:11px">1.6</text>
               <line class="gridline" x1="48" y1="284" x2="560" y2="284"></line>
-              <text class="plat fade" x="148" y="300" text-anchor="middle">1 GP, ramping</text>
-              <text class="plat fade" x="304" y="300" text-anchor="middle">1 at steady state</text>
-              <text class="plat fade" x="460" y="300" text-anchor="middle">2 GPs</text>
+              <text class="plat fade" x="148" y="300" text-anchor="middle">1 GP</text>
+              <text class="plat fade" x="304" y="300" text-anchor="middle">2 GPs</text>
+              <text class="plat fade" x="460" y="300" text-anchor="middle">4 GPs</text>
               <text class="ax" x="560" y="320" text-anchor="end">SGD millions, annual revenue</text>
             </svg>
           </div>
