@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>The Owner-Operator Play — AI value creation for private equity</title>
+<title>The Owner-Operator Play: AI value creation for private equity</title>
 <meta name="description" content="A confidential draft business plan: running the invaders' operating model on Deloitte's AI rails, aimed at private equity in Southeast Asia." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
 /* ──────────────────────────────────────────────────────────────
-   The Owner-Operator Play — Swiss modern deck
+   The Owner-Operator Play, Swiss modern deck
    International Typographic Style: grid, whitespace, one accent,
    tight tracking. Fixed 1280×720 stage, scaled to fit: layout is
    identical at every viewport, so nothing can collide.
@@ -23,9 +23,9 @@
   --muted:#6b6b66;
   --line:#d8d8d2;
   --line-soft:#e6e6e0;
-  --s1:#e2231a;   /* series 1 — private equity    */
-  --s2:#2456c7;   /* series 2 — telco CVM         */
-  --s3:#0f8a6a;   /* series 3 — financial services*/
+  --s1:#e2231a;   /* series 1: private equity     */
+  --s2:#2456c7;   /* series 2: telco CVM          */
+  --s3:#0f8a6a;   /* series 3: financial services */
   --ease:cubic-bezier(.22,.61,.36,1);
   color-scheme:light;
 }
@@ -63,18 +63,18 @@ body{
 
 .s-head{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex:none}
 .s-body{flex:1;min-height:0;display:flex;flex-direction:column;padding-top:8px}
-/* right padding reserves the corner the nav buttons live in — they never
+/* right padding reserves the corner the nav buttons live in, so they never
    sit on top of the running footer */
 .s-foot{flex:none;display:flex;align-items:center;justify-content:space-between;gap:24px;
   padding-top:12px;padding-right:78px;
   font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10.5px;
   letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 
-/* Layout helpers — content blocks grow into the slide, so no slide ends
+/* Layout helpers. Content blocks grow into the slide, so no slide ends
    with a dead band of whitespace above the footer. */
 .grow{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
 .grow.top{justify-content:flex-start}
-/* Cards keep their natural height and their tops aligned — the slack is
+/* Cards keep their natural height and their tops aligned, so the slack is
    split above and below the row by .grow, never inside a card. */
 .cards.spread .card{justify-content:flex-start;gap:14px;padding:26px 22px 28px}
 .card .chead{display:flex;flex-direction:column;gap:6px}
@@ -89,7 +89,7 @@ table.grid.stretch td{vertical-align:middle}
 .kicker{display:inline-flex;align-items:center;gap:12px;font-size:11px;font-weight:700;
   text-transform:uppercase;letter-spacing:.18em;color:var(--accent)}
 .kicker::before{content:"";width:34px;height:2px;background:var(--accent);flex:none}
-/* Act label — Threat / Opportunity / Approach — set in ink so the three-act
+/* Act label (Threat / Opportunity / Approach), set in ink so the three-act
    spine reads from the back of the room without extra chrome. */
 .kicker .act{color:var(--ink);font-weight:700}
 .dark .kicker .act{color:var(--paper)}
@@ -110,7 +110,7 @@ h2 .thin{font-weight:300}
 .callout .big{font-weight:700}
 .src{font-size:10.5px;line-height:1.45;color:var(--muted);max-width:105ch}
 
-/* Card grid — 1px hairline mesh, the Swiss staple */
+/* Card grid: 1px hairline mesh, the Swiss staple */
 .cards{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
 .cards.c2{grid-template-columns:1fr 1fr}
 .cards.c3{grid-template-columns:1fr 1fr 1fr}
@@ -132,7 +132,7 @@ h2 .thin{font-weight:300}
 .stat .v.a{color:var(--accent)}
 .stat .l{margin-top:6px;font-size:12px;line-height:1.35;color:var(--muted)}
 
-/* Table — hairline grid, no zebra */
+/* Table: hairline grid, no zebra */
 table.grid{width:100%;border-collapse:separate;border-spacing:0;background:var(--line);
   border:1px solid var(--line);table-layout:fixed}
 table.grid th,table.grid td{background:var(--paper);text-align:left;vertical-align:top;
@@ -194,7 +194,7 @@ svg{display:block}
 .gridline{stroke:var(--line);stroke-width:1}
 .baseline{stroke:var(--ink);stroke-width:1.5}
 
-/* Bar reveal — keyed to slide activation */
+/* Bar reveal, keyed to slide activation */
 .bar{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(.001);
   transition:transform .72s var(--ease)}
 .bar-h{transform-box:fill-box;transform-origin:0% 50%;transform:scaleX(.001);
@@ -203,7 +203,7 @@ svg{display:block}
 .fade{opacity:0;transition:opacity .5s var(--ease)}
 .slide.live .fade{opacity:1;transition-delay:.55s}
 
-/* Step reveals — max three per slide */
+/* Step reveals: max three per slide */
 [data-step]{opacity:0;transform:translateY(12px);
   transition:opacity .44s var(--ease),transform .5s var(--ease)}
 [data-step].on{opacity:1;transform:none}
@@ -260,7 +260,7 @@ body.turned #hint{display:none}
         <h1>The Owner-<br>Operator <span class="accent">Play</span></h1>
         <div class="rule-accent"></div>
         <p class="lede" style="max-width:none;font-size:21px">
-          AI value creation for private equity — on rails the firm already owns.
+          AI value creation for private equity, on rails the firm already owns.
         </p>
         <div data-step="1" class="stagger" style="margin-top:22px">
           <div>
@@ -339,7 +339,7 @@ body.turned #hint{display:none}
         <h2>OpenAI competes with consultants.<br><span class="thin">Anthropic</span> armed <span class="accent">one.</span></h2>
         <div data-step="1" style="margin-top:22px">
           <div class="stats c3">
-            <div class="stat"><div class="v a">470,000</div><div class="l">Deloitte people with Claude deployed — Anthropic's largest enterprise deployment anywhere</div></div>
+            <div class="stat"><div class="v a">470,000</div><div class="l">Deloitte people with Claude deployed. Anthropic's largest enterprise deployment anywhere</div></div>
             <div class="stat"><div class="v">150+</div><div class="l">Countries and territories in the network. The Anthropic alliance includes a dedicated Claude Center of Excellence.</div></div>
             <div class="stat"><div class="v">15,000</div><div class="l">Practitioners being certified on Claude under the joint programme</div></div>
           </div>
@@ -353,7 +353,7 @@ body.turned #hint{display:none}
               </div>
               <p>Finance, procurement and supply-chain agents on the NVIDIA stack, wired into
                  SAP Joule and Oracle Fusion. Deloitte is first user on its own expense
-                 management — targeting <strong>25% cost reduction</strong> and
+                 management, targeting <strong>25% cost reduction</strong> and
                  <strong>40% productivity</strong>.</p>
             </div>
             <div class="card">
@@ -361,7 +361,7 @@ body.turned #hint{display:none}
                 <div class="ct">10X Analyst · financial services</div>
                 <h4>Claude-powered, on Amazon Bedrock</h4>
               </div>
-              <p>Fixed income, actuarial and campaign analysis on Bedrock AgentCore — for the
+              <p>Fixed income, actuarial and campaign analysis on Bedrock AgentCore. For the
                  sector that buys the most analyst hours.</p>
             </div>
             <div class="card">
@@ -371,7 +371,7 @@ body.turned #hint{display:none}
               </div>
               <p>Launched June 2025 across Singapore, Malaysia and India. <strong>120+</strong> AI
                  specialists, <strong>6,000+</strong> Asia Pacific practitioners, and a stated
-                 implementation pipeline above <strong>US$1B</strong> — running Zora AI.</p>
+                 implementation pipeline above <strong>US$1B</strong>, running Zora AI.</p>
             </div>
           </div>
         </div>
@@ -522,7 +522,7 @@ body.turned #hint{display:none}
                 <rect class="bar-h" x="562" y="160" width="82" height="50" fill="#c9c9c2" style="transition-delay:.50s"></rect>
               </g>
               <text class="fade" x="298" y="242" style="font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:.12em;fill:#6b6b66">THE DEPLOYMENT SITES</text>
-              <text class="fade" x="298" y="268" style="font-size:16px;font-weight:700;letter-spacing:-.03em;fill:#0a0a0a">8–12 investees — each a revenue line,</text>
+              <text class="fade" x="298" y="268" style="font-size:16px;font-weight:700;letter-spacing:-.03em;fill:#0a0a0a">8–12 investees, each a revenue line,</text>
               <text class="fade" x="298" y="288" style="font-size:16px;font-weight:700;letter-spacing:-.03em;fill:#0a0a0a">each a reference for the next.</text>
             </svg>
           </div>
@@ -533,7 +533,7 @@ body.turned #hint{display:none}
               <p style="font-size:13.5px;line-height:1.45;color:#2a2a2a;margin-top:10px">
                 Temasek's <strong>65 Equity Partners</strong> (USD 4.2B+ AUM) and
                 <strong>Tower Capital Asia</strong> took Boardroom private in 2022 for
-                <strong>~S$312M</strong> — corporate secretarial, share registry, employee plans.</p>
+                <strong>~S$312M</strong>: corporate secretarial, share registry, employee plans.</p>
               <p style="font-size:13.5px;line-height:1.45;color:#2a2a2a;margin-top:10px">
                 In 2026 they appointed Goldman Sachs to explore a sale at around
                 <strong>US$1B</strong>. Advent, CVC, EQT and TPG reported as interested.</p>
@@ -556,13 +556,13 @@ body.turned #hint{display:none}
       </header>
       <div class="s-body">
         <h2 style="font-size:34px">Twelve GPs. <span class="accent">Four run through Temasek.</span></h2>
-        <p class="muted" style="font-size:13px;margin-top:8px">65 Equity Partners is a Temasek subsidiary. It wholly owns Heliconia and is an LP in Tower Capital and Novo Tellus, with Temasek's GP interests reported to be consolidating under it. Warm introductions across four — not one signature.</p>
+        <p class="muted" style="font-size:13px;margin-top:8px">65 Equity Partners is a Temasek subsidiary. It wholly owns Heliconia and is an LP in Tower Capital and Novo Tellus, with Temasek's GP interests reported to be consolidating under it. Warm introductions across four, not one signature.</p>
         <div data-step="1" style="margin-top:14px">
           <table class="grid tight">
             <colgroup><col style="width:168px"><col style="width:68px"><col style="width:116px"><col style="width:280px"><col></colgroup>
             <thead><tr><th>Target GP</th><th>Base</th><th>Scale</th><th>Focus</th><th>Back-office AI fit</th></tr></thead>
             <tbody>
-              <tr class="grp"><td colspan="5">One network — the Temasek orbit</td></tr>
+              <tr class="grp"><td colspan="5">One network: the Temasek orbit</td></tr>
               <tr><td class="k">65 Equity Partners</td><td>SG</td><td>USD 4.2B+ AUM</td><td>Family and entrepreneur-led</td><td>Temasek subsidiary; co-owns Boardroom</td></tr>
               <tr><td class="k">Heliconia Capital</td><td>SG</td><td>Mid-market</td><td>Singapore SMEs and champions</td><td>Consolidating as a 65EP subsidiary; high-volume SME portfolio</td></tr>
               <tr><td class="k">Tower Capital Asia</td><td>SG</td><td>Mid-market</td><td>SEA family-led buyouts</td><td>65EP is an LP; co-owns Boardroom</td></tr>
@@ -617,7 +617,7 @@ body.turned #hint{display:none}
               <text class="axl" x="164" y="40" text-anchor="end">Source</text>
               <text class="axs" x="164" y="55" text-anchor="end">market scanning, theses</text>
               <rect class="bar-h" x="180" y="31" width="46" height="24" fill="#c9c9c2" style="transition-delay:.10s"></rect>
-              <text class="axs fade" x="236" y="48">Low fee, high goodwill — the door opener</text>
+              <text class="axs fade" x="236" y="48">Low fee, high goodwill: the door opener</text>
 
               <text class="axl" x="164" y="86" text-anchor="end">Diligence</text>
               <text class="axs" x="164" y="101" text-anchor="end">per deal, at deal speed</text>
@@ -639,13 +639,13 @@ body.turned #hint{display:none}
               <rect class="bar-h" x="290" y="219" width="110" height="24" fill="#6b6b66" style="transition-delay:.42s"></rect>
               <text class="val fade" x="410" y="236" style="font-size:12px">100–200K</text>
             </svg>
-            <p class="fig-cap"><span style="display:inline-block;width:11px;height:11px;background:var(--accent);vertical-align:-1px;margin-right:7px"></span><strong style="color:var(--accent)">The hold is the wedge</strong> — recurring, outcome-priced, repeatable across the portfolio.</p>
+            <p class="fig-cap"><span style="display:inline-block;width:11px;height:11px;background:var(--accent);vertical-align:-1px;margin-right:7px"></span><strong style="color:var(--accent)">The hold is the wedge:</strong> recurring, outcome-priced, repeatable across the portfolio.</p>
           </div>
           <div class="col" style="padding-top:18px">
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:13px">
               <div>
                 <div class="ct">What the wedge is</div>
-                <p style="font-size:13.5px;line-height:1.42;margin-top:5px">A back-office AI factory per investee — invoice extraction, three-way matching, regulatory monitoring, finance-close automation — plus churn and cross-sell analytics for the consumer-facing ones.</p>
+                <p style="font-size:13.5px;line-height:1.42;margin-top:5px">A back-office AI factory per investee: invoice extraction, three-way matching, regulatory monitoring, finance-close automation. Plus churn and cross-sell analytics for the consumer-facing ones.</p>
               </div>
               <div>
                 <p style="font-size:13.5px;line-height:1.42">Delivered by <strong>configuring</strong> Zora and Claude assets, not building bespoke. Cost-to-serve falls with every deployment.</p>
@@ -672,7 +672,7 @@ body.turned #hint{display:none}
           <div class="col" style="padding-top:18px">
             <div data-step="1" class="stagger" style="display:flex;flex-direction:column;gap:12px">
               <div class="stats c3" style="grid-template-columns:1fr 1fr">
-                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">30%</div><div class="l">of a typical 8–12 investee portfolio goes live — three per GP</div></div>
+                <div class="stat" style="padding:12px 16px 14px"><div class="v a" style="font-size:34px">30%</div><div class="l">of a typical 8–12 investee portfolio goes live, or three per GP</div></div>
                 <div class="stat" style="padding:12px 16px 14px"><div class="v" style="font-size:34px">4</div><div class="l">GPs signed by year three, from a target list of twelve</div></div>
               </div>
               <table class="grid tight">
@@ -782,7 +782,7 @@ body.turned #hint{display:none}
               <div class="ct">But theirs sits on a subscription</div>
               <p>For the invaders, platform subscription is the main revenue line and outcome fees ride on top.
                  Deloitte can put a larger share of fee genuinely at risk, because it can measure the outcome to
-                 audit standard — <strong>MAS AI Risk Management Toolkit</strong> and <strong>IMDA's agentic AI
+                 audit standard: the <strong>MAS AI Risk Management Toolkit</strong> and <strong>IMDA's agentic AI
                  framework</strong>, both 2026.</p>
             </div>
           </div>
@@ -899,7 +899,7 @@ body.turned #hint{display:none}
         <div class="rule-accent" style="background:#ff6a5e"></div>
         <p data-step="1" class="lede" style="color:#d8d8d2;max-width:52ch;font-size:19px;margin-top:22px">
           The rails are built and paid for. The buyer needs EBITDA more than ever.
-          This seat runs the rails as a business — and <span style="color:#ff6a5e;font-weight:600">owns the outcome.</span>
+          This seat runs the rails as a business, and <span style="color:#ff6a5e;font-weight:600">owns the outcome.</span>
         </p>
         <div data-step="2" style="margin-top:26px">
           <span class="pill" style="border-color:#4a4a44;color:#f4f4f0">SGD 1.5M year one</span>
@@ -1016,7 +1016,7 @@ body.turned #hint{display:none}
     var pad = vw < 700 ? 6 : 28;
     var aw = Math.max(1, vw - pad * 2), ah = Math.max(1, vh - pad * 2);
     // Tall, narrow screens (a phone held upright) get the deck turned on its
-    // side — 16:9 shrunk into a portrait width is unreadable otherwise.
+    // side. 16:9 shrunk into a portrait width is unreadable otherwise.
     var turn = vw < vh && vw < 700;
     var k = turn ? Math.min(ah / 1280, aw / 720)
                  : Math.min(aw / 1280, ah / 720);
