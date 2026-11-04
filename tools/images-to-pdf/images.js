@@ -523,7 +523,8 @@
     document.getElementById('downloadModal').hidden = false;
     PdfSizes.mount(document.getElementById('sizeOptions'), {
       getBytes: buildPdf,
-      nameFor: function (level) { return level === 100 ? 'bound.pdf' : 'bound-' + level + '.pdf'; }
+      nameFor: function (level) { return level === 100 ? 'bound.pdf' : 'bound-' + level + '.pdf'; },
+      usageKey: 'images-to-pdf'
     });
   });
   document.getElementById('dlClose').addEventListener('click', function () {

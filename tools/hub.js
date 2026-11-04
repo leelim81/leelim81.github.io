@@ -84,6 +84,7 @@
       story.appendChild(chapter(tool, i));
     });
     watchChapters();
+    if (window.ToolsUsage) ToolsUsage.showHub(document.getElementById('usage'), tools);
   }
 
   function watchChapters() {
@@ -104,6 +105,7 @@
     .then(render)
     .catch(function () {
       document.getElementById('tools').textContent = 'The tool list could not be loaded.';
+      if (window.ToolsUsage) ToolsUsage.showHub(document.getElementById('usage'), []);
     });
 
   var rule = document.querySelector('.scroll-rule');

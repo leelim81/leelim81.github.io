@@ -1,10 +1,11 @@
 {
-  "howToAdd": "Append an object to tools and add a folder at that href with an index.html. Fields: name, description, href, icon (pen, press, bind, or dot), kicker, chapter, line.",
+  "howToAdd": "Append an object to tools and add a folder at that href with an index.html. Fields: name, description, href, icon (pen, press, bind, or dot), kicker, chapter, line. Optional counter is the usage key; if omitted it is the folder name. Call ToolsUsage.recordUse(counter) when a download finishes.",
   "tools": [
     {
       "name": "Edit and Sign PDF",
       "description": "Write, cover, highlight, and sign. The file never leaves this browser.",
       "href": "pdf-editor/",
+      "counter": "pdf-editor",
       "icon": "pen",
       "kicker": "01  —  The pen",
       "chapter": "Make a mark",
@@ -14,6 +15,7 @@
       "name": "Reduce PDF file size",
       "description": "Shrink a PDF and read the real size of each version before you keep it.",
       "href": "small-pdf/",
+      "counter": "small-pdf",
       "icon": "press",
       "kicker": "02  —  The press",
       "chapter": "Squeeze the file",
@@ -23,6 +25,7 @@
       "name": "Convert images to one PDF",
       "description": "A folder of pictures, in order, bound into one document on your machine.",
       "href": "images-to-pdf/",
+      "counter": "images-to-pdf",
       "icon": "bind",
       "kicker": "03  —  The bindery",
       "chapter": "Bind the pictures",
