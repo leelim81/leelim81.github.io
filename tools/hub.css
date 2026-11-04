@@ -216,7 +216,7 @@ body { overflow-x: clip; }
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  padding: 28px 4vw 40px;
+  padding: 28px 4vw 48px;
   border-top: 1px solid var(--line);
   font-size: 14px;
 }
@@ -227,7 +227,24 @@ body { overflow-x: clip; }
   display: block;
 }
 .colophon p { margin: 4px 0 0; max-width: 36ch; color: var(--muted); }
-.colophon a { color: var(--ink); }
+.colophon span { align-self: end; color: var(--muted); }
+.usage {
+  position: fixed;
+  right: 10px;
+  bottom: max(6px, env(safe-area-inset-bottom));
+  z-index: 25;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: color-mix(in srgb, var(--ink) 42%, transparent);
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 720px) {
+  .usage { right: 8px; font-size: 9px; }
+}
 
 .cursor, .cursor-ring {
   display: none;
@@ -266,14 +283,19 @@ body.cursor-hot .cursor-ring {
     grid-template-columns: 1fr;
     min-height: auto;
     padding-top: 4vh;
+    padding-bottom: 28px;
     align-items: start;
   }
+  .sheets { gap: 22px; padding-bottom: 8px; }
   .sheet, .sheet:nth-child(1), .sheet:nth-child(2), .sheet:nth-child(3) {
     margin: 0;
     --tilt: 0deg;
   }
   .chapter { grid-template-columns: 1fr; gap: 8px; }
   .story { gap: 12vh; }
+  .sheet:nth-child(n) { margin-right: 58px; }
+  .chapter p, .lede { padding-right: 52px; }
+  .usage { right: 6px; width: 52px; text-align: right; }
 }
 
 @media (prefers-reduced-motion: reduce) {

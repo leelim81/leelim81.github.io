@@ -35,7 +35,8 @@
       getBytes: async function () { return source.slice(0); },
       baselineSize: source.byteLength,
       baselineLabel: 'original',
-      nameFor: function (level) { return stem + '-' + level + '.pdf'; }
+      nameFor: function (level) { return stem + '-' + level + '.pdf'; },
+      usageKey: 'small-pdf'
     });
   }
 
