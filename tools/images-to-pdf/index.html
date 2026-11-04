@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convert images to one PDF</title>
+<meta name="description" content="Turn photos into one PDF in the browser. Files never leave this device.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="images.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="../">← Tools</a>
+  <div class="titles">
+    <p class="kicker">The bindery</p>
+    <h1>Convert images to one PDF</h1>
+  </div>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<p class="privacy">Your pictures never leave this device. The PDF is built in this browser.</p>
+<main class="narrow">
+  <div id="drop" class="drop">
+    <p class="kicker">Pictures, in order</p>
+    <strong>Drop images or a folder</strong>
+    <span>JPG, PNG, WebP, GIF, and HEIC when the browser can read it. Subfolders are included. Nothing is uploaded.</span>
+    <div class="row">
+      <button id="pickFiles" type="button" class="btn primary">Add images</button>
+      <button id="pickFolder" type="button" class="btn">Add a folder</button>
+    </div>
+  </div>
+  <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif" multiple hidden>
+  <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
+
+  <section id="workspace" hidden>
+    <div class="bar-line">
+      <p id="count" class="kicker">0 images</p>
+      <fieldset class="sizes">
+        <legend>Page</legend>
+        <label><input type="radio" name="pageSize" value="a4" checked> A4</label>
+        <label><input type="radio" name="pageSize" value="letter"> Letter</label>
+      </fieldset>
+      <button id="downloadBtn" type="button" class="btn wax" disabled>Download</button>
+    </div>
+    <p class="note">A landscape picture on a portrait page is turned 90° when that makes it larger. Drag the handle to reorder. New files are added in filename order.</p>
+    <div id="list" class="list"></div>
+  </section>
+</main>
+
+<div id="downloadModal" class="modal" hidden>
+  <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
+    <div class="dialog-head">
+      <h2 id="dlTitle">Download</h2>
+      <button id="dlClose" type="button" class="btn" aria-label="Close">Close</button>
+    </div>
+    <p class="hint">100% is the bound document. Smaller choices compress the pictures inside it.</p>
+    <div id="sizeOptions"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../shared/pdf-compress.js"></script>
+<script src="../shared/size-chooser.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="images.js"></script>
+</body>
+</html>

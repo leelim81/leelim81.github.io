@@ -1,0 +1,32 @@
+{
+  "howToAdd": "Append an object to tools and add a folder at that href with an index.html. Fields: name, description, href, icon (pen, press, bind, or dot), kicker, chapter, line.",
+  "tools": [
+    {
+      "name": "Edit and Sign PDF",
+      "description": "Write, cover, highlight, and sign. The file never leaves this browser.",
+      "href": "pdf-editor/",
+      "icon": "pen",
+      "kicker": "01  —  The pen",
+      "chapter": "Make a mark",
+      "line": "Text, white-out, and a signature drawn with a mouse, a finger, or a pen."
+    },
+    {
+      "name": "Reduce PDF file size",
+      "description": "Shrink a PDF and read the real size of each version before you keep it.",
+      "href": "small-pdf/",
+      "icon": "press",
+      "kicker": "02  —  The press",
+      "chapter": "Squeeze the file",
+      "line": "Photographs get smaller. Sentences stay sharp, selectable type."
+    },
+    {
+      "name": "Convert images to one PDF",
+      "description": "A folder of pictures, in order, bound into one document on your machine.",
+      "href": "images-to-pdf/",
+      "icon": "bind",
+      "kicker": "03  —  The bindery",
+      "chapter": "Bind the pictures",
+      "line": "Portrait or landscape, one page each, turned when that fits the sheet better."
+    }
+  ]
+}
