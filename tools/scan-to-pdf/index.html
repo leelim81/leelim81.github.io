@@ -28,11 +28,11 @@ try {
   <button id="themeToggle" type="button">Night</button>
 </header>
 <p class="privacy">Pages stay on this device. The camera, the crop, and the PDF never leave the browser.</p>
-<main class="narrow">
-  <div class="drop">
+<main class="narrow scan-main">
+  <div class="drop" id="intro">
     <p class="kicker">A page on the glass</p>
     <strong>Photograph or upload</strong>
-    <span class="sub">Point the phone at a document or receipt. Drag the four corners if the outline is wrong.</span>
+    <span class="sub">Hold the phone over a document. It captures when the outline holds still. Drag a corner only if it misses.</span>
     <div class="row" style="margin-top:14px">
       <button id="addBtn" type="button" class="btn primary btn-main">Add a photo</button>
       <button id="camBtn" type="button" class="btn">Use camera</button>
@@ -40,40 +40,51 @@ try {
     </div>
     <p id="readStatus" class="read-status" hidden role="status"></p>
   </div>
-  <input id="fileInput" type="file" accept="image/*" capture="environment" multiple hidden>
+  <input id="fileInput" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.heic,.heif,.avif,.tif,.tiff" multiple hidden>
   <div id="live" class="live" hidden>
-    <video id="video" playsinline autoplay muted></video>
-    <div class="row">
-      <button id="shutter" type="button" class="btn wax">Capture</button>
-      <button id="camOff" type="button" class="btn">Close camera</button>
+    <div class="viewfinder">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="liveOverlay"></canvas>
     </div>
+    <p id="liveNote" class="note">Looking for a page…</p>
+    <label class="auto-label"><input id="autoCap" type="checkbox" checked> Capture when the outline holds still</label>
   </div>
   <div id="adjust" class="adjust" hidden>
     <p class="note" id="detectNote"></p>
-    <div class="stage" id="stage">
-      <canvas id="source"></canvas>
-      <svg id="overlay"></svg>
+    <div class="stage-pad">
+      <div class="stage" id="stage">
+        <canvas id="source"></canvas>
+      </div>
     </div>
-    <div class="filters" role="group" aria-label="Filter">
-      <button type="button" data-filter="original">Original</button>
-      <button type="button" data-filter="clean" aria-pressed="true">Colour clean</button>
-      <button type="button" data-filter="grey">Greyscale</button>
-      <button type="button" data-filter="bw">Black &amp; white</button>
-    </div>
-    <button id="redetect" type="button" class="btn">Detect edges again</button>
   </div>
+  <canvas id="loupe" class="loupe" width="148" height="148" hidden></canvas>
   <div id="pages" class="thumbs"></div>
-  <div class="bar-line">
+</main>
+<div class="dock" id="dock" hidden>
+  <div class="filters" role="group" aria-label="Filter">
+    <button type="button" data-filter="original">Original</button>
+    <button type="button" data-filter="clean" aria-pressed="true">Clean</button>
+    <button type="button" data-filter="grey">Grey</button>
+    <button type="button" data-filter="bw">B&amp;W</button>
+  </div>
+  <div class="dock-actions">
+    <button id="addMore" type="button" class="btn">Add photo</button>
+    <button id="camDock" type="button" class="btn">Camera</button>
+    <button id="resetCorners" type="button" class="btn">Reset</button>
+    <button id="redetect" type="button" class="btn">Auto-detect</button>
+    <button id="fullImage" type="button" class="btn">Use full image</button>
+    <button id="shutter" type="button" class="btn wax" hidden>Shutter</button>
+    <button id="camOff" type="button" class="btn" hidden>Close camera</button>
     <button id="downloadBtn" type="button" class="btn wax" disabled>Download</button>
   </div>
-</main>
+</div>
 <div id="downloadModal" class="modal" hidden>
   <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
     <div class="dialog-head">
       <h2 id="dlTitle">Download</h2>
       <button id="dlClose" type="button" class="btn">Close</button>
     </div>
-    <p class="hint">100% keeps the scan sharp. Smaller choices make a lighter PDF.</p>
+    <p class="hint">100% is one high-quality encode of the full-resolution scan. Smaller choices stay readable.</p>
     <div id="sizeOptions"></div>
   </div>
 </div>
@@ -85,6 +96,8 @@ try {
 <script src="../shared/usage.js"></script>
 <script src="../shared/idb.js"></script>
 <script src="../shared/chrome.js"></script>
+<script src="detect.js"></script>
+<script src="warp.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
