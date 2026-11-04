@@ -12,19 +12,34 @@
   var pageSize = 'a4';
   var uid = 0;
 
+  var IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?)$/i;
+
+  function fileLabel(file) {
+    var name = file && file.name ? String(file.name) : '';
+    var slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
+    if (slash >= 0) name = name.slice(slash + 1);
+    name = name.trim();
+    return name || 'photo';
+  }
+
   function isImage(file) {
-    if (!file || !file.name) return false;
-    if (/svg/i.test(file.type)) return false;
-    if (/^image\//.test(file.type)) return true;
-    return /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
+    if (!file) return false;
+    var name = fileLabel(file);
+    if (!name || name === '.' || name === '..') return false;
+    var type = String(file.type || '').toLowerCase();
+    if (type === 'image/svg+xml' || /\.svg$/i.test(name)) return false;
+    if (type.indexOf('image/') === 0) return true;
+    return IMAGE_EXT.test(name);
   }
 
   function sortFiles(files) {
     return files.slice().sort(function (a, b) {
-      var c = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-      if (c) return c;
-      return String(a.webkitRelativePath || '').localeCompare(String(b.webkitRelativePath || ''));
+      return fileLabel(a).localeCompare(fileLabel(b), undefined, { numeric: true, sensitivity: 'base' });
     });
+  }
+
+  function yieldTick() {
+    return new Promise(function (resolve) { setTimeout(resolve, 0); });
   }
 
   function readOrientation(buffer) {
@@ -113,18 +128,33 @@
     return null;
   }
 
+  function decodeError(file) {
+    var name = fileLabel(file);
+    var type = String(file.type || '');
+    if (/\.heic$|\.heif$/i.test(name) || /heic|heif/i.test(type)) {
+      return name + ' is HEIC and this browser couldn’t decode it. Save it as JPG, or use Add images.';
+    }
+    if (/\.tiff?$/i.test(name) || /tiff/i.test(type)) {
+      return name + ' is TIFF and this browser couldn’t read it.';
+    }
+    return 'Couldn’t read ' + name + '.';
+  }
+
   async function decodeFile(file) {
-    var name = file.name.toLowerCase();
-    var heic = /heic|heif/.test(file.type) || name.endsWith('.heic') || name.endsWith('.heif');
-    if (/\.jpe?g$/.test(name) || file.type === 'image/jpeg') {
-      var buf = await file.arrayBuffer();
-      var orientation = readOrientation(buf);
-      var blob = new Blob([buf], { type: 'image/jpeg' });
-      var bmp = await createImageBitmap(blob);
-      var stored = jpegStoredSize(buf);
-      var swap = orientation > 4;
-      var stillRaw = stored && swap && bmp.width === stored.w && bmp.height === stored.h;
-      return drawOriented(bmp, stillRaw ? orientation : 1);
+    var name = fileLabel(file).toLowerCase();
+    var type = String(file.type || '').toLowerCase();
+    var heic = /\.heic$|\.heif$/.test(name) || /heic|heif/.test(type);
+    if (/\.jpe?g$/.test(name) || /jpe?g/.test(type)) {
+      try {
+        var buf = await file.arrayBuffer();
+        var orientation = readOrientation(buf);
+        var blob = new Blob([buf], { type: 'image/jpeg' });
+        var bmp = await createImageBitmap(blob);
+        var stored = jpegStoredSize(buf);
+        var swap = orientation > 4;
+        var stillRaw = stored && swap && bmp.width === stored.w && bmp.height === stored.h;
+        return drawOriented(bmp, stillRaw ? orientation : 1);
+      } catch (err) { /* sniff the bytes below */ }
     }
     try {
       var bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -134,8 +164,8 @@
     }
     await loadHeic();
     var converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 });
-    var blob = Array.isArray(converted) ? converted[0] : converted;
-    var heicBmp = await createImageBitmap(blob);
+    var heicBlob = Array.isArray(converted) ? converted[0] : converted;
+    var heicBmp = await createImageBitmap(heicBlob);
     return drawOriented(heicBmp, 1);
   }
 
@@ -175,28 +205,141 @@
     return c.toDataURL('image/jpeg', 0.72);
   }
 
+  function showStatus(message, busy) {
+    var el = document.getElementById('readStatus');
+    el.hidden = !message;
+    el.classList.toggle('busy', !!busy);
+    el.textContent = message || '';
+  }
+
+  function showEmptyFolder(kind) {
+    var box = document.getElementById('emptyFolder');
+    var text = document.getElementById('emptyFolderText');
+    box.hidden = false;
+    text.textContent = kind === 'empty'
+      ? 'The folder was allowed, but no files came through. That happens on some phones. Choose photos instead — that picker is the reliable one.'
+      : 'No photos were found in that folder. This page looks for JPG, PNG, WebP, GIF, BMP, AVIF, HEIC and TIFF. Choose photos instead.';
+    showStatus('');
+  }
+
+  function hideEmptyFolder() {
+    document.getElementById('emptyFolder').hidden = true;
+  }
+
+  function setPicking(on) {
+    document.getElementById('pickFiles').disabled = on;
+    document.getElementById('pickFolder').disabled = on;
+  }
+
+  function snapshotFiles(fileList) {
+    var out = [];
+    if (!fileList) return out;
+    for (var i = 0; i < fileList.length; i++) out.push(fileList[i]);
+    return out;
+  }
+
   async function addFiles(files) {
-    var batch = sortFiles(files.filter(isImage));
-    if (!batch.length) {
-      ToolsUI.toast('No images were found in that selection.');
-      return;
+    var incoming = snapshotFiles(files);
+    showStatus(incoming.length ? 'Reading folder…' : 'Reading folder…', true);
+    setPicking(true);
+    var batch = [];
+    try {
+      for (var i = 0; i < incoming.length; i++) {
+        if (isImage(incoming[i])) batch.push(incoming[i]);
+        if (i > 0 && i % 250 === 0) {
+          showStatus('Checking ' + i + ' of ' + incoming.length + '…', true);
+          await yieldTick();
+        }
+      }
+      batch = sortFiles(batch);
+      if (!incoming.length) {
+        showEmptyFolder('empty');
+        return;
+      }
+      if (!batch.length) {
+        showEmptyFolder('none');
+        return;
+      }
+      hideEmptyFolder();
+      var failed = [];
+      for (var n = 0; n < batch.length; n++) {
+        showStatus('Reading ' + (n + 1) + ' of ' + batch.length + '…', true);
+        try {
+          var canvas = await decodeFile(batch[n]);
+          items.push({
+            id: ++uid,
+            name: fileLabel(batch[n]),
+            file: batch[n],
+            width: canvas.width,
+            height: canvas.height,
+            thumb: thumbFrom(canvas)
+          });
+        } catch (err) {
+          failed.push(decodeError(batch[n]));
+        }
+        if (n % 2 === 1) await yieldTick();
+      }
+      render();
+      if (!items.length && failed.length) {
+        showStatus(failed[0], false);
+        document.getElementById('emptyFolder').hidden = false;
+        document.getElementById('emptyFolderText').textContent = failed[0];
+        return;
+      }
+      var addedCount = batch.length - failed.length;
+      var lead = addedCount === 1 ? 'Added 1 photo. ' : 'Added ' + addedCount + ' photos. ';
+      if (failed.length) showStatus(lead + failed[0], false);
+      else showStatus(batch.length === 1 ? 'Added 1 photo.' : 'Added ' + batch.length + ' photos.', false);
+    } finally {
+      setPicking(false);
     }
-    for (var i = 0; i < batch.length; i++) {
-      try {
-        var canvas = await decodeFile(batch[i]);
-        items.push({
-          id: ++uid,
-          name: batch[i].name,
-          file: batch[i],
-          width: canvas.width,
-          height: canvas.height,
-          thumb: thumbFrom(canvas)
-        });
-      } catch (err) {
-        ToolsUI.toast(batch[i].name + ' could not be read.');
+  }
+
+  async function walkHandle(handle, out) {
+    var iter = handle.values ? handle.values() : handle.entries();
+    var step = 0;
+    for await (var entry of iter) {
+      var child = entry && entry.kind ? entry : (entry && entry[1]);
+      if (!child) continue;
+      if (child.kind === 'file') {
+        try {
+          var file = await child.getFile();
+          out.push(file);
+        } catch (err) {}
+      } else if (child.kind === 'directory') {
+        await walkHandle(child, out);
+      }
+      if (++step % 40 === 0) {
+        showStatus('Looking through the folder…', true);
+        await yieldTick();
       }
     }
-    render();
+  }
+
+  async function chooseFolder() {
+    if (typeof window.showDirectoryPicker === 'function') {
+      try {
+        var handle = await window.showDirectoryPicker({ mode: 'read', id: 'images-to-pdf' });
+        showStatus('Reading folder…', true);
+        setPicking(true);
+        var found = [];
+        try {
+          await walkHandle(handle, found);
+        } catch (walkErr) {
+          showStatus('Couldn’t read that folder. Choose photos instead.', false);
+          document.getElementById('emptyFolder').hidden = false;
+          document.getElementById('emptyFolderText').textContent = 'Couldn’t read that folder. Choose photos instead.';
+          return;
+        } finally {
+          setPicking(false);
+        }
+        await addFiles(found);
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+    document.getElementById('folderInput').click();
   }
 
   function render() {
@@ -352,19 +495,23 @@
   }
   window.collectFromEntries = collectFromEntries;
 
-  document.getElementById('pickFiles').addEventListener('click', function () {
+  function openPhotos() {
     document.getElementById('fileInput').click();
-  });
-  document.getElementById('pickFolder').addEventListener('click', function () {
-    document.getElementById('folderInput').click();
-  });
+  }
+  document.getElementById('pickFiles').addEventListener('click', openPhotos);
+  document.getElementById('emptyPick').addEventListener('click', openPhotos);
+  document.getElementById('pickFolder').addEventListener('click', function () { chooseFolder(); });
   document.getElementById('fileInput').addEventListener('change', function () {
-    addFiles(Array.from(document.getElementById('fileInput').files || []));
-    document.getElementById('fileInput').value = '';
+    var input = document.getElementById('fileInput');
+    var files = snapshotFiles(input.files);
+    input.value = '';
+    addFiles(files);
   });
   document.getElementById('folderInput').addEventListener('change', function () {
-    addFiles(Array.from(document.getElementById('folderInput').files || []));
-    document.getElementById('folderInput').value = '';
+    var input = document.getElementById('folderInput');
+    var files = snapshotFiles(input.files);
+    input.value = '';
+    addFiles(files);
   });
   document.querySelectorAll('input[name="pageSize"]').forEach(function (input) {
     input.addEventListener('change', function () {
@@ -376,7 +523,8 @@
     document.getElementById('downloadModal').hidden = false;
     PdfSizes.mount(document.getElementById('sizeOptions'), {
       getBytes: buildPdf,
-      nameFor: function (level) { return level === 100 ? 'bound.pdf' : 'bound-' + level + '.pdf'; }
+      nameFor: function (level) { return level === 100 ? 'bound.pdf' : 'bound-' + level + '.pdf'; },
+      usageKey: 'images-to-pdf'
     });
   });
   document.getElementById('dlClose').addEventListener('click', function () {

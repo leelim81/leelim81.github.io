@@ -639,7 +639,8 @@
       getBytes: flatten,
       nameFor: function (level) {
         return level === 100 ? stem + '-edited.pdf' : stem + '-edited-' + level + '.pdf';
-      }
+      },
+      usageKey: 'pdf-editor'
     });
   }
 

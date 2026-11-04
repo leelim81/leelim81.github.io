@@ -39,6 +39,9 @@
       btn.addEventListener('click', function () {
         if (!btn._bytes) return;
         download(btn._bytes, options.nameFor(level));
+        try {
+          if (options.usageKey && window.ToolsUsage) ToolsUsage.recordUse(options.usageKey);
+        } catch (err) {}
       });
       container.appendChild(btn);
       buttons[level] = btn;
