@@ -1,0 +1,8 @@
+Document corner model
+----------------------
+lcnet100 heatmap weights (docaligner-lcnet100.onnx) are DocAligner by DocsaidLab,
+Apache License 2.0. https://github.com/DocsaidLab/DocAligner
+SHA-256: f4117b786e3a18470f3865c93f3c2bd69d9b998edd60f385574a5c665e79594e
+
+ONNX Runtime Web is loaded from jsDelivr when a scan starts (MIT).
+OpenCV.js is loaded only if the model cannot lock a quadrilateral (Apache-2.0).
