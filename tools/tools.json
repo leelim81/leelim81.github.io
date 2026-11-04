@@ -30,6 +30,36 @@
       "kicker": "03  —  The bindery",
       "chapter": "Bind the pictures",
       "line": "Portrait or landscape, one page each, turned when that fits the sheet better."
+    },
+    {
+      "name": "Merge and split PDF",
+      "description": "Stack several PDFs, reorder every page, or pull a range back out.",
+      "href": "merge-split-pdf/",
+      "counter": "merge-split",
+      "icon": "merge",
+      "kicker": "04  —  The splice",
+      "chapter": "Lay the pages out",
+      "line": "Drag pages across files, then keep them as one document or several."
+    },
+    {
+      "name": "Shrink and resize photos",
+      "description": "Fit pictures under a file size, a percent, or exact pixels.",
+      "href": "photo-resize/",
+      "counter": "photo-resize",
+      "icon": "photo",
+      "kicker": "05  —  The darkroom",
+      "chapter": "Fit the frame",
+      "line": "A target weight, a percentage, or a width and a height. JPEG, WebP, or PNG."
+    },
+    {
+      "name": "Scan to PDF",
+      "description": "Photograph a page, straighten the corners, and keep a flat PDF.",
+      "href": "scan-to-pdf/",
+      "counter": "scan-to-pdf",
+      "icon": "scan",
+      "kicker": "06  —  The platen",
+      "chapter": "Lay it on the glass",
+      "line": "The camera finds the edges. You can still drag the corners yourself."
     }
   ]
 }
