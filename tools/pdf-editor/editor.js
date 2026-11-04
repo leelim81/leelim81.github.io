@@ -20,7 +20,9 @@
     sigFont: 'Caveat',
     sigTab: 'draw',
     uploadDataUrl: '',
-    points: [],
+    strokes: [],
+    activeStroke: null,
+    activePointer: null,
     drawing: false
   };
 
@@ -710,27 +712,28 @@
       return;
     }
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.max(2, Math.floor(rect.width * dpr));
-    canvas.height = Math.max(2, Math.floor(rect.height * dpr));
+    var nextW = Math.max(2, Math.floor(rect.width * dpr));
+    var nextH = Math.max(2, Math.floor(rect.height * dpr));
+    var css = canvas._css;
+    var unchanged = css && canvas.width === nextW && canvas.height === nextH &&
+      css.dpr === dpr && Math.abs(css.w - rect.width) < 0.5 && Math.abs(css.h - rect.height) < 0.5;
     canvas._css = { w: rect.width, h: rect.height, dpr: dpr };
-    var ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (!unchanged) {
+      canvas.width = nextW;
+      canvas.height = nextH;
+    }
     redrawSign();
   }
-  function redrawSign() {
-    var canvas = $('signCanvas');
-    var ctx = canvas.getContext('2d');
-    var css = canvas._css || { w: canvas.width, h: canvas.height };
-    ctx.clearRect(0, 0, css.w, css.h);
-    var pts = state.points;
-    if (!pts.length) return;
-    ctx.fillStyle = state.pen;
-    ctx.strokeStyle = state.pen;
+  function drawStroke(ctx, stroke) {
+    var pts = stroke.points;
+    if (!pts || !pts.length) return;
+    ctx.fillStyle = stroke.color;
+    ctx.strokeStyle = stroke.color;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     if (pts.length === 1) {
       ctx.beginPath();
-      ctx.arc(pts[0].x, pts[0].y, 1.7, 0, Math.PI * 2);
+      ctx.arc(pts[0].x, pts[0].y, 1.8, 0, Math.PI * 2);
       ctx.fill();
       return;
     }
@@ -744,6 +747,14 @@
     }
     ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
     ctx.stroke();
+  }
+  function redrawSign() {
+    var canvas = $('signCanvas');
+    var ctx = canvas.getContext('2d');
+    var css = canvas._css || { w: canvas.clientWidth || canvas.width, h: canvas.clientHeight || canvas.height, dpr: 1 };
+    ctx.setTransform(css.dpr || 1, 0, 0, css.dpr || 1, 0, 0);
+    ctx.clearRect(0, 0, css.w, css.h);
+    state.strokes.forEach(function (stroke) { drawStroke(ctx, stroke); });
   }
   function signPoint(e) {
     var r = $('signCanvas').getBoundingClientRect();
@@ -793,6 +804,10 @@
   }
   function openSig() {
     if (!state.pdfBytes) return;
+    state.strokes = [];
+    state.activeStroke = null;
+    state.activePointer = null;
+    state.drawing = false;
     $('sigModal').hidden = false;
     setTab('draw');
     renderSaved();
@@ -959,25 +974,54 @@
     });
 
     var canvas = $('signCanvas');
+    canvas.style.touchAction = 'none';
     canvas.addEventListener('pointerdown', function (e) {
       if (state.sigTab !== 'draw') return;
-      canvas.setPointerCapture(e.pointerId);
+      if (e.button != null && e.button !== 0) return;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
       state.drawing = true;
-      state.points = [signPoint(e)];
+      state.activePointer = e.pointerId;
+      var stroke = { color: state.pen, points: [signPoint(e)] };
+      state.strokes.push(stroke);
+      state.activeStroke = stroke;
       redrawSign();
       e.preventDefault();
-    });
+    }, { passive: false });
     canvas.addEventListener('pointermove', function (e) {
-      if (!state.drawing) return;
+      if (!state.drawing || !state.activeStroke || e.pointerId !== state.activePointer) return;
+      if (canvas.setPointerCapture && !(canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId))) {
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      }
       var events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-      events.forEach(function (ev) { state.points.push(signPoint(ev)); });
+      events.forEach(function (ev) { state.activeStroke.points.push(signPoint(ev)); });
       redrawSign();
       e.preventDefault();
-    });
-    function endDraw() { state.drawing = false; }
+    }, { passive: false });
+    function endDraw(e) {
+      if (e && state.activePointer != null && e.pointerId !== state.activePointer) return;
+      state.drawing = false;
+      state.activeStroke = null;
+      state.activePointer = null;
+      if (e && canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+        try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+    }
     canvas.addEventListener('pointerup', endDraw);
     canvas.addEventListener('pointercancel', endDraw);
-    $('sigClear').addEventListener('click', function () { state.points = []; redrawSign(); });
+    window.addEventListener('resize', function () {
+      if (!$('sigModal').hidden && state.sigTab === 'draw') sizeSignCanvas();
+    });
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () {
+        if (!$('sigModal').hidden && state.sigTab === 'draw') sizeSignCanvas();
+      }).observe(canvas.parentElement || canvas);
+    }
+    $('sigClear').addEventListener('click', function () {
+      state.strokes = [];
+      state.activeStroke = null;
+      state.drawing = false;
+      redrawSign();
+    });
     $('sigCancel').addEventListener('click', closeSig);
     $('sigClose').addEventListener('click', closeSig);
     $('sigApply').addEventListener('click', applySig);
