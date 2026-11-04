@@ -31,13 +31,18 @@ try {
   <div id="drop" class="drop">
     <p class="kicker">Pictures, in order</p>
     <strong>Drop images or a folder</strong>
-    <span>JPG, PNG, WebP, GIF, and HEIC when the browser can read it. Subfolders are included. Nothing is uploaded.</span>
+    <span>On a phone, Add images is the sure way. Add a folder includes subfolders. JPG, PNG, WebP, GIF, BMP, AVIF, HEIC and TIFF. Nothing is uploaded.</span>
     <div class="row">
-      <button id="pickFiles" type="button" class="btn primary">Add images</button>
+      <button id="pickFiles" type="button" class="btn primary btn-main">Add images</button>
       <button id="pickFolder" type="button" class="btn">Add a folder</button>
     </div>
+    <p id="readStatus" class="read-status" hidden role="status"></p>
+    <div id="emptyFolder" class="empty-folder" hidden>
+      <p id="emptyFolderText"></p>
+      <button id="emptyPick" type="button" class="btn primary">Choose photos instead</button>
+    </div>
   </div>
-  <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif" multiple hidden>
+  <input id="fileInput" type="file" accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.heic,.heif,.avif,.tif,.tiff" multiple hidden>
   <input id="folderInput" type="file" webkitdirectory directory multiple hidden>
 
   <section id="workspace" hidden>

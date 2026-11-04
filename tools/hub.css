@@ -227,7 +227,7 @@ body { overflow-x: clip; }
   display: block;
 }
 .colophon p { margin: 4px 0 0; max-width: 36ch; color: var(--muted); }
-.colophon a { color: var(--ink); }
+.colophon span { align-self: end; color: var(--muted); }
 
 .cursor, .cursor-ring {
   display: none;
