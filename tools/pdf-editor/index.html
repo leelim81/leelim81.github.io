@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Edit and Sign PDF</title>
+<meta name="description" content="Add text, signatures, highlights, and images to a PDF. Files stay on this device.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="editor.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="back" href="../">← Tools</a>
+    <div class="titles">
+      <p class="kicker">The pen</p>
+      <h1>Edit and Sign PDF</h1>
+    </div>
+    <span id="saveState" data-gen="0" aria-live="polite"></span>
+    <button id="startOver" type="button" class="btn" hidden>Start over</button>
+    <button id="downloadBtn" type="button" class="btn wax" hidden>Download</button>
+    <button id="themeToggle" type="button">Night</button>
+  </header>
+  <p class="privacy">Your files never leave this device. Opening, editing, and exporting all happen in this browser.</p>
+
+  <div class="toolbar" id="toolbar" hidden>
+    <button id="openBtnBar" type="button" class="tool">Open</button>
+    <button id="addText" type="button" class="tool">Text</button>
+    <button id="addWhiteout" type="button" class="tool">Whiteout</button>
+    <button id="addHighlight" type="button" class="tool">Highlight</button>
+    <button id="addRect" type="button" class="tool">Box</button>
+    <button id="addEllipse" type="button" class="tool">Ellipse</button>
+    <button id="addImage" type="button" class="tool">Image</button>
+    <button id="addSignature" type="button" class="tool tool-strong">Sign</button>
+    <button id="addDate" type="button" class="tool">Date</button>
+    <span class="tool-gap" aria-hidden="true"></span>
+    <button id="rotatePage" type="button" class="tool" title="Rotate page">Rotate</button>
+    <button id="deletePage" type="button" class="tool">Delete page</button>
+    <button id="movePageUp" type="button" class="tool" title="Move page up">Up</button>
+    <button id="movePageDown" type="button" class="tool" title="Move page down">Down</button>
+    <div id="selectionBar" class="selection" hidden>
+      <label id="fontSizeWrap">Size
+        <input id="fontSize" type="number" min="8" max="96" value="18" inputmode="numeric">
+      </label>
+      <label>Colour
+        <input id="fontColor" type="color" value="#1a1612" aria-label="Colour">
+      </label>
+      <button id="deleteAnn" type="button" class="tool">Delete</button>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">
+      <p class="kicker">Waiting for paper</p>
+      <h2>Drop a PDF on the desk</h2>
+      <p>Nothing is uploaded. The file stays in this browser, and your marks are kept if the tab closes.</p>
+      <button id="openBtn" type="button" class="btn primary">Open a PDF</button>
+    </div>
+    <div id="pages"></div>
+  </div>
+
+  <div class="status" id="status" hidden>
+    <button id="prevPage" type="button" class="tool">Prev</button>
+    <span id="pageLabel">1 / 1</span>
+    <button id="nextPage" type="button" class="tool">Next</button>
+    <button id="zoomOut" type="button" class="tool" aria-label="Zoom out">−</button>
+    <span id="zoomLabel">100%</span>
+    <button id="zoomIn" type="button" class="tool" aria-label="Zoom in">+</button>
+    <button id="fitWidth" type="button" class="tool">Fit</button>
+    <span id="fileName"></span>
+  </div>
+</div>
+
+<input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
+<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+<div id="sigModal" class="modal" hidden>
+  <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="sigTitle">
+    <div class="dialog-head">
+      <h2 id="sigTitle">Add signature</h2>
+      <button id="sigClose" type="button" class="btn" aria-label="Close">Close</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button id="tab-draw" type="button" class="tool" role="tab" aria-selected="true">Draw</button>
+      <button id="tab-type" type="button" class="tool" role="tab" aria-selected="false">Type</button>
+      <button id="tab-upload" type="button" class="tool" role="tab" aria-selected="false">Upload</button>
+    </div>
+
+    <div class="pen-row">
+      <button id="penBlack" type="button" class="swatch on" aria-label="Black ink" data-color="#16130f"></button>
+      <button id="penBlue" type="button" class="swatch blue" aria-label="Blue ink" data-color="#1d4ed8"></button>
+      <button id="sigClear" type="button" class="btn">Clear</button>
+    </div>
+    <div id="panel-draw">
+      <div class="sign-pad"><canvas id="signCanvas"></canvas></div>
+      <p class="hint">Draw with a mouse, finger, or stylus. A smooth line follows the stroke.</p>
+    </div>
+
+    <div id="panel-type" hidden>
+      <label class="field">Name
+        <input id="typeName" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <div id="fontChoices" class="font-choices"></div>
+      <canvas id="typePreview" aria-hidden="true"></canvas>
+    </div>
+
+    <div id="panel-upload" hidden>
+      <label class="btn" for="uploadSig">Choose an image</label>
+      <input id="uploadSig" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      <img id="uploadPreview" alt="" hidden>
+    </div>
+
+    <div id="savedSigs" class="saved-sigs"></div>
+    <div class="dialog-foot">
+      <button id="sigCancel" type="button" class="btn">Cancel</button>
+      <button id="sigApply" type="button" class="btn wax">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div id="downloadModal" class="modal" hidden>
+  <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
+    <div class="dialog-head">
+      <h2 id="dlTitle">Download</h2>
+      <button id="dlClose" type="button" class="btn" aria-label="Close">Close</button>
+    </div>
+    <p class="hint">Each file is built in this browser. 100% keeps the original page and your type. Smaller choices compress pictures first.</p>
+    <div id="sizeOptions"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../shared/pdf-compress.js"></script>
+<script src="../shared/size-chooser.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="editor.js"></script>
+</body>
+</html>

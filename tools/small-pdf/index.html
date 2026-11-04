@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reduce PDF file size</title>
+<meta name="description" content="Make a PDF smaller in the browser. Files never leave this device.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="small.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="../">← Tools</a>
+  <div class="titles">
+    <p class="kicker">The press</p>
+    <h1>Reduce PDF file size</h1>
+  </div>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<p class="privacy">Your file never leaves this device. The smaller copies are made in this browser.</p>
+<main class="narrow">
+  <button id="drop" type="button" class="drop">
+    <span class="kicker">Drop a PDF</span>
+    <strong>Choose a file, or drop it here</strong>
+    <span>Text stays as text when the pictures can be squeezed. Otherwise the pages are rebuilt, still readable.</span>
+  </button>
+  <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
+  <section id="result" hidden>
+    <div class="filecard">
+      <div>
+        <p class="kicker" id="fileName">document.pdf</p>
+        <p class="orig">Original <strong id="origSize">—</strong></p>
+      </div>
+      <button id="replace" type="button" class="btn">Choose another</button>
+    </div>
+    <div id="sizeOptions"></div>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../shared/pdf-compress.js"></script>
+<script src="../shared/size-chooser.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="small.js"></script>
+</body>
+</html>
