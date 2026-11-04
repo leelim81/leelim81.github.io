@@ -1,0 +1,24 @@
+.narrow { max-width: 760px; margin: 0 auto; padding: 28px 18px 64px; }
+.drop {
+  width: 100%;
+  text-align: left;
+  padding: 36px 22px;
+  border: 1px dashed var(--line);
+  background: var(--paper-2);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.drop strong { font-family: var(--serif); font-weight: 560; font-size: clamp(32px, 5vw, 48px); letter-spacing: -0.03em; line-height: 0.95; }
+.drop span:last-child { color: var(--muted); max-width: 46ch; }
+.drop.hot { border-style: solid; background: color-mix(in srgb, var(--wax) 12%, var(--paper-2)); }
+.filecard {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+.orig { margin: 4px 0 0; font-family: var(--mono); font-size: 13px; }

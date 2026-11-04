@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tools — Lee Lim</title>
+<meta name="description" content="Sign, shrink, and bind PDFs on your own desk. Files never leave this device.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="hub.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#tools">Skip to the tools</a>
+<canvas id="wash" aria-hidden="true"></canvas>
+<header class="bar">
+  <a class="mark" href="../">Lee Lim</a>
+  <p class="bar-kicker">The desk</p>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<div class="scroll-rule" aria-hidden="true"></div>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="kicker">A private print shop, in the browser</p>
+      <h1>
+        <span class="line">Sign it.</span>
+        <span class="line">Shrink it.</span>
+        <span class="line">Bind it.</span>
+      </h1>
+      <svg class="flourish" viewBox="0 0 460 90" aria-hidden="true">
+        <path d="M8 62 C 28 18, 52 14, 70 58 S 108 92, 132 48 S 168 8, 198 52 S 236 88, 268 46 S 312 6, 348 50 S 390 86, 448 28"/>
+      </svg>
+      <p class="lede">Three instruments for paper. No account, no upload — the file stays on this device, the way a page stays on a desk.</p>
+    </div>
+    <div class="sheets" id="tools" aria-live="polite"></div>
+  </section>
+
+  <section class="trust" aria-label="Privacy">
+    <div class="marquee">
+      <p>Files never leave your device · No account · No server · No archive in the cloud ·&nbsp;</p>
+      <p aria-hidden="true">Files never leave your device · No account · No server · No archive in the cloud ·&nbsp;</p>
+    </div>
+  </section>
+
+  <section class="story" id="story" aria-label="How the desk works"></section>
+</main>
+
+<footer class="colophon">
+  <div>
+    <strong>The desk</strong>
+    <p>Edit, compress, and bind. The work happens in this tab and nowhere else.</p>
+  </div>
+  <a href="../">Back to projects</a>
+  <span>© 2026 Lee Lim</span>
+</footer>
+
+<div class="cursor" aria-hidden="true"></div>
+<div class="cursor-ring" aria-hidden="true"></div>
+<script src="shared/chrome.js"></script>
+<script src="hub.js"></script>
+</body>
+</html>
