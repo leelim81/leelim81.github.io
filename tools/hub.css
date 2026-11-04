@@ -303,6 +303,35 @@ body.cursor-hot .cursor-ring {
   .marquee { animation: none; width: auto; }
   .marquee p[aria-hidden="true"] { display: none; }
   .chapter { opacity: 1; transform: none; transition: none; }
-  .sheet { transition: none; }
-  .hero h1 .line { animation: none; }
+.sheet { transition: none; }
+.hero h1 .line { animation: none; }
+}
+
+/* Six tools: a broadsheet index under the headline, not one tall stack. */
+.hero {
+  min-height: auto;
+  display: block;
+  padding: 5vh 4vw 7vh;
+}
+.sheets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 22px;
+  margin-top: 36px;
+}
+.sheet:nth-child(n) {
+  --tilt: 0deg;
+  margin: 0;
+  transform: none;
+}
+.sheet:nth-child(odd) { transform: rotate(-0.35deg); }
+.sheet:nth-child(even) { transform: rotate(0.28deg); }
+.sheet:hover, .sheet:focus-visible {
+  transform: rotate(0deg) translateY(-4px);
+  box-shadow: 8px 12px 0 var(--ink);
+}
+.sheet h2 { font-size: clamp(22px, 2.4vw, 32px); }
+@media (max-width: 800px) {
+  .sheets { grid-template-columns: 1fr; }
+  .sheet:nth-child(n) { margin-right: 58px; transform: none; }
 }

@@ -1,0 +1,16 @@
+.live video, .stage { width: 100%; background: #111; display: block; }
+.live { margin: 12px 0; }
+.stage { position: relative; touch-action: none; }
+.stage canvas, .stage svg { width: 100%; height: auto; display: block; }
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.handle {
+  position: absolute;
+  width: 28px; height: 28px; margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--wax);
+  touch-action: none;
+  z-index: 2;
+}
+.filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.filters button { border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); padding: 8px 10px; font-family: var(--ui); }

@@ -6,6 +6,9 @@
     pen: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 26l4.2-1.2L24 11.2 20.8 8 7.2 21.6 6 26z"/><path d="M18.6 10.2l3.2 3.2"/><path d="M8 24c2.2.4 3.6 1.2 4.4 3"/></svg>',
     press: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="6" y="8" width="20" height="16"/><path d="M10 12h12M10 16h12M10 20h7"/><path d="M4 6l2 2M28 6l-2 2M4 26l2-2M28 26l-2-2"/></svg>',
     bind: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 7h12v18H9z"/><path d="M12 5h12v18"/><path d="M15 3h12v18"/><path d="M12 13h6M12 17h6"/></svg>',
+    merge: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 7h8v18H7zM17 7h8v18h-8z"/><path d="M11 16h10"/></svg>',
+    photo: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 10l2-3h12l2 3"/><rect x="6" y="10" width="20" height="14"/><circle cx="16" cy="17" r="3.5"/></svg>',
+    scan: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6H6v6M26 6h-2M26 6v6M8 26H6v-6M26 26h-2v-6"/><rect x="11" y="11" width="10" height="10"/></svg>',
     dot: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="16" cy="16" r="5"/></svg>'
   };
 

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge and split PDF</title>
+<meta name="description" content="Join PDFs or pull pages apart in the browser. Files never leave this device.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="../shared/tool.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="../">← Tools</a>
+  <div class="titles">
+    <p class="kicker">The splice</p>
+    <h1>Merge and split PDF</h1>
+  </div>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<p class="privacy">Your files never leave this device. Joining, splitting, and export happen in this browser.</p>
+<main class="narrow">
+  <div class="modes" role="group" aria-label="Mode">
+    <button id="modeMerge" type="button" class="btn" aria-pressed="true">Merge</button>
+    <button id="modeSplit" type="button" class="btn" aria-pressed="false">Split</button>
+  </div>
+  <div class="drop" id="drop">
+    <p class="kicker">Pages, in your order</p>
+    <strong>Drop PDFs here</strong>
+    <span class="sub">Add several files. Drag pages to reorder them across documents. Rotate or remove any page.</span>
+    <div class="row" style="margin-top:14px">
+      <button id="addPdf" type="button" class="btn primary btn-main">Add PDFs</button>
+      <button id="clearAll" type="button" class="btn">Start over</button>
+    </div>
+  </div>
+  <input id="fileInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+  <p id="readStatus" class="read-status" hidden role="status"></p>
+  <div id="splitPanel" hidden>
+    <div class="bar-line">
+      <label class="field">Page range
+        <input id="range" class="plain" placeholder="1-3, 5">
+      </label>
+      <label class="field">Every N pages
+        <input id="everyN" class="plain" type="number" min="1" value="1" inputmode="numeric">
+      </label>
+    </div>
+    <div class="row">
+      <button id="useRange" type="button" class="btn">Extract range</button>
+      <button id="useSelected" type="button" class="btn">Extract selected</button>
+      <button id="useEvery" type="button" class="btn">Split every N</button>
+      <button id="useEach" type="button" class="btn">Every page</button>
+    </div>
+    <p class="note">In Split, tap a page to select it. A single extract downloads one PDF. Several pieces download as a zip.</p>
+  </div>
+  <div id="pages" class="thumbs"></div>
+  <div class="bar-line">
+    <button id="downloadBtn" type="button" class="btn wax" disabled>Download</button>
+  </div>
+</main>
+<div id="downloadModal" class="modal" hidden>
+  <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
+    <div class="dialog-head">
+      <h2 id="dlTitle">Download</h2>
+      <button id="dlClose" type="button" class="btn">Close</button>
+    </div>
+    <p class="hint" id="dlHint">100% keeps the pages as they are. Smaller choices compress pictures inside them.</p>
+    <div id="sizeOptions"></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../shared/pdf-compress.js"></script>
+<script src="../shared/size-chooser.js"></script>
+<script src="../shared/usage.js"></script>
+<script src="../shared/zip.js"></script>
+<script src="../shared/idb.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

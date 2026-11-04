@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scan to PDF</title>
+<meta name="description" content="Photograph a page and save a flat PDF. Files never leave this device.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="../shared/tool.css">
+<link rel="stylesheet" href="scan.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="../">← Tools</a>
+  <div class="titles">
+    <p class="kicker">The platen</p>
+    <h1>Scan to PDF</h1>
+  </div>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<p class="privacy">Pages stay on this device. The camera, the crop, and the PDF never leave the browser.</p>
+<main class="narrow">
+  <div class="drop">
+    <p class="kicker">A page on the glass</p>
+    <strong>Photograph or upload</strong>
+    <span class="sub">Point the phone at a document or receipt. Drag the four corners if the outline is wrong.</span>
+    <div class="row" style="margin-top:14px">
+      <button id="addBtn" type="button" class="btn primary btn-main">Add a photo</button>
+      <button id="camBtn" type="button" class="btn">Use camera</button>
+      <button id="clearAll" type="button" class="btn">Start over</button>
+    </div>
+    <p id="readStatus" class="read-status" hidden role="status"></p>
+  </div>
+  <input id="fileInput" type="file" accept="image/*" capture="environment" multiple hidden>
+  <div id="live" class="live" hidden>
+    <video id="video" playsinline autoplay muted></video>
+    <div class="row">
+      <button id="shutter" type="button" class="btn wax">Capture</button>
+      <button id="camOff" type="button" class="btn">Close camera</button>
+    </div>
+  </div>
+  <div id="adjust" class="adjust" hidden>
+    <p class="note" id="detectNote"></p>
+    <div class="stage" id="stage">
+      <canvas id="source"></canvas>
+      <svg id="overlay"></svg>
+    </div>
+    <div class="filters" role="group" aria-label="Filter">
+      <button type="button" data-filter="original">Original</button>
+      <button type="button" data-filter="clean" aria-pressed="true">Colour clean</button>
+      <button type="button" data-filter="grey">Greyscale</button>
+      <button type="button" data-filter="bw">Black &amp; white</button>
+    </div>
+    <button id="redetect" type="button" class="btn">Detect edges again</button>
+  </div>
+  <div id="pages" class="thumbs"></div>
+  <div class="bar-line">
+    <button id="downloadBtn" type="button" class="btn wax" disabled>Download</button>
+  </div>
+</main>
+<div id="downloadModal" class="modal" hidden>
+  <div class="sheet-dialog" role="dialog" aria-modal="true" aria-labelledby="dlTitle">
+    <div class="dialog-head">
+      <h2 id="dlTitle">Download</h2>
+      <button id="dlClose" type="button" class="btn">Close</button>
+    </div>
+    <p class="hint">100% keeps the scan sharp. Smaller choices make a lighter PDF.</p>
+    <div id="sizeOptions"></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../shared/pdf-compress.js"></script>
+<script src="../shared/size-chooser.js"></script>
+<script src="../shared/images.js"></script>
+<script src="../shared/usage.js"></script>
+<script src="../shared/idb.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

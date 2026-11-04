@@ -7,8 +7,8 @@
     return node;
   }
 
-  function download(bytes, filename) {
-    var blob = new Blob([bytes], { type: 'application/pdf' });
+  function download(bytes, filename, mime) {
+    var blob = new Blob([bytes], { type: mime || 'application/pdf' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -38,7 +38,7 @@
       btn.append(pct, detail, size);
       btn.addEventListener('click', function () {
         if (!btn._bytes) return;
-        download(btn._bytes, options.nameFor(level));
+        download(btn._bytes, options.nameFor(level), options.mime);
         try {
           if (options.usageKey && window.ToolsUsage) ToolsUsage.recordUse(options.usageKey);
         } catch (err) {}
@@ -48,6 +48,32 @@
     });
 
     try {
+      if (options.perLevel) {
+        var zipBaseline = null;
+        for (var li = 0; li < PdfCompress.LEVELS.length; li++) {
+          if (container._gen !== gen) return;
+          var level = PdfCompress.LEVELS[li];
+          var btnL = buttons[level];
+          btnL.classList.add('loading');
+          btnL.querySelector('.opt-detail').textContent = 'Building…';
+          var built = await options.perLevel(level);
+          if (container._gen !== gen) return;
+          if (zipBaseline == null) zipBaseline = built.byteLength;
+          btnL.classList.remove('loading');
+          btnL.disabled = false;
+          btnL._bytes = built;
+          btnL.dataset.bytes = String(built.byteLength);
+          btnL.dataset.method = level === 100 ? 'full' : 'images';
+          btnL.querySelector('.opt-size').textContent = PdfCompress.formatMB(built.byteLength);
+          var note = level === 100 ? 'Full quality' : 'Compressed pieces';
+          if (level !== 100) {
+            var sav = PdfCompress.formatSaving(built.byteLength, zipBaseline);
+            if (sav) note += ' · ' + sav;
+          }
+          btnL.querySelector('.opt-detail').textContent = note;
+        }
+        return;
+      }
       var source = await options.getBytes();
       if (container._gen !== gen) return;
       var baseline = options.baselineSize || source.byteLength;
