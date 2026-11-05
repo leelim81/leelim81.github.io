@@ -162,16 +162,23 @@
     refreshLabels();
   }
 
+  function onceNote(mb) {
+    return 'One-time download (~' + mb + ' MB). It\'s saved in this browser, so next time it loads from your device without downloading again. Clearing site data, using incognito, or another browser means downloading it again.';
+  }
+
   function showProgress(report) {
     var box = $('modelBox');
     box.hidden = false;
     var model = state.gpu && state.gpu.model;
     var mb = model ? model.megabytes : 868;
     var text = report && report.text ? report.text : '';
-    var title = /from this device|cache/i.test(text)
-      ? 'Loading the private model from this device'
-      : 'Downloading private model · ~' + mb + ' MB, stays on this device';
-    $('modelTitle').textContent = title;
+    var cached = !!(report && report.cached);
+    $('modelTitle').textContent = cached
+      ? 'Model ready on this device, no download needed.'
+      : 'Downloading private model · ~' + mb + ' MB';
+    $('modelNote').textContent = cached
+      ? 'It\'s saved in this browser. Clearing site data, using incognito, or another browser means downloading it again.'
+      : onceNote(mb);
     var pct = Math.max(0, Math.min(1, report && report.progress ? report.progress : 0));
     $('modelBar').style.width = Math.round(pct * 100) + '%';
     $('modelDetail').textContent = text;
@@ -224,7 +231,10 @@
     if (!state.formBytes || !state.fields.length || !state.refs.length) return;
     state.running = true;
     refreshLabels();
-    showProgress({ progress: 0, text: 'Downloading private model · ~' + state.gpu.model.megabytes + ' MB, stays on this device' });
+    try {
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+    } catch (err) {}
+    showProgress({ progress: 0, cached: false, text: '' });
     try {
       var notesAll = await corpus();
       if (!notesAll.trim()) throw new Error('The references had no readable text.');

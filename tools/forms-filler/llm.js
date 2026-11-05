@@ -36,6 +36,14 @@
     return import(LIB);
   }
 
+  function keepStored() {
+    try {
+      if (navigator.storage && typeof navigator.storage.persist === 'function') {
+        navigator.storage.persist().catch(function () {});
+      }
+    } catch (err) {}
+  }
+
   function ensure(onProgress) {
     if (enginePromise) return enginePromise;
     enginePromise = gpu().then(function (status) {
@@ -45,10 +53,12 @@
         throw err;
       }
       choice = status.model;
+      keepStored();
       if (onProgress) {
         onProgress({
           progress: 0,
-          text: 'Downloading private model · ~' + choice.megabytes + ' MB, stays on this device'
+          cached: false,
+          text: 'Downloading private model · ~' + choice.megabytes + ' MB'
         });
       }
       return loadLib().then(function (lib) {
@@ -57,12 +67,11 @@
           initProgressCallback: function (report) {
             if (!onProgress) return;
             var text = report && report.text ? report.text : '';
-            if (/cache/i.test(text)) {
-              text = 'Loading the private model from this device. ' + text;
-            }
+            var cached = /from cache/i.test(text);
             onProgress({
               progress: report && typeof report.progress === 'number' ? report.progress : 0,
-              text: text || ('Downloading private model · ~' + choice.megabytes + ' MB, stays on this device')
+              cached: cached,
+              text: text
             });
           }
         }, {
