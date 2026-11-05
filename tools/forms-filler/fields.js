@@ -444,19 +444,43 @@
     return total;
   }
 
-  function bestLineAngle(canvas) {
-    var small = shrinkCanvas(canvas, 420);
-    var best = 0;
-    var bestScore = horizontalScore(small);
-    for (var deg = -6; deg <= 6; deg += 0.5) {
-      if (!deg) continue;
-      var score = horizontalScore(rotateCanvas(small, deg));
-      if (score > bestScore) {
-        bestScore = score;
-        best = deg;
+  function longRuleScore(canvas) {
+    var mask = inkMask(canvas);
+    var w = canvas.width;
+    var h = canvas.height;
+    var min = Math.max(80, w * 0.34);
+    var total = 0;
+    for (var y = 0; y < h; y++) {
+      var start = -1;
+      for (var x = 0; x <= w; x++) {
+        var on = x < w && mask[y * w + x];
+        if (on && start < 0) start = x;
+        else if (!on && start >= 0) {
+          if (x - start >= min) total += x - start;
+          start = -1;
+        }
       }
     }
-    return best;
+    return total;
+  }
+
+  function bestLineAngle(canvas) {
+    var small = shrinkCanvas(canvas, 720);
+    function scan(from, to, step) {
+      var best = from;
+      var bestScore = -1;
+      for (var deg = from; deg <= to + 0.0001; deg += step) {
+        var turned = Math.abs(deg) < 0.02 ? small : rotateCanvas(small, deg);
+        var score = longRuleScore(turned);
+        if (score > bestScore) {
+          bestScore = score;
+          best = deg;
+        }
+      }
+      return best;
+    }
+    var coarse = scan(-6, 6, 0.5);
+    return scan(coarse - 0.4, coarse + 0.4, 0.1);
   }
 
   function cropToPage(canvas) {
@@ -596,42 +620,7 @@
       lines: geo.lines,
       squares: geo.squares
     }, scale);
-    var fields = FormSpots.layout(page);
-    var known = [
-      [/full name/i, 'Full Name'],
-      [/^\(hp\)$/i, '(HP)'],
-      [/email address/i, 'Email Address'],
-      [/nric\/fin number/i, 'NRIC/FIN Number'],
-      [/date of birth/i, 'Date of Birth'],
-      [/street name/i, 'Street Name'],
-      [/postal code/i, 'Postal Code'],
-      [/company name/i, 'Company Name in Full'],
-      [/house no/i, 'Blk/House No'],
-      [/unit no/i, 'Unit No. #']
-    ];
-    known.forEach(function (pair) {
-      if (fields.some(function (field) { return field.type !== 'radio' && pair[0].test(field.label); })) return;
-      var text = null;
-      page.texts.forEach(function (item) {
-        if (pair[0].test(item.str)) text = item;
-      });
-      if (!text) return;
-      var below = text.y - Math.max(16, (text.h || 8) + 8);
-      fields.push({
-        id: pair[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 42),
-        label: pair[1],
-        type: 'text',
-        options: [],
-        group: '',
-        source: 'flat',
-        page: 0,
-        pageWidth: page.width,
-        pageHeight: page.height,
-        lineH: 12,
-        rect: { x: text.x, y: below, width: Math.min(240, Math.max(80, text.w + 80)), height: 13 }
-      });
-    });
-    return fields;
+    return FormSpots.layout(page);
   }
 
   async function readRasterPdf(bytes) {

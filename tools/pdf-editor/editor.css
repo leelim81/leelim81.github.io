@@ -120,12 +120,14 @@ body { overflow: hidden; }
 .ann.selected { outline: 1.5px solid #2c4bd6; outline-offset: 1px; }
 .ann-body { width: 100%; height: 100%; }
 .ann.text .ann-body, .ann.date .ann-body {
+  display: flex;
+  align-items: flex-end;
   font-family: Helvetica, Arial, sans-serif;
-  line-height: 1.3;
-  white-space: pre-wrap;
-  overflow: hidden;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: visible;
   cursor: text;
-  min-height: 1.2em;
+  min-height: 0;
 }
 .ann.text .ann-body:empty::before { content: "Type here"; color: #9a9186; }
 .ann.whiteout { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
