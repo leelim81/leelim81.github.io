@@ -56,13 +56,13 @@ try {
     <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
     <p id="modelDetail" class="note"></p>
   </div>
-  <section id="summary" class="summary" hidden>
-    <p class="kicker">What was written</p>
-    <h2 id="summaryHead">Mapped fields</h2>
-    <ul id="summaryList"></ul>
-    <button id="openEditor" type="button" class="btn wax btn-main">Open in Edit PDF</button>
-    <p class="note">Opens the filled file in Edit and Sign PDF, replacing whatever is on that desk.</p>
-  </section>
+  <div id="failBox" class="gpu-warn" hidden>
+    <p id="failText"></p>
+    <div class="row">
+      <button id="retryFill" type="button" class="btn">Try again</button>
+      <button id="openBlank" type="button" class="btn">Open the blank form</button>
+    </div>
+  </div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -73,6 +73,7 @@ try {
 <script src="llm.js"></script>
 <script src="extract.js"></script>
 <script src="fields.js"></script>
+<script src="sanitize.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

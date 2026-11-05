@@ -9,21 +9,7 @@
 .model { border: 1px solid var(--line); padding: 12px 14px; margin: 14px 0; }
 .meter { height: 8px; background: var(--paper-2); border: 1px solid var(--line); margin: 8px 0; }
 .meter span { display: block; height: 100%; width: 0; background: var(--wax); }
-.summary { margin-top: 18px; }
-.summary h2 { font-family: var(--serif); font-weight: 560; font-size: 32px; letter-spacing: -0.03em; margin: 4px 0 12px; }
-.summary ul { list-style: none; padding: 0; margin: 0 0 16px; max-height: 46vh; overflow: auto; }
-.summary li {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) auto;
-  gap: 8px;
-  padding: 8px 0;
-  border-top: 1px solid var(--line);
-  font-size: 15px;
-}
-.summary li span:nth-child(2) { overflow-wrap: anywhere; }
-.summary .conf { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.summary .miss { color: var(--muted); }
-#openEditor { margin-top: 4px; }
+#failBox p { margin: 0 0 10px; }
 @media (max-width: 720px) {
   .drops { grid-template-columns: 1fr; }
   .summary li { grid-template-columns: 1fr; gap: 2px; }

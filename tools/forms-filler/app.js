@@ -80,62 +80,18 @@
     return best;
   }
 
-  function cleanAnswer(text, field) {
-    var line = String(text || '').split('\n')[0].replace(/^["'\s]+|["'\s]+$/g, '').trim();
-    line = line.replace(/^(value|answer)\s*[:=-]\s*/i, '').trim();
-    if (!line || /^(none|null|n\/a|unknown|not found)$/i.test(line)) return '';
-    if (field.options && field.options.length) {
-      var want = line.toLowerCase();
-      var match = field.options.filter(function (option) {
-        return want.indexOf(String(option).toLowerCase()) !== -1 || String(option).toLowerCase().indexOf(want) !== -1;
-      })[0];
-      if (match) return String(match);
-    }
-    if (field.type === 'checkbox') return /yes|agree|true|check/i.test(line) ? 'yes' : '';
-    return line;
-  }
-
   async function askOne(field, corpus) {
     var notes = snippetFor(corpus, field.label + ' ' + hintFor(field));
-    var cue = hintFor(field).replace(/^the\s+/i, '');
-    var prompt = notes + '\nThe ' + cue + ' is';
-    var text = await FormLLM.complete(prompt, 20);
-    var value = cleanAnswer(text, field);
-    if (!value) value = text;
-    var quote = notes;
-    var confidence = 0;
+    var prompt = [
+      'Reply with only the raw value for this field. No label, no sentence, no quotes, no explanation.',
+      'If the notes do not contain it, reply with an empty line.',
+      'Field: ' + field.label,
+      'Notes: ' + notes
+    ].join('\n');
+    var text = await FormLLM.complete(prompt, 16);
+    var value = FormSanitize.sanitize(text, field);
     value = bestSupported(value, corpus);
-    if (value) confidence = 0.9;
-    return { value: value, confidence: confidence, quote: value ? quote : '' };
-  }
-
-  function confLabel(n) {
-    if (!n) return 'Not in the papers';
-    if (n >= 0.8) return 'High';
-    if (n >= 0.5) return 'Medium';
-    return 'Low';
-  }
-
-  function renderSummary() {
-    var filled = state.proposals.filter(function (row) { return row.value; }).length;
-    $('summary').hidden = false;
-    $('summaryHead').textContent = filled + ' of ' + state.fields.length + ' fields written from the papers';
-    var list = $('summaryList');
-    list.innerHTML = '';
-    state.proposals.forEach(function (row) {
-      var li = document.createElement('li');
-      li.dataset.field = row.id;
-      var name = document.createElement('span');
-      name.textContent = row.label;
-      var value = document.createElement('span');
-      value.textContent = row.value || 'Left blank';
-      if (!row.value) value.className = 'miss';
-      var conf = document.createElement('span');
-      conf.className = 'conf';
-      conf.textContent = confLabel(row.confidence);
-      li.append(name, value, conf);
-      list.appendChild(li);
-    });
+    return { value: value, confidence: value ? 0.9 : 0, quote: value ? notes : '' };
   }
 
   function refreshLabels() {
@@ -188,7 +144,6 @@
     state.formBytes = bytes;
     state.formName = name || 'form.pdf';
     state.proposals = [];
-    $('summary').hidden = true;
     var read = await FormFields.read(bytes);
     state.fields = read.fields;
     state.kind = read.kind;
@@ -200,7 +155,6 @@
   async function addRef(bytes, name, mime) {
     state.refs.push({ name: name || 'reference', bytes: bytes, mime: mime || '' });
     state.proposals = [];
-    $('summary').hidden = true;
     refreshLabels();
     scheduleSave();
   }
@@ -258,29 +212,36 @@
           quote: row.quote
         };
       });
-      renderSummary();
-      status('', false);
+      await openEditor(false);
     } catch (err) {
+      state.running = false;
+      refreshLabels();
       if (err && err.code === 'webgpu') showGpu({ ok: false });
-      else toast(err && err.message ? err.message : 'The form could not be filled.');
+      var msg = err && err.message ? err.message : 'The form could not be filled.';
+      $('failText').textContent = msg;
+      $('failBox').hidden = false;
       status('', false);
     }
-    state.running = false;
-    refreshLabels();
   }
 
-  async function openEditor() {
-    if (!state.formBytes || !state.proposals.length) return;
-    status('Writing the PDF…', true);
-    var values = {};
-    state.proposals.forEach(function (row) { values[row.id] = row.value; });
-    var bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: state.kind === 'acro' });
+  async function openEditor(blank) {
+    if (!state.formBytes) return;
+    if (!blank && !state.proposals.length) return;
+    status('Opening the editor…', true);
+    var bytes = state.formBytes;
+    if (!blank) {
+      var values = {};
+      state.proposals.forEach(function (row) {
+        values[row.id] = FormSanitize.sanitize(row.value, row);
+      });
+      bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: state.kind === 'acro' });
+    }
     var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {
       pages.push({ id: Math.random().toString(36).slice(2, 10), srcIndex: i, rotation: 0, annotations: [] });
     }
-    var fileName = state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
+    var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
     await DeskDB.set(EDITOR_DB, 'pdf', bytes);
     await DeskDB.set(EDITOR_DB, 'session', { fileName: fileName, zoom: 1, current: 0, pages: pages });
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
@@ -345,15 +306,24 @@
       status('', false);
     }
   });
-  $('fillBtn').addEventListener('click', fillFromPapers);
-  $('openEditor').addEventListener('click', function () { openEditor().catch(function (err) { toast(err.message || 'Could not open the editor.'); }); });
+  $('fillBtn').addEventListener('click', function () {
+    $('failBox').hidden = true;
+    fillFromPapers();
+  });
+  $('retryFill').addEventListener('click', function () {
+    $('failBox').hidden = true;
+    fillFromPapers();
+  });
+  $('openBlank').addEventListener('click', function () {
+    openEditor(true).catch(function (err) { toast(err.message || 'Could not open the editor.'); });
+  });
   $('clearBtn').addEventListener('click', function () {
     state.formBytes = null;
     state.formName = '';
     state.fields = [];
     state.refs = [];
     state.proposals = [];
-    $('summary').hidden = true;
+    $('failBox').hidden = true;
     $('modelBox').hidden = true;
     refreshLabels();
     DeskDB.clear(DB).catch(function () {});
@@ -363,17 +333,18 @@
   window.FormDesk = {
     applyMap: function (map) {
       state.proposals = state.fields.map(function (field) {
-        var value = map && map[field.id] ? String(map[field.id]) : '';
+        var raw = map && map[field.id] != null ? String(map[field.id]) : '';
+        var value = FormSanitize.sanitize(raw, field);
         return {
           id: field.id,
           label: field.label,
           type: field.type,
           value: value,
           confidence: value ? 0.9 : 0,
-          quote: value ? 'Known from the papers' : ''
+          quote: ''
         };
       });
-      renderSummary();
+      return openEditor(false);
     }
   };
   FormLLM.gpu().then(showGpu);
