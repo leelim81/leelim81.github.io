@@ -872,6 +872,24 @@
 
   function wire() {
     function pick() { $('fileInput').click(); }
+    function closeDrawer() {
+      $('toolDrawer').hidden = true;
+      $('moreTools').setAttribute('aria-expanded', 'false');
+    }
+    $('moreTools').addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = $('toolDrawer').hidden;
+      $('toolDrawer').hidden = !open;
+      $('moreTools').setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    $('toolDrawer').addEventListener('click', function (e) {
+      if (e.target.closest('button')) closeDrawer();
+    });
+    document.addEventListener('click', function (e) {
+      if ($('toolDrawer').hidden) return;
+      if (e.target.closest('#toolDrawer') || e.target.closest('#moreTools')) return;
+      closeDrawer();
+    });
     $('openBtn').addEventListener('click', pick);
     $('openBtnBar').addEventListener('click', pick);
     $('fileInput').addEventListener('change', function () {

@@ -39,6 +39,7 @@ body { overflow: hidden; }
   background: var(--paper);
   z-index: 5;
 }
+.toolbar { position: relative; overflow: visible; }
 .status { border-bottom: 0; border-top: 1px solid var(--line); }
 .tool {
   flex: none;
@@ -51,6 +52,25 @@ body { overflow: hidden; }
   color: var(--ink);
 }
 .tool-strong { background: var(--ink); color: var(--paper); }
+.toolbar > .tool-strong { min-height: 40px; padding: 8px 16px; font-size: 15px; }
+.tool-more { width: 40px; min-height: 40px; padding: 0; font-size: 18px; line-height: 1; }
+.tool-more span { display: inline-block; transition: transform 0.16s ease; }
+.tool-more[aria-expanded="true"] span { transform: rotate(90deg); }
+.tool-drawer {
+  position: absolute;
+  left: 12px;
+  top: calc(100% + 6px);
+  z-index: 8;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: min(440px, calc(100vw - 24px));
+  padding: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 40px rgba(18, 16, 14, 0.28);
+}
+.tool-drawer[hidden] { display: none; }
 .tool-gap { width: 8px; flex: none; }
 .selection {
   display: flex;
@@ -146,8 +166,8 @@ body { overflow: hidden; }
   margin-top: 10px;
   height: min(42vh, 280px);
   background:
-    linear-gradient(var(--muted), var(--muted)) left 78% / 100% 1px no-repeat,
-    var(--paper);
+    linear-gradient(#c4beb6, #c4beb6) left 78% / 100% 1px no-repeat,
+    #fffef9;
   border: 1px solid var(--line);
   touch-action: none;
 }
@@ -181,6 +201,7 @@ body { overflow: hidden; }
 @media (max-width: 800px) {
   .app { height: 100dvh; }
   .toolbar { order: 4; position: sticky; bottom: 0; border-top: 1px solid var(--line); border-bottom: 0; background: var(--paper); }
+  .tool-drawer { top: auto; bottom: calc(100% + 6px); }
   .status { order: 3; }
   .stage { order: 2; }
   .topbar { flex-wrap: wrap; }
