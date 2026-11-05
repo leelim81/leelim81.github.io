@@ -31,6 +31,7 @@
     if (words(s).length > 6) return '';
     if (s.charAt(0) === '(' && s.length > 5) return '';
     if (/^(the|and|for|with|that|this|from|your|will|are|was|has|have|not|but|any|all|per|via)$/i.test(s)) return '';
+    if (/sumame|surname|underline|please underline/i.test(s)) return '';
     s = s.replace(/\.$/, '').trim();
     if (/^(page|form|union|membership application)$/i.test(s)) return '';
     return s.replace(/\s*\($/, '').trim();
@@ -66,6 +67,11 @@
     return false;
   }
 
+  function joinLimit(run, seg) {
+    var cell = Math.min(seg.w, run.w / Math.max(run.n, 1));
+    return cell < 36 ? 18 : 12;
+  }
+
   function mergeRuns(lines) {
     var sorted = lines.slice().sort(function (a, b) {
       if (Math.abs(a.y - b.y) > 2) return b.y - a.y;
@@ -76,8 +82,10 @@
       var hit = null;
       for (var i = 0; i < runs.length; i++) {
         var run = runs[i];
-        if (Math.abs(run.y - seg.y) > 2.4) continue;
-        if (seg.x <= run.x + run.w + 14 && seg.x + seg.w >= run.x - 14) {
+        var limit = joinLimit(run, seg);
+        var yLimit = Math.min(seg.w, run.w / Math.max(run.n, 1)) < 36 ? 6 : 2.8;
+        if (Math.abs(run.y - seg.y) > yLimit) continue;
+        if (seg.x <= run.x + run.w + limit && seg.x + seg.w >= run.x - limit) {
           var right = Math.max(run.x + run.w, seg.x + seg.w);
           run.x = Math.min(run.x, seg.x);
           run.w = right - run.x;
@@ -96,8 +104,10 @@
         for (var j = i + 1; j < runs.length; j++) {
           var a = runs[i];
           var b = runs[j];
-          if (Math.abs(a.y - b.y) > 2.4) continue;
-          if (b.x <= a.x + a.w + 14 && a.x <= b.x + b.w + 14) {
+          var yLimit = Math.min(a.w / Math.max(a.n, 1), b.w / Math.max(b.n, 1)) < 36 ? 6 : 2.8;
+          if (Math.abs(a.y - b.y) > yLimit) continue;
+          var limit = joinLimit(a, b);
+          if (b.x <= a.x + a.w + limit && a.x <= b.x + b.w + limit) {
             var right = Math.max(a.x + a.w, b.x + b.w);
             a.x = Math.min(a.x, b.x);
             a.w = right - a.x;
@@ -127,9 +137,10 @@
       texts.forEach(function (text, index) {
         if (used[index]) return;
         var gap = text.x - (square.x + square.w);
-        if (gap < -3 || gap > 16) return;
-        if (Math.abs(text.y - (square.y + 1.5)) > 6) return;
-        if (text.w > 150) return;
+        if (gap < -6 || gap > 28) return;
+        if (Math.abs(text.y - (square.y + square.h * 0.25)) > 12) return;
+        if (text.w > 130) return;
+        if (String(text.str || '').replace(/[^A-Za-z]/g, '').length < 3) return;
         if (gap < bestGap) {
           best = index;
           bestGap = gap;
@@ -200,10 +211,11 @@
         var gap = slot.x - (text.x + text.w);
         var dy = text.y - slot.y;
         var overlap = text.x < slot.x + slot.w * 0.7 && text.x + text.w > slot.x - 8;
+        var hint = /surname|underline|please|passport|family/i.test(text.str) ? 30 : 0;
         if (gap >= -6 && gap <= 110 && Math.abs(dy) <= 9) {
-          pairs.push({ si: si, ti: ti, score: Math.max(0, gap) * 0.25 + Math.abs(dy) });
-        } else if (dy >= 8 && dy <= 34 && text.x >= slot.x - 16 && text.x <= slot.x + Math.min(slot.w * 0.5, 90)) {
-          pairs.push({ si: si, ti: ti, score: 24 + dy + Math.abs(text.x - slot.x) * 0.2 });
+          pairs.push({ si: si, ti: ti, score: hint + Math.max(0, gap) * 0.25 + Math.abs(dy) });
+        } else if (dy >= 8 && dy <= 36 && text.x >= slot.x - 30 && text.x <= slot.x + Math.min(slot.w * 0.55, 110)) {
+          pairs.push({ si: si, ti: ti, score: hint + 18 + dy + Math.abs(text.x - slot.x) * 0.15 });
         } else if (dy <= -2 && dy >= -16 && overlap && text.w < 150 && words(text.str).length < 6) {
           pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
         }
@@ -250,10 +262,13 @@
     var width = page.width || 595;
     var height = page.height || 842;
     var texts = prepareTexts(page.texts, height);
+    var coverTexts = (page.texts || []).filter(function (text) {
+      return text && text.str && text.w > 6;
+    });
     var squares = (page.squares || []).filter(function (square) {
       return square.w >= 5 && square.w <= 18 && square.h >= 5 && square.h <= 18
         && Math.abs(square.w - square.h) <= 5
-        && square.y > 90 && square.y < height - 70;
+        && square.y > 90 && square.y < height - 95;
     });
     var rawLines = (page.lines || []).filter(function (line) {
       return line.w >= 8 && line.y > 90 && line.y < height - 70 && !onSquareEdge(line, squares);
@@ -261,7 +276,10 @@
     var runs = mergeRuns(rawLines).filter(function (run) {
       if (run.w < 26 || run.w >= width * 0.74) return false;
       var cover = 0;
-      texts.forEach(function (text) {
+      coverTexts.forEach(function (text) {
+        var str = String(text.str || '');
+        if (str.length < 28) return;
+        if (/please|surname|underline|sumame/i.test(str)) return;
         if (run.y < text.y - 3 || run.y > text.y + (text.h || 8) + 1) return;
         var overlap = Math.min(run.x + run.w, text.x + text.w) - Math.max(run.x, text.x);
         if (overlap > 0) cover += overlap;
@@ -292,8 +310,17 @@
     var labeled = mergeStacks(slots);
     slots = labeled.filter(function (slot) {
       if (!slot.label) return false;
-      if (slot.y > height * 0.9) return false;
       if (/^(job|contact details|address in singapore|personal particulars)$/i.test(slot.label)) return false;
+      var label = null;
+      for (var i = 0; i < texts.length; i++) {
+        if (texts[i].str === slot.label) { label = texts[i]; break; }
+      }
+      if (label) {
+        var top = slot.y + slot.h;
+        var onBox = label.y > slot.y - 1 && label.y < top + 1;
+        var overlap = Math.min(slot.x + slot.w, label.x + label.w) - Math.max(slot.x, label.x);
+        if (onBox && overlap > label.w * 0.55 && overlap > slot.w * 0.35) return false;
+      }
       return true;
     });
 

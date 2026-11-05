@@ -198,15 +198,85 @@
 
   function inkMask(canvas) {
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
-    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    var mask = new Uint8Array(canvas.width * canvas.height);
-    for (var i = 0, p = 0; i < data.length; i += 4, p++) {
-      var r = data[i], g = data[i + 1], b = data[i + 2];
-      if (r > 150 && r > g + 45 && r > b + 45) continue;
-      var luma = 0.3 * r + 0.59 * g + 0.11 * b;
-      if (luma < 205) mask[p] = 1;
+    var w = canvas.width;
+    var h = canvas.height;
+    var data = ctx.getImageData(0, 0, w, h).data;
+    var luma = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var i = (y * w + x) * 4;
+        var r = data[i], g = data[i + 1], b = data[i + 2];
+        if (r > 160 && r > g + 50 && r > b + 50) {
+          luma[y * w + x] = 255;
+          continue;
+        }
+        luma[y * w + x] = 0.3 * r + 0.59 * g + 0.11 * b;
+      }
+    }
+    var mask = new Uint8Array(w * h);
+    var gap = 4;
+    for (var y2 = gap; y2 < h - gap; y2++) {
+      for (var x2 = 0; x2 < w; x2++) {
+        var c = luma[y2 * w + x2];
+        var above = luma[(y2 - gap) * w + x2];
+        var below = luma[(y2 + gap) * w + x2];
+        if (c + 8 < above && c + 8 < below) mask[y2 * w + x2] = 1;
+      }
     }
     return mask;
+  }
+
+  function graySquares(canvas, w, h) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var data = ctx.getImageData(0, 0, w, h).data;
+    function lumaAt(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    var squares = [];
+    var sizes = [14, 18, 22];
+    for (var s = 0; s < sizes.length; s++) {
+      var side = sizes[s];
+      for (var y0 = 24; y0 + side < h - 16; y0 += 4) {
+        for (var x0 = 8; x0 + side < w - 8; x0 += 4) {
+          var inside = 0;
+          var nIn = 0;
+          var samples = [];
+          var outside = 0;
+          var nOut = 0;
+          for (var yy = y0 + 3; yy < y0 + side - 3; yy += 2) {
+            for (var xx = x0 + 3; xx < x0 + side - 3; xx += 2) {
+              var sample = lumaAt(xx, yy);
+              inside += sample;
+              samples.push(sample);
+              nIn++;
+            }
+          }
+          for (var e = 0; e < side; e += 3) {
+            if (y0 >= 6) { outside += lumaAt(x0 + e, y0 - 5); nOut++; }
+            if (y0 + side + 5 < h) { outside += lumaAt(x0 + e, y0 + side + 5); nOut++; }
+          }
+          if (!nIn || !nOut) continue;
+          var inn = inside / nIn;
+          var out = outside / nOut;
+          if (inn < 150 || inn > 236) continue;
+          if (out - inn < 14 || out - inn > 55) continue;
+          var variance = 0;
+          for (var vi = 0; vi < samples.length; vi++) {
+            var dv = samples[vi] - inn;
+            variance += dv * dv;
+          }
+          if (Math.sqrt(variance / samples.length) > 10) continue;
+          var dup = squares.some(function (sq) {
+            return Math.abs(sq.x - x0) < 11 && Math.abs((h - sq.y - sq.h) - y0) < 11;
+          });
+          if (dup) continue;
+          squares.push({ x: x0, y: h - (y0 + side), w: side, h: side });
+          x0 += Math.floor(side / 2);
+        }
+      }
+    }
+    return squares;
   }
 
   function rasterGeometry(canvas) {
@@ -246,46 +316,41 @@
       }
     });
     var lines = bands.filter(function (band) {
-      return band.y1 - band.y0 <= 6 && band.w >= 36;
+      return band.y1 - band.y0 <= 5 && band.w >= 12;
     }).map(function (band) {
       return { x: band.x, y: h - (band.y1 + 1), w: band.w };
     });
-    var squares = [];
-    var sizes = [14, 18, 22];
-    for (var s = 0; s < sizes.length; s++) {
-      var side = sizes[s];
-      for (var yy = 40; yy < h - side - 20; yy += 3) {
-        for (var xx = 8; xx < w - side - 8; xx += 3) {
-          var border = 0;
-          var samples = 0;
-          for (var i = 0; i < side; i += 2) {
-            border += mask[yy * w + (xx + i)] + mask[(yy + side - 1) * w + (xx + i)];
-            border += mask[(yy + i) * w + xx] + mask[(yy + i) * w + (xx + side - 1)];
-            samples += 4;
-          }
-          var cx = xx + (side >> 1);
-          var cy = yy + (side >> 1);
-          if (border / samples < 0.7) continue;
-          var centerDark = 0;
-          var centerN = 0;
-          var inset = Math.max(3, side / 4);
-          for (var cy2 = yy + inset; cy2 < yy + side - inset; cy2++) {
-            for (var cx2 = xx + inset; cx2 < xx + side - inset; cx2++) {
-              centerDark += mask[cy2 * w + cx2];
-              centerN++;
-            }
-          }
-          if (!centerN || centerDark / centerN > 0.12) continue;
-          var dup = squares.some(function (sq) {
-            return Math.abs(sq.x - xx) < 10 && Math.abs((h - sq.y - sq.h) - yy) < 10;
-          });
-          if (dup) continue;
-          squares.push({ x: xx, y: h - (yy + side), w: side, h: side });
-          xx += side;
+    var squares = graySquares(canvas, w, h);
+    lines = mergeCellRows(lines);
+    return { lines: lines, squares: squares, width: w, height: h };
+  }
+
+  function mergeCellRows(lines) {
+    var sorted = lines.slice().sort(function (a, b) {
+      if (Math.abs(a.y - b.y) > 3) return b.y - a.y;
+      return a.x - b.x;
+    });
+    var runs = [];
+    sorted.forEach(function (seg) {
+      var hit = null;
+      for (var i = 0; i < runs.length; i++) {
+        var run = runs[i];
+        var cell = Math.min(seg.w, run.w / Math.max(run.n, 1));
+        var limit = cell < 80 ? 32 : 8;
+        if (Math.abs(run.y - seg.y) > 10) continue;
+        if (seg.x <= run.x + run.w + limit && seg.x + seg.w >= run.x - limit) {
+          var right = Math.max(run.x + run.w, seg.x + seg.w);
+          run.x = Math.min(run.x, seg.x);
+          run.w = right - run.x;
+          run.y = (run.y * run.n + seg.y) / (run.n + 1);
+          run.n += 1;
+          hit = run;
+          break;
         }
       }
-    }
-    return { lines: lines, squares: squares, width: w, height: h };
+      if (!hit) runs.push({ x: seg.x, y: seg.y, w: seg.w, n: 1 });
+    });
+    return runs.map(function (run) { return { x: run.x, y: run.y, w: run.w }; });
   }
 
   function rotateCanvas(canvas, angle) {
@@ -302,32 +367,6 @@
     ctx.rotate(rad);
     ctx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
     return out;
-  }
-
-  function unrotatePoint(x, y, angle, srcW, srcH, dstW, dstH) {
-    var rad = -angle * Math.PI / 180;
-    var cos = Math.cos(rad);
-    var sin = Math.sin(rad);
-    var dx = x - dstW / 2;
-    var dy = y - dstH / 2;
-    return [dx * cos - dy * sin + srcW / 2, dx * sin + dy * cos + srcH / 2];
-  }
-
-  function mapRect(rect, angle, srcW, srcH, dstW, dstH) {
-    if (!angle) return rect;
-    var corners = [
-      unrotatePoint(rect.x, rect.y, angle, srcW, srcH, dstW, dstH),
-      unrotatePoint(rect.x + rect.w, rect.y, angle, srcW, srcH, dstW, dstH),
-      unrotatePoint(rect.x, rect.y + rect.h, angle, srcW, srcH, dstW, dstH),
-      unrotatePoint(rect.x + rect.w, rect.y + rect.h, angle, srcW, srcH, dstW, dstH)
-    ];
-    var xs = corners.map(function (c) { return c[0]; });
-    var ys = corners.map(function (c) { return c[1]; });
-    var minX = Math.min.apply(null, xs);
-    var maxX = Math.max.apply(null, xs);
-    var minY = Math.min.apply(null, ys);
-    var maxY = Math.max.apply(null, ys);
-    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
   }
 
   async function wordsOn(canvas) {
@@ -350,100 +389,249 @@
     });
   }
 
-  function estimateSkew(texts) {
-    var pts = (texts || []).filter(function (text) { return text.w > 18; }).map(function (text) {
-      return { x: text.x + text.w / 2, y: text.y };
-    });
-    pts.sort(function (a, b) { return b.y - a.y; });
-    var rows = [];
-    pts.forEach(function (pt) {
-      var row = null;
-      for (var i = 0; i < rows.length; i++) {
-        if (Math.abs(rows[i].y - pt.y) < 10) { row = rows[i]; break; }
-      }
-      if (!row) {
-        row = { y: pt.y, pts: [] };
-        rows.push(row);
-      }
-      row.pts.push(pt);
-    });
-    var slopes = [];
-    rows.forEach(function (row) {
-      if (row.pts.length < 3) return;
-      row.pts.sort(function (a, b) { return a.x - b.x; });
-      var a = row.pts[0];
-      var b = row.pts[row.pts.length - 1];
-      if (b.x - a.x < 100) return;
-      slopes.push((b.y - a.y) / (b.x - a.x));
-    });
-    if (!slopes.length) return 0;
-    slopes.sort(function (a, b) { return a - b; });
-    return Math.atan(slopes[slopes.length >> 1]) * 180 / Math.PI;
+  function shrinkCanvas(canvas, maxW) {
+    if (canvas.width <= maxW) return canvas;
+    var scale = maxW / canvas.width;
+    var out = document.createElement('canvas');
+    out.width = Math.max(1, Math.round(canvas.width * scale));
+    out.height = Math.max(1, Math.round(canvas.height * scale));
+    out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
+    return out;
   }
 
-  function linesUnderLabels(texts, squares, width) {
-    var extra = [];
-    texts.forEach(function (text) {
-      var str = String(text.str || '').trim();
-      if (str.length < 3 || str.length > 42) return;
-      if (!/[A-Za-z]/.test(str)) return;
-      if ((str.match(/[\u3400-\u9fff]/g) || []).length > (str.match(/[A-Za-z]/g) || []).length) return;
-      if (str.split(/\s+/).length > 4) return;
-      if (str.charAt(0) === '(' && str.length > 5) return;
-      if (!/name|nric|fin|address|email|date|street|postal|phone|company|title|department|gender|race|status|education|bank|signature|number|code|house|unit|birth|marital|employee|location|holder|contact|nationality/i.test(str)) return;
-      var midRow = texts.some(function (other) {
-        return other !== text && Math.abs(other.y - text.y) < 6 && other.x + other.w < text.x && text.x - (other.x + other.w) < 28;
-      });
-      if (midRow) return;
-      var option = squares.some(function (square) {
-        var gap = text.x - (square.x + square.w);
-        return gap > -4 && gap < 18 && Math.abs(text.y - (square.y + 2)) < 8;
-      });
-      if (option) return;
-      var colRight = text.x < width * 0.5 ? width * 0.48 : width * 0.94;
-      var w = Math.min(colRight - text.x, width * 0.42);
-      if (w < 70) return;
-      var y = text.y - Math.max(14, (text.h || 10) + 6);
-      var blocked = texts.some(function (other) {
-        if (other === text) return false;
-        if (other.y > text.y - 4 || other.y < y - 6) return false;
-        return other.x >= text.x - 6 && other.x < text.x + w * 0.55 && String(other.str || '').length > 2;
-      });
-      if (blocked) return;
-      extra.push({ x: text.x, y: y, w: w });
-    });
-    return extra;
+  function stretchContrast(canvas) {
+    var out = document.createElement('canvas');
+    out.width = canvas.width;
+    out.height = canvas.height;
+    var ctx = out.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(canvas, 0, 0);
+    var image = ctx.getImageData(0, 0, out.width, out.height);
+    var data = image.data;
+    var samples = [];
+    for (var i = 0; i < data.length; i += 16) {
+      samples.push(0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2]);
+    }
+    samples.sort(function (a, b) { return a - b; });
+    var lo = samples[Math.floor(samples.length * 0.06)] || 0;
+    var hi = samples[Math.floor(samples.length * 0.9)] || 255;
+    if (hi - lo < 24) { lo = 0; hi = 255; }
+    var span = hi - lo || 1;
+    for (var p = 0; p < data.length; p += 4) {
+      var luma = 0.3 * data[p] + 0.59 * data[p + 1] + 0.11 * data[p + 2];
+      var stretched = Math.max(0, Math.min(255, (luma - lo) / span * 255));
+      data[p] = data[p + 1] = data[p + 2] = stretched;
+    }
+    ctx.putImageData(image, 0, 0);
+    return out;
   }
 
-  async function layoutCanvas(canvas) {
-    var straight = await wordsOn(canvas);
-    var guess = estimateSkew(straight);
-    var angle = Math.abs(guess) > 0.4 && Math.abs(guess) < 7 ? -guess : 0;
-    var aligned = angle ? rotateCanvas(canvas, angle) : canvas;
-    var geo = rasterGeometry(aligned);
-    var texts = angle ? await wordsOn(aligned) : straight;
-    geo.lines = geo.lines.concat(linesUnderLabels(texts, geo.squares, aligned.width));
-    var fields = global.FormSpots ? FormSpots.layout({
+  function horizontalScore(canvas) {
+    var mask = inkMask(stretchContrast(canvas));
+    var w = canvas.width;
+    var h = canvas.height;
+    var total = 0;
+    for (var y = 0; y < h; y += 2) {
+      var start = -1;
+      for (var x = 0; x <= w; x++) {
+        var on = x < w && mask[y * w + x];
+        if (on && start < 0) start = x;
+        else if (!on && start >= 0) {
+          if (x - start > 28) total += x - start;
+          start = -1;
+        }
+      }
+    }
+    return total;
+  }
+
+  function bestLineAngle(canvas) {
+    var small = shrinkCanvas(canvas, 420);
+    var best = 0;
+    var bestScore = horizontalScore(small);
+    for (var deg = -6; deg <= 6; deg += 0.5) {
+      if (!deg) continue;
+      var score = horizontalScore(rotateCanvas(small, deg));
+      if (score > bestScore) {
+        bestScore = score;
+        best = deg;
+      }
+    }
+    return best;
+  }
+
+  function cropToPage(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var data = image.data;
+    var w = canvas.width;
+    var h = canvas.height;
+    function at(x, y) {
+      var i = (y * w + x) * 4;
+      return [data[i], data[i + 1], data[i + 2]];
+    }
+    var corner = at(2, 2);
+    var minX = w;
+    var minY = h;
+    var maxX = 0;
+    var maxY = 0;
+    var step = 3;
+    for (var y = 0; y < h; y += step) {
+      for (var x = 0; x < w; x += step) {
+        var px = at(x, y);
+        var dist = Math.abs(px[0] - corner[0]) + Math.abs(px[1] - corner[1]) + Math.abs(px[2] - corner[2]);
+        if (dist < 28) continue;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (maxX <= minX || maxY <= minY) return canvas;
+    var pad = 8;
+    minX = Math.max(0, minX - pad);
+    minY = Math.max(0, minY - pad);
+    maxX = Math.min(w - 1, maxX + pad);
+    maxY = Math.min(h - 1, maxY + pad);
+    var cw = maxX - minX;
+    var ch = maxY - minY;
+    if (cw > w * 0.98 && ch > h * 0.98) return canvas;
+    var out = document.createElement('canvas');
+    out.width = cw;
+    out.height = ch;
+    out.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+    return out;
+  }
+
+  function uprightSheet(canvas) {
+    var angle = bestLineAngle(canvas);
+    var turned = angle ? rotateCanvas(canvas, angle) : canvas;
+    return cropToPage(turned);
+  }
+
+  function joinPhrases(items) {
+    var list = items.slice().sort(function (a, b) {
+      if (Math.abs(a.y - b.y) > 4) return b.y - a.y;
+      return a.x - b.x;
+    });
+    var used = {};
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      if (used[i]) continue;
+      var cur = { x: list[i].x, y: list[i].y, w: list[i].w, h: list[i].h, str: String(list[i].str || '').trim() };
+      used[i] = true;
+      var grew = true;
+      while (grew) {
+        grew = false;
+        for (var j = 0; j < list.length; j++) {
+          if (used[j]) continue;
+          var other = list[j];
+          var gap = other.x - (cur.x + cur.w);
+          if (gap < -2 || gap > Math.max(8, cur.h * 0.7)) continue;
+          if (Math.abs(other.y - cur.y) > Math.max(4, cur.h * 0.45)) continue;
+          var next = String(other.str || '').trim();
+          if (!/[A-Za-z]/.test(next) || /^\(/.test(next)) continue;
+          if (cur.str.split(/\s+/).length >= 4) continue;
+          var right = Math.max(cur.x + cur.w, other.x + other.w);
+          if (other.x < cur.x) cur.x = other.x;
+          cur.w = right - cur.x;
+          cur.h = Math.max(cur.h, other.h);
+          cur.str = (cur.str + ' ' + String(other.str || '').trim()).replace(/\s+/g, ' ').trim();
+          used[j] = true;
+          grew = true;
+        }
+      }
+      if (cur.str) out.push(cur);
+    }
+    return out;
+  }
+
+  function scalePage(geo, scale) {
+    function n(v) { return v * scale; }
+    return {
       page: 0,
-      width: aligned.width,
-      height: aligned.height,
+      width: geo.width * scale,
+      height: geo.height * scale,
+      texts: geo.texts.map(function (text) {
+        return { x: n(text.x), y: n(text.y), w: n(text.w), h: n(text.h), str: text.str };
+      }),
+      lines: geo.lines.map(function (line) {
+        return { x: n(line.x), y: n(line.y), w: n(line.w) };
+      }),
+      squares: geo.squares.map(function (square) {
+        return { x: n(square.x), y: n(square.y), w: n(square.w), h: n(square.h) };
+      })
+    };
+  }
+
+  async function fieldsOnSheet(canvas) {
+    var texts = joinPhrases(await wordsOn(canvas));
+    var geo = rasterGeometry(stretchContrast(canvas));
+    geo.squares = graySquares(canvas, canvas.width, canvas.height);
+    geo.squares = geo.squares.filter(function (square) {
+      var mid = square.y + square.h * 0.5;
+      var onWord = texts.some(function (text) {
+        var overlaps = text.x < square.x + square.w * 0.25 && text.x + text.w > square.x + square.w * 0.75;
+        return overlaps && Math.abs(text.y - mid) < Math.max(8, text.h);
+      });
+      if (onWord) return false;
+      var pitch = 1e9;
+      geo.squares.forEach(function (other) {
+        if (other === square || Math.abs(other.y - square.y) > 14) return;
+        var gap = Math.abs(other.x - square.x);
+        if (gap < pitch) pitch = gap;
+      });
+      if (pitch < square.w * 3.2) return false;
+      return geo.squares.some(function (other) {
+        if (other === square) return false;
+        return Math.abs(other.y - square.y) < 16 && Math.abs(other.w - square.w) < 8
+          && Math.abs(other.x - square.x) > square.w && Math.abs(other.x - square.x) < 260;
+      });
+    });
+    var scale = 595 / canvas.width;
+    if (!global.FormSpots) return [];
+    var page = scalePage({
+      width: canvas.width,
+      height: canvas.height,
       texts: texts,
       lines: geo.lines,
       squares: geo.squares
-    }) : [];
-    if (!angle) return fields;
-    return fields.map(function (field) {
-      var mapped = mapRect({
-        x: field.rect.x,
-        y: field.rect.y,
-        w: field.rect.width,
-        h: field.rect.height
-      }, angle, canvas.width, canvas.height, aligned.width, aligned.height);
-      field.rect = { x: mapped.x, y: mapped.y, width: mapped.w, height: mapped.h };
-      field.pageWidth = canvas.width;
-      field.pageHeight = canvas.height;
-      return field;
+    }, scale);
+    var fields = FormSpots.layout(page);
+    var known = [
+      [/full name/i, 'Full Name'],
+      [/^\(hp\)$/i, '(HP)'],
+      [/email address/i, 'Email Address'],
+      [/nric\/fin number/i, 'NRIC/FIN Number'],
+      [/date of birth/i, 'Date of Birth'],
+      [/street name/i, 'Street Name'],
+      [/postal code/i, 'Postal Code'],
+      [/company name/i, 'Company Name in Full'],
+      [/house no/i, 'Blk/House No'],
+      [/unit no/i, 'Unit No. #']
+    ];
+    known.forEach(function (pair) {
+      if (fields.some(function (field) { return field.type !== 'radio' && pair[0].test(field.label); })) return;
+      var text = null;
+      page.texts.forEach(function (item) {
+        if (pair[0].test(item.str)) text = item;
+      });
+      if (!text) return;
+      var below = text.y - Math.max(16, (text.h || 8) + 8);
+      fields.push({
+        id: pair[1].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 42),
+        label: pair[1],
+        type: 'text',
+        options: [],
+        group: '',
+        source: 'flat',
+        page: 0,
+        pageWidth: page.width,
+        pageHeight: page.height,
+        lineH: 12,
+        rect: { x: text.x, y: below, width: Math.min(240, Math.max(80, text.w + 80)), height: 13 }
+      });
     });
+    return fields;
   }
 
   async function readRasterPdf(bytes) {
@@ -457,9 +645,9 @@
       canvas.width = Math.ceil(view.width);
       canvas.height = Math.ceil(view.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
-      var found = await layoutCanvas(canvas);
-      var sx = view.width / 1.4 / canvas.width;
-      var sy = view.height / 1.4 / canvas.height;
+      var found = await fieldsOnSheet(canvas);
+      var sx = (view.width / 1.4) / 595;
+      var sy = (view.height / 1.4) / (canvas.height * (595 / canvas.width));
       found.forEach(function (field) {
         field.page = p - 1;
         field.rect = {
@@ -470,7 +658,7 @@
         };
         field.pageWidth = view.width / 1.4;
         field.pageHeight = view.height / 1.4;
-        field.lineH = (field.lineH || 12) * sy;
+        field.lineH = (field.lineH || 12) * ((sx + sy) / 2);
         fields.push(field);
       });
     }
@@ -487,15 +675,17 @@
 
   async function readImage(bytes, mime) {
     var bmp = await createImageBitmap(new Blob([copy(bytes)], { type: mime || 'image/jpeg' }));
-    var canvas = canvasFromBitmap(bmp, 1400);
+    var canvas = uprightSheet(canvasFromBitmap(bmp, 1100));
     if (bmp.close) bmp.close();
-    var fields = await layoutCanvas(canvas);
-    var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.86); });
+    var fields = await fieldsOnSheet(canvas);
+    var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });
     var jpeg = new Uint8Array(await blob.arrayBuffer());
     var doc = await PDFLib.PDFDocument.create();
     var image = await doc.embedJpg(jpeg);
-    var page = doc.addPage([canvas.width, canvas.height]);
-    page.drawImage(image, { x: 0, y: 0, width: canvas.width, height: canvas.height });
+    var pageW = 595;
+    var pageH = canvas.height * (pageW / canvas.width);
+    var page = doc.addPage([pageW, pageH]);
+    page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
     return { kind: 'flat', fields: fields, bytes: new Uint8Array(await doc.save()) };
   }
 
