@@ -33,20 +33,22 @@ try {
   <p class="privacy">Your files never leave this device. Opening, editing, and exporting all happen in this browser.</p>
 
   <div class="toolbar" id="toolbar" hidden>
-    <button id="openBtnBar" type="button" class="tool">Open</button>
-    <button id="addText" type="button" class="tool">Text</button>
-    <button id="addWhiteout" type="button" class="tool">Whiteout</button>
-    <button id="addHighlight" type="button" class="tool">Highlight</button>
-    <button id="addRect" type="button" class="tool">Box</button>
-    <button id="addEllipse" type="button" class="tool">Ellipse</button>
-    <button id="addImage" type="button" class="tool">Image</button>
+    <button id="addText" type="button" class="tool tool-strong">Text</button>
     <button id="addSignature" type="button" class="tool tool-strong">Sign</button>
-    <button id="addDate" type="button" class="tool">Date</button>
-    <span class="tool-gap" aria-hidden="true"></span>
-    <button id="rotatePage" type="button" class="tool" title="Rotate page">Rotate</button>
-    <button id="deletePage" type="button" class="tool">Delete page</button>
-    <button id="movePageUp" type="button" class="tool" title="Move page up">Up</button>
-    <button id="movePageDown" type="button" class="tool" title="Move page down">Down</button>
+    <button id="moreTools" type="button" class="tool tool-more" aria-expanded="false" aria-controls="toolDrawer" aria-label="More tools"><span aria-hidden="true">▸</span></button>
+    <div id="toolDrawer" class="tool-drawer" hidden>
+      <button id="openBtnBar" type="button" class="tool">Open</button>
+      <button id="addWhiteout" type="button" class="tool">Whiteout</button>
+      <button id="addHighlight" type="button" class="tool">Highlight</button>
+      <button id="addRect" type="button" class="tool">Box</button>
+      <button id="addEllipse" type="button" class="tool">Ellipse</button>
+      <button id="addImage" type="button" class="tool">Image</button>
+      <button id="addDate" type="button" class="tool">Date</button>
+      <button id="rotatePage" type="button" class="tool" title="Rotate page">Rotate</button>
+      <button id="deletePage" type="button" class="tool">Delete page</button>
+      <button id="movePageUp" type="button" class="tool" title="Move page up">Up</button>
+      <button id="movePageDown" type="button" class="tool" title="Move page down">Down</button>
+    </div>
     <div id="selectionBar" class="selection" hidden>
       <label id="fontSizeWrap">Size
         <input id="fontSize" type="number" min="8" max="96" value="18" inputmode="numeric">
