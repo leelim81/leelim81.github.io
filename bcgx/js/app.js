@@ -24227,6 +24227,10 @@ function applyPanes() {
   document.body.classList.toggle("is-narrow", narrow);
   const root = document.getElementById("ide");
   if (!root) return;
+  if (root.classList.contains("sandbox")) {
+    root.querySelectorAll(".pane-off").forEach((el) => el.classList.remove("pane-off"));
+    return;
+  }
   root.querySelectorAll("[data-pane]").forEach((el) => {
     el.classList.toggle("pane-off", narrow && el.dataset.pane !== S.mobilePane && !(S.mobilePane === "code" && el.dataset.pane === "work"));
   });
@@ -24394,14 +24398,23 @@ function answerWidget(q) {
   }
   return `<div id="editor-host" class="editor-host" data-pane="code"></div>`;
 }
+function consoleBlock() {
+  const run = S.run;
+  const out = [run.stdout, run.stderr].filter(Boolean).join("\n");
+  const err = [run.error, run.traceback].filter(Boolean).join("\n\n");
+  let html = "";
+  if (run.running) html += `<div class="empty">${esc(run.status || "Starting Python\u2026")}</div>`;
+  if (out || err) {
+    html += `<div class="console">${out ? esc(out) : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}</div>`;
+  } else if (!run.running) {
+    html += `<div class="empty">Console output appears here.</div>`;
+  }
+  return html;
+}
 function testsHtml() {
   const run = S.run;
-  if (S.bottomTab === "console") {
-    const out = [run.stdout, run.stderr].filter(Boolean).join("\n");
-    const err = [run.error, run.traceback].filter(Boolean).join("\n\n");
-    return `<div class="console">${out ? esc(out) : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}${!out && !err ? `<div class="empty">Console output appears here.</div>` : ""}</div>`;
-  }
-  if (run.running) return `<div class="empty">${esc(run.status || "Running\u2026")}</div>`;
+  if (S.bottomTab === "console") return consoleBlock();
+  if (run.running && !run.tests.length) return `<div class="empty">${esc(run.status || "Starting Python\u2026")}</div>`;
   if (!run.tests.length && run.error) return `<div class="banner bad">${esc(run.error)}</div>${run.traceback ? `<pre class="console err">${esc(run.traceback)}</pre>` : ""}`;
   if (!run.tests.length && !run.error) return `<div class="empty">Run tests to see results. Submit records a restore point.</div>`;
   const head = run.passed == null ? "" : `<div class="banner ${run.passed ? "ok" : "bad"}">${run.passed ? "All tests passed" : "Some tests failed"}</div>`;
@@ -24413,7 +24426,8 @@ function testsHtml() {
       ${!t2.passed && !parts && t2.message ? `<div class="diff"><pre>${esc(t2.message)}</pre></div>` : ""}
     </article>`;
   }).join("");
-  return head + rows;
+  const printed = run.stdout || run.stderr ? `<p class="sub conlabel">Console</p>${consoleBlock()}` : "";
+  return head + rows + printed;
 }
 function splitDiff(message) {
   const i2 = message.indexOf("EXPECTED");
@@ -24456,6 +24470,7 @@ function renderIde(q) {
         <div class="editor-tools">
           <span class="langpill">${q.type === "sql" ? "SQLite" : q.type === "python" ? "Python 3" : q.type}</span>
           ${S.mode === "mock" ? `<span class="langpill">Autocomplete off</span>` : ""}
+          <span class="run-status" id="run-status"></span>
           <span class="spacer"></span>
           ${coding ? `<button class="btn small" data-act="format">Format</button><button class="btn small" data-act="reset">Reset</button>` : ""}
           <button class="btn small" data-act="gear">Gear</button>
@@ -24578,20 +24593,24 @@ function renderReview(id2) {
 }
 function renderSandbox() {
   if (!S.scratch) S.scratch = { code: "print('hello')\n", lang: "python", back: "#/" };
+  S.bottomTab = "console";
   return `${topbar("")}
-  <div class="mobile-switch"><button class="on">Code</button></div>
-  <div class="ide" id="ide">
+  <div class="ide sandbox" id="ide">
     <section class="work-col">
       <div class="editor-tools">
         <button class="btn small" data-act="back-scratch">Back</button>
         <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3"}</span>
+        <span class="run-status" id="run-status"></span>
         <span class="spacer"></span>
         <button class="btn small" data-act="format">Format</button>
-        <button class="btn" data-act="run-scratch" ${S.run.running ? "disabled" : ""}>Run</button>
+        <button class="btn" data-act="run-scratch" ${S.run.running ? "disabled" : ""}>${S.run.running ? "Running" : "Run"}</button>
         ${S.run.running ? `<button class="btn" data-act="stop-run">Stop</button>` : ""}
       </div>
-      <div id="editor-host" class="editor-host"></div>
-      <section class="tests"><div class="tabs"><button class="on">Console</button></div><div class="body">${testsHtml()}</div></section>
+      <div id="editor-host" class="editor-host" data-pane="code"></div>
+      <section class="tests" data-pane="output">
+        <div class="tabs"><button class="on" data-act="bottom" data-tab="console">Console</button></div>
+        <div class="body" id="bottom-body">${testsHtml()}</div>
+      </section>
     </section>
   </div>
   <div class="helper" id="helper">${["Tab", "(", ")", "[", "]", "{", "}", ":", "'", '"', "=", ".", "pd.", "np."].map((k) => `<button type="button" data-act="ins" data-key="${esc(k)}">${esc(k)}</button>`).join("")}</div>`;
@@ -24673,7 +24692,45 @@ function paintBottom() {
     const label = S.run.tests.length ? `Tests ${passedN}/${S.run.tests.length}` : "Tests";
     const btn = tabs.querySelector('[data-tab="tests"]');
     if (btn) btn.textContent = label;
+    tabs.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.bottomTab));
   }
+}
+function paintChrome() {
+  const running = !!S.run.running;
+  document.querySelectorAll("[data-act=run], [data-act=run-scratch]").forEach((btn) => {
+    btn.disabled = running;
+    btn.textContent = running ? "Running" : btn.dataset.act === "run-scratch" ? "Run" : "Run tests";
+  });
+  document.querySelectorAll("[data-act=submit]").forEach((btn) => {
+    btn.disabled = running;
+    btn.hidden = running;
+  });
+  const tools = document.querySelector(".editor-tools");
+  if (tools) {
+    let stop = tools.querySelector("[data-act=stop-run]");
+    if (running && !stop) {
+      stop = document.createElement("button");
+      stop.type = "button";
+      stop.className = "btn";
+      stop.dataset.act = "stop-run";
+      stop.textContent = "Stop";
+      const anchor = tools.querySelector("[data-act=run], [data-act=run-scratch]");
+      if (anchor) anchor.after(stop);
+      else tools.appendChild(stop);
+    } else if (!running && stop) {
+      stop.remove();
+    }
+  }
+  const status = document.getElementById("run-status");
+  if (status) status.textContent = running ? S.run.status || "Starting Python\u2026" : "";
+}
+function showOutput(kind) {
+  S.bottomTab = kind === "console" ? "console" : "tests";
+  const sandbox = document.getElementById("ide")?.classList.contains("sandbox");
+  if (!sandbox && isNarrow()) S.mobilePane = "tests";
+  applyPanes();
+  paintBottom();
+  paintChrome();
 }
 function ensureWorker() {
   if (S.worker) return S.worker;
@@ -24688,18 +24745,18 @@ function stopRun(message) {
   }
   S.run.running = false;
   S.run.status = "";
-  if (message) S.run.error = message;
+  if (message) {
+    S.run.error = message;
+    S.bottomTab = "console";
+  }
   paintBottom();
-  const runBtn = document.querySelector('[data-act="run"], [data-act="run-scratch"]');
-  if (runBtn) runBtn.disabled = false;
+  paintChrome();
 }
-function runSource({ source, tests, packages, timeoutMs }) {
+function runSource({ source, tests, packages, timeoutMs, consoleOnly }) {
   const id2 = ++S.runSeq;
   S.run = { id: id2, running: true, status: "Starting Python\u2026", tests: [], stdout: "", stderr: "", error: "", traceback: "", passed: null };
-  S.bottomTab = "tests";
-  if (isNarrow()) S.mobilePane = "tests";
-  applyPanes();
-  paintBottom();
+  const showConsole = consoleOnly || !(tests && tests.length);
+  showOutput(showConsole ? "console" : "tests");
   const worker = ensureWorker();
   const timer = setTimeout(() => {
     if (S.run.id === id2) stopRun("Timed out. The runtime was stopped. Run tests starts a fresh session.");
@@ -24710,6 +24767,7 @@ function runSource({ source, tests, packages, timeoutMs }) {
     if (d.type === "status") {
       S.run.status = d.text;
       paintBottom();
+      paintChrome();
     } else if (d.type === "result") {
       clearTimeout(timer);
       worker.removeEventListener("message", onMsg);
@@ -24720,9 +24778,11 @@ function runSource({ source, tests, packages, timeoutMs }) {
       S.run.error = r.ok ? "" : r.error || "Error";
       S.run.traceback = r.ok ? "" : r.traceback || "";
       S.run.tests = r.tests || [];
-      S.run.passed = r.ok && S.run.tests.length ? S.run.tests.every((t2) => t2.passed) : false;
+      S.run.passed = !!(r.ok && S.run.tests.length && S.run.tests.every((t2) => t2.passed));
       S.run.status = "";
+      if (!S.run.tests.length) S.bottomTab = "console";
       paintBottom();
+      paintChrome();
       afterGrade(!!S._submitted);
       S._submitted = false;
     } else if (d.type === "error") {
@@ -24730,7 +24790,9 @@ function runSource({ source, tests, packages, timeoutMs }) {
       worker.removeEventListener("message", onMsg);
       S.run.running = false;
       S.run.error = d.message || "Runtime error";
+      S.bottomTab = "console";
       paintBottom();
+      paintChrome();
     }
   };
   worker.addEventListener("message", onMsg);
@@ -24831,7 +24893,7 @@ ACTUAL ${picked.join(", ") || "(none)"}`;
     if (S.mode !== "mock") touch(q.id, { caseText: text, status: text.trim() ? "attempted" : "not_started" });
     if (submitted) gradeCase(q, text);
     S.run = { id: 0, running: false, status: "", tests: [], stdout: text ? "Draft saved." : "", stderr: "", error: "", traceback: "", passed: null };
-    paintBottom();
+    showOutput("console");
     return;
   }
   S.run = {
@@ -24854,7 +24916,7 @@ ACTUAL ${picked.join(", ") || "(none)"}`;
       scheduleSync();
     }
   }
-  paintBottom();
+  showOutput("tests");
   refreshPills();
 }
 function storeMockField(q, patch) {
@@ -24867,7 +24929,7 @@ function storeMockField(q, patch) {
 }
 async function runSql(q, code2, submitted) {
   S.run = { id: 0, running: true, status: "Loading SQL\u2026", tests: [], stdout: "", stderr: "", error: "", traceback: "", passed: null };
-  paintBottom();
+  showOutput(q.scratch ? "console" : "tests");
   try {
     const SQL = await loadSql();
     const db = new SQL.Database();
@@ -24888,6 +24950,7 @@ async function runSql(q, code2, submitted) {
       db.close();
       S.bottomTab = "console";
       paintBottom();
+      paintChrome();
       return;
     }
     const exp = q.expected;
@@ -24925,9 +24988,12 @@ ACTUAL columns ${JSON.stringify(table.columns)}` : bad.join("\n");
     db.close();
     afterGrade(submitted);
     paintBottom();
+    paintChrome();
   } catch (err) {
     S.run = { running: false, status: "", tests: [], stdout: "", stderr: "", error: String(err.message || err), traceback: "", passed: false };
+    S.bottomTab = "console";
     paintBottom();
+    paintChrome();
   }
 }
 function cellEqual(a, b) {
@@ -24956,6 +25022,8 @@ async function formatCode() {
   const code2 = S.editor.get();
   const id2 = ++S.runSeq;
   S.run.status = "Formatting\u2026";
+  paintBottom();
+  paintChrome();
   const worker = ensureWorker();
   const onMsg = (ev) => {
     if (!ev.data || ev.data.id !== id2) return;
@@ -24963,8 +25031,10 @@ async function formatCode() {
     if (ev.data.type === "formatted") S.editor.set(ev.data.code);
     else if (ev.data.type === "error") {
       S.run.error = "Formatter: " + ev.data.message;
+      S.run.status = "";
       S.bottomTab = "console";
       paintBottom();
+      paintChrome();
     }
   };
   worker.addEventListener("message", onMsg);
@@ -25051,7 +25121,7 @@ async function gradeCase(q, text) {
   S.ai = { loading: true, text: "", error: "" };
   S.leftTab = "review";
   S.run = { running: true, status: "Grading\u2026", tests: [], stdout: "", stderr: "", error: "", traceback: "", passed: null };
-  paintBottom();
+  showOutput("tests");
   const prompt = `${q.rubric}
 
 Case: ${q.title}
@@ -25069,7 +25139,7 @@ ${text.slice(0, 12e3)}`;
   S.run = { running: false, status: "", tests: out.text ? [{ name: Number.isFinite(score2) ? `score ${score2}` : "review", passed, message: "" }] : [], stdout: "", stderr: "", error: out.error || "", traceback: "", passed: out.text ? passed : null };
   const body = document.getElementById("left-body");
   if (body) body.innerHTML = leftBody(q);
-  paintBottom();
+  showOutput(out.text ? "tests" : "console");
   refreshPills();
 }
 function insertKey(key) {
@@ -25233,7 +25303,7 @@ function onClick(ev) {
   else if (act === "run-scratch") {
     const code2 = S.editor ? S.editor.get() : "";
     if (S.scratch && S.scratch.lang === "sql") runSql({ schema: "", scratch: true, type: "sql" }, code2, false);
-    else runSource({ source: code2, tests: [], packages: [], timeoutMs: 2e4 });
+    else runSource({ source: code2, tests: [], packages: [], timeoutMs: 2e4, consoleOnly: true });
   } else if (act === "mark-read") {
     touch(btn.dataset.id, { status: "read" });
     render();
