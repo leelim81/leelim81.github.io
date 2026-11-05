@@ -24608,7 +24608,7 @@ function renderReview(id2) {
     <div class="score">${m.score}</div>
     <p>${m.earned} / ${m.max} points before scaling. 200 + 400 \xD7 points/700.</p>
     ${rows}
-    <p><button class="btn" data-act="go" data-hash="#/mock">Back</button></p>
+    <p><button class="btn" data-act="go" data-hash="#/mock" title="${esc(tip("Back", "Ctrl+B"))}">Back</button></p>
   </div>`;
 }
 function renderSandbox() {
@@ -24618,7 +24618,7 @@ function renderSandbox() {
   <div class="ide sandbox" id="ide">
     <section class="work-col">
       <div class="editor-tools">
-        <button class="btn small" data-act="back-scratch" title="${esc(tip("Back", "Alt+B"))}">Back</button>
+        <button class="btn small" data-act="back-scratch" title="${esc(tip("Back", "Ctrl+B"))}">Back</button>
         <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3"}</span>
         <span class="run-status" id="run-status"></span>
         <span class="spacer"></span>
@@ -25585,6 +25585,7 @@ function toggleOutputTab() {
 function goBack() {
   const route = parseRoute();
   if (route.name === "sandbox") go(S.scratch && S.scratch.back || "#/");
+  else if (route.name === "review") go("#/mock");
   else if (route.name !== "path") go("#/");
 }
 function doReset() {
@@ -25636,7 +25637,7 @@ function shortcutRows() {
     ["Description, code, or output pane", "Ctrl+Alt+1 / 2 / 3"],
     ["Focus the editor", "Ctrl+Alt+E"],
     ["Task list", "Ctrl+Alt+H"],
-    ["Back", "Alt+B"],
+    ["Back", "Ctrl+B or Alt+B"],
     ["Settings", "Ctrl+,"],
     ["Ask Claude (practice only)", "Ctrl+Alt+R"],
     ["Reset code to the starter", "Ctrl+Alt+Backspace"],
@@ -25770,8 +25771,9 @@ function onShortcut(e) {
     go("#/");
     return;
   }
-  if (!mod && e.altKey && !e.shiftKey && e.code === "KeyB") {
+  if ((mod || e.altKey) && !e.shiftKey && !(mod && e.altKey) && e.code === "KeyB") {
     e.preventDefault();
+    e.stopPropagation();
     goBack();
     return;
   }
