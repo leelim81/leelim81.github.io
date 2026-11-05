@@ -203,6 +203,26 @@
     return best || 'Choice';
   }
 
+  function expandLabel(text, texts) {
+    var label = text.str;
+    var edge = text;
+    for (var n = 0; n < 4; n++) {
+      var prev = null;
+      for (var i = 0; i < texts.length; i++) {
+        var other = texts[i];
+        if (other === edge) continue;
+        var gap = edge.x - (other.x + other.w);
+        if (gap < -2 || gap > 16) continue;
+        if (Math.abs(other.y - edge.y) > 4) continue;
+        if (!prev || other.x > prev.x) prev = other;
+      }
+      if (!prev) break;
+      label = prev.str + ' ' + label;
+      edge = prev;
+    }
+    return label.replace(/\s+/g, ' ').trim();
+  }
+
   function assignLabels(slots, texts, reserved) {
     var pairs = [];
     slots.forEach(function (slot, si) {
@@ -212,10 +232,11 @@
         var dy = text.y - slot.y;
         var overlap = text.x < slot.x + slot.w * 0.7 && text.x + text.w > slot.x - 8;
         var hint = /surname|underline|please|passport|family/i.test(text.str) ? 30 : 0;
+        var longer = Math.min(24, text.str.length) * 0.35;
         if (gap >= -6 && gap <= 110 && Math.abs(dy) <= 9) {
-          pairs.push({ si: si, ti: ti, score: hint + Math.max(0, gap) * 0.25 + Math.abs(dy) });
+          pairs.push({ si: si, ti: ti, score: hint + Math.max(0, gap) * 0.25 + Math.abs(dy) - longer });
         } else if (dy >= 8 && dy <= 36 && text.x >= slot.x - 30 && text.x <= slot.x + Math.min(slot.w * 0.55, 110)) {
-          pairs.push({ si: si, ti: ti, score: hint + 18 + dy + Math.abs(text.x - slot.x) * 0.15 });
+          pairs.push({ si: si, ti: ti, score: hint + 18 + dy + Math.abs(text.x - slot.x) * 0.15 - longer });
         } else if (dy <= -2 && dy >= -16 && overlap && text.w < 150 && words(text.str).length < 6) {
           pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
         }
@@ -226,7 +247,7 @@
     var textUsed = {};
     pairs.forEach(function (pair) {
       if (slotUsed[pair.si] || textUsed[pair.ti]) return;
-      slots[pair.si].label = texts[pair.ti].str;
+      slots[pair.si].label = expandLabel(texts[pair.ti], texts);
       slotUsed[pair.si] = true;
       textUsed[pair.ti] = true;
     });
@@ -249,6 +270,7 @@
         if (Math.abs(upper.w - lower.w) > Math.max(upper.w, lower.w) * 0.25) continue;
         var overlap = Math.min(upper.x + upper.w, lower.x + lower.w) - Math.max(upper.x, lower.x);
         if (overlap / Math.min(upper.w, lower.w) < 0.75) continue;
+        upper.lineY = lower.lineY != null ? lower.lineY : lower.y;
         upper.h = (upper.y + upper.h) - lower.y;
         upper.y = lower.y;
         upper.lines = (upper.lines || 1) + 1;
@@ -256,6 +278,62 @@
       }
     }
     return list.filter(function (_, index) { return !drop[index]; });
+  }
+
+  function columnEnd(x, width) {
+    if (x < width * 0.47) return width * 0.485;
+    return width * 0.975;
+  }
+
+  function widenSlot(slot, texts, width) {
+    var label = null;
+    for (var i = 0; i < texts.length; i++) {
+      if (texts[i].str === slot.label) { label = texts[i]; break; }
+    }
+    if (label && label.x < slot.x + slot.w * 0.45 && label.x + label.w > slot.x - 2 && Math.abs(label.y - slot.lineY) < 16) {
+      var start = label.x + label.w + 3;
+      if (start < slot.x + slot.w - 24) {
+        slot.w = slot.x + slot.w - start;
+        slot.x = start;
+      }
+    }
+    var end = columnEnd(slot.x, width);
+    texts.forEach(function (text) {
+      if (text.str === slot.label) return;
+      if (text.x < slot.x + 16) return;
+      if (Math.abs(text.y - slot.lineY) > 14) return;
+      if (text.x - 4 < end) end = text.x - 4;
+    });
+    if (end - slot.x > slot.w + 8) slot.w = end - slot.x;
+    if (!(slot.lines > 1)) {
+      slot.y = (slot.lineY != null ? slot.lineY : slot.y - 1) + 1;
+      slot.h = 12;
+    }
+  }
+
+  function keepSlot(slot, texts) {
+    if (/^(job|contact details|address in singapore|personal particulars|residential status|marital status|highest education( level)?|ntuc|race|gender)$/i.test(slot.label)) return false;
+    if (/fairprice|ntuc|understand|rebates|dividend|entrance fee|this section/i.test(slot.label)) return false;
+    if (/^[a-z]/.test(slot.label)) return false;
+    if (/^\(/.test(slot.label) && !/^\(hp\)$/i.test(slot.label)) return false;
+    var onLine = 0;
+    for (var n = 0; n < texts.length; n++) {
+      var sitting = texts[n];
+      if (sitting.str === slot.label) continue;
+      if (Math.abs(sitting.y - slot.lineY) > 7) continue;
+      var over = Math.min(slot.x + slot.w, sitting.x + sitting.w) - Math.max(slot.x, sitting.x);
+      if (over > 6) onLine++;
+    }
+    if (onLine >= 2) return false;
+    var inside = 0;
+    for (var i = 0; i < texts.length; i++) {
+      var text = texts[i];
+      if (text.str === slot.label) continue;
+      if (text.y < slot.y + 1 || text.y > slot.y + slot.h + 1) continue;
+      var overlap = Math.min(slot.x + slot.w, text.x + text.w) - Math.max(slot.x, text.x);
+      if (overlap > 8) inside++;
+    }
+    return inside === 0;
   }
 
   function layout(page) {
@@ -291,7 +369,7 @@
     var pairs = pairSquares(squares, texts);
     var optionSet = new Set(pairs.map(function (pair) { return pair.text; }));
     var slots = runs.map(function (run) {
-      return { x: run.x, y: run.y + 1.4, w: run.w, h: 13, label: '', type: 'text', lines: 1 };
+      return { x: run.x, y: run.y + 1, w: run.w, h: 12, label: '', type: 'text', lines: 1, lineY: run.y };
     });
     assignLabels(slots, texts, optionSet);
     slots.forEach(function (slot) {
@@ -308,21 +386,9 @@
       if (best) slot.label = best.label;
     });
     var labeled = mergeStacks(slots);
-    slots = labeled.filter(function (slot) {
-      if (!slot.label) return false;
-      if (/^(job|contact details|address in singapore|personal particulars)$/i.test(slot.label)) return false;
-      var label = null;
-      for (var i = 0; i < texts.length; i++) {
-        if (texts[i].str === slot.label) { label = texts[i]; break; }
-      }
-      if (label) {
-        var top = slot.y + slot.h;
-        var onBox = label.y > slot.y - 1 && label.y < top + 1;
-        var overlap = Math.min(slot.x + slot.w, label.x + label.w) - Math.max(slot.x, label.x);
-        if (onBox && overlap > label.w * 0.55 && overlap > slot.w * 0.35) return false;
-      }
-      return true;
-    });
+    slots = labeled.filter(function (slot) { return !!slot.label; });
+    slots.forEach(function (slot) { widenSlot(slot, texts, width); });
+    slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
 
     var fields = [];
     var seen = {};
