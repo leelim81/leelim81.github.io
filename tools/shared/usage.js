@@ -41,7 +41,7 @@
   }
 
   function recordUse(key) {
-    hit(key);
+    return hit(key);
   }
 
   function showHub(el, tools) {
