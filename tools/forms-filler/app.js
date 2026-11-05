@@ -245,6 +245,8 @@
     await DeskDB.set(EDITOR_DB, 'pdf', bytes);
     await DeskDB.set(EDITOR_DB, 'session', { fileName: fileName, zoom: 1, current: 0, pages: pages });
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
+    state.running = false;
+    refreshLabels();
     location.href = '../pdf-editor/';
   }
 
@@ -263,32 +265,59 @@
     }).catch(function () {});
   }
 
-  function takeFiles(fileList, kind) {
+  function snapshotFiles(input) {
     var files = [];
-    if (fileList) for (var i = 0; i < fileList.length; i++) files.push(fileList[i]);
+    if (input.files) for (var i = 0; i < input.files.length; i++) files.push(input.files[i]);
+    input.value = '';
+    return files;
+  }
+
+  function takeFiles(files, kind) {
     return (async function () {
+      if (!files.length) {
+        toast('No file was selected.');
+        status('', false);
+        return;
+      }
       for (var n = 0; n < files.length; n++) {
         var file = files[n];
+        status('Opening ' + file.name + '…', true);
         var bytes = new Uint8Array(await file.arrayBuffer());
         if (kind === 'form') await setForm(bytes, file.name);
-        else await addRef(bytes, file.name, file.type);
+        else await addRef(bytes, file.name, file.type || '');
       }
-    })();
+      status(kind === 'form' ? 'Form ready.' : files.length + ' reference file' + (files.length === 1 ? '' : 's') + ' added.', false);
+    })().catch(function (err) {
+      toast(err && err.message ? err.message : 'That file could not be opened.');
+      status('', false);
+    });
+  }
+
+  function resetDesk() {
+    state.running = false;
+    state.formBytes = null;
+    state.formName = '';
+    state.fields = [];
+    state.kind = '';
+    state.refs = [];
+    state.proposals = [];
+    $('formInput').value = '';
+    $('refInput').value = '';
+    $('formDrop').disabled = false;
+    $('refDrop').disabled = false;
+    $('failBox').hidden = true;
+    $('modelBox').hidden = true;
+    refreshLabels();
+    status('', false);
   }
 
   $('formDrop').addEventListener('click', function () { $('formInput').click(); });
   $('refDrop').addEventListener('click', function () { $('refInput').click(); });
   $('formInput').addEventListener('change', function () {
-    var input = $('formInput');
-    var files = input.files;
-    input.value = '';
-    takeFiles(files, 'form');
+    takeFiles(snapshotFiles($('formInput')), 'form');
   });
   $('refInput').addEventListener('change', function () {
-    var input = $('refInput');
-    var files = input.files;
-    input.value = '';
-    takeFiles(files, 'ref');
+    takeFiles(snapshotFiles($('refInput')), 'ref');
   });
   $('sampleBtn').addEventListener('click', async function () {
     status('Opening the sample…', true);
@@ -318,16 +347,15 @@
     openEditor(true).catch(function (err) { toast(err.message || 'Could not open the editor.'); });
   });
   $('clearBtn').addEventListener('click', function () {
-    state.formBytes = null;
-    state.formName = '';
-    state.fields = [];
-    state.refs = [];
-    state.proposals = [];
-    $('failBox').hidden = true;
-    $('modelBox').hidden = true;
-    refreshLabels();
+    resetDesk();
     DeskDB.clear(DB).catch(function () {});
-    status('', false);
+  });
+  window.addEventListener('pageshow', function (event) {
+    state.running = false;
+    $('formDrop').disabled = false;
+    $('refDrop').disabled = false;
+    refreshLabels();
+    if (event.persisted) status('Ready for another form.', false);
   });
 
   window.FormDesk = {
