@@ -2,12 +2,22 @@
   "howToAdd": "Append an object to tools and add a folder at that href with an index.html. Fields: name, description, href, icon (pen, press, bind, or dot), kicker, chapter, line. Optional counter is the usage key; if omitted it is the folder name. Call ToolsUsage.recordUse(counter) when a download finishes.",
   "tools": [
     {
+      "name": "Forms Filler",
+      "description": "Read your papers on this device and prefill a form, then sign it in the editor.",
+      "href": "forms-filler/",
+      "counter": "forms-filler",
+      "icon": "form",
+      "kicker": "01  —  The clerk",
+      "chapter": "Fill the blanks",
+      "line": "A blank form and the papers that answer it. You sign the result in the editor."
+    },
+    {
       "name": "Edit and Sign PDF",
       "description": "Write, cover, highlight, and sign. The file never leaves this browser.",
       "href": "pdf-editor/",
       "counter": "pdf-editor",
       "icon": "pen",
-      "kicker": "01  —  The pen",
+      "kicker": "02  —  The pen",
       "chapter": "Make a mark",
       "line": "Text, white-out, and a signature drawn with a mouse, a finger, or a pen."
     },
@@ -17,7 +27,7 @@
       "href": "small-pdf/",
       "counter": "small-pdf",
       "icon": "press",
-      "kicker": "02  —  The press",
+      "kicker": "03  —  The press",
       "chapter": "Squeeze the file",
       "line": "Photographs get smaller. Sentences stay sharp, selectable type."
     },
@@ -27,7 +37,7 @@
       "href": "images-to-pdf/",
       "counter": "images-to-pdf",
       "icon": "bind",
-      "kicker": "03  —  The bindery",
+      "kicker": "04  —  The bindery",
       "chapter": "Bind the pictures",
       "line": "Portrait or landscape, one page each, turned when that fits the sheet better."
     },
@@ -37,7 +47,7 @@
       "href": "merge-split-pdf/",
       "counter": "merge-split",
       "icon": "merge",
-      "kicker": "04  —  The splice",
+      "kicker": "05  —  The splice",
       "chapter": "Lay the pages out",
       "line": "Drag pages across files, then keep them as one document or several."
     },
@@ -47,29 +57,9 @@
       "href": "photo-resize/",
       "counter": "photo-resize",
       "icon": "photo",
-      "kicker": "05  —  The darkroom",
+      "kicker": "06  —  The darkroom",
       "chapter": "Fit the frame",
       "line": "A target weight, a percentage, or a width and a height. JPEG, WebP, or PNG."
-    },
-    {
-      "name": "Scan to PDF",
-      "description": "Photograph a page, straighten the corners, and keep a flat PDF.",
-      "href": "scan-to-pdf/",
-      "counter": "scan-to-pdf",
-      "icon": "scan",
-      "kicker": "06  —  The platen",
-      "chapter": "Lay it on the glass",
-      "line": "The camera finds the edges. You can still drag the corners yourself."
-    },
-    {
-      "name": "Forms Filler",
-      "description": "Read your papers on this device and prefill a form, then sign it in the editor.",
-      "href": "forms-filler/",
-      "counter": "forms-filler",
-      "icon": "form",
-      "kicker": "07  —  The clerk",
-      "chapter": "Fill the blanks",
-      "line": "A blank form and the papers that answer it. You sign the result in the editor."
     }
   ]
 }
