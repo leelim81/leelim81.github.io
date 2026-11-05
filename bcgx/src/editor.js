@@ -4,7 +4,7 @@ import { python } from "@codemirror/lang-python";
 import { sql, StandardSQL } from "@codemirror/lang-sql";
 import { defaultKeymap, indentWithTab, history, historyKeymap } from "@codemirror/commands";
 import { syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentOnInput, indentUnit } from "@codemirror/language";
-import { closeBrackets, closeBracketsKeymap, autocompletion, acceptCompletion } from "@codemirror/autocomplete";
+import { closeBrackets, closeBracketsKeymap, autocompletion, acceptCompletion, startCompletion, closeCompletion } from "@codemirror/autocomplete";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { pythonCompletions, sqlCompletions } from "./complete.js";
 
@@ -68,7 +68,11 @@ export function createEditor(parent, { value, lang, theme, fontSize, tabSize, au
           spellcheck: "false",
           "data-gramm": "false",
         }),
-        Prec.high(keymap.of([{ key: "Tab", run: acceptCompletion }])),
+        Prec.highest(keymap.of([
+          { key: "Tab", run: acceptCompletion },
+          { key: "Mod-Space", run: startCompletion },
+          { key: "Escape", run: closeCompletion },
+        ])),
         keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         langComp.of(language(lang)),

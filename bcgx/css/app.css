@@ -275,6 +275,21 @@ body.kb .helper, body.show-helper .helper { display: flex; }
 }
 .run-status { color: var(--amber); font-size: 12px; min-height: 1em; }
 .conlabel { margin: 10px 0 4px; }
+button kbd, .help-table kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 550;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.help-table { width: 100%; border-collapse: collapse; }
+.help-table td { padding: 8px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.help-table td:first-child { white-space: nowrap; width: 42%; }
+.help-sheet { width: min(560px, 100%); }
 
 .lobby { flex: 1; overflow: auto; padding: 16px 16px 40px; padding-left: calc(16px + env(safe-area-inset-left)); }
 .lobby-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }

@@ -472,14 +472,31 @@ function splitHtml() {
   return `--desc:${desc};--tests:${tests}`;
 }
 
+function isMac() {
+  return /Mac|iPhone|iPad|iPod/.test(navigator.platform || "") || /Mac OS/.test(navigator.userAgent || "");
+}
+function modName() {
+  return isMac() ? "⌘" : "Ctrl";
+}
+function keyLabel(spec) {
+  return spec.replaceAll("Ctrl", modName());
+}
+function tip(action, spec) {
+  return `${action} (${keyLabel(spec)})`;
+}
+function face(label, spec) {
+  return `${esc(label)}<kbd>${esc(keyLabel(spec))}</kbd>`;
+}
+
 function topbar(extra) {
   const dot = S.sync.state === "synced" ? "ok" : S.sync.state === "error" ? "bad" : S.sync.state === "syncing" ? "wait" : "";
   return `<header class="topbar">
-    <button class="iconbtn" data-act="go" data-hash="#/" aria-label="Questions">≡</button>
+    <button class="iconbtn" data-act="go" data-hash="#/" title="${esc(tip("Task list", "Ctrl+Alt+H"))}" aria-label="Questions">≡</button>
     <div class="brand">DSF<span>Desk</span></div>
     ${extra || ""}
     <span class="syncdot ${dot}" id="sync-dot" title="${esc(S.sync.detail)}"></span>
-    <button class="iconbtn" data-act="go" data-hash="#/settings" aria-label="Settings">⚙</button>
+    <button class="iconbtn" data-act="help" title="${esc(tip("Keyboard shortcuts", "F1"))}" aria-label="Keyboard shortcuts">?</button>
+    <button class="iconbtn" data-act="go" data-hash="#/settings" title="${esc(tip("Settings", "Ctrl+,"))}" aria-label="Settings">⚙</button>
   </header>`;
 }
 
@@ -631,10 +648,10 @@ function consoleBlock() {
   const out = [run.stdout, run.stderr].filter(Boolean).join("\n");
   const err = [run.error, run.traceback].filter(Boolean).join("\n\n");
   let html = "";
-  if (run.running) html += `<div class="empty">${esc(run.status || "Starting Python…")}</div>`;
+  if (run.running || run.status) html += `<div class="empty">${esc(run.status || "Starting Python…")}</div>`;
   if (out || err) {
     html += `<div class="console">${out ? esc(out) : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}</div>`;
-  } else if (!run.running) {
+  } else if (!run.running && !run.status) {
     html += `<div class="empty">Console output appears here.</div>`;
   }
   return html;
@@ -703,19 +720,19 @@ function renderIde(q) {
           ${S.mode === "mock" ? `<span class="langpill">Autocomplete off</span>` : ""}
           <span class="run-status" id="run-status"></span>
           <span class="spacer"></span>
-          ${coding ? `<button class="btn small" data-act="format">Format</button><button class="btn small" data-act="reset">Reset</button>` : ""}
-          <button class="btn small" data-act="gear">Gear</button>
-          <button class="btn" data-act="run" ${S.run.running ? "disabled" : ""}>${S.run.running ? "Running" : "Run tests"}</button>
-          ${S.mode === "practice" ? `<button class="btn small" data-act="review">Review</button>` : ""}
-          ${S.run.running ? `<button class="btn" data-act="stop-run">Stop</button>` : `<button class="btn primary" data-act="submit">Submit</button>`}
+          ${coding ? `<button class="btn small" data-act="format" title="${esc(tip("Format", "Shift+Alt+F"))}">Format</button><button class="btn small" data-act="reset" title="${esc(tip("Reset to starter", "Ctrl+Alt+Backspace"))}">Reset</button>` : ""}
+          <button class="btn small" data-act="gear" title="Editor settings">Gear</button>
+          <button class="btn" data-act="run" title="${esc(tip("Run tests", "Ctrl+Enter"))}" ${S.run.running ? "disabled" : ""}>${S.run.running ? "Running" : face("Run tests", "Ctrl+Enter")}</button>
+          ${S.mode === "practice" ? `<button class="btn small" data-act="review" title="${esc(tip("Ask Claude", "Ctrl+Alt+R"))}">Review</button>` : ""}
+          ${S.run.running ? `<button class="btn" data-act="stop-run" title="${esc(tip("Stop", "Esc"))}">Stop</button>` : `<button class="btn primary" data-act="submit" title="${esc(tip("Submit", "Ctrl+Shift+Enter"))}">${face("Submit", "Ctrl+Shift+Enter")}</button>`}
         </div>
         ${answerWidget(q)}
       </div>
       <div class="hsplit" data-split="h"></div>
       <section class="tests" data-pane="tests">
         <div class="tabs">
-          <button data-act="bottom" data-tab="tests" class="${S.bottomTab === "tests" ? "on" : ""}">${testLabel}</button>
-          <button data-act="bottom" data-tab="console" class="${S.bottomTab === "console" ? "on" : ""}">Console</button>
+          <button data-act="bottom" data-tab="tests" title="${esc(tip("Tests", "Ctrl+`"))}" class="${S.bottomTab === "tests" ? "on" : ""}">${testLabel}</button>
+          <button data-act="bottom" data-tab="console" title="${esc(tip("Console", "Ctrl+`"))}" class="${S.bottomTab === "console" ? "on" : ""}">Console</button>
         </div>
         <div class="body" id="bottom-body">${testsHtml()}</div>
       </section>
@@ -837,13 +854,13 @@ function renderSandbox() {
   <div class="ide sandbox" id="ide">
     <section class="work-col">
       <div class="editor-tools">
-        <button class="btn small" data-act="back-scratch">Back</button>
+        <button class="btn small" data-act="back-scratch" title="${esc(tip("Back", "Alt+B"))}">Back</button>
         <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3"}</span>
         <span class="run-status" id="run-status"></span>
         <span class="spacer"></span>
-        <button class="btn small" data-act="format">Format</button>
-        <button class="btn" data-act="run-scratch" ${S.run.running ? "disabled" : ""}>${S.run.running ? "Running" : "Run"}</button>
-        ${S.run.running ? `<button class="btn" data-act="stop-run">Stop</button>` : ""}
+        <button class="btn small" data-act="format" title="${esc(tip("Format", "Shift+Alt+F"))}">Format</button>
+        <button class="btn" data-act="run-scratch" title="${esc(tip("Run", "Ctrl+Enter"))}" ${S.run.running ? "disabled" : ""}>${S.run.running ? "Running" : face("Run", "Ctrl+Enter")}</button>
+        ${S.run.running ? `<button class="btn" data-act="stop-run" title="${esc(tip("Stop", "Esc"))}">Stop</button>` : ""}
       </div>
       <div id="editor-host" class="editor-host" data-pane="code"></div>
       <section class="tests" data-pane="output">
@@ -942,7 +959,9 @@ function paintChrome() {
   const running = !!S.run.running;
   document.querySelectorAll("[data-act=run], [data-act=run-scratch]").forEach((btn) => {
     btn.disabled = running;
-    btn.textContent = running ? "Running" : (btn.dataset.act === "run-scratch" ? "Run" : "Run tests");
+    const name = btn.dataset.act === "run-scratch" ? "Run" : "Run tests";
+    btn.innerHTML = running ? "Running" : face(name, "Ctrl+Enter");
+    btn.title = tip(name, "Ctrl+Enter");
   });
   document.querySelectorAll("[data-act=submit]").forEach((btn) => {
     btn.disabled = running;
@@ -956,6 +975,7 @@ function paintChrome() {
       stop.type = "button";
       stop.className = "btn";
       stop.dataset.act = "stop-run";
+      stop.title = tip("Stop", "Esc");
       stop.textContent = "Stop";
       const anchor = tools.querySelector("[data-act=run], [data-act=run-scratch]");
       if (anchor) anchor.after(stop);
@@ -965,7 +985,7 @@ function paintChrome() {
     }
   }
   const status = document.getElementById("run-status");
-  if (status) status.textContent = running ? (S.run.status || "Starting Python…") : "";
+  if (status) status.textContent = running ? (S.run.status || "Starting Python…") : (S.run.status || "");
 }
 
 function showOutput(kind) {
@@ -1271,7 +1291,12 @@ async function formatCode() {
   const onMsg = (ev) => {
     if (!ev.data || ev.data.id !== id) return;
     worker.removeEventListener("message", onMsg);
-    if (ev.data.type === "formatted") S.editor.set(ev.data.code);
+    if (ev.data.type === "formatted") {
+      if (S.editor) S.editor.set(ev.data.code);
+      S.run.status = "";
+      paintBottom();
+      paintChrome();
+    }
     else if (ev.data.type === "error") {
       S.run.error = "Formatter: " + ev.data.message;
       S.run.status = "";
@@ -1534,11 +1559,9 @@ function onClick(ev) {
     go("#/sandbox");
   }
   else if (act === "back-scratch") go(S.scratch && S.scratch.back ? S.scratch.back : "#/");
-  else if (act === "run-scratch") {
-    const code = S.editor ? S.editor.get() : "";
-    if (S.scratch && S.scratch.lang === "sql") runSql({ schema: "", scratch: true, type: "sql" }, code, false);
-    else runSource({ source: code, tests: [], packages: [], timeoutMs: 20000, consoleOnly: true });
-  }
+  else if (act === "run-scratch") runScratch();
+  else if (act === "help") setHelp(!document.getElementById("help-overlay"));
+  else if (act === "close-help") setHelp(false);
   else if (act === "mark-read") {
     touch(btn.dataset.id, { status: "read" });
     render();
@@ -1682,6 +1705,263 @@ function bindHelper() {
   document.addEventListener("focusout", () => setTimeout(update, 50));
 }
 
+function runScratch() {
+  if (S.run.running) return;
+  const code = S.editor ? S.editor.get() : (S.scratch && S.scratch.code) || "";
+  if (S.scratch && S.scratch.lang === "sql") runSql({ schema: "", scratch: true, type: "sql" }, code, false);
+  else runSource({ source: code, tests: [], packages: [], timeoutMs: 20000, consoleOnly: true });
+}
+
+function doRun() {
+  if (S.run.running) return;
+  if (parseRoute().name === "sandbox") {
+    runScratch();
+    return;
+  }
+  if (currentTask()) runCurrent(false);
+}
+
+function doSubmit() {
+  if (S.run.running) return;
+  if (parseRoute().name === "sandbox") return;
+  if (currentTask()) runCurrent(true);
+}
+
+function taskSequence() {
+  const route = parseRoute();
+  if (S.mode === "mock" || S.mode === "review") {
+    const m = S.mode === "review" ? S.progress.mocks.find((x) => x.id === S.reviewId) : activeMock();
+    if (!m) return [];
+    return m.questionIds;
+  }
+  if (route.name === "task") return flat().map((q) => q.id);
+  return [];
+}
+
+function moveTask(dir) {
+  const route = parseRoute();
+  if (route.name === "sandbox") return;
+  if (route.name === "path") {
+    if (dir > 0) openId(continueId(), "practice");
+    return;
+  }
+  const ids = taskSequence();
+  const cur = route.name === "task" ? route.id : null;
+  const idx = ids.indexOf(cur);
+  if (idx < 0) return;
+  const next = ids[idx + dir];
+  if (!next) return;
+  const mode = S.mode === "mock" || S.mode === "review" ? S.mode : "practice";
+  if (mode === "mock") {
+    const m = activeMock();
+    if (m) { m.cursor = next; persistLocal(); }
+  }
+  openId(next, mode);
+}
+
+function refreshLeftTab(q) {
+  const body = document.getElementById("left-body");
+  if (!body || !q) return;
+  body.innerHTML = leftBody(q);
+  document.querySelectorAll(".task-col .tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.leftTab));
+}
+
+function toggleSolution() {
+  const q = currentTask();
+  if (!q || q.type === "reading") return;
+  if (liveMockHidesSolution(q) && S.mode !== "review") return;
+  S.leftTab = S.leftTab === "solution" ? "description" : "solution";
+  if (isNarrow()) {
+    S.mobilePane = "task";
+    applyPanes();
+  }
+  refreshLeftTab(q);
+}
+
+function focusEditor() {
+  if (isNarrow()) {
+    S.mobilePane = "code";
+    applyPanes();
+  }
+  if (S.editor) S.editor.focus();
+  else document.querySelector("[data-act=numeric], [data-act=case], .cm-content")?.focus();
+}
+
+function focusPane(which) {
+  const sandbox = document.getElementById("ide")?.classList.contains("sandbox");
+  if (sandbox && which === "task") return;
+  if (isNarrow() && !sandbox) {
+    S.mobilePane = which === "task" ? "task" : which === "code" ? "code" : "tests";
+    applyPanes();
+  }
+  if (which === "code") focusEditor();
+  else if (which === "task") document.querySelector(".task-col .scroll")?.focus();
+  else {
+    const el = document.getElementById("bottom-body");
+    if (el) {
+      el.tabIndex = -1;
+      el.focus();
+    }
+  }
+}
+
+function toggleOutputTab() {
+  S.bottomTab = S.bottomTab === "console" ? "tests" : "console";
+  const sandbox = document.getElementById("ide")?.classList.contains("sandbox");
+  if (isNarrow() && !sandbox) S.mobilePane = "tests";
+  applyPanes();
+  paintBottom();
+}
+
+function goBack() {
+  const route = parseRoute();
+  if (route.name === "sandbox") go((S.scratch && S.scratch.back) || "#/");
+  else if (route.name !== "path") go("#/");
+}
+
+function doReset() {
+  const q = currentTask();
+  if (!q || !S.editor || q.type === "reading") return;
+  if (confirm("Reset this editor to the starter code?")) {
+    S.editor.set(q.starter || "");
+    flushCode();
+  }
+}
+
+function toggleAutocomplete() {
+  S.settings.autocomplete = !S.settings.autocomplete;
+  saveSettings();
+  const q = currentTask();
+  const lang = (q && q.type === "sql") || (S.scratch && S.scratch.lang === "sql") ? "sql" : "python";
+  if (S.editor) S.editor.setAutocomplete(S.scratch ? S.settings.autocomplete : autocompleteOn(q), lang);
+}
+
+function pickChoice(n) {
+  const q = currentTask();
+  if (!q || q.type !== "mcq" || S.mode === "review") return false;
+  const inputs = [...document.querySelectorAll("[data-act=mcq]")];
+  const el = inputs[n - 1];
+  if (!el || el.disabled) return false;
+  if (q.multi) el.checked = !el.checked;
+  else el.checked = true;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  return true;
+}
+
+function endMockNow() {
+  const m = activeMock();
+  if (!m) return;
+  if (confirm("Submit the mock now? Tasks you have not submitted score zero.")) {
+    finishMock(m);
+    S.mode = "review";
+    go("#/mock/review/" + m.id);
+  }
+}
+
+function shortcutRows() {
+  return [
+    ["Run tests, sandbox Run, or check a numeric / multiple-choice answer", "Ctrl+Enter"],
+    ["Submit", "Ctrl+Shift+Enter"],
+    ["Format code", "Shift+Alt+F"],
+    ["Stop the run, or close this sheet", "Esc"],
+    ["Next task", "Alt+J"],
+    ["Previous task", "Alt+K"],
+    ["Toggle Description / Solution", "Ctrl+\\"],
+    ["Toggle Tests / Console", "Ctrl+`"],
+    ["Description, code, or output pane", "Ctrl+Alt+1 / 2 / 3"],
+    ["Focus the editor", "Ctrl+Alt+E"],
+    ["Task list", "Ctrl+Alt+H"],
+    ["Back", "Alt+B"],
+    ["Settings", "Ctrl+,"],
+    ["Ask Claude (practice only)", "Ctrl+Alt+R"],
+    ["Reset code to the starter", "Ctrl+Alt+Backspace"],
+    ["Toggle autocomplete", "Ctrl+Alt+Space"],
+    ["Pick multiple-choice option 1–4 (when not typing)", "1 2 3 4"],
+    ["End the mock (asks first)", "Ctrl+Alt+Shift+Enter"],
+    ["This sheet", "F1, or ? when not typing"],
+    ["Autocomplete, comment, indent (editor)", "Ctrl+Space, Ctrl+/, Tab"],
+  ];
+}
+
+function setHelp(open) {
+  document.getElementById("help-overlay")?.remove();
+  if (!open) return;
+  const rows = shortcutRows().map(([what, keys]) => `<tr><td><kbd>${esc(keyLabel(keys))}</kbd></td><td>${esc(what)}</td></tr>`).join("");
+  document.getElementById("app").insertAdjacentHTML("beforeend", `<div class="overlay" id="help-overlay" data-act="close-help"><div class="drawer help-sheet" data-act="noop" role="dialog" aria-label="Keyboard shortcuts"><h2>Keyboard shortcuts</h2><p class="sub">On a Mac, Ctrl means Command. These work while the editor is focused. A phone without a keyboard is unchanged.</p><table class="help-table">${rows}</table><p><button class="btn" data-act="close-help">Close</button></p></div></div>`);
+}
+
+function isTypingTarget(el) {
+  if (!el || !el.closest) return false;
+  if (el.closest(".cm-editor")) return true;
+  const tag = (el.tagName || "").toLowerCase();
+  if (tag === "textarea" || tag === "select") return true;
+  if (tag === "input") {
+    const type = (el.getAttribute("type") || "text").toLowerCase();
+    return type !== "checkbox" && type !== "radio" && type !== "button" && type !== "range";
+  }
+  return !!el.isContentEditable;
+}
+
+function onShortcut(e) {
+  if (e.repeat) return;
+  const helpOpen = !!document.getElementById("help-overlay");
+  const mod = e.ctrlKey || e.metaKey;
+  const typing = isTypingTarget(e.target);
+  if (e.key === "Escape") {
+    if (helpOpen) { e.preventDefault(); setHelp(false); return; }
+    if (S.jump) { e.preventDefault(); S.jump = false; render(); return; }
+    if (S.gear) { e.preventDefault(); S.gear = false; render(); return; }
+    if (S.run.running) { e.preventDefault(); stopRun("Stopped."); return; }
+    return;
+  }
+  if (helpOpen && e.key !== "F1") { e.preventDefault(); return; }
+  if (e.key === "F1" || (mod && e.altKey && !e.shiftKey && e.code === "Slash")) {
+    e.preventDefault();
+    setHelp(!helpOpen);
+    return;
+  }
+  if (!typing && !mod && !e.altKey && e.key === "?") {
+    e.preventDefault();
+    setHelp(true);
+    return;
+  }
+  if (mod && e.altKey && e.shiftKey && e.key === "Enter") {
+    e.preventDefault();
+    endMockNow();
+    return;
+  }
+  if (mod && !e.altKey && e.key === "Enter") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.shiftKey) doSubmit();
+    else doRun();
+    return;
+  }
+  if (!mod && e.altKey && e.shiftKey && e.code === "KeyF") {
+    e.preventDefault();
+    if (S.editor) formatCode();
+    return;
+  }
+  if (!mod && e.altKey && !e.shiftKey && e.code === "KeyJ") { e.preventDefault(); moveTask(1); return; }
+  if (!mod && e.altKey && !e.shiftKey && e.code === "KeyK") { e.preventDefault(); moveTask(-1); return; }
+  if (mod && !e.altKey && !e.shiftKey && e.key === "\\") { e.preventDefault(); toggleSolution(); return; }
+  if (mod && !e.altKey && !e.shiftKey && e.key === "`") { e.preventDefault(); toggleOutputTab(); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "Digit1") { e.preventDefault(); focusPane("task"); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "Digit2") { e.preventDefault(); focusPane("code"); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "Digit3") { e.preventDefault(); focusPane("tests"); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "KeyE") { e.preventDefault(); focusEditor(); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "KeyH") { e.preventDefault(); go("#/"); return; }
+  if (!mod && e.altKey && !e.shiftKey && e.code === "KeyB") { e.preventDefault(); goBack(); return; }
+  if (mod && !e.altKey && !e.shiftKey && e.key === ",") { e.preventDefault(); go("#/settings"); return; }
+  if (mod && e.altKey && !e.shiftKey && e.code === "KeyR") { e.preventDefault(); if (S.mode !== "mock" && currentTask()) askReview(); return; }
+  if (mod && e.altKey && !e.shiftKey && e.key === "Backspace") { e.preventDefault(); doReset(); return; }
+  if (mod && e.altKey && e.code === "Space") { e.preventDefault(); toggleAutocomplete(); return; }
+  if (!typing && !mod && !e.altKey && !e.shiftKey && /^[1-4]$/.test(e.key)) {
+    if (pickChoice(Number(e.key))) e.preventDefault();
+  }
+}
+
 async function boot() {
   S.settings = loadSettings();
   S.progress = loadProgress();
@@ -1694,6 +1974,7 @@ async function boot() {
   bindHelper();
   setInterval(tickTimer, 1000);
   document.addEventListener("visibilitychange", () => { if (document.hidden) flushCode(); });
+  window.addEventListener("keydown", onShortcut, true);
   render();
   try {
     const [bank, harness] = await Promise.all([
