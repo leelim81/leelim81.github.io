@@ -106,15 +106,18 @@
       });
     } catch (err) {
       if (container._gen !== gen) return;
+      var alreadySmall = err && /smaller|Could not make/.test(err.message || '');
       Object.keys(buttons).forEach(function (level) {
         var btn = buttons[level];
         if (btn.disabled) {
           btn.classList.remove('loading');
-          btn.querySelector('.opt-detail').textContent = err.message || 'Could not build this file';
+          btn.querySelector('.opt-detail').textContent = alreadySmall
+            ? 'Already as small as it can be'
+            : (err.message || 'Could not build this file');
           btn.querySelector('.opt-size').textContent = '—';
         }
       });
-      if (global.ToolsUI) ToolsUI.toast(err.message || 'Could not build the files');
+      if (global.ToolsUI && !alreadySmall) ToolsUI.toast(err.message || 'Could not build the files');
     }
   }
 
