@@ -278,7 +278,7 @@
       usageKey: 'merge-split',
       nameFor: function (level) {
         var ext = zip ? '.zip' : '.pdf';
-        var stem = zip ? 'split' : 'merged';
+        var stem = mode === 'split' ? 'split' : 'merged';
         return level === 100 ? stem + ext : stem + '-' + level + ext;
       }
     };
