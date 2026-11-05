@@ -1,0 +1,13 @@
+{
+  "full_name": "Tan Wei Ming",
+  "nric": "S1234567D",
+  "address": "18 Lorong Chuan, #04-12, Singapore 556789",
+  "phone": "+65 8123 4567",
+  "email": "wei.ming.tan@example.com",
+  "dob": "14 Mar 1992",
+  "nationality": "Singaporean",
+  "member_type": "Visitor",
+  "emergency_name": "Lim Siew Lian",
+  "emergency_phone": "+65 9876 5432",
+  "consent": "yes"
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forms Filler</title>
+<meta name="description" content="Prefill a form from papers on this device, then open it in the editor.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f3eee4">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="../shared/tool.css">
+<link rel="stylesheet" href="form.css">
+<script>
+try {
+  var t = localStorage.getItem('tools-theme');
+  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
+  document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="back" href="../">← Tools</a>
+  <div class="titles">
+    <p class="kicker">The clerk</p>
+    <h1>Forms Filler</h1>
+  </div>
+  <button id="themeToggle" type="button">Night</button>
+</header>
+<p class="privacy">Files and the model run only on your device. Nothing is uploaded.</p>
+<main class="narrow">
+  <p id="gpuWarn" class="gpu-warn" hidden></p>
+  <div class="drops">
+    <button id="formDrop" type="button" class="drop">
+      <span class="kicker">1 · The blank</span>
+      <strong>Form PDF</strong>
+      <span class="sub" id="formLabel">A fillable form, or a flat scan with lines.</span>
+    </button>
+    <button id="refDrop" type="button" class="drop">
+      <span class="kicker">2 · The papers</span>
+      <strong>References</strong>
+      <span class="sub" id="refLabel">Passport, letter, résumé, or a photo of an ID. One or many.</span>
+    </button>
+  </div>
+  <input id="formInput" type="file" accept="application/pdf,.pdf" hidden>
+  <input id="refInput" type="file" accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.heic,.tif,.tiff" multiple hidden>
+  <div class="row">
+    <button id="sampleBtn" type="button" class="btn primary btn-main">Try the sample</button>
+    <button id="fillBtn" type="button" class="btn wax" disabled>Fill from the papers</button>
+    <button id="clearBtn" type="button" class="btn">Start over</button>
+  </div>
+  <p id="readStatus" class="read-status" hidden role="status"></p>
+  <div id="modelBox" class="model" hidden>
+    <p id="modelTitle">Downloading private model · stays on this device</p>
+    <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
+    <p id="modelDetail" class="note"></p>
+  </div>
+  <section id="summary" class="summary" hidden>
+    <p class="kicker">What was written</p>
+    <h2 id="summaryHead">Mapped fields</h2>
+    <ul id="summaryList"></ul>
+    <button id="openEditor" type="button" class="btn wax btn-main">Open in Edit PDF</button>
+    <p class="note">Opens the filled file in Edit and Sign PDF, replacing whatever is on that desk.</p>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="../shared/usage.js"></script>
+<script src="../shared/idb.js"></script>
+<script src="../shared/chrome.js"></script>
+<script src="llm.js"></script>
+<script src="extract.js"></script>
+<script src="fields.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

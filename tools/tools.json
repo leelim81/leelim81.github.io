@@ -60,6 +60,16 @@
       "kicker": "06  —  The platen",
       "chapter": "Lay it on the glass",
       "line": "The camera finds the edges. You can still drag the corners yourself."
+    },
+    {
+      "name": "Forms Filler",
+      "description": "Read your papers on this device and prefill a form, then sign it in the editor.",
+      "href": "forms-filler/",
+      "counter": "forms-filler",
+      "icon": "form",
+      "kicker": "07  —  The clerk",
+      "chapter": "Fill the blanks",
+      "line": "A blank form and the papers that answer it. You sign the result in the editor."
     }
   ]
 }

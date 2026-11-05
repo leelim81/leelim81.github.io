@@ -9,6 +9,7 @@
     merge: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M7 7h8v18H7zM17 7h8v18h-8z"/><path d="M11 16h10"/></svg>',
     photo: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 10l2-3h12l2 3"/><rect x="6" y="10" width="20" height="14"/><circle cx="16" cy="17" r="3.5"/></svg>',
     scan: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 6H6v6M26 6h-2M26 6v6M8 26H6v-6M26 26h-2v-6"/><rect x="11" y="11" width="10" height="10"/></svg>',
+    form: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 5h8l6 6v16H10z"/><path d="M18 5v6h6"/><path d="M13 16h8M13 20h8M13 24h5"/></svg>',
     dot: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="16" cy="16" r="5"/></svg>'
   };
 
