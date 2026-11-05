@@ -33,8 +33,8 @@ try {
   <div class="drops">
     <button id="formDrop" type="button" class="drop">
       <span class="kicker">1 · The blank</span>
-      <strong>Form PDF</strong>
-      <span class="sub" id="formLabel">A fillable form, or a flat scan with lines.</span>
+      <strong>Form</strong>
+      <span class="sub" id="formLabel">A fillable PDF, a flat form, or a photo of one.</span>
     </button>
     <button id="refDrop" type="button" class="drop">
       <span class="kicker">2 · The papers</span>
@@ -42,7 +42,7 @@ try {
       <span class="sub" id="refLabel">Passport, letter, résumé, or a photo of an ID. One or many.</span>
     </button>
   </div>
-  <input id="formInput" type="file" accept="application/pdf,.pdf" hidden>
+  <input id="formInput" type="file" accept="application/pdf,.pdf,image/*,.png,.jpg,.jpeg,.webp" hidden>
   <input id="refInput" type="file" accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.heic,.tif,.tiff" multiple hidden>
   <div class="row">
     <button id="sampleBtn" type="button" class="btn primary btn-main">Try the sample</button>
@@ -72,6 +72,7 @@ try {
 <script src="../shared/chrome.js"></script>
 <script src="llm.js"></script>
 <script src="extract.js"></script>
+<script src="spots.js"></script>
 <script src="fields.js"></script>
 <script src="sanitize.js"></script>
 <script src="app.js"></script>

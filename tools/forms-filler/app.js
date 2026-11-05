@@ -82,10 +82,13 @@
 
   async function askOne(field, corpus) {
     var notes = snippetFor(corpus, field.label + ' ' + hintFor(field));
+    var choice = field.options && field.options.length
+      ? 'Reply with one of these options and nothing else: ' + field.options.join(', ') + '.'
+      : 'Reply with only the raw value for this field. No label, no sentence, no quotes, no explanation.';
     var prompt = [
-      'Reply with only the raw value for this field. No label, no sentence, no quotes, no explanation.',
+      choice,
       'If the notes do not contain it, reply with an empty line.',
-      'Field: ' + field.label,
+      'Field: ' + (field.group ? field.group + ' — ' + field.label : field.label),
       'Notes: ' + notes
     ].join('\n');
     var text = await FormLLM.complete(prompt, 16);
@@ -95,14 +98,16 @@
   }
 
   function refreshLabels() {
+    var flat = state.kind === 'flat';
     $('formLabel').textContent = state.formName
-      ? state.formName + ' · ' + state.fields.length + ' ' + (state.kind === 'flat' ? 'blank lines' : 'fields')
-      : 'A fillable form, or a flat scan with lines.';
+      ? state.formName + ' · ' + state.fields.length + ' ' + (flat ? 'entry spots' : 'fields')
+      : 'A fillable PDF, a flat form, or a photo of one.';
     $('refLabel').textContent = state.refs.length
       ? state.refs.map(function (ref) { return ref.name; }).join(', ')
       : 'Passport, letter, résumé, or a photo of an ID. One or many.';
-    var ready = !!(state.formBytes && state.fields.length && state.refs.length && state.gpu && state.gpu.ok && !state.running);
+    var ready = !!(state.formBytes && state.fields.length && !state.running && (flat || (state.refs.length && state.gpu && state.gpu.ok)));
     $('fillBtn').disabled = !ready;
+    $('fillBtn').textContent = flat && !state.refs.length ? 'Open in the editor' : 'Fill from the papers';
   }
 
   function showGpu(status) {
@@ -143,12 +148,18 @@
   var formToken = 0;
   var userTouched = false;
 
-  async function setForm(bytes, name) {
+  function isImageName(name, mime) {
+    if (mime && mime.indexOf('image/') === 0) return true;
+    return /\.(png|jpe?g|webp|gif|bmp)$/i.test(name || '');
+  }
+
+  async function setForm(bytes, name, mime) {
     var token = ++formToken;
-    var read = await FormFields.read(bytes);
+    var image = isImageName(name, mime);
+    var read = image ? await FormFields.readImage(bytes, mime || 'image/jpeg') : await FormFields.read(bytes);
     if (token !== formToken) return false;
-    state.formBytes = bytes;
-    state.formName = name || 'form.pdf';
+    state.formBytes = read.bytes || bytes;
+    state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
     state.proposals = [];
     state.fields = read.fields;
     state.kind = read.kind;
@@ -184,11 +195,26 @@
 
   async function fillFromPapers() {
     if (state.running) return;
-    if (!state.gpu || !state.gpu.ok) {
-      showGpu(state.gpu || { ok: false });
+    if (!state.formBytes || !state.fields.length) return;
+    if (state.kind === 'flat' && !state.refs.length) {
+      state.proposals = state.fields.map(function (field) {
+        return { id: field.id, label: field.label, type: field.type, value: '', confidence: 0, quote: '' };
+      });
+      await openEditor(false);
       return;
     }
-    if (!state.formBytes || !state.fields.length || !state.refs.length) return;
+    if (!state.gpu || !state.gpu.ok) {
+      showGpu(state.gpu || { ok: false });
+      if (state.kind === 'flat') {
+        state.proposals = state.fields.map(function (field) {
+          return { id: field.id, label: field.label, type: field.type, value: '', confidence: 0, quote: '' };
+        });
+        toast('This browser has no WebGPU, so the boxes are empty. You can type into them.');
+        await openEditor(false);
+      }
+      return;
+    }
+    if (!state.refs.length) return;
     state.running = true;
     refreshLabels();
     try {
@@ -202,8 +228,29 @@
       await FormLLM.ensure(showProgress);
       $('modelBox').hidden = true;
       var into = {};
+      var asked = {};
       for (var i = 0; i < state.fields.length; i++) {
         var field = state.fields[i];
+        if (field.type === 'radio' && field.group) {
+          if (!asked[field.group]) {
+            status('Mapping ' + field.group + '…', true);
+            var groupField = {
+              id: field.group,
+              label: field.group,
+              type: 'radio',
+              options: field.options
+            };
+            var picked = await askOne(groupField, notesAll);
+            asked[field.group] = picked;
+          }
+          var answer = asked[field.group].value || '';
+          into[field.id] = {
+            value: answer.toLowerCase() === String(field.label).toLowerCase() ? field.label : '',
+            confidence: asked[field.group].confidence,
+            quote: asked[field.group].quote
+          };
+          continue;
+        }
         status('Mapping ' + field.label + '…', true);
         into[field.id] = await askOne(field, notesAll);
       }
@@ -232,20 +279,28 @@
 
   async function openEditor(blank) {
     if (!state.formBytes) return;
-    if (!blank && !state.proposals.length) return;
+    if (!blank && state.kind === 'acro' && !state.proposals.length) return;
     status('Opening the editor…', true);
-    var bytes = state.formBytes;
+    var values = {};
     if (!blank) {
-      var values = {};
       state.proposals.forEach(function (row) {
         values[row.id] = FormSanitize.sanitize(row.value, row);
       });
-      bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: state.kind === 'acro' });
+    }
+    var bytes = state.formBytes;
+    if (!blank && state.kind === 'acro') {
+      bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: true });
     }
     var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+    var boxes = state.kind === 'flat' && window.FormSpots ? FormSpots.annotations(state.fields, values) : {};
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {
-      pages.push({ id: Math.random().toString(36).slice(2, 10), srcIndex: i, rotation: 0, annotations: [] });
+      pages.push({
+        id: Math.random().toString(36).slice(2, 10),
+        srcIndex: i,
+        rotation: 0,
+        annotations: boxes[i] || []
+      });
     }
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
     await DeskDB.set(EDITOR_DB, 'pdf', bytes);
@@ -291,7 +346,7 @@
         status('Opening ' + file.name + '…', true);
         var bytes = new Uint8Array(await file.arrayBuffer());
         if (kind === 'form') {
-          var applied = await setForm(bytes, file.name);
+          var applied = await setForm(bytes, file.name, file.type || '');
           if (!applied) return;
         } else await addRef(bytes, file.name, file.type || '');
       }
@@ -372,6 +427,19 @@
   });
 
   window.FormDesk = {
+    fields: function () {
+      return state.fields.map(function (field) {
+        return {
+          id: field.id,
+          label: field.label,
+          type: field.type,
+          group: field.group || '',
+          options: field.options || [],
+          page: field.page || 0,
+          rect: field.rect || null
+        };
+      });
+    },
     applyMap: function (map) {
       state.proposals = state.fields.map(function (field) {
         var raw = map && map[field.id] != null ? String(map[field.id]) : '';

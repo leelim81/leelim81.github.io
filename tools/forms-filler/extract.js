@@ -62,6 +62,15 @@
     }
   }
 
+  async function wordBoxes(source) {
+    var worker = await ocrWorker();
+    var result = await worker.recognize(source);
+    var words = result && result.data && result.data.words ? result.data.words : [];
+    return words.filter(function (word) {
+      return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= 35);
+    });
+  }
+
   async function ocrPdf(bytes) {
     var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
     var parts = [];
@@ -165,6 +174,7 @@
   global.FormExtract = {
     fromPdf: fromPdf,
     imageText: imageText,
+    wordBoxes: wordBoxes,
     chunks: chunks,
     retrieve: retrieve
   };
