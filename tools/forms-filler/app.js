@@ -140,16 +140,22 @@
     $('modelDetail').textContent = text;
   }
 
+  var formToken = 0;
+  var userTouched = false;
+
   async function setForm(bytes, name) {
+    var token = ++formToken;
+    var read = await FormFields.read(bytes);
+    if (token !== formToken) return false;
     state.formBytes = bytes;
     state.formName = name || 'form.pdf';
     state.proposals = [];
-    var read = await FormFields.read(bytes);
     state.fields = read.fields;
     state.kind = read.kind;
     if (!state.fields.length) toast('No fields or blank lines were found in that PDF.');
     refreshLabels();
     scheduleSave();
+    return true;
   }
 
   async function addRef(bytes, name, mime) {
@@ -274,6 +280,7 @@
 
   function takeFiles(files, kind) {
     return (async function () {
+      userTouched = true;
       if (!files.length) {
         toast('No file was selected.');
         status('', false);
@@ -283,8 +290,10 @@
         var file = files[n];
         status('Opening ' + file.name + '…', true);
         var bytes = new Uint8Array(await file.arrayBuffer());
-        if (kind === 'form') await setForm(bytes, file.name);
-        else await addRef(bytes, file.name, file.type || '');
+        if (kind === 'form') {
+          var applied = await setForm(bytes, file.name);
+          if (!applied) return;
+        } else await addRef(bytes, file.name, file.type || '');
       }
       status(kind === 'form' ? 'Form ready.' : files.length + ' reference file' + (files.length === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
@@ -294,6 +303,8 @@
   }
 
   function resetDesk() {
+    formToken++;
+    userTouched = true;
     state.running = false;
     state.formBytes = null;
     state.formName = '';
@@ -320,13 +331,15 @@
     takeFiles(snapshotFiles($('refInput')), 'ref');
   });
   $('sampleBtn').addEventListener('click', async function () {
+    userTouched = true;
     status('Opening the sample…', true);
     try {
       var form = new Uint8Array(await (await fetch('samples/visitor-form.pdf')).arrayBuffer());
       var ref = new Uint8Array(await (await fetch('samples/visitor-reference.pdf')).arrayBuffer());
       var card = new Uint8Array(await (await fetch('samples/id-card.png')).arrayBuffer());
       state.refs = [];
-      await setForm(form, 'visitor-form.pdf');
+      var applied = await setForm(form, 'visitor-form.pdf');
+      if (!applied) return;
       await addRef(ref, 'visitor-reference.pdf', 'application/pdf');
       await addRef(card, 'id-card.png', 'image/png');
       status('', false);
@@ -377,8 +390,9 @@
   };
   FormLLM.gpu().then(showGpu);
   DeskDB.get(DB, 'draft').then(async function (draft) {
-    if (!draft || !draft.formBytes) return;
-    await setForm(draft.formBytes, draft.formName);
+    if (userTouched || !draft || !draft.formBytes) return;
+    var applied = await setForm(draft.formBytes, draft.formName);
+    if (!applied || userTouched) return;
     state.refs = draft.refs || [];
     refreshLabels();
   }).catch(function () {});
