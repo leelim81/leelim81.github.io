@@ -24397,7 +24397,20 @@ function leftBody(q) {
     </div>`;
   }
   const cheat = q.cheatsheet ? `<div class="cheat"><strong>Syntax</strong><pre class="codeblock"><code>${esc(q.cheatsheet)}</code></pre></div>` : "";
-  return `<div class="prose"><h1>${esc(q.code)} \xB7 ${esc(q.title)}</h1><p class="sub">${esc(q.difficulty)} \xB7 ${esc(q.type)}</p>${renderMarkdown(q.prompt || "")}${cheat}</div>`;
+  return `<div class="prose"><h1>${esc(q.code)} \xB7 ${esc(q.title)}</h1><p class="sub">${esc(q.difficulty)} \xB7 ${esc(q.type)}</p>${renderMarkdown(q.prompt || "")}${examplesHtml(q)}${cheat}</div>`;
+}
+function examplesHtml(q) {
+  const examples = q.examples || [];
+  if (!examples.length || q.type !== "python" && q.type !== "sql") return "";
+  const blocks = examples.map((ex, i2) => `<section class="example">
+      ${examples.length > 1 ? `<p class="sub">Example ${i2 + 1}</p>` : ""}
+      <div class="ex-label">Input</div>
+      <pre class="codeblock"><code>${esc(ex.input || "")}</code></pre>
+      <div class="ex-label">Output</div>
+      <pre class="codeblock"><code>${esc(ex.output || "")}</code></pre>
+      ${ex.note ? `<p class="sub">${esc(ex.note)}</p>` : ""}
+    </section>`).join("");
+  return `<div class="examples"><strong>${examples.length > 1 ? "Examples" : "Example"}</strong>${blocks}</div>`;
 }
 function answerWidget(q) {
   const r = rec(q.id) || {};

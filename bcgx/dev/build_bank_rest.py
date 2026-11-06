@@ -786,6 +786,9 @@ for role, n in need.items():
     if have.get(role, 0) < n:
         raise SystemExit(f"mock pool {role} has {have.get(role, 0)}")
 
+from add_examples import add_examples
+add_examples(QS)
+
 bank = {"groups": GROUPS, "questions": QS, "cheatsheet": CHEAT}
 out = ROOT / "questions" / "bank.json"
 out.write_text(json.dumps(bank, ensure_ascii=False))
