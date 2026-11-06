@@ -4,6 +4,14 @@
     return bytes instanceof Uint8Array ? bytes.slice(0) : new Uint8Array(bytes);
   }
 
+  function pause() {
+    return new Promise(function (resolve) { setTimeout(resolve, 0); });
+  }
+
+  function say(progress, msg) {
+    if (typeof progress === 'function') progress(msg);
+  }
+
   function prettify(name) {
     var text = String(name || 'Field').replace(/[._[\]]+/g, ' ').replace(/\s+/g, ' ').trim();
     if (!text) return 'Field';
@@ -67,12 +75,14 @@
     return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
   }
 
-  async function geometryFromPdf(bytes) {
+  async function geometryFromPdf(bytes, progress) {
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var OPS = pdfjsLib.OPS;
     var pages = [];
     var limit = Math.min(pdf.numPages, 4);
     for (var p = 1; p <= limit; p++) {
+      say(progress, 'Reading page ' + p + ' of ' + limit + '…');
+      await pause();
       var page = await pdf.getPage(p);
       var view = page.getViewport({ scale: 1 });
       var content = await page.getTextContent();
@@ -153,6 +163,7 @@
         }
       }
       for (var step = 0; step < op.fnArray.length; step++) {
+        if (step && step % 800 === 0) await pause();
         var fn = op.fnArray[step];
         var args = op.argsArray[step];
         if (fn === OPS.save) stack.push(ctm.slice());
@@ -178,12 +189,13 @@
     return fields;
   }
 
-  async function readFlat(bytes) {
-    var pages = await geometryFromPdf(bytes);
+  async function readFlat(bytes, progress) {
+    var pages = await geometryFromPdf(bytes, progress);
     var glyphs = pages.reduce(function (sum, page) { return sum + (page.glyphs || 0); }, 0);
     var fields = layoutPages(pages);
     if (fields.length >= 4 && glyphs >= 12) return fields;
-    var raster = await readRasterPdf(bytes);
+    say(progress, 'Reading the scan…');
+    var raster = await readRasterPdf(bytes, progress);
     return raster.length > fields.length ? raster : fields;
   }
 
@@ -196,13 +208,14 @@
     return canvas;
   }
 
-  function inkMask(canvas) {
+  async function inkMask(canvas) {
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
     var w = canvas.width;
     var h = canvas.height;
     var data = ctx.getImageData(0, 0, w, h).data;
     var luma = new Uint8Array(w * h);
     for (var y = 0; y < h; y++) {
+      if (y && y % 160 === 0) await pause();
       for (var x = 0; x < w; x++) {
         var i = (y * w + x) * 4;
         var r = data[i], g = data[i + 1], b = data[i + 2];
@@ -216,6 +229,7 @@
     var mask = new Uint8Array(w * h);
     var gap = 4;
     for (var y2 = gap; y2 < h - gap; y2++) {
+      if (y2 % 160 === 0) await pause();
       for (var x2 = 0; x2 < w; x2++) {
         var c = luma[y2 * w + x2];
         var above = luma[(y2 - gap) * w + x2];
@@ -226,7 +240,7 @@
     return mask;
   }
 
-  function graySquares(canvas, w, h) {
+  async function graySquares(canvas, w, h) {
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
     var data = ctx.getImageData(0, 0, w, h).data;
     function lumaAt(x, y) {
@@ -235,9 +249,11 @@
     }
     var squares = [];
     var sizes = [14, 18, 22];
+    var row = 0;
     for (var s = 0; s < sizes.length; s++) {
       var side = sizes[s];
       for (var y0 = 24; y0 + side < h - 16; y0 += 4) {
+        if ((row++ % 48) === 0) await pause();
         for (var x0 = 8; x0 + side < w - 8; x0 += 4) {
           var inside = 0;
           var nIn = 0;
@@ -279,10 +295,10 @@
     return squares;
   }
 
-  function rasterGeometry(canvas) {
+  async function rasterGeometry(canvas) {
     var w = canvas.width;
     var h = canvas.height;
-    var mask = inkMask(canvas);
+    var mask = await inkMask(canvas);
     var runs = [];
     for (var y = 0; y < h; y++) {
       var start = -1;
@@ -320,9 +336,8 @@
     }).map(function (band) {
       return { x: band.x, y: h - (band.y1 + 1), w: band.w };
     });
-    var squares = graySquares(canvas, w, h);
     lines = mergeCellRows(lines);
-    return { lines: lines, squares: squares, width: w, height: h };
+    return { lines: lines, squares: [], width: w, height: h };
   }
 
   function mergeCellRows(lines) {
@@ -399,7 +414,7 @@
     return out;
   }
 
-  function stretchContrast(canvas) {
+  async function stretchContrast(canvas) {
     var out = document.createElement('canvas');
     out.width = canvas.width;
     out.height = canvas.height;
@@ -416,7 +431,9 @@
     var hi = samples[Math.floor(samples.length * 0.9)] || 255;
     if (hi - lo < 24) { lo = 0; hi = 255; }
     var span = hi - lo || 1;
+    var stride = Math.max(4, canvas.width * 160 * 4);
     for (var p = 0; p < data.length; p += 4) {
+      if (p && p % stride === 0) await pause();
       var luma = 0.3 * data[p] + 0.59 * data[p + 1] + 0.11 * data[p + 2];
       var stretched = Math.max(0, Math.min(255, (luma - lo) / span * 255));
       data[p] = data[p + 1] = data[p + 2] = stretched;
@@ -425,8 +442,8 @@
     return out;
   }
 
-  function horizontalScore(canvas) {
-    var mask = inkMask(stretchContrast(canvas));
+  async function horizontalScore(canvas) {
+    var mask = await inkMask(await stretchContrast(canvas));
     var w = canvas.width;
     var h = canvas.height;
     var total = 0;
@@ -444,8 +461,8 @@
     return total;
   }
 
-  function longRuleScore(canvas) {
-    var mask = inkMask(canvas);
+  async function longRuleScore(canvas) {
+    var mask = await inkMask(canvas);
     var w = canvas.width;
     var h = canvas.height;
     var min = Math.max(80, w * 0.34);
@@ -464,14 +481,15 @@
     return total;
   }
 
-  function bestLineAngle(canvas) {
-    var small = shrinkCanvas(canvas, 720);
-    function scan(from, to, step) {
+  async function bestLineAngle(canvas) {
+    var small = shrinkCanvas(canvas, 480);
+    async function scan(from, to, step) {
       var best = from;
       var bestScore = -1;
       for (var deg = from; deg <= to + 0.0001; deg += step) {
+        await pause();
         var turned = Math.abs(deg) < 0.02 ? small : rotateCanvas(small, deg);
-        var score = longRuleScore(turned);
+        var score = await longRuleScore(turned);
         if (score > bestScore) {
           bestScore = score;
           best = deg;
@@ -479,7 +497,7 @@
       }
       return best;
     }
-    var coarse = scan(-6, 6, 0.5);
+    var coarse = await scan(-6, 6, 0.5);
     return scan(coarse - 0.4, coarse + 0.4, 0.1);
   }
 
@@ -526,8 +544,8 @@
     return out;
   }
 
-  function uprightSheet(canvas) {
-    var angle = bestLineAngle(canvas);
+  async function uprightSheet(canvas) {
+    var angle = await bestLineAngle(canvas);
     var turned = angle ? rotateCanvas(canvas, angle) : canvas;
     return cropToPage(turned);
   }
@@ -587,10 +605,13 @@
     };
   }
 
-  async function fieldsOnSheet(canvas) {
+  async function fieldsOnSheet(canvas, progress) {
+    say(progress, 'Reading the words on the form…');
     var texts = joinPhrases(await wordsOn(canvas));
-    var geo = rasterGeometry(stretchContrast(canvas));
-    geo.squares = graySquares(canvas, canvas.width, canvas.height);
+    await pause();
+    say(progress, 'Finding the blank lines…');
+    var geo = await rasterGeometry(await stretchContrast(canvas));
+    geo.squares = await graySquares(canvas, canvas.width, canvas.height);
     geo.squares = geo.squares.filter(function (square) {
       var mid = square.y + square.h * 0.5;
       var onWord = texts.some(function (text) {
@@ -623,18 +644,19 @@
     return FormSpots.layout(page);
   }
 
-  async function readRasterPdf(bytes) {
+  async function readRasterPdf(bytes, progress) {
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
     for (var p = 1; p <= limit; p++) {
+      say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
       var page = await pdf.getPage(p);
       var view = page.getViewport({ scale: 1.4 });
       var canvas = document.createElement('canvas');
       canvas.width = Math.ceil(view.width);
       canvas.height = Math.ceil(view.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
-      var found = await fieldsOnSheet(canvas);
+      var found = await fieldsOnSheet(canvas, progress);
       var sx = (view.width / 1.4) / 595;
       var sy = (view.height / 1.4) / (canvas.height * (595 / canvas.width));
       found.forEach(function (field) {
@@ -654,19 +676,23 @@
     return fields;
   }
 
-  async function read(bytes) {
+  async function read(bytes, progress) {
+    say(progress, 'Opening the PDF…');
     var doc = await PDFLib.PDFDocument.load(copy(bytes));
     var fields = readAcro(doc);
     if (fields.length) return { kind: 'acro', fields: fields };
-    fields = await readFlat(bytes);
+    say(progress, 'Finding the blank lines…');
+    fields = await readFlat(bytes, progress);
     return { kind: 'flat', fields: fields };
   }
 
-  async function readImage(bytes, mime) {
+  async function readImage(bytes, mime, progress) {
+    say(progress, 'Reading the photo…');
     var bmp = await createImageBitmap(new Blob([copy(bytes)], { type: mime || 'image/jpeg' }));
-    var canvas = uprightSheet(canvasFromBitmap(bmp, 1100));
+    say(progress, 'Straightening the photo…');
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, 1100));
     if (bmp.close) bmp.close();
-    var fields = await fieldsOnSheet(canvas);
+    var fields = await fieldsOnSheet(canvas, progress);
     var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });
     var jpeg = new Uint8Array(await blob.arrayBuffer());
     var doc = await PDFLib.PDFDocument.create();

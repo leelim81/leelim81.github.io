@@ -26,7 +26,7 @@ assert.equal(facts.blk, '10');
 assert.equal(facts.street, 'EXAMPLE ROAD');
 assert.equal(facts.unit, '04-12');
 assert.equal(facts.postal, '123456');
-assert.equal(facts.residential, 'Singapore Citizen');
+assert.equal(facts.residential, undefined);
 
 const fields = [
   { id: 'full_name', label: 'Full Name', type: 'text' },
@@ -58,7 +58,14 @@ assert.equal(mapped.female, 'Female');
 assert.equal(mapped.male, undefined);
 assert.equal(mapped.chinese, 'Chinese');
 assert.equal(mapped.malay, undefined);
-assert.equal(mapped.citizen, 'Singapore Citizen');
+assert.equal(mapped.citizen, undefined);
+
+const stated = fromText(ocr + '\nResidential status Singapore Citizen\n');
+assert.equal(stated.residential, 'Singapore Citizen');
+assert.equal(mapFactsToFields(stated, fields).citizen, 'Singapore Citizen');
+const resident = fromText('NRIC S1234567D\nPermanent Resident\n');
+assert.equal(resident.residential, 'Permanent Resident');
+assert.equal(resident.nric.charAt(0), 'S');
 assert.equal(mapped.phone, undefined);
 assert.equal(mapped.email, undefined);
 assert.equal(mapped.company, undefined);

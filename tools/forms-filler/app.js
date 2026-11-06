@@ -153,10 +153,37 @@
     return /\.(png|jpe?g|webp|gif|bmp)$/i.test(name || '');
   }
 
+  function withTimeout(promise, ms, message) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(new Error(message)); }, ms);
+      Promise.resolve(promise).then(function (value) {
+        clearTimeout(timer);
+        resolve(value);
+      }, function (err) {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
   async function setForm(bytes, name, mime) {
     var token = ++formToken;
     var image = isImageName(name, mime);
-    var read = image ? await FormFields.readImage(bytes, mime || 'image/jpeg') : await FormFields.read(bytes);
+    function progress(msg) {
+      if (token !== formToken) return;
+      status(msg, true);
+    }
+    var read;
+    try {
+      read = await withTimeout(
+        image ? FormFields.readImage(bytes, mime || 'image/jpeg', progress) : FormFields.read(bytes, progress),
+        45000,
+        'Reading the form took too long. Start over and choose it again.'
+      );
+    } catch (err) {
+      if (token === formToken) formToken++;
+      throw err;
+    }
     if (token !== formToken) return false;
     state.formBytes = read.bytes || bytes;
     state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
@@ -347,31 +374,47 @@
   function snapshotFiles(input) {
     var files = [];
     if (input.files) for (var i = 0; i < input.files.length; i++) files.push(input.files[i]);
-    input.value = '';
     return files;
   }
 
-  function takeFiles(files, kind) {
+  function takeFiles(files, kind, input) {
     return (async function () {
       userTouched = true;
       if (!files.length) {
         toast('No file was selected.');
-        status('', false);
+        status('No file was selected.', false);
+        if (input) input.value = '';
         return;
       }
+      var loaded = [];
       for (var n = 0; n < files.length; n++) {
         var file = files[n];
-        status('Opening ' + file.name + '…', true);
-        var bytes = new Uint8Array(await file.arrayBuffer());
-        if (kind === 'form') {
-          var applied = await setForm(bytes, file.name, file.type || '');
-          if (!applied) return;
-        } else await addRef(bytes, file.name, file.type || '');
+        status('Reading ' + file.name + '…', true);
+        var buf = await withTimeout(
+          file.arrayBuffer(),
+          15000,
+          'Could not read ' + (file.name || 'that file') + '. Choose it again.'
+        );
+        loaded.push({ name: file.name, type: file.type || '', bytes: new Uint8Array(buf) });
       }
-      status(kind === 'form' ? 'Form ready.' : files.length + ' reference file' + (files.length === 1 ? '' : 's') + ' added.', false);
+      if (input) input.value = '';
+      for (var i = 0; i < loaded.length; i++) {
+        var item = loaded[i];
+        if (kind === 'form') {
+          var applied = await setForm(item.bytes, item.name, item.type);
+          if (!applied) return;
+        } else await addRef(item.bytes, item.name, item.type);
+      }
+      status(kind === 'form' ? 'Form ready.' : loaded.length + ' reference file' + (loaded.length === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
-      toast(err && err.message ? err.message : 'That file could not be opened.');
-      status('', false);
+      if (input) input.value = '';
+      state.running = false;
+      $('formDrop').disabled = false;
+      $('refDrop').disabled = false;
+      var msg = err && err.message ? err.message : 'That file could not be opened.';
+      toast(msg);
+      status(msg, false);
+      refreshLabels();
     });
   }
 
@@ -398,10 +441,10 @@
   $('formDrop').addEventListener('click', function () { $('formInput').click(); });
   $('refDrop').addEventListener('click', function () { $('refInput').click(); });
   $('formInput').addEventListener('change', function () {
-    takeFiles(snapshotFiles($('formInput')), 'form');
+    takeFiles(snapshotFiles($('formInput')), 'form', $('formInput'));
   });
   $('refInput').addEventListener('change', function () {
-    takeFiles(snapshotFiles($('refInput')), 'ref');
+    takeFiles(snapshotFiles($('refInput')), 'ref', $('refInput'));
   });
   $('sampleBtn').addEventListener('click', async function () {
     userTouched = true;
@@ -423,7 +466,11 @@
   });
   $('fillBtn').addEventListener('click', function () {
     $('failBox').hidden = true;
-    fillFromPapers();
+    fillFromPapers().catch(function (err) {
+      state.running = false;
+      refreshLabels();
+      status(err && err.message ? err.message : 'The form could not be opened.', false);
+    });
   });
   $('retryFill').addEventListener('click', function () {
     $('failBox').hidden = true;
@@ -477,9 +524,16 @@
   FormLLM.gpu().then(showGpu);
   DeskDB.get(DB, 'draft').then(async function (draft) {
     if (userTouched || !draft || !draft.formBytes) return;
-    var applied = await setForm(draft.formBytes, draft.formName);
-    if (!applied || userTouched) return;
-    state.refs = draft.refs || [];
-    refreshLabels();
+    status('Opening the saved form…', true);
+    try {
+      var applied = await setForm(draft.formBytes, draft.formName);
+      if (!applied || userTouched) return;
+      state.refs = draft.refs || [];
+      refreshLabels();
+      status('Form ready.', false);
+    } catch (err) {
+      if (userTouched) return;
+      status(err && err.message ? err.message : 'The saved form could not be opened.', false);
+    }
   }).catch(function () {});
 })();

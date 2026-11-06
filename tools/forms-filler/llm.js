@@ -23,12 +23,16 @@
     if (!navigator.gpu || typeof navigator.gpu.requestAdapter !== 'function') {
       return Promise.resolve({ ok: false, reason: 'missing' });
     }
-    return navigator.gpu.requestAdapter().then(function (adapter) {
+    var request = navigator.gpu.requestAdapter().then(function (adapter) {
       if (!adapter) return { ok: false, reason: 'no-adapter' };
       var f16 = adapter.features && adapter.features.has('shader-f16');
       return { ok: true, f16: !!f16, model: f16 ? F16 : F32 };
     }).catch(function () {
       return { ok: false, reason: 'error' };
+    });
+    return new Promise(function (resolve) {
+      var timer = setTimeout(function () { resolve({ ok: false, reason: 'timeout' }); }, 4000);
+      request.then(function (status) { clearTimeout(timer); resolve(status); });
     });
   }
 

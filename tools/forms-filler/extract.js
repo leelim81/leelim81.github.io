@@ -142,7 +142,22 @@
 
   async function wordBoxes(source) {
     var worker = await ocrWorker();
-    var result = await worker.recognize(source);
+    var timer;
+    var timeout = new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        reject(new Error('Reading the words took too long.'));
+      }, 25000);
+    });
+    var result;
+    try {
+      result = await Promise.race([worker.recognize(source), timeout]);
+    } catch (err) {
+      try { if (worker.terminate) await worker.terminate(); } catch (e) {}
+      workerPromise = null;
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
     var words = result && result.data && result.data.words ? result.data.words : [];
     return words.filter(function (word) {
       return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= 35);

@@ -116,8 +116,16 @@
     if (address.street) facts.street = address.street;
     if (address.unit) facts.unit = address.unit;
     if (address.postal) facts.postal = address.postal;
-    if (facts.nric && facts.nric.charAt(0) === 'S') facts.residential = 'Singapore Citizen';
+    var residential = residentialFrom(text);
+    if (residential) facts.residential = residential;
     return facts;
+  }
+
+  function residentialFrom(text) {
+    var raw = String(text || '');
+    if (/singapore\s+citizen/i.test(raw)) return 'Singapore Citizen';
+    if (/permanent\s+resident/i.test(raw)) return 'Permanent Resident';
+    return '';
   }
 
   function blob(field) {
