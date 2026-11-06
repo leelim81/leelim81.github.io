@@ -51,12 +51,18 @@ def main() -> int:
         try:
             if q["type"] == "python":
                 n_py += 1
+                examples = q.get("examples") or []
+                if not examples or not examples[0].get("input") or not examples[0].get("output"):
+                    raise AssertionError("missing example")
                 ns: dict = {}
                 exec(HARNESS + "\n" + q.get("prelude", "") + "\n" + q["solution"], ns, ns)
                 for t in q["tests"]:
                     exec(t["code"], ns, ns)
             elif q["type"] == "sql":
                 n_sql += 1
+                examples = q.get("examples") or []
+                if not examples or not examples[0].get("input") or not examples[0].get("output"):
+                    raise AssertionError("missing example")
                 check_sql(q)
             elif q["type"] == "numeric":
                 if abs(float(q["answer"]) - round(float(q["answer"]), 3)) > 1e-9:
