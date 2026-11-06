@@ -172,6 +172,11 @@ html[data-theme="light"] .prose .codeblock { background: #f6f8fb; color: #1c2130
   background: var(--panel-2);
 }
 .cheat strong { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.examples { margin: 14px 0; min-width: 0; }
+.examples > strong { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.ex-label { font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+.prose { min-width: 0; }
+.prose .codeblock { max-width: 100%; overflow-x: auto; }
 .editor-tools {
   display: flex;
   gap: 6px;
