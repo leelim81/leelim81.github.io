@@ -30,17 +30,21 @@ try {
 <p class="privacy">Files and the model run only on your device. Nothing is uploaded.</p>
 <main class="narrow">
   <p id="gpuWarn" class="gpu-warn" hidden></p>
+  <p id="modelState" class="model-state" role="status">Checking whether this browser can run the private model…</p>
   <div class="drops">
     <button id="formDrop" type="button" class="drop">
       <span class="kicker">1 · The blank</span>
       <strong>Form</strong>
       <span class="sub" id="formLabel">A fillable PDF, a flat form, or a photo of one.</span>
     </button>
-    <button id="refDrop" type="button" class="drop">
-      <span class="kicker">2 · The papers</span>
-      <strong>References</strong>
-      <span class="sub" id="refLabel">Passport, letter, résumé, or a photo of an ID. One or many.</span>
-    </button>
+    <div class="ref-stack">
+      <button id="refDrop" type="button" class="drop">
+        <span class="kicker">2 · The papers</span>
+        <strong>References</strong>
+        <span class="sub" id="refLabel">Passport, letter, résumé, or a photo of an ID. One or many.</span>
+      </button>
+      <ul id="refList" class="ref-list" hidden></ul>
+    </div>
   </div>
   <input id="formInput" type="file" accept="application/pdf,.pdf,image/*,.png,.jpg,.jpeg,.webp" hidden>
   <input id="refInput" type="file" accept="application/pdf,image/*,.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.heic,.tif,.tiff" multiple hidden>
@@ -48,6 +52,7 @@ try {
     <button id="sampleBtn" type="button" class="btn primary btn-main">Try the sample</button>
     <button id="fillBtn" type="button" class="btn wax" disabled>Fill from the papers</button>
     <button id="clearBtn" type="button" class="btn">Start over</button>
+    <button id="skipModel" type="button" class="btn" hidden>Continue with what’s filled</button>
   </div>
   <p id="readStatus" class="read-status" hidden role="status"></p>
   <div id="modelBox" class="model" hidden>

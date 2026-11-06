@@ -10,7 +10,11 @@
     kind: '',
     refs: [],
     proposals: [],
-    running: false
+    running: false,
+    modelNote: '',
+    handedOff: false,
+    seeded: {},
+    notes: ''
   };
 
   function $(id) { return document.getElementById(id); }
@@ -102,9 +106,7 @@
     $('formLabel').textContent = state.formName
       ? state.formName + ' · ' + state.fields.length + ' ' + (flat ? 'entry spots' : 'fields')
       : 'A fillable PDF, a flat form, or a photo of one.';
-    $('refLabel').textContent = state.refs.length
-      ? state.refs.map(function (ref) { return ref.name; }).join(', ')
-      : 'Passport, letter, résumé, or a photo of an ID. One or many.';
+    renderRefs();
     var ready = !!(state.formBytes && state.fields.length && !state.running && (flat || (state.refs.length && state.gpu && state.gpu.ok)));
     $('fillBtn').disabled = !ready;
     $('fillBtn').textContent = flat && !state.refs.length ? 'Open in the editor' : 'Fill from the papers';
@@ -121,31 +123,82 @@
       warn.textContent = 'This browser has no WebGPU, so the private model cannot run. Open this page in Chrome or Edge on a computer or phone that has WebGPU. Nothing is sent to a server.';
     }
     refreshLabels();
+    paintModel();
   }
 
-  function onceNote(mb) {
-    return 'One-time download (~' + mb + ' MB). It\'s saved in this browser, so next time it loads from your device without downloading again. Clearing site data, using incognito, or another browser means downloading it again.';
+  function modelSentence(snap) {
+    var name = snap && snap.label ? snap.label : 'Private model';
+    var bits = [name];
+    if (snap && snap.quant) bits.push(snap.quant);
+    if (snap && snap.megabytes) bits.push('~' + snap.megabytes + ' MB');
+    return bits.join(' · ');
+  }
+
+  function paintModel() {
+    var el = $('modelState');
+    if (!el || !window.FormLLM || !FormLLM.snapshot) return;
+    var snap = FormLLM.snapshot();
+    var who = modelSentence(snap);
+    var tail = ' It runs only on this device. The browser may evict the cache.';
+    el.hidden = false;
+    if (state.modelNote === 'skipped') {
+      el.textContent = snap.label
+        ? 'Model not needed. These papers had nothing further for it to read, so ' + who + ' was not downloaded.' + tail
+        : 'Model not needed. These papers had nothing further for it to read, so nothing was downloaded.' + tail;
+      return;
+    }
+    if (snap.phase === 'unavailable') {
+      el.textContent = 'Private model unavailable. This browser has no WebGPU, so nothing is downloaded.';
+      return;
+    }
+    if (snap.phase === 'checking') {
+      el.textContent = 'Checking whether this browser can run the private model…';
+      return;
+    }
+    if (snap.phase === 'selected') {
+      el.textContent = who + ' selected, not downloaded yet.' + tail;
+      return;
+    }
+    if (snap.phase === 'downloading') {
+      var pct = Math.round(Math.max(0, Math.min(1, snap.progress || 0)) * 100);
+      var fromCache = /from cache/i.test(snap.detail || '');
+      el.textContent = (fromCache ? 'Loading ' : 'Downloading ') + who + ' · ' + pct + '%.' + tail;
+      return;
+    }
+    if (snap.phase === 'ready' && snap.cachedConfirmed) {
+      el.textContent = who + ' loaded from this browser’s cache and ready.' + tail;
+      return;
+    }
+    if (snap.phase === 'ready') {
+      el.textContent = who + ' downloaded and ready on this device.' + tail;
+      return;
+    }
+    if (snap.phase === 'failed') {
+      el.textContent = who + ' did not finish loading. Fields already read from the papers are still filled.' + tail;
+      return;
+    }
+    el.textContent = who + ' selected, not downloaded yet.' + tail;
   }
 
   function showProgress(report) {
+    paintModel();
+    var snap = window.FormLLM && FormLLM.snapshot ? FormLLM.snapshot() : { phase: '', progress: 0, detail: '' };
     var box = $('modelBox');
+    if (snap.phase !== 'downloading') {
+      box.hidden = true;
+      return;
+    }
     box.hidden = false;
-    var model = state.gpu && state.gpu.model;
-    var mb = model ? model.megabytes : 868;
-    var text = report && report.text ? report.text : '';
-    var cached = !!(report && report.cached);
-    $('modelTitle').textContent = cached
-      ? 'Model ready on this device, no download needed.'
-      : 'Downloading private model · ~' + mb + ' MB';
-    $('modelNote').textContent = cached
-      ? 'It\'s saved in this browser. Clearing site data, using incognito, or another browser means downloading it again.'
-      : onceNote(mb);
-    var pct = Math.max(0, Math.min(1, report && report.progress ? report.progress : 0));
+    $('modelTitle').textContent = (/from cache/i.test(snap.detail || '') ? 'Loading from cache · ' : 'Downloading ') + modelSentence(snap);
+    $('modelNote').textContent = 'On this device. The browser may evict the cache. This is not finished until the line above says ready.';
+    var pct = Math.max(0, Math.min(1, snap.progress || (report && report.progress) || 0));
     $('modelBar').style.width = Math.round(pct * 100) + '%';
-    $('modelDetail').textContent = text;
+    $('modelDetail').textContent = snap.detail || '';
   }
 
   var formToken = 0;
+  var fillToken = 0;
+  var refSeq = 0;
   var userTouched = false;
 
   function isImageName(name, mime) {
@@ -168,6 +221,7 @@
 
   async function setForm(bytes, name, mime) {
     var token = ++formToken;
+    fillToken++;
     var image = isImageName(name, mime);
     function progress(msg) {
       if (token !== formToken) return;
@@ -196,26 +250,145 @@
     return true;
   }
 
-  async function addRef(bytes, name, mime) {
-    state.refs.push({ name: name || 'reference', bytes: bytes, mime: mime || '' });
+  function refById(id) {
+    for (var i = 0; i < state.refs.length; i++) if (state.refs[i].id === id) return state.refs[i];
+    return null;
+  }
+
+  function sameFile(a, b) {
+    if (!a || !b || a.byteLength !== b.byteLength) return false;
+    var step = Math.max(1, Math.floor(a.byteLength / 24));
+    for (var i = 0; i < a.byteLength; i += step) if (a[i] !== b[i]) return false;
+    return a[a.byteLength - 1] === b[b.byteLength - 1];
+  }
+
+  function renderRefs() {
+    var list = $('refList');
+    if (!list) return;
+    list.textContent = '';
+    if (!state.refs.length) {
+      list.hidden = true;
+      $('refLabel').textContent = 'Passport, letter, résumé, or a photo of an ID. One or many.';
+      return;
+    }
+    list.hidden = false;
+    $('refLabel').textContent = state.refs.length + (state.refs.length === 1 ? ' file' : ' files') + ' · add another or remove one';
+    state.refs.forEach(function (ref) {
+      var li = document.createElement('li');
+      li.className = 'ref-row';
+      var main = document.createElement('div');
+      main.className = 'ref-main';
+      var name = document.createElement('span');
+      name.className = 'ref-name';
+      name.textContent = ref.name || 'reference';
+      var preview = document.createElement('span');
+      preview.className = 'ref-preview';
+      if (ref.status === 'reading') preview.textContent = 'Reading…';
+      else if (ref.status === 'error') preview.textContent = 'Couldn’t read this file.';
+      else if (!ref.preview) preview.textContent = 'No fields found in this file.';
+      else preview.textContent = ref.preview;
+      main.appendChild(name);
+      main.appendChild(preview);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ref-x';
+      btn.textContent = '×';
+      btn.setAttribute('aria-label', 'Remove ' + (ref.name || 'reference'));
+      btn.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        removeRef(ref.id);
+      });
+      li.appendChild(main);
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+
+  function rememberRef(ref) {
+    var facts = window.FormFacts ? FormFacts.fromText(ref.text || '') : {};
+    ref.preview = window.FormFacts && FormFacts.preview ? FormFacts.preview(facts) : '';
+    ref.status = ref.preview ? 'ready' : 'empty';
+  }
+
+  async function extractOne(ref) {
+    var id = ref.id;
+    var text = '';
+    var failed = false;
+    try {
+      var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
+      text = isPdf ? await FormExtract.fromPdf(ref.bytes) : await FormExtract.imageText(ref.bytes, ref.mime || 'image/png');
+    } catch (err) {
+      failed = true;
+    }
+    var live = refById(id);
+    if (!live) return;
+    if (failed) {
+      live.status = 'error';
+      live.preview = '';
+      live.text = '';
+    } else {
+      live.text = text || '';
+      rememberRef(live);
+    }
+    renderRefs();
+    scheduleSave();
+  }
+
+  function addRef(bytes, name, mime) {
+    var label = name || 'reference';
+    var dup = state.refs.some(function (ref) { return ref.name === label && sameFile(ref.bytes, bytes); });
+    if (dup) {
+      status(label + ' is already in the list.', false);
+      return false;
+    }
+    var ref = {
+      id: 'r' + (++refSeq),
+      name: label,
+      bytes: bytes,
+      mime: mime || '',
+      text: '',
+      status: 'reading',
+      preview: '',
+      pending: null
+    };
+    state.refs.push(ref);
     state.proposals = [];
+    ref.pending = extractOne(ref);
+    refreshLabels();
+    scheduleSave();
+    return true;
+  }
+
+  function removeRef(id) {
+    var ref = refById(id);
+    if (!ref) return;
+    fillToken++;
+    state.refs = state.refs.filter(function (item) { return item.id !== id; });
+    state.proposals = [];
+    state.seeded = {};
+    state.notes = '';
+    var wasRunning = state.running;
+    state.running = false;
+    state.handedOff = false;
+    $('skipModel').hidden = true;
+    if (wasRunning) status('Removed ' + (ref.name || 'the file') + '. Fill again with the files that are left.', false);
     refreshLabels();
     scheduleSave();
   }
 
   async function corpus() {
+    var ids = state.refs.map(function (ref) { return ref.id; });
     var parts = [];
-    for (var i = 0; i < state.refs.length; i++) {
-      var ref = state.refs[i];
-      status('Reading ' + ref.name + '…', true);
-      var text = '';
-      var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
-      try {
-        text = isPdf ? await FormExtract.fromPdf(ref.bytes) : await FormExtract.imageText(ref.bytes, ref.mime || 'image/png');
-      } catch (err) {
-        toast('Couldn’t read ' + ref.name + '.');
+    for (var i = 0; i < ids.length; i++) {
+      var ref = refById(ids[i]);
+      if (!ref) continue;
+      if (ref.pending) {
+        try { await ref.pending; } catch (err) {}
       }
-      if (text && text.trim()) parts.push(text.trim());
+      ref = refById(ids[i]);
+      if (!ref || !ref.text || !String(ref.text).trim()) continue;
+      parts.push(String(ref.text).trim());
     }
     return parts.join('\n\n');
   }
@@ -240,33 +413,50 @@
     };
   }
 
+  function plainLabel(field) {
+    return String((field.group ? field.group + ': ' : '') + (field.label || field.id || 'field')).replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 48);
+  }
+
   async function askRest(fields, facts, corpusText) {
     if (!fields.length || !window.FormLLM || !FormLLM.completeJson) return {};
     var properties = {};
     fields.forEach(function (field) {
-      properties[field.id] = { type: 'string', description: field.group ? field.group + ': ' + field.label : field.label };
+      properties[field.id] = { type: 'string', description: plainLabel(field) };
     });
-    var schema = { type: 'object', properties: properties };
     var prompt = [
       'Fill only these form fields from the identity facts and the excerpt.',
       'Reply with a JSON object whose keys are the field ids. Use an empty string when the excerpt does not contain the value.',
       'Never answer with SINGAPORE or REPUBLIC OF SINGAPORE unless that is the whole street or country the field asks for, and never invent a phone or email.',
       'Facts: ' + JSON.stringify(facts || {}),
-      'Fields: ' + fields.map(function (field) { return field.id + ' = ' + (field.group ? field.group + ' / ' : '') + field.label; }).join('; '),
+      'Fields: ' + fields.map(function (field) { return field.id + ' = ' + plainLabel(field); }).join('; '),
       'Excerpt: ' + String(corpusText || '').slice(0, 900)
     ].join('\n');
-    try {
-      return await FormLLM.completeJson(prompt, schema) || {};
-    } catch (err) {
-      return {};
-    }
+    return await FormLLM.completeJson(prompt, { type: 'object', properties: properties }, 12000) || {};
+  }
+
+  function rowsFrom(seeded, guessed, notes) {
+    return state.fields.map(function (field) {
+      if (seeded && seeded[field.id]) return proposalFrom(field, seeded[field.id], 'facts');
+      var raw = guessed && guessed[field.id] != null ? String(guessed[field.id]) : '';
+      var row = proposalFrom(field, raw, 'model');
+      if (row.value && notes && !bestSupported(row.value, notes)) row.value = '';
+      return row;
+    });
   }
 
   async function fillFromPapers() {
     if (state.running) return;
     if (!state.formBytes || !state.fields.length) return;
+    var token = ++fillToken;
+    var seenForm = formToken;
+    state.handedOff = false;
+    function current() { return token === fillToken && seenForm === formToken && !state.handedOff; }
     if (!state.refs.length) {
+      state.modelNote = '';
+      paintModel();
       state.proposals = state.fields.map(blankRow);
+      if (!current()) return;
+      state.handedOff = true;
       await openEditor(false);
       return;
     }
@@ -276,44 +466,63 @@
       if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
     } catch (err) {}
     try {
+      status('Reading the papers…', true);
       var notesAll = await corpus();
+      if (!current()) return;
       if (!notesAll.trim()) throw new Error('The references had no readable text.');
       var facts = window.FormFacts ? FormFacts.fromText(notesAll) : {};
       var seeded = window.FormFacts ? FormFacts.mapFactsToFields(facts, state.fields) : {};
+      state.seeded = seeded;
+      state.notes = notesAll;
       var rest = state.fields.filter(function (field) {
         return !seeded[field.id] && field.type !== 'radio' && field.type !== 'checkbox';
       });
+      var ask = window.FormFacts && FormFacts.modelFields ? FormFacts.modelFields(rest, notesAll) : [];
       var guessed = {};
       var gpuOk = state.gpu && state.gpu.ok;
-      if (rest.length && gpuOk) {
-        status('Checking the remaining fields…', true);
-        showProgress({ progress: 0, cached: false, text: '' });
-        try {
-          await FormLLM.ensure(showProgress);
-          $('modelBox').hidden = true;
-          guessed = await askRest(rest, facts, notesAll);
-        } catch (err) {
-          if (err && err.code === 'webgpu') showGpu({ ok: false });
-          guessed = {};
-        }
+      if (!ask.length) {
+        state.modelNote = 'skipped';
+        paintModel();
       } else if (!gpuOk) {
+        state.modelNote = '';
         showGpu(state.gpu || { ok: false });
+        paintModel();
+      } else {
+        state.modelNote = '';
+        status('Checking ' + ask.length + ' field' + (ask.length === 1 ? '' : 's') + ' the papers might contain…', true);
+        $('skipModel').hidden = false;
+        showProgress({ progress: 0 });
+        try {
+          await withTimeout(FormLLM.ensure(showProgress), 12000, 'The private model did not start.');
+          if (!current()) return;
+          $('modelBox').hidden = true;
+          paintModel();
+          guessed = await withTimeout(askRest(ask, facts, notesAll), 13000, 'The private model did not answer.') || {};
+        } catch (err) {
+          guessed = {};
+          if (err && err.code === 'webgpu') showGpu({ ok: false });
+          else if (window.FormLLM && FormLLM.markFailed && FormLLM.snapshot().phase !== 'ready') FormLLM.markFailed(err && err.message);
+          paintModel();
+          status('The model did not answer in time. Opening the fields already read from the papers.', true);
+        }
+        $('skipModel').hidden = true;
+        $('modelBox').hidden = true;
+        if (!current()) return;
       }
-      state.proposals = state.fields.map(function (field) {
-        if (seeded[field.id]) return proposalFrom(field, seeded[field.id], 'facts');
-        var raw = guessed && guessed[field.id] != null ? String(guessed[field.id]) : '';
-        var row = proposalFrom(field, raw, 'model');
-        if (row.value && !bestSupported(row.value, notesAll)) row.value = '';
-        return row;
-      });
+      if (!current()) return;
+      state.handedOff = true;
+      $('skipModel').hidden = true;
+      state.proposals = rowsFrom(seeded, guessed, notesAll);
       await openEditor(false);
     } catch (err) {
+      if (!current()) return;
       state.running = false;
+      $('skipModel').hidden = true;
       refreshLabels();
       var msg = err && err.message ? err.message : 'The form could not be filled.';
       $('failText').textContent = msg;
       $('failBox').hidden = false;
-      status('', false);
+      status(msg, false);
     }
   }
 
@@ -367,7 +576,9 @@
       formName: state.formName,
       formBytes: state.formBytes,
       kind: state.kind,
-      refs: state.refs.map(function (ref) { return { name: ref.name, bytes: ref.bytes, mime: ref.mime }; })
+      refs: state.refs.map(function (ref) {
+        return { id: ref.id, name: ref.name, bytes: ref.bytes, mime: ref.mime, text: ref.text || '' };
+      })
     }).catch(function () {});
   }
 
@@ -398,14 +609,16 @@
         loaded.push({ name: file.name, type: file.type || '', bytes: new Uint8Array(buf) });
       }
       if (input) input.value = '';
+      var added = 0;
       for (var i = 0; i < loaded.length; i++) {
         var item = loaded[i];
         if (kind === 'form') {
           var applied = await setForm(item.bytes, item.name, item.type);
           if (!applied) return;
-        } else await addRef(item.bytes, item.name, item.type);
+        } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
-      status(kind === 'form' ? 'Form ready.' : loaded.length + ' reference file' + (loaded.length === 1 ? '' : 's') + ' added.', false);
+      if (kind === 'form') status('Form ready.', false);
+      else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
       if (input) input.value = '';
       state.running = false;
@@ -420,7 +633,13 @@
 
   function resetDesk() {
     formToken++;
+    fillToken++;
     userTouched = true;
+    state.modelNote = '';
+    state.handedOff = false;
+    state.seeded = {};
+    state.notes = '';
+    $('skipModel').hidden = true;
     state.running = false;
     state.formBytes = null;
     state.formName = '';
@@ -435,6 +654,7 @@
     $('failBox').hidden = true;
     $('modelBox').hidden = true;
     refreshLabels();
+    paintModel();
     status('', false);
   }
 
@@ -479,6 +699,19 @@
   $('openBlank').addEventListener('click', function () {
     openEditor(true).catch(function (err) { toast(err.message || 'Could not open the editor.'); });
   });
+  $('skipModel').addEventListener('click', function () {
+    if (!state.running || state.handedOff) return;
+    fillToken++;
+    state.handedOff = true;
+    state.running = false;
+    $('skipModel').hidden = true;
+    $('modelBox').hidden = true;
+    state.proposals = rowsFrom(state.seeded || {}, {}, state.notes || '');
+    openEditor(false).catch(function (err) {
+      state.handedOff = false;
+      status(err && err.message ? err.message : 'The form could not be opened.', false);
+    });
+  });
   $('clearBtn').addEventListener('click', function () {
     resetDesk();
     DeskDB.clear(DB).catch(function () {});
@@ -505,6 +738,25 @@
         };
       });
     },
+    forceGpu: function (on) {
+      showGpu(on ? { ok: true, f16: true, model: FormLLM.models.f16 } : { ok: false, reason: 'test' });
+    },
+    paintTest: function (partial) {
+      if (partial && Object.prototype.hasOwnProperty.call(partial, 'note')) state.modelNote = partial.note || '';
+      if (window.FormLLM) FormLLM.applyTestState(partial || {});
+      paintModel();
+      showProgress(FormLLM.snapshot());
+      return {
+        text: $('modelState').textContent,
+        title: $('modelBox').hidden ? '' : $('modelTitle').textContent,
+        boxHidden: $('modelBox').hidden
+      };
+    },
+    refs: function () {
+      return state.refs.map(function (ref) {
+        return { name: ref.name, status: ref.status, preview: ref.preview };
+      });
+    },
     applyMap: function (map) {
       state.proposals = state.fields.map(function (field) {
         var raw = map && map[field.id] != null ? String(map[field.id]) : '';
@@ -523,14 +775,34 @@
   };
   FormLLM.gpu().then(showGpu);
   DeskDB.get(DB, 'draft').then(async function (draft) {
-    if (userTouched || !draft || !draft.formBytes) return;
-    status('Opening the saved form…', true);
+    if (userTouched || !draft || (!draft.formBytes && !(draft.refs && draft.refs.length))) return;
     try {
-      var applied = await setForm(draft.formBytes, draft.formName);
-      if (!applied || userTouched) return;
-      state.refs = draft.refs || [];
+      if (draft.formBytes) {
+        status('Opening the saved form…', true);
+        var applied = await setForm(draft.formBytes, draft.formName);
+        if (!applied || userTouched) return;
+      }
+      if (userTouched) return;
+      state.refs = (draft.refs || []).map(function (ref) {
+        var item = {
+          id: ref.id || ('d' + (++refSeq)),
+          name: ref.name || 'reference',
+          bytes: ref.bytes,
+          mime: ref.mime || '',
+          text: ref.text || '',
+          status: 'reading',
+          preview: '',
+          pending: null
+        };
+        if (item.text) rememberRef(item);
+        return item;
+      });
+      state.refs.forEach(function (ref) {
+        if (ref.status === 'reading' && ref.bytes) ref.pending = extractOne(ref);
+      });
       refreshLabels();
-      status('Form ready.', false);
+      paintModel();
+      status(draft.formBytes ? 'Form ready.' : '', false);
     } catch (err) {
       if (userTouched) return;
       status(err && err.message ? err.message : 'The saved form could not be opened.', false);

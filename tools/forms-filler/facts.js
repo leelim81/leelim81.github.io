@@ -40,6 +40,8 @@
   }
 
   function nameFrom(text) {
+    var inline = String(text || '').match(/\bfull name\b[ \t]*[:\-][ \t]*([A-Za-z][A-Za-z'’.\-]+(?:[ \t]+[A-Za-z][A-Za-z'’.\-]+){1,5})/i);
+    if (inline) return inline[1].replace(/\s+/g, ' ').trim();
     var lines = linesOf(text);
     var labelled = text.match(/\bName\b[^\n]{0,40}\n+\s*([A-Z][A-Z ]{4,})/);
     if (labelled) {
@@ -53,6 +55,8 @@
       if (!/^[A-Z][A-Z\s]{4,}$/.test(clean)) continue;
       var words = clean.split(' ').filter(Boolean);
       if (words.length < 2 || words.length > 6) continue;
+      if (words.filter(function (word) { return word.length === 1; }).length >= 2) continue;
+      if (words.filter(function (word) { return JUNK[word.toLowerCase()]; }).length >= words.length - 1) continue;
       if (words.every(function (word) { return JUNK[word.toLowerCase()]; })) continue;
       if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD'; })) continue;
       return words.join(' ');
@@ -64,8 +68,40 @@
     var raw = String(text || '');
     var near = raw.match(/(?:date of b\w+|dob|出生)[\s\S]{0,60}?(\d{2})[-\/.](\d{2})[-\/.](\d{4})/i)
       || raw.match(/\b(\d{2})[-\/.](\d{2})[-\/.](\d{4})\s+[MF]\b/);
-    if (!near) return '';
-    return near[1] + '/' + near[2] + '/' + near[3];
+    if (near) return near[1] + '/' + near[2] + '/' + near[3];
+    var months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+    var named = raw.match(/(?:date of birth|dob|born)[^\n]{0,48}?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/i);
+    if (!named) return '';
+    var month = months[named[2].slice(0, 3).toLowerCase()];
+    if (!month) return '';
+    return ('0' + named[1]).slice(-2) + '/' + month + '/' + named[3];
+  }
+
+  function emailFrom(text) {
+    var found = String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    return found ? found[0] : '';
+  }
+
+  function phoneFrom(text) {
+    var raw = String(text || '');
+    var labelled = raw.match(/(?:phone|mobile|\btel\b|contact)\s*(?:no\.?|number)?\s*[:\-]?\s*(\+?\d[\d\s()-]{7,})/i);
+    var chunk = labelled ? labelled[1] : '';
+    if (!chunk) {
+      var stripped = raw.replace(/\b[STFGM]\d{7}[A-Z]\b/gi, ' ').replace(/\b\d{2}[-\/.]\d{2}[-\/.]\d{4}\b/g, ' ').replace(/\b\d{6}\b/g, ' ');
+      var loose = stripped.match(/\+\d[\d\s()-]{8,}/);
+      chunk = loose ? loose[0] : '';
+    }
+    var digits = chunk.replace(/\D/g, '');
+    if (digits.length < 8 || digits.length > 15) return '';
+    return chunk.replace(/\s+/g, ' ').trim();
+  }
+
+  function companyFrom(text) {
+    var found = String(text || '').match(/\b(?:company|employer)\b\s*[:\-]\s*([^\n]{2,80})/i);
+    if (!found) return '';
+    var value = found[1].replace(/\s+/g, ' ').trim().replace(/[.,;]+$/, '');
+    if (!value || /^(singapore|republic of singapore|republic)$/i.test(value)) return '';
+    return value;
   }
 
   function sexFrom(text) {
@@ -118,6 +154,12 @@
     if (address.postal) facts.postal = address.postal;
     var residential = residentialFrom(text);
     if (residential) facts.residential = residential;
+    var email = emailFrom(text);
+    if (email) facts.email = email;
+    var phone = phoneFrom(text);
+    if (phone) facts.phone = phone;
+    var company = companyFrom(text);
+    if (company) facts.company = company;
     return facts;
   }
 
@@ -207,9 +249,78 @@
     return out;
   }
 
+  function signals(text) {
+    var raw = String(text || '');
+    var emails = raw.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig) || [];
+    var nrics = raw.match(/\b[STFGM]\d{7}[A-Z]\b/gi) || [];
+    var cue = /\b(company|employer|designation|department|employee|occupation|e-?mail|\btel\b|phone|mobile|bank|account|nationality)\b/i.test(raw);
+    var phone = !!phoneFrom(raw);
+    return {
+      raw: raw,
+      emails: emails,
+      phone: phone,
+      idLike: nrics.length > 0 && !emails.length && !phone && !cue && raw.length < 2200
+    };
+  }
+
+  function modelFields(fields, corpus) {
+    var sig = signals(corpus);
+    var out = [];
+    (fields || []).forEach(function (field) {
+      if (!field || field.type === 'radio' || field.type === 'checkbox' || out.length >= 8) return;
+      var key = factKey(field);
+      var label = blob(field).toLowerCase();
+      if (key === 'email' || /e-?mail/.test(label)) {
+        if (sig.emails.length) out.push(field);
+        return;
+      }
+      if (key === 'phone' || /phone|\(hp\)|\bhp\b|mobile|\btel\b/.test(label)) {
+        if (sig.phone) out.push(field);
+        return;
+      }
+      if (sig.idLike) return;
+      if (/company|employer|employee|bank|designation|department|occupation|title/.test(label)) {
+        var hinted = label.split(/[^a-z0-9]+/).filter(function (word) { return word.length > 3; }).some(function (word) {
+          return sig.raw.toLowerCase().indexOf(word) !== -1;
+        });
+        if (hinted) out.push(field);
+        return;
+      }
+      var words = label.split(/[^a-z0-9]+/).filter(function (word) {
+        return word.length > 3 && !/^(name|date|full|number|field|text|form|this|with|from)$/.test(word);
+      });
+      var hit = words.some(function (word) { return sig.raw.toLowerCase().indexOf(word) !== -1; });
+      var prose = sig.raw.split(/\s+/).filter(Boolean).length > 40;
+      if (hit || (prose && (key === 'name' || key === 'street' || key === 'dob' || /national|address|emergency/.test(label)))) out.push(field);
+    });
+    return out;
+  }
+
+  function preview(facts) {
+    var items = [];
+    function push(label, value) {
+      if (!value || items.length >= 4) return;
+      items.push(label + ' ' + String(value).replace(/\s+/g, ' ').trim());
+    }
+    if (!facts) return '';
+    var address = (facts.blk || facts.street)
+      ? [facts.blk, facts.street, facts.unit ? '#' + String(facts.unit).replace(/^#/, '') : '', facts.postal].filter(Boolean).join(' ')
+      : '';
+    push('Name', facts.name);
+    push('DOB', facts.dob);
+    push('Address', address);
+    push('NRIC', facts.nric);
+    push('Phone', facts.phone);
+    push('Email', facts.email);
+    push('Company', facts.company);
+    return items.join(' · ');
+  }
+
   return {
     fromText: fromText,
     mapFactsToFields: mapFactsToFields,
+    modelFields: modelFields,
+    preview: preview,
     accept: accept,
     nricChecksum: nricChecksum
   };
