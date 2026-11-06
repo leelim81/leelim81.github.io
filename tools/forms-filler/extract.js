@@ -50,16 +50,94 @@
     return workerPromise;
   }
 
+  function stretchCanvas(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var data = image.data;
+    var samples = [];
+    for (var i = 0; i < data.length; i += 32) samples.push(0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2]);
+    samples.sort(function (a, b) { return a - b; });
+    var lo = samples[Math.floor(samples.length * 0.05)] || 0;
+    var hi = samples[Math.floor(samples.length * 0.92)] || 255;
+    if (hi - lo < 48) return canvas;
+    var span = hi - lo;
+    for (var p = 0; p < data.length; p += 4) {
+      var luma = 0.3 * data[p] + 0.59 * data[p + 1] + 0.11 * data[p + 2];
+      var next = Math.max(0, Math.min(255, (luma - lo) / span * 255));
+      data[p] = data[p + 1] = data[p + 2] = next;
+    }
+    ctx.putImageData(image, 0, 0);
+    return canvas;
+  }
+
+  function rowScore(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    var w = canvas.width;
+    var h = canvas.height;
+    var total = 0;
+    for (var y = 0; y < h; y += 2) {
+      var ink = 0;
+      for (var x = 0; x < w; x += 2) {
+        if (data[(y * w + x) * 4] < 140) ink++;
+      }
+      total += ink * ink;
+    }
+    return total;
+  }
+
+  function rotateCanvas(canvas, deg) {
+    var rad = deg * Math.PI / 180;
+    var sin = Math.abs(Math.sin(rad));
+    var cos = Math.abs(Math.cos(rad));
+    var out = document.createElement('canvas');
+    out.width = Math.max(1, Math.round(canvas.width * cos + canvas.height * sin));
+    out.height = Math.max(1, Math.round(canvas.width * sin + canvas.height * cos));
+    var ctx = out.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.translate(out.width / 2, out.height / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+    return out;
+  }
+
+  function prepareOcr(canvas) {
+    var small = document.createElement('canvas');
+    var scale = canvas.width > 480 ? 480 / canvas.width : 1;
+    small.width = Math.max(1, Math.round(canvas.width * scale));
+    small.height = Math.max(1, Math.round(canvas.height * scale));
+    small.getContext('2d').drawImage(canvas, 0, 0, small.width, small.height);
+    var best = 0;
+    var bestScore = rowScore(small);
+    for (var deg = -3; deg <= 3; deg += 0.5) {
+      if (!deg) continue;
+      var score = rowScore(rotateCanvas(small, deg));
+      if (score > bestScore) { bestScore = score; best = deg; }
+    }
+    var turned = best ? rotateCanvas(canvas, best) : canvas;
+    return stretchCanvas(turned);
+  }
+
   async function imageText(bytes, mime) {
     var worker = await ocrWorker();
-    var blob = new Blob([bytes], { type: mime || 'image/png' });
-    var url = URL.createObjectURL(blob);
-    try {
-      var result = await worker.recognize(url);
-      return result && result.data && result.data.text ? result.data.text : '';
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
+    var maxW = 1600;
+    var scale = bmp.width > maxW ? maxW / bmp.width : 1;
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    if (bmp.close) bmp.close();
+    var ready = prepareOcr(canvas);
+    var blob = await new Promise(function (resolve) { ready.toBlob(resolve, 'image/png'); });
+    try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (err) {}
+    var result = await worker.recognize(blob);
+    var text = result && result.data && result.data.text ? result.data.text : '';
+    if (text.trim()) return text;
+    try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (err) {}
+    result = await worker.recognize(blob);
+    return result && result.data && result.data.text ? result.data.text : '';
   }
 
   async function wordBoxes(source) {

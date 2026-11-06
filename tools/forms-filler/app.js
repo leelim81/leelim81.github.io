@@ -193,83 +193,96 @@
     return parts.join('\n\n');
   }
 
+  function blankRow(field) {
+    return { id: field.id, label: field.label, type: field.type, value: '', confidence: 0, quote: '', source: '' };
+  }
+
+  function proposalFrom(field, value, source) {
+    var clean = source === 'facts' ? value : FormSanitize.sanitize(value, field);
+    if (source !== 'facts') {
+      if (window.FormFacts && !FormFacts.accept(field, clean)) clean = '';
+    }
+    return {
+      id: field.id,
+      label: field.label,
+      type: field.type,
+      value: clean || '',
+      confidence: clean ? (source === 'facts' ? 1 : 0.7) : 0,
+      quote: source || '',
+      source: source || ''
+    };
+  }
+
+  async function askRest(fields, facts, corpusText) {
+    if (!fields.length || !window.FormLLM || !FormLLM.completeJson) return {};
+    var properties = {};
+    fields.forEach(function (field) {
+      properties[field.id] = { type: 'string', description: field.group ? field.group + ': ' + field.label : field.label };
+    });
+    var schema = { type: 'object', properties: properties };
+    var prompt = [
+      'Fill only these form fields from the identity facts and the excerpt.',
+      'Reply with a JSON object whose keys are the field ids. Use an empty string when the excerpt does not contain the value.',
+      'Never answer with SINGAPORE or REPUBLIC OF SINGAPORE unless that is the whole street or country the field asks for, and never invent a phone or email.',
+      'Facts: ' + JSON.stringify(facts || {}),
+      'Fields: ' + fields.map(function (field) { return field.id + ' = ' + (field.group ? field.group + ' / ' : '') + field.label; }).join('; '),
+      'Excerpt: ' + String(corpusText || '').slice(0, 900)
+    ].join('\n');
+    try {
+      return await FormLLM.completeJson(prompt, schema) || {};
+    } catch (err) {
+      return {};
+    }
+  }
+
   async function fillFromPapers() {
     if (state.running) return;
     if (!state.formBytes || !state.fields.length) return;
-    if (state.kind === 'flat' && !state.refs.length) {
-      state.proposals = state.fields.map(function (field) {
-        return { id: field.id, label: field.label, type: field.type, value: '', confidence: 0, quote: '' };
-      });
+    if (!state.refs.length) {
+      state.proposals = state.fields.map(blankRow);
       await openEditor(false);
       return;
     }
-    if (!state.gpu || !state.gpu.ok) {
-      showGpu(state.gpu || { ok: false });
-      if (state.kind === 'flat') {
-        state.proposals = state.fields.map(function (field) {
-          return { id: field.id, label: field.label, type: field.type, value: '', confidence: 0, quote: '' };
-        });
-        toast('This browser has no WebGPU, so the boxes are empty. You can type into them.');
-        await openEditor(false);
-      }
-      return;
-    }
-    if (!state.refs.length) return;
     state.running = true;
     refreshLabels();
     try {
       if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
     } catch (err) {}
-    showProgress({ progress: 0, cached: false, text: '' });
     try {
       var notesAll = await corpus();
       if (!notesAll.trim()) throw new Error('The references had no readable text.');
-      status('Loading the private model…', true);
-      await FormLLM.ensure(showProgress);
-      $('modelBox').hidden = true;
-      var into = {};
-      var asked = {};
-      for (var i = 0; i < state.fields.length; i++) {
-        var field = state.fields[i];
-        if (field.type === 'radio' && field.group) {
-          if (!asked[field.group]) {
-            status('Mapping ' + field.group + '…', true);
-            var groupField = {
-              id: field.group,
-              label: field.group,
-              type: 'radio',
-              options: field.options
-            };
-            var picked = await askOne(groupField, notesAll);
-            asked[field.group] = picked;
-          }
-          var answer = asked[field.group].value || '';
-          into[field.id] = {
-            value: answer.toLowerCase() === String(field.label).toLowerCase() ? field.label : '',
-            confidence: asked[field.group].confidence,
-            quote: asked[field.group].quote
-          };
-          continue;
+      var facts = window.FormFacts ? FormFacts.fromText(notesAll) : {};
+      var seeded = window.FormFacts ? FormFacts.mapFactsToFields(facts, state.fields) : {};
+      var rest = state.fields.filter(function (field) {
+        return !seeded[field.id] && field.type !== 'radio' && field.type !== 'checkbox';
+      });
+      var guessed = {};
+      var gpuOk = state.gpu && state.gpu.ok;
+      if (rest.length && gpuOk) {
+        status('Checking the remaining fields…', true);
+        showProgress({ progress: 0, cached: false, text: '' });
+        try {
+          await FormLLM.ensure(showProgress);
+          $('modelBox').hidden = true;
+          guessed = await askRest(rest, facts, notesAll);
+        } catch (err) {
+          if (err && err.code === 'webgpu') showGpu({ ok: false });
+          guessed = {};
         }
-        status('Mapping ' + field.label + '…', true);
-        into[field.id] = await askOne(field, notesAll);
+      } else if (!gpuOk) {
+        showGpu(state.gpu || { ok: false });
       }
       state.proposals = state.fields.map(function (field) {
-        var row = into[field.id] || { value: '', confidence: 0, quote: '' };
-        return {
-          id: field.id,
-          label: field.label,
-          type: field.type,
-          value: row.value,
-          confidence: row.confidence,
-          quote: row.quote
-        };
+        if (seeded[field.id]) return proposalFrom(field, seeded[field.id], 'facts');
+        var raw = guessed && guessed[field.id] != null ? String(guessed[field.id]) : '';
+        var row = proposalFrom(field, raw, 'model');
+        if (row.value && !bestSupported(row.value, notesAll)) row.value = '';
+        return row;
       });
       await openEditor(false);
     } catch (err) {
       state.running = false;
       refreshLabels();
-      if (err && err.code === 'webgpu') showGpu({ ok: false });
       var msg = err && err.message ? err.message : 'The form could not be filled.';
       $('failText').textContent = msg;
       $('failBox').hidden = false;
@@ -284,7 +297,12 @@
     var values = {};
     if (!blank) {
       state.proposals.forEach(function (row) {
-        values[row.id] = FormSanitize.sanitize(row.value, row);
+        var field = null;
+        for (var i = 0; i < state.fields.length; i++) {
+          if (state.fields[i].id === row.id) { field = state.fields[i]; break; }
+        }
+        values[row.id] = FormSanitize.sanitize(row.value, field || row);
+        if (row.source !== 'facts' && window.FormFacts && !FormFacts.accept(field || row, values[row.id])) values[row.id] = '';
       });
     }
     var bytes = state.formBytes;
