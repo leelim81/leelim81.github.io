@@ -84,6 +84,12 @@
     return enginePromise;
   }
 
+  function replyText(reply) {
+    var choice0 = reply && reply.choices && reply.choices[0];
+    var message = choice0 && choice0.message;
+    return message && message.content ? String(message.content) : '';
+  }
+
   async function complete(prompt, maxTokens) {
     var engine = await ensure();
     if (engine.resetChat) await engine.resetChat();
@@ -93,15 +99,27 @@
       max_tokens: maxTokens || 8,
       stop: ['\n', '.']
     });
-    var choice0 = reply && reply.choices && reply.choices[0];
-    var message = choice0 && choice0.message;
-    return message && message.content ? String(message.content) : '';
+    return replyText(reply);
+  }
+
+  async function completeJson(prompt, schema) {
+    var engine = await ensure();
+    if (engine.resetChat) await engine.resetChat();
+    var reply = await engine.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0,
+      max_tokens: 480,
+      response_format: { type: 'json_object', schema: schema }
+    });
+    var text = replyText(reply);
+    try { return JSON.parse(text); } catch (err) { return {}; }
   }
 
   global.FormLLM = {
     gpu: gpu,
     ensure: ensure,
     complete: complete,
+    completeJson: completeJson,
     current: function () { return choice; }
   };
 })(window);
