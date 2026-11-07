@@ -147,4 +147,10 @@ $('fill').addEventListener('click', async function () {
   }
 });
 
+$('drop').addEventListener('click', async function () {
+  await chrome.storage.local.remove('bundle');
+  await paintProfiles();
+  say('Removed the imported copy on this browser. Forms Filler’s own saved values are untouched.');
+});
+
 paintProfiles();

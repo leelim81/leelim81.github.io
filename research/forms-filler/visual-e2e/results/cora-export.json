@@ -1,0 +1,24 @@
+{
+  "kind": "forms-filler-profiles",
+  "schema": 1,
+  "profiles": [
+    {
+      "id": "d34sjc5hbphp",
+      "name": "Cora Example",
+      "facts": [
+        {
+          "key": "email",
+          "label": "email",
+          "value": "cora.fixed@example.com",
+          "status": "confirmed"
+        },
+        {
+          "key": "custom",
+          "label": "Desk code",
+          "value": "42",
+          "status": "confirmed"
+        }
+      ]
+    }
+  ]
+}

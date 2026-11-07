@@ -145,7 +145,7 @@
       link.href = url;
       link.download = 'forms-filler-profiles.json';
       link.click();
-      URL.revokeObjectURL(url);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
       say('Downloaded confirmed values only.');
     });
     $('profileImport').addEventListener('change', async function () {

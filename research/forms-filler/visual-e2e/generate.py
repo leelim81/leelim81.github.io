@@ -282,8 +282,36 @@ def main():
     print({name: len(rows) for name, rows in records.items()})
 
 
+def write_feature():
+    """One boxed raster pair for the profile end-to-end. Not a scorecard split."""
+    labels = ['Full name', 'Phone', 'Email']
+    p = person('development', 40)
+    p['name'] = 'Cora Example'
+    p['email'] = 'cora.sample9@example.com'
+    p['phone'] = '+65 80000009'
+    p['id'] = 'feature-cora'
+    dest = ROOT / 'fixtures' / 'feature-e2e'
+    dest.mkdir(parents=True, exist_ok=True)
+    form, _ = draw_page(['feature form', 'Synthetic raster. Not a real form.'], labels, -0.8, 0.35, 7, 20261121)
+    ref, _ = draw_page(reference_lines('single', p), [], -0.4, 0.35, 7, 20261122)
+    ambiguous, _ = draw_page([
+        'Applicant',
+        'Full name: Cora Example',
+        'Email: cora.other@example.com',
+        'Applicant',
+        'Full name: Bea Example',
+        'Email: bea@example.com'
+    ], [], 0.2, 0.35, 7, 20261123)
+    form.save(dest / 'cora.form.png')
+    ref.save(dest / 'cora.reference.png')
+    ambiguous.save(dest / 'cora.ambiguous.png')
+    print('feature pngs', dest)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'stack':
         write_stack()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'feature':
+        write_feature()
     else:
         main()

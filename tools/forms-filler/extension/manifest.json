@@ -10,5 +10,14 @@
   "permissions": ["storage", "activeTab", "scripting"],
   "background": {
     "service_worker": "sw.js"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open the profile popup for the current tab"
+    }
   }
 }
