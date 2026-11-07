@@ -1,0 +1,38 @@
+{
+  "measured": true,
+  "kind": "automated browser export, not a human study",
+  "chrome": "Google Chrome 156.0.8078.47",
+  "node": "v22.23.4",
+  "os": "linux",
+  "model_download": "none",
+  "cases": [
+    {
+      "id": "test-claim_widget-00",
+      "layout": "native_widget",
+      "wall_ms": 1389,
+      "fields_detected": 7,
+      "placed": [
+        {"text": "Asha Fixture", "x": 182, "y": 764, "width": 73, "box": [180, 760, 250, 18], "inside": true, "wider_than_box": false},
+        {"text": "S1000084Z", "x": 182, "y": 728, "width": 67, "box": [180, 724, 250, 18], "inside": true, "wider_than_box": false},
+        {"text": "01/01/1990", "x": 182, "y": 692, "width": 65, "box": [180, 688, 250, 18], "inside": true, "wider_than_box": false},
+        {"text": "81000000", "x": 182, "y": 656, "width": 58, "box": [180, 652, 250, 18], "inside": true, "wider_than_box": false},
+        {"text": "asha.fixture0@example.com", "x": 182, "y": 620, "width": 165, "box": [180, 616, 250, 18], "inside": true, "wider_than_box": false},
+        {"text": "10 PALM ROAD 208400", "x": 182, "y": 584, "width": 142, "box": [180, 580, 250, 18], "inside": true, "wider_than_box": false}
+      ],
+      "mailbox_placed": false,
+      "placement_correct": 6,
+      "placement_n": 6,
+      "clipped": 0
+    },
+    {
+      "id": "test-claim_widget-01",
+      "layout": "native_widget",
+      "ambiguity": "patient_other",
+      "wall_ms": 1089,
+      "fields_detected": 7,
+      "other_person_exported": false,
+      "note": "Only the claimant name was exported. Identity number, date, phone, email, and dwelling were left blank because those labels do not name a role and the reference has two people."
+    }
+  ],
+  "untested_platforms": ["Safari", "Firefox", "iOS", "Android", "WebGPU", "a machine other than this Linux Chrome"]
+}

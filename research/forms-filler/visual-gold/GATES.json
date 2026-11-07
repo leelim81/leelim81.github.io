@@ -1,0 +1,17 @@
+{
+  "scorecard": "visual-gold-1",
+  "frozen_before_test": true,
+  "alpha": 0.05,
+  "bound": "one-sided Clopper-Pearson upper bound on the automatic-fill error rate",
+  "not_a_certified_risk_limit": true,
+  "not_the_2_percent_target": "The earlier 2% wrong-fill figure is not this gate and is not a blanket safety target.",
+  "identity_kinds": ["name", "nric", "dob"],
+  "identity_wrong_fill_upper_max": 0.10,
+  "other_wrong_fill_upper_max": 0.15,
+  "require_zero_wrong_person_on_calibration": true,
+  "require_zero_wrong_on_calibration": true,
+  "zero_observed_is_not_proof": "Zero observed wrong-person fills is a screening gate. It does not prove the rate is zero.",
+  "if_bound_not_met": "review-only, not autofill",
+  "coverage_is_not_a_reason_to_loosen": true,
+  "calibration_does_not_include": ["development", "test", "v3 test"]
+}
