@@ -354,6 +354,55 @@
     return { lines: lines, squares: [], width: w, height: h };
   }
 
+  /* Separate from rasterGeometry. Looks only for rules longer than 45% of the
+     page, and may bridge eight white pixels inside those long rules. Boxed
+     edges on the development sheets are shorter than that, so this does not
+     change the ink mask the boxed path uses. */
+  function underlineRules(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var w = canvas.width;
+    var h = canvas.height;
+    var data = ctx.getImageData(0, 0, w, h).data;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    function rulePixel(x, y) {
+      if (x < 0 || x >= w || y < 3 || y >= h - 3) return false;
+      var c = lum(x, y);
+      var above = lum(x, y - 3);
+      var below = lum(x, y + 3);
+      return c < 150 && above - c > 30 && below - c > 30;
+    }
+    var minW = w * 0.45;
+    var found = [];
+    for (var y = 3; y < h - 3; y++) {
+      var start = -1;
+      var last = -1;
+      var dark = 0;
+      for (var x = 0; x <= w; x++) {
+        var on = x < w && rulePixel(x, y);
+        if (!on && start >= 0 && x < w) {
+          for (var g = 1; g <= 8 && x + g < w; g++) {
+            if (rulePixel(x + g, y)) { on = true; break; }
+          }
+        }
+        if (on) {
+          if (start < 0) start = x;
+          last = x;
+          dark++;
+        } else if (start >= 0) {
+          var width = last - start + 1;
+          if (width >= minW && dark / width > 0.25) found.push({ x: start, y: h - y, w: width });
+          start = -1;
+          last = -1;
+          dark = 0;
+        }
+      }
+    }
+    return mergeCellRows(found).filter(function (line) { return line.w >= minW; });
+  }
+
   function mergeCellRows(lines) {
     var sorted = lines.slice().sort(function (a, b) {
       if (Math.abs(a.y - b.y) > 3) return b.y - a.y;
@@ -656,7 +705,46 @@
       lines: geo.lines,
       squares: geo.squares
     }, scale);
-    return FormSpots.layout(page);
+    var primary = FormSpots.layout(page);
+    var rules = underlineRules(source);
+    if (!rules.length || !global.FormEvidence) return primary;
+    var taken = {};
+    primary.forEach(function (field) { taken[FormEvidence.fieldKind(field)] = true; });
+    rules.forEach(function (line) {
+      var best = null;
+      var bestDy = 90;
+      texts.forEach(function (text) {
+        var dy = text.y - line.y;
+        if (dy < 8 || dy > 80 || dy >= bestDy) return;
+        if (text.x > line.x + line.w || text.x + text.w < line.x) return;
+        best = text;
+        bestDy = dy;
+      });
+      if (!best) return;
+      var kind = FormEvidence.fieldKind({ label: best.str });
+      if (!kind || kind === 'other' || taken[kind]) return;
+      taken[kind] = true;
+      primary.push({
+        id: 'rule-' + kind,
+        label: best.str,
+        type: 'text',
+        options: [],
+        group: '',
+        untrusted: false,
+        source: 'flat',
+        page: 0,
+        pageWidth: 595,
+        pageHeight: source.height * scale,
+        rect: {
+          x: line.x * scale,
+          y: line.y * scale,
+          width: Math.max(40, line.w * scale),
+          height: 16
+        },
+        lineH: 12
+      });
+    });
+    return primary;
   }
 
   async function readRasterPdf(bytes, progress) {

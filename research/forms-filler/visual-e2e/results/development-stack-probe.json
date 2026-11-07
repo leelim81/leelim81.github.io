@@ -5,7 +5,7 @@
   "rows": [
     {
       "id": "development-stack-00",
-      "ms": 11967,
+      "ms": 12267,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Suki Sample\nNRIC: S2000346D\nDate of birth: 21/09/1990\nPhone: +65 80000020\nEmail:\nAddress: 32 QUAY LANE 304320",
@@ -506,7 +506,7 @@
     },
     {
       "id": "development-stack-01",
-      "ms": 11475,
+      "ms": 11753,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Tess Sample\nNRIC: T2000359B\nDate of birth: 22/10/1991\nPhone: +65 80000021\nEmail: tess.sample21@example.com\nAddress: 33 QUAY LANE 304321\nPatient\nFull name: Kim Voss\nDate of birth: 03/03/1977",
@@ -1066,7 +1066,7 @@
     },
     {
       "id": "development-stack-02",
-      "ms": 11722,
+      "ms": 12063,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Ulf Sample\nNRIC: S2000372C\nDate of birth: 23/11/1992\nPhone: +65 80000022\nEmail: ulf.sample22@example.com\nAddress: 34 QUAY LANE 304322\nApplicant\nFull name: Kim Voss\nDate of birth: 03/03/1977",
@@ -1362,6 +1362,45 @@
             "height": 12
           },
           "page": 0
+        },
+        {
+          "id": "rule-nric",
+          "label": "Member FIN",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 50.74414715719064,
+            "y": 686.5384615384615,
+            "width": 293.5200668896321,
+            "height": 16
+          },
+          "page": 0
+        },
+        {
+          "id": "rule-phone",
+          "label": "Member handset",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 60.196488294314385,
+            "y": 611.4172240802676,
+            "width": 284.06772575250835,
+            "height": 16
+          },
+          "page": 0
+        },
+        {
+          "id": "rule-address",
+          "label": "Member street",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 67.1613712374582,
+            "y": 536.2959866220735,
+            "width": 277.60033444816054,
+            "height": 16
+          },
+          "page": 0
         }
       ],
       "candidate": [
@@ -1390,6 +1429,69 @@
           "value": "",
           "reason": "conflict",
           "hard": "conflict"
+        },
+        {
+          "fieldId": "rule-nric",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f1",
+              "value": "S2000372C",
+              "role": "applicant",
+              "quote": "NRIC: S2000372C",
+              "line": 3
+            }
+          ],
+          "decision": "autofill",
+          "value": "S2000372C",
+          "factId": "f1",
+          "quote": "NRIC: S2000372C",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "rule-phone",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "80000022",
+              "role": "applicant",
+              "quote": "Phone: +65 80000022",
+              "line": 5
+            }
+          ],
+          "decision": "autofill",
+          "value": "80000022",
+          "factId": "f3",
+          "quote": "Phone: +65 80000022",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "rule-address",
+          "kind": "address",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f5",
+              "value": "34 QUAY LANE 304322",
+              "role": "applicant",
+              "quote": "Address: 34 QUAY LANE 304322",
+              "line": 7
+            }
+          ],
+          "decision": "autofill",
+          "value": "34 QUAY LANE 304322",
+          "factId": "f5",
+          "quote": "Address: 34 QUAY LANE 304322",
+          "reason": "explicit_single_source",
+          "hard": null
         }
       ],
       "baseline": [
@@ -1399,13 +1501,53 @@
           "decision": "autofill",
           "value": "Ulf Sample",
           "reason": "legacy_map"
+        },
+        {
+          "fieldId": "rule-nric",
+          "label": "Member FIN",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "rule-phone",
+          "label": "Member handset",
+          "decision": "autofill",
+          "value": "+65 80000022",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "rule-address",
+          "label": "Member street",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
         }
       ],
-      "placed": []
+      "placed": [
+        {
+          "text": "S2000372C",
+          "x": 52.74414715719064,
+          "y": 690.5384615384615,
+          "w": 58.091
+        },
+        {
+          "text": "80000022",
+          "x": 62.19648829431439,
+          "y": 615.4172240802676,
+          "w": 48.928
+        },
+        {
+          "text": "34 QUAY LANE 304322",
+          "x": 69.1613712374582,
+          "y": 540.2959866220735,
+          "w": 118.00800000000001
+        }
+      ]
     },
     {
       "id": "development-stack-03",
-      "ms": 11233,
+      "ms": 11472,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Wynn Sample\nNRIC: T2000385A\nDate of birth: 24/12/1993\nPhone: +65 80000023\nEmail: wynn.sample23@example.com\nAddress: 35 QUAY LANE 304323",
@@ -1646,6 +1788,58 @@
             "height": 12
           },
           "page": 0
+        },
+        {
+          "id": "rule-name",
+          "label": "Member name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 37.43055555555556,
+            "y": 703.4027777777777,
+            "width": 305.76388888888886,
+            "height": 16
+          },
+          "page": 0
+        },
+        {
+          "id": "rule-nric",
+          "label": "Member FIN",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 37.43055555555556,
+            "y": 667.4305555555555,
+            "width": 305.76388888888886,
+            "height": 16
+          },
+          "page": 0
+        },
+        {
+          "id": "rule-phone",
+          "label": "Member handset",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 37.43055555555556,
+            "y": 595.4861111111111,
+            "width": 305.76388888888886,
+            "height": 16
+          },
+          "page": 0
+        },
+        {
+          "id": "rule-mailbox",
+          "label": "Member mailbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 37.43055555555556,
+            "y": 487.32638888888886,
+            "width": 305.76388888888886,
+            "height": 16
+          },
+          "page": 0
         }
       ],
       "candidate": [
@@ -1711,6 +1905,80 @@
           "quote": "Address: 35 QUAY LANE 304323",
           "reason": "explicit_single_source",
           "hard": null
+        },
+        {
+          "fieldId": "rule-name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Wynn Sample",
+              "role": "applicant",
+              "quote": "Full name: Wynn Sample",
+              "line": 2
+            }
+          ],
+          "decision": "autofill",
+          "value": "Wynn Sample",
+          "factId": "f0",
+          "quote": "Full name: Wynn Sample",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "rule-nric",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f1",
+              "value": "T2000385A",
+              "role": "applicant",
+              "quote": "NRIC: T2000385A",
+              "line": 3
+            }
+          ],
+          "decision": "autofill",
+          "value": "T2000385A",
+          "factId": "f1",
+          "quote": "NRIC: T2000385A",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "rule-phone",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "80000023",
+              "role": "applicant",
+              "quote": "Phone: +65 80000023",
+              "line": 5
+            }
+          ],
+          "decision": "autofill",
+          "value": "80000023",
+          "factId": "f3",
+          "quote": "Phone: +65 80000023",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "rule-mailbox",
+          "kind": "mailbox",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "mailbox_not_address",
+          "hard": "type"
         }
       ],
       "baseline": [
@@ -1734,6 +2002,34 @@
           "decision": "abstain",
           "value": "",
           "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "rule-name",
+          "label": "Member name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "rule-nric",
+          "label": "Member FIN",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "rule-phone",
+          "label": "Member handset",
+          "decision": "autofill",
+          "value": "+65 80000023",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "rule-mailbox",
+          "label": "Member mailbox",
+          "decision": "autofill",
+          "value": "wynn.sample23@example.com",
+          "reason": "legacy_map"
         }
       ],
       "placed": [
@@ -1754,6 +2050,24 @@
           "x": 48.66666666666666,
           "y": 502.2916666666667,
           "w": 118.00799999999998
+        },
+        {
+          "text": "Wynn Sample",
+          "x": 39.43055555555556,
+          "y": 707.4027777777777,
+          "w": 68.464
+        },
+        {
+          "text": "T2000385A",
+          "x": 39.43055555555556,
+          "y": 671.4305555555555,
+          "w": 56.870000000000005
+        },
+        {
+          "text": "80000023",
+          "x": 39.43055555555556,
+          "y": 599.4861111111111,
+          "w": 48.928
         }
       ]
     }

@@ -71,6 +71,16 @@ OCR autofill stays off. Eighteen name fills on the earlier calibration were alre
 | Dev result | Underlines rose to 7, 7, 4, and 3 fields. Probe coverage on that set went from 13/22 to 17/22, still 0 wrong. The original four boxed sheets fell from 16/22 to 12/22 correct, also 0 wrong. Time stayed about 12 s. |
 | Why rejected | The boxed development set got worse. The change was reverted. The holder-sheet split was not scored. |
 
-## Next experiment that is still reasonable
+## Kept: a separate long-rule detector on the already deskewed page
 
-A deskew that records its transform and looks for lines in the upright image without changing the boxed-page ink mask. That is separate from gap-bridging. An optional PaddleOCR tiny challenger is written up in the 7 November memo and is not loaded. The dictionary flags in Tesseract 5.1.1 only apply at worker creation, so a later `setParameters` call is not that experiment.
+| | |
+| --- | --- |
+| Error class | Rotated underlines. The shared ink mask still missed them. The six-pixel gap bridge was not put back. |
+| Hypothesis | Rules longer than 45% of the page width can be found with their own contrast test, including an eight-pixel bridge only inside that test. A label sitting just above the rule can add a field whose kind is not already present. Boxed edges on the intake sheets are shorter, so they stay on the old mask. |
+| Change | `underlineRules` in `fields.js`. `rasterGeometry` is unchanged. |
+| Dev result | Underline sheets: fields 7, 6, 4, 7 (was 7, 6, 1, 3). Correct probe fills 19/22, was 13/22. Wrong 0. Wrong-person 0. All 19 painted values sat inside the detected rule. Boxed intake sheets stayed 16/22 correct, 0 wrong, same 7, 6, 7, 7 fields. Native `development-desk_widget-00` is still an AcroForm with 7 widgets. `spots.test.mjs` still finds 6 fields. About 12 s per form. |
+| Why kept | The gain is on the underline set only. Identity gates and the boxed path did not move. Autofill stays off. The holder-sheet split was not scored. |
+
+## Not started
+
+PP-OCRv6 tiny is still an optional later challenger. Its two archives are 6,318,080 bytes. The worker, ONNX Runtime, and OpenCV are extra and were not downloaded. Tesseract dictionary flags still have to be set when the worker is created. The three answerable underline fields that remain unfilled are not enough reason to sweep more thresholds.
