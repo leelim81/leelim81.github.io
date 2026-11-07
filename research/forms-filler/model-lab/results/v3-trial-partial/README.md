@@ -8,7 +8,7 @@ Reproduce from the repository root:
 python3 research/forms-filler/model-lab/results/v3-trial-partial/check_v3_trial.py
 ```
 
-That reruns the trial `score3.py` on the frozen `data/v3/dev.jsonl`. It checks the 480/180/180 hashes, that v2 train is still the separate 360-row file, and that `facts.js`, `llm.js`, `sanitize.js`, and `app.js` are still the 9c2d5b8 guard bytes.
+That reruns the trial `score3.py` on the frozen `data/v3/dev.jsonl`. It checks the 480/180/180 hashes, that v2 train is still the separate 360-row file, and that `facts.js`, `llm.js`, `sanitize.js`, and `app.js` are still the 9c2d5b8 guard bytes. It then runs `tools/forms-filler/facts.test.mjs`. The hash of `facts.test.mjs` in `provenance/postfilter-9c2d5b8.VERSION` names the historical test file. Do not restore that file. The current test uses the synthetic demo card.
 
 ## Provenance
 

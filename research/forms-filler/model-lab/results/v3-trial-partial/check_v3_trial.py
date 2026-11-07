@@ -126,6 +126,12 @@ def main():
             fail("truncation " + name)
         if ids(HERE / "results" / name) & test_ids:
             fail(name + " includes a test id")
+    tests = subprocess.run(
+        ["node", str(REPO / "tools" / "forms-filler" / "facts.test.mjs")],
+        capture_output=True, text=True, check=False,
+    )
+    if tests.returncode != 0:
+        fail(tests.stdout + tests.stderr)
     print(json.dumps({
         "v3": "480/180/180",
         "v2_train_left_frozen": 360,
