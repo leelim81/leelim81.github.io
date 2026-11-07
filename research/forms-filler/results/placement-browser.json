@@ -43,6 +43,14 @@
         "correct": ["name on the name-as-in-NRIC line", "NRIC on the NRIC/FIN line"],
         "wrong": ["two further name strings land on the sex and date-of-birth area"],
         "missed": ["address", "phone", "email", "sex checkbox", "race", "postal code"]
+      },
+      "after_name_abstention": {
+        "spots": 5,
+        "values": [{"text": "S1234567D", "y": 640, "x": 288}],
+        "correct": ["nric"],
+        "wrong": [],
+        "missed": ["name", "date of birth", "sex", "address", "phone", "email"],
+        "note": "Garbled name lines stay blank. The applicant name is not written on sex or date of birth."
       }
     },
     {

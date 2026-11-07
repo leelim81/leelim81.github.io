@@ -2,6 +2,8 @@
 
 Open measurements and a frozen synthetic suite for the on-device Forms Filler. The product page links here.
 
+The 12/4/6 JSONL split is a seed smoke suite for the pipeline. It is not a gold benchmark and it is not evidence of form-filling quality. Quality evidence is the per-form placement file, which only covers forms that were actually opened.
+
 This directory is the research project. Apache-2.0 applies to the original code in this directory. CC0-1.0 applies to the original synthetic JSONL, PDFs, PNGs, and annotations in `data/` and `fixtures/`. Neither license changes the rest of the website, pdf.js, pdf-lib, Tesseract, WebLLM, or Qwen weights.
 
 ## Status

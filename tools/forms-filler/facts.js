@@ -208,11 +208,24 @@
     return edits <= 1;
   }
 
+  function cleanNameLabel(label) {
+    var s = String(label || '');
+    if (/printed|card|cord|\bphoto\b|behind|\bwrite\b|possport/i.test(s)) return false;
+    var tokens = s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    var known = { name: 1, full: 1, first: 1, last: 1, family: 1, given: 1, surname: 1, middle: 1, maiden: 1, of: 1, the: 1, as: 1, in: 1, member: 1, claimant: 1, applicant: 1, applicants: 1, entity: 1, individual: 1, person: 1, nric: 1, fin: 1, passport: 1, no: 1, number: 1 };
+    var odd = tokens.some(function (token) { return token.length > 2 && !known[token]; });
+    if (odd) return false;
+    return /\bname\b/i.test(s);
+  }
+
+  function personName(text) {
+    var parts = String(text || '').trim().split(/\s+/);
+    return parts.length >= 2 && parts.every(function (part) { return /^[A-Za-z][A-Za-z'’.\-]+$/.test(part); });
+  }
+
   function factKey(field) {
     var label = blob(field);
-    var tokens = label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
     if (/dependant|dependent|spouse|\bchild\b|authorised officer|authorized officer/i.test(label)) return '';
-    if (tokens.some(function (token) { return oneEdit(token, 'name'); }) && /nric|passport|fin/.test(label.toLowerCase())) return 'name';
     if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
@@ -220,9 +233,14 @@
     if (/postal/i.test(label)) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
-    if (/contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
+    if (/(^|\s)contact$/i.test(label) || /contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
     if (/\bname\b/i.test(label) && /nric|\bfin\b/i.test(label)) return 'name';
-    if (/nric|fin\s*number|身份证/i.test(label)) return 'nric';
+    if (/nric|fin\s*number|身份证/i.test(label)) {
+      var nricTokens = label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      var nricKnown = { nric: 1, fin: 1, no: 1, number: 1, name: 1, of: 1, the: 1, as: 1, in: 1, passport: 1, applicant: 1, member: 1 };
+      if (nricTokens.some(function (token) { return token.length > 3 && !nricKnown[token]; })) return '';
+      return 'nric';
+    }
     if (/date of birth|出生|\bdob\b/i.test(label)) return 'dob';
     if (/gender|性别|\bsex\b/i.test(label)) return 'sex';
     if (/\brace\b|种族/i.test(label)) return 'race';
@@ -234,8 +252,21 @@
     if (/\b(last|family|surname)\b/i.test(label) && /\bname\b/i.test(label)) return 'lastName';
     if (/full\s*name|姓名/i.test(label)) return 'name';
     if (/\bapplicant'?s?\s+name\b/i.test(label)) return 'name';
-    if (/\bname\b/i.test(label) && !/street|bank|company|user|emergency|first|given|last|family|middle|maiden|sign/i.test(label)) return 'name';
+    if (/\bname\b/i.test(label) && !/street|bank|company|user|emergency|first|given|last|family|middle|maiden|sign/i.test(label)) {
+      return cleanNameLabel(label) ? 'name' : '';
+    }
     return '';
+  }
+
+  function reviewLabels(fields) {
+    var out = [];
+    (fields || []).forEach(function (field) {
+      if (!field || field.type === 'radio' || field.type === 'checkbox') return;
+      if (factKey(field)) return;
+      var label = blob(field);
+      if (/\bname\b|possport|\bprinted\b|\bnome\b/i.test(label)) out.push(String(field.label || 'line'));
+    });
+    return out;
   }
 
   function kindOf(field) {
@@ -261,9 +292,11 @@
     }
     var kind = kindOf(field);
     if (kind === 'firstName' || kind === 'lastName') return /^[A-Za-z][A-Za-z'’.\-]{1,30}$/.test(text);
+    if (personName(text) && (kind === 'sex' || kind === 'dob' || kind === 'race' || kind === 'nric' || /sex|gender|date of birth|\bdob\b|\brace\b/i.test(blob(field)))) return false;
     if (kind === 'name') {
       if (PLACE.test(text)) return false;
       if (/^(chinese|malay|indian|eurasian|male|female)$/i.test(text)) return false;
+      if (!cleanNameLabel(blob(field))) return false;
       return text.split(/\s+/).length >= 2;
     }
     if (kind === 'nric') return /^[STFGM]\d{7}[A-Z]$/i.test(text.replace(/\s/g, ''));
@@ -364,6 +397,7 @@
   return {
     fromText: fromText,
     mapFactsToFields: mapFactsToFields,
+    reviewLabels: reviewLabels,
     modelFields: modelFields,
     preview: preview,
     accept: accept,

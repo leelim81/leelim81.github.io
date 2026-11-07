@@ -1172,6 +1172,7 @@
       var usable = pdf && session && session.pages && session.pages.length && session.source !== (desk === 'forms' ? 'edit' : 'forms');
       if (usable) {
         await loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
+        if (session.reviewNote) toast(session.reviewNote);
         setSaveStatus('Saved');
         $('saveState').dataset.gen = '1';
       } else if (desk === 'forms') {

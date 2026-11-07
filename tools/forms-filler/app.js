@@ -526,6 +526,12 @@
     }
   }
 
+  function reviewNote(fields) {
+    var labels = window.FormFacts && FormFacts.reviewLabels ? FormFacts.reviewLabels(fields) : [];
+    if (!labels.length) return '';
+    return 'Left ' + labels.length + ' uncertain line' + (labels.length === 1 ? '' : 's') + ' blank.';
+  }
+
   async function openEditor(blank) {
     if (!state.formBytes) return;
     if (!blank && state.kind === 'acro' && !state.proposals.length) return;
@@ -559,7 +565,7 @@
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms' } }
+      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields) } }
     ]);
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;

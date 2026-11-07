@@ -620,11 +620,12 @@
 
   async function fieldsOnSheet(canvas, progress) {
     say(progress, 'Reading the words on the form…');
-    var texts = joinPhrases(await wordsOn(canvas));
+    var source = canvas;
+    var texts = joinPhrases(await wordsOn(source));
     await pause();
     say(progress, 'Finding the blank lines…');
-    var geo = await rasterGeometry(await stretchContrast(canvas));
-    geo.squares = await graySquares(canvas, canvas.width, canvas.height);
+    var geo = await rasterGeometry(await stretchContrast(source));
+    geo.squares = await graySquares(source, source.width, source.height);
     geo.squares = geo.squares.filter(function (square) {
       var mid = square.y + square.h * 0.5;
       var onWord = texts.some(function (text) {
@@ -645,11 +646,11 @@
           && Math.abs(other.x - square.x) > square.w && Math.abs(other.x - square.x) < 260;
       });
     });
-    var scale = 595 / canvas.width;
+    var scale = 595 / source.width;
     if (!global.FormSpots) return [];
     var page = scalePage({
-      width: canvas.width,
-      height: canvas.height,
+      width: source.width,
+      height: source.height,
       texts: texts,
       lines: geo.lines,
       squares: geo.squares
@@ -766,7 +767,7 @@
     say(progress, 'Reading the photo…');
     var bmp = await createImageBitmap(new Blob([copy(bytes)], { type: mime || 'image/jpeg' }));
     say(progress, 'Straightening the photo…');
-    var canvas = await uprightSheet(canvasFromBitmap(bmp, 1100));
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, 1500));
     if (bmp.close) bmp.close();
     var fields = await fieldsOnSheet(canvas, progress);
     var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });

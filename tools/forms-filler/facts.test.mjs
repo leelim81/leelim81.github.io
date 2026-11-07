@@ -161,6 +161,24 @@ const sexed = mapFactsToFields(fromText('Sex: M\n'), [
 ]);
 assert.equal(sexed.memberSex, 'Male');
 assert.equal(sexed.depSex, undefined);
+const unsafe = mapFactsToFields(fromText('Full name: Alex Example\nNRIC/FIN: S1234567D\n'), [
+  { id: 'messy', label: 'Nome os in NRIC/Possport', type: 'text' },
+  { id: 'printed', label: 'Name to be printed', type: 'text' },
+  { id: 'card', label: 'Name to be printed on cord', type: 'text' },
+  { id: 'sex', label: 'Sex', type: 'text' },
+  { id: 'dob', label: 'Date of Birth', type: 'text' },
+  { id: 'member', label: 'Name of Member (Claimant)', type: 'text' },
+  { id: 'nric', label: 'NRIC/FIN NO', type: 'text' }
+]);
+assert.equal(unsafe.messy, undefined);
+assert.equal(unsafe.printed, undefined);
+assert.equal(unsafe.card, undefined);
+assert.equal(unsafe.sex, undefined);
+assert.equal(unsafe.dob, undefined);
+assert.equal(unsafe.member, 'Alex Example');
+assert.equal(unsafe.nric, 'S1234567D');
+assert.equal(accept({ id: 'dob', label: 'Date of Birth', type: 'text' }, 'Alex Example'), false);
+assert.equal(accept({ id: 'sex', label: 'Sex', type: 'text' }, 'Alex Example'), false);
 const noSplit = mapFactsToFields(fromText('Full name: Alex Example\n'), splitFields);
 assert.equal(noSplit.first, undefined);
 assert.equal(noSplit.last, undefined);

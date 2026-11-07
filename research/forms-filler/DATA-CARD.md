@@ -6,6 +6,8 @@ Synthetic people and synthetic form layouts for reference-to-field filling. Ever
 
 ## Splits
 
+This is a seed smoke suite, not a gold benchmark. The counts are only large enough to check that the generator, checksums, and scorer run.
+
 | Split | Templates | People | Records |
 | --- | --- | --- | --- |
 | train | harbour-membership, harbour-payslip | p01–p08 | 12 |
