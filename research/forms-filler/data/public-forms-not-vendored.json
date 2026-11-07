@@ -1,0 +1,26 @@
+{
+  "vendored": false,
+  "note": "These blanks were fetched for private development or as candidate held-out layouts. A public URL is not a redistribution license, so the PDFs are not in git. Hashes let someone refetch and compare. FUNSD, XFUND, and FormGym are excluded entirely.",
+  "excluded": ["FUNSD", "XFUND", "FormGym", "FormFactory"],
+  "forms": [
+    {"id": "dev-ntuc-hardcopy", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/f12a26579548407c9baa33ba8647af47?v=ab19badf", "sha256": "6be13bf44923bec94a3751b57d7937b709f700d30333d70c6b8c96917492916d"},
+    {"id": "dev-ntuc-giro", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/07b73a0bb5c54e9d996778bc8c27ed2b?v=35486213", "sha256": "33c918a16277b667dc00e97f9cdacf4e9654f27cec05816ec73ea5f0fbee680b"},
+    {"id": "dev-checkoff", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/933f03f4b6e84e1f97ad2144e9350b6e?v=b617d30a", "sha256": "fbc22d9c66351814b543067021e2d633b2f82d228ab0c089b22d0dd1f0b7e14a"},
+    {"id": "dev-group-hospitalisation", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/39ca018399ec4ceb957d56b6f9c1bd6b?v=8d74b50c", "sha256": "582412ec7bea4303cc2c80ddfe597e90f940388f4c17c98c643fbf806bb62b15"},
+    {"id": "dev-thrift", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/9af1a6c9458a434ebe04892c1caf820c?v=a56fef87", "sha256": "a15730c94b6989a36c624583fbf52981a0fc91dd2f82cf335356525b68677356"},
+    {"id": "dev-pubeu-membership", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/eade35d83967445aa07ba6f11d1f7a4f?v=b65548db", "sha256": "f34187614c5f78ea8fff9e013bd463f6a4fe94486c50a1f4730acb075028a791"},
+    {"id": "dev-hdbsu-membership", "role": "development-seen", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/9cda3b88bd2d48ab810c7707bb7576a2?v=3603868e", "sha256": "2fbd540aa4412b0b31dc76204ecc00daf5f0d599020f20e3d295a843d74ac3cb"},
+    {"id": "dev-irs-w9", "role": "development-seen", "url": "https://www.irs.gov/pub/irs-pdf/fw9.pdf", "sha256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53"},
+    {"id": "dev-irs-w4", "role": "development-seen", "url": "https://www.irs.gov/pub/irs-pdf/fw4.pdf", "sha256": "92444d8856ce55d9e25dca8b6d1420634fc68b11e1ab1f760916ea29ddd312b2"},
+    {"id": "dev-uscis-i9", "role": "development-seen", "url": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf", "sha256": "780f348c34df694bb0b4dbbfaf9f22b99b9757b80d16a37ba89aadf069597281"},
+    {"id": "heldout-irs-w8ben", "role": "candidate-held-out-not-in-synthetic-test", "url": "https://www.irs.gov/pub/irs-pdf/fw8ben.pdf", "sha256": "b821dc1172c91b348a65675529cc792782f11fc1ae8579df92d627113203f918"},
+    {"id": "heldout-irs-ss4", "role": "candidate-held-out-not-in-synthetic-test", "url": "https://www.irs.gov/pub/irs-pdf/fss4.pdf", "sha256": "23d295529950b05979596cf58d559db6c433a4ec852407b1820265c117cb3ca2"},
+    {"id": "heldout-irs-w7", "role": "candidate-held-out-not-in-synthetic-test", "url": "https://www.irs.gov/pub/irs-pdf/fw7.pdf", "sha256": "0917902b7fd3caaf63a4562fea3d23765fdfd4715f3b2470adb56a930556a943"},
+    {"id": "heldout-sg-gift-death", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/f9f9a24224174cacbb466a3e5c2955cc?v=2e91abb4", "sha256": "b12f7a071b07621b5664c25718ba7e51c619e361f84911c8fa053475a0cdc1ca"},
+    {"id": "heldout-sg-gift-tpd", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/76b8b3f1952a4d21a89ab96bc97ed1a9?v=5738539e", "sha256": "ebfb7f9927cef5146a6b5b9b9c0d9ee6359747705c13ca6f474f617877ba37f0"},
+    {"id": "heldout-sg-childbirth", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/d118069b31a04be7abc543b61100fd37?v=1a296d14", "sha256": "bffe38183ef584839881a253bdf52a26b668c8441e69d5df367ca966ffff2613"},
+    {"id": "heldout-sg-marriage", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/8d118110a57648bdb1bd51d87ac5a9f5?v=b5e75c87", "sha256": "b349110ec0fb8a2b003a3956cd7333ada520fa639394b6b4991662274516d93e"},
+    {"id": "heldout-sg-hdbsu-hosp", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/6987df23457c4a509733f5064fbc07c1?v=dc8cf4a7", "sha256": "628b5fe256c3fb1da921483c04663b9d30f8739838810454cead06882003e861"},
+    {"id": "heldout-sg-occ-pass", "role": "candidate-held-out-not-vendored", "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/0e598a168e1b41edb1596d512b8ff650?v=74550647", "sha256": "0e0882574f92feb3f5f3cce297c06f3885bd917f220c3f965febea9fc7f097c6"}
+  ]
+}

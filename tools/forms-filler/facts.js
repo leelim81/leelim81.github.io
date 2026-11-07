@@ -188,8 +188,31 @@
     return ((field && field.group) || '') + ' ' + ((field && field.label) || '') + ' ' + ((field && field.id) || '');
   }
 
+  function oneEdit(a, b) {
+    if (a === b) return true;
+    var la = a.length;
+    var lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+    var i = 0;
+    var j = 0;
+    var edits = 0;
+    while (i < la && j < lb) {
+      if (a.charAt(i) === b.charAt(j)) { i++; j++; continue; }
+      edits++;
+      if (edits > 1) return false;
+      if (la > lb) i++;
+      else if (lb > la) j++;
+      else { i++; j++; }
+    }
+    if (i < la || j < lb) edits++;
+    return edits <= 1;
+  }
+
   function factKey(field) {
     var label = blob(field);
+    var tokens = label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    if (/dependant|dependent|spouse|\bchild\b|authorised officer|authorized officer/i.test(label)) return '';
+    if (tokens.some(function (token) { return oneEdit(token, 'name'); }) && /nric|passport|fin/.test(label.toLowerCase())) return 'name';
     if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
@@ -197,7 +220,8 @@
     if (/postal/i.test(label)) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
-    if (/phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
+    if (/contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
+    if (/\bname\b/i.test(label) && /nric|\bfin\b/i.test(label)) return 'name';
     if (/nric|fin\s*number|身份证/i.test(label)) return 'nric';
     if (/date of birth|出生|\bdob\b/i.test(label)) return 'dob';
     if (/gender|性别|\bsex\b/i.test(label)) return 'sex';

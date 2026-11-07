@@ -1,0 +1,115 @@
+{
+  "template_id": "cedar-clinic",
+  "split": "test",
+  "page": {
+    "width": 595,
+    "height": 842,
+    "origin": "bottom-left"
+  },
+  "fields": [
+    {
+      "id": "patient_name",
+      "label": "Patient name",
+      "pdf_rule": {
+        "x": 210,
+        "y": 720,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "identity_card_number",
+      "label": "Identity card number",
+      "pdf_rule": {
+        "x": 210,
+        "y": 680,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "residential_address",
+      "label": "Residential address",
+      "pdf_rule": {
+        "x": 210,
+        "y": 640,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "contact_number",
+      "label": "Contact number",
+      "pdf_rule": {
+        "x": 210,
+        "y": 600,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "sex",
+      "label": "Sex",
+      "pdf_rule": {
+        "x": 210,
+        "y": 560,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "occupation",
+      "label": "Occupation",
+      "pdf_rule": {
+        "x": 210,
+        "y": 520,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "name_of_dependant",
+      "label": "Name of dependant",
+      "pdf_rule": {
+        "x": 210,
+        "y": 480,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "citizenship",
+      "label": "Citizenship",
+      "pdf_rule": {
+        "x": 210,
+        "y": 440,
+        "w": 310,
+        "h": 1
+      }
+    },
+    {
+      "id": "bank_account",
+      "label": "Bank account",
+      "pdf_rule": {
+        "x": 210,
+        "y": 400,
+        "w": 310,
+        "h": 1
+      }
+    }
+  ],
+  "image_clean": {
+    "file": "fixtures/images/cedar-clinic-clean.png",
+    "width": 595,
+    "height": 842,
+    "y_from_top": "842 - pdf_y - 14 is the text top"
+  },
+  "image_noisy": {
+    "file": "fixtures/images/cedar-clinic-noisy.png",
+    "rotation_degrees": 2.6,
+    "resample": "nearest",
+    "noise_seed": 1412,
+    "note": "Gold boxes are for the clean upright image. The noisy file is a derived view, not a second template."
+  },
+  "license": "CC0-1.0"
+}

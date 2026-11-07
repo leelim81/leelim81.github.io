@@ -1,0 +1,2 @@
+# Used only to regenerate PNG fixtures. Scoring and integrity checks use the standard library.
+pillow==13.0.0

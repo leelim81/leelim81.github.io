@@ -146,7 +146,7 @@ body { overflow: hidden; }
 }
 .grip {
   position: absolute;
-  display: block;
+  display: none;
   padding: 0;
   border: 1px solid #1a1612;
   background: #fff;
@@ -160,7 +160,7 @@ body { overflow: hidden; }
   cursor: grab;
   touch-action: none;
 }
-.ann.selected .handle, .ann.selected .ann-del { display: block; }
+.ann:hover .grip, .ann.selected .grip, .ann.selected .handle, .ann.selected .ann-del { display: block; }
 .handle { width: 12px; height: 12px; background: #fff; }
 .handle.nw { left: -7px; top: -7px; cursor: nwse-resize; }
 .handle.ne { right: -7px; top: -7px; cursor: nesw-resize; }

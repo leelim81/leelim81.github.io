@@ -1,0 +1,27 @@
+name: forms-research
+on:
+  push:
+    paths:
+      - research/forms-filler/**
+      - tools/forms-filler/facts.js
+      - .github/workflows/forms-research.yml
+  pull_request:
+    paths:
+      - research/forms-filler/**
+      - tools/forms-filler/facts.js
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python3 research/forms-filler/scripts/assert_integrity.py
+      - run: python3 research/forms-filler/scripts/score_predictions.py --smoke
+      - run: node research/forms-filler/scripts/export_parser_baseline.mjs
+      - run: python3 research/forms-filler/scripts/score_parser_baseline.py
+      - run: python3 research/forms-filler/scripts/check_parser_score.py

@@ -1,0 +1,31 @@
+{
+  "task": "parser-only",
+  "model": null,
+  "runtime": "node facts.js from tools/forms-filler, not a language model",
+  "browser_quantized_inference": "not run",
+  "cpu_model_inference": "not run",
+  "by_split": {
+    "train": {
+      "correct": 60,
+      "wrong": 0,
+      "missed": 0,
+      "abstain_ok": 12,
+      "wrong_fill_rate": 0.0
+    },
+    "dev": {
+      "correct": 24,
+      "wrong": 0,
+      "missed": 0,
+      "abstain_ok": 4,
+      "wrong_fill_rate": 0.0
+    },
+    "test": {
+      "correct": 30,
+      "wrong": 0,
+      "missed": 6,
+      "abstain_ok": 18,
+      "wrong_fill_rate": 0.0
+    }
+  },
+  "note": "Occupation is only in a prose sentence and is counted as a miss when gold expects it. Citizenship, bank, dependant, net pay, and nationality are empty in gold."
+}

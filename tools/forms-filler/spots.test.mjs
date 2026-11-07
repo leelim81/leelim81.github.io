@@ -59,4 +59,23 @@ const wide = layout({
   squares: []
 });
 assert.ok(wide.some((field) => field.label === 'NAME:'), 'a wide name rule is kept');
+const member = layout({
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 47, y: 554, w: 81, h: 9, str: 'Name of Member (Claimant)' },
+    { x: 387, y: 554, w: 26, h: 9, str: 'NRIC No.' }
+  ],
+  lines: [
+    { x: 43, y: 564, w: 510 },
+    { x: 43, y: 524, w: 256 },
+    { x: 383, y: 524, w: 170 }
+  ],
+  squares: []
+});
+const memberNames = member.filter((field) => /Name of Member/.test(field.label));
+assert.equal(memberNames.length, 1, 'member name is one box');
+assert.ok(Math.abs(memberNames[0].rect.y - 555) < 8, 'member name sits on its label row');
+assert.equal(member.filter((field) => /NRIC/.test(field.label)).length, 1);
 console.log('spots tests ok', fields.length, 'fields');

@@ -24,7 +24,7 @@
   }
 
   function usableLabel(text) {
-    var s = String(text || '').replace(/\s+/g, ' ').trim();
+    var s = String(text || '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
     if (s.length < 2 || s.length > 60) return '';
     if (!latin(s)) return '';
     if (cjkCount(s) > (s.match(/[A-Za-z]/g) || []).length) return '';
@@ -230,7 +230,7 @@
     return label.replace(/\s+/g, ' ').trim();
   }
 
-  function assignLabels(slots, texts, reserved) {
+  function assignLabels(slots, texts, reserved, width) {
     var pairs = [];
     slots.forEach(function (slot, si) {
       texts.forEach(function (text, ti) {
@@ -240,11 +240,11 @@
         var overlap = text.x < slot.x + slot.w * 0.7 && text.x + text.w > slot.x - 8;
         var hint = /surname|underline|please|passport|family/i.test(text.str) ? 30 : 0;
         var longer = Math.min(24, text.str.length) * 0.35;
-        if (gap >= -6 && gap <= 110 && Math.abs(dy) <= 9) {
+        if (gap >= -6 && gap <= 110 && Math.abs(dy) <= 14) {
           pairs.push({ si: si, ti: ti, score: hint + Math.max(0, gap) * 0.25 + Math.abs(dy) - longer });
         } else if (dy >= 8 && dy <= 36 && text.x >= slot.x - 30 && text.x <= slot.x + Math.min(slot.w * 0.55, 110)) {
           pairs.push({ si: si, ti: ti, score: hint + 18 + dy + Math.abs(text.x - slot.x) * 0.15 - longer });
-        } else if (dy <= -2 && dy >= -16 && overlap && text.w < 150 && words(text.str).length < 6) {
+        } else if (slot.w < width * 0.72 && dy <= -2 && dy >= -16 && overlap && text.w < 150 && words(text.str).length < 6) {
           pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
         }
       });
@@ -319,6 +319,8 @@
   }
 
   function keepSlot(slot, texts) {
+    if (/important notice|please submit|^please\b|particulars of|details of|declaration by|i agree|i hereby|for official use|certificate of|this section/i.test(slot.label)) return false;
+    if (!/\b(full\s*)?name\b|\bnric\b|\bfin\b|\baddress\b|\bpostal\b|\be-?mail\b|\bphone\b|\btel\b|\bh\s*\/\s*p\b|\bdate\b|\bbirth\b|\bdob\b|\bsignature\b|\bmember\b|\bsex\b|\bmale\b|\bfemale\b|\brace\b|\bcontact\b|\bhospital\b|\badmit|\bdischarge|\bsalary\b|\bdesignation\b|\bdepartment\b|\boffice\b|\bapplicant\b|\bpassport\b|\bcompany\b|\bunion\b|\bcode\b|\bgender\b|\bmarital\b|\bemployer\b|\boccupation\b|\bnationality\b|\bbank\b|\baccount\b|\bsection\b|\bdepot\b|\bpolicy\b|\bofficer\b|\brelationship\b|\bplan\b|\bemail\b|\bstreet\b|\bunit\b|\bblk\b|\bhouse\b|\bjoined\b|\bservice\b|\b(off|res|pgr|hp)\s*no\b/i.test(slot.label)) return false;
     if (/^(job|contact details|address in singapore|personal particulars|residential status|marital status|highest education( level)?|ntuc|race|gender)$/i.test(slot.label)) return false;
     if (/fairprice|ntuc|understand|rebates|dividend|entrance fee|this section/i.test(slot.label)) return false;
     if (/^[a-z]/.test(slot.label)) return false;
@@ -341,6 +343,45 @@
       if (overlap > 8) inside++;
     }
     return inside === 0;
+  }
+
+  function normLabel(label) {
+    return String(label || '').replace(/[:\s]+$/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function dedupeSlots(slots, texts) {
+    var drop = {};
+    function lineY(slot) { return slot.lineY != null ? slot.lineY : slot.y; }
+    function labelDist(slot) {
+      var want = normLabel(slot.label);
+      var best = 1e9;
+      texts.forEach(function (text) {
+        if (normLabel(text.str) !== want) return;
+        var d = Math.abs(text.y - lineY(slot));
+        if (d < best) best = d;
+      });
+      return best;
+    }
+    for (var i = 0; i < slots.length; i++) {
+      if (drop[i] || slots[i].type === 'radio') continue;
+      for (var j = i + 1; j < slots.length; j++) {
+        if (drop[j] || slots[j].type === 'radio') continue;
+        var a = slots[i];
+        var b = slots[j];
+        var same = normLabel(a.label) && normLabel(a.label) === normLabel(b.label);
+        var dy = Math.abs(lineY(a) - lineY(b));
+        var overlapW = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        var overlapH = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        var smaller = Math.min(a.w * Math.max(a.h, 1), b.w * Math.max(b.h, 1));
+        var inter = Math.max(0, overlapW) * Math.max(0, overlapH);
+        if (!(same && dy < 42) && !(inter > smaller * 0.45 && dy < 18)) continue;
+        var lose = j;
+        if (same) lose = labelDist(a) <= labelDist(b) ? j : i;
+        else lose = (a.w * a.h) >= (b.w * b.h) ? j : i;
+        drop[lose] = true;
+      }
+    }
+    return slots.filter(function (_, index) { return !drop[index]; });
   }
 
   function layout(page) {
@@ -386,7 +427,7 @@
     var slots = runs.map(function (run) {
       return { x: run.x, y: run.y + 1, w: run.w, h: 12, label: '', type: 'text', lines: 1, lineY: run.y };
     });
-    assignLabels(slots, texts, optionSet);
+    assignLabels(slots, texts, optionSet, width);
     slots.forEach(function (slot) {
       if (slot.label) return;
       var best = null;
@@ -403,10 +444,11 @@
     var labeled = mergeStacks(slots);
     slots = labeled.filter(function (slot) { return !!slot.label; });
     slots.forEach(function (slot) { widenSlot(slot, texts, width); });
+    slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
     texts.forEach(function (text) {
       var bare = String(text.str || '').replace(/[:\s]+$/, '');
       if (words(bare).length > 6 || bare.length > 42) return;
-      if (!/:\s*$/.test(text.str) && !/^(name|nric(\s*no\.?)?|address|e-?mail|email)\b/i.test(bare)) return;
+      if (!/:\s*$/.test(text.str) && !/^(name|nric(\s*no\.?)?|address|e-?mail|email|date of birth|contact(\s+no\.?)?)\b/i.test(bare)) return;
       var already = slots.some(function (slot) {
         var same = String(slot.label || '').replace(/[:\s]+$/, '').toLowerCase() === bare.toLowerCase();
         var dy = Math.abs((slot.lineY != null ? slot.lineY : slot.y) - text.y);
@@ -421,7 +463,7 @@
         if (other.x >= start - 2 && other.x < end) end = other.x - 4;
       });
       if (end - start < 36) return;
-      slots.push({
+      var made = {
         x: start,
         y: text.y + 1,
         w: end - start,
@@ -430,9 +472,17 @@
         type: 'text',
         lines: 1,
         lineY: text.y
+      };
+      if (keepSlot(made, texts)) slots.push(made);
+    });
+    slots = dedupeSlots(slots, texts);
+    slots.forEach(function (slot) {
+      slots.forEach(function (other) {
+        if (other === slot || slot.group) return;
+        if (Math.abs((other.lineY != null ? other.lineY : other.y) - (slot.lineY != null ? slot.lineY : slot.y)) > 8) return;
+        if (/dependant|dependent|spouse|\bchild\b|officer/i.test(other.label)) slot.group = other.label;
       });
     });
-    slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
 
     var fields = [];
     var seen = {};
@@ -453,7 +503,7 @@
         label: slot.label,
         type: 'text',
         options: [],
-        group: '',
+        group: slot.group || '',
         rect: { x: slot.x, y: slot.y, width: slot.w, height: Math.max(12, slot.h) },
         lineH: 12
       });
@@ -468,11 +518,16 @@
       group.rows.forEach(function (row) {
         row.pairs.forEach(function (pair) {
           var square = pair.square;
+          var around = '';
+          slots.forEach(function (slot) {
+            if (Math.abs((slot.lineY != null ? slot.lineY : slot.y) - square.y) > 22) return;
+            if (/dependant|dependent|spouse|\bchild\b|officer/i.test(slot.label)) around = slot.label;
+          });
           push({
             label: pair.label,
             type: 'radio',
             options: options.slice(),
-            group: title,
+            group: around ? around + ' ' + title : title,
             rect: { x: square.x, y: square.y, width: square.w, height: square.h },
             lineH: square.h
           });

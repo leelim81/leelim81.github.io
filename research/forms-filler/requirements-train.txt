@@ -1,0 +1,6 @@
+# Not installed by the integrity check.
+# These pins are the versions reported for the shared-box virtualenv /tmp/lv on 2026-11-07.
+# This repository has not reinstalled them and has not started training.
+torch==2.15.0
+transformers==5.22.2
+peft==0.21.2

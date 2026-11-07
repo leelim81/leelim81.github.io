@@ -1,0 +1,83 @@
+{
+  "task": "browser end-to-end placement",
+  "model_assisted": "not run",
+  "reason": "This browser reported no WebGPU adapter. No Qwen weights were loaded.",
+  "runtime": "Forms Filler parser plus flat-form geometry in Chromium. Not a CPU LoRA run and not a quantized model score.",
+  "synthetic_reference": "Alex Example, S1234567D, 14/03/1992, 10 EXAMPLE ROAD #04-12 123456, +65 8123 4567, alex.example@example.com, Chinese, Example Press",
+  "earlier_live_baseline_commit": "511d9d284f432bba2f678a3e82eaaa5762265bb4",
+  "cases": [
+    {
+      "form": "Group Hospitalisation Benefit Claim",
+      "role": "development-seen",
+      "before": {"values": ["X", "X"], "correct": [], "wrong": ["two gender marks and no identity text"], "missed": ["name", "nric", "address", "email", "phone"]},
+      "after_first_remeasure": {"correct": ["member name", "member nric", "member sex", "address", "email"], "wrong": ["dependant nric", "dependant sex"], "missed": ["phone", "date of birth"]},
+      "after_dependant_abstention": {
+        "spots": 24,
+        "values": [
+          {"text": "Alex Example", "y": 676, "x": 253},
+          {"text": "S1234567D", "y": 676, "x": 762},
+          {"text": "X", "y": 716, "x": 559},
+          {"text": "10 EXAMPLE ROAD #04-12 123456", "y": 960, "x": 207},
+          {"text": "+65 8123 4567", "y": 1031, "x": 169},
+          {"text": "alex.example@example.com", "y": 1031, "x": 745},
+          {"text": "Alex Example", "y": 1813, "x": 197}
+        ],
+        "correct": ["member name and nric on one row", "one member sex mark", "address", "contact number and email on one row", "page-2 member name"],
+        "wrong": [],
+        "missed": ["date of birth", "occupation"],
+        "abstained": ["dependant name", "dependant nric", "dependant sex", "name of union", "officer lines"]
+      }
+    },
+    {
+      "form": "HDBSU membership scan",
+      "role": "development-seen",
+      "before": {"spots": 4, "labels": ["Signature of Applicant", "Member's", "OCR junk", "Nome"]},
+      "after": {
+        "spots": 6,
+        "values": [
+          {"text": "Alex Example", "y": 532, "x": 105},
+          {"text": "S1234567D", "y": 618, "x": 288},
+          {"text": "Alex Example", "y": 662, "x": 222},
+          {"text": "Alex Example", "y": 729, "x": 208}
+        ],
+        "correct": ["name on the name-as-in-NRIC line", "NRIC on the NRIC/FIN line"],
+        "wrong": ["two further name strings land on the sex and date-of-birth area"],
+        "missed": ["address", "phone", "email", "sex checkbox", "race", "postal code"]
+      }
+    },
+    {
+      "form": "NTUC membership brochure",
+      "role": "development-seen",
+      "before": {"spots": 5, "values": ["S1234567D", "14/03/1992"], "note": "NRIC and date of birth were stored. The sheet was not a usable fill."},
+      "after_fill": {"spots": 1, "values": [{"text": "S1234567D", "y": 1025, "x": 872}], "correct": ["nric string stored"], "wrong": [], "missed": ["name", "date of birth", "address", "phone"], "note": "Still not a usable fill. The page is a landscape brochure."},
+      "later_label_read_not_refilled": ["NRIC/FIN of", "'Date of Birth", "Contact"]
+    },
+    {
+      "form": "PUBEU rotated noisy photo",
+      "role": "development-seen derivative",
+      "before": {"spots": 18, "false_labels": ["PORNG", "Dw", "GROSS", "NO"], "missed": ["NRIC NO"]},
+      "after": {
+        "spots": 9,
+        "values": [
+          {"text": "14/03/1992", "y": 472, "x": 686},
+          {"text": "10 EXAMPLE ROAD #04-12 123456", "y": 507, "x": 251},
+          {"text": "123456", "y": 551, "x": 283},
+          {"text": "Chinese", "y": 551, "x": 605}
+        ],
+        "correct": ["date of birth", "address", "postal code", "race"],
+        "wrong": [],
+        "missed": ["name", "nric", "phone"]
+      }
+    },
+    {
+      "form": "PUBEU membership vector",
+      "role": "development-seen",
+      "after_commit_aced8b7_live": {
+        "spots": 21,
+        "values_on_distinct_rows": ["Alex Example", "S1234567D", "14/03/1992", "10 EXAMPLE ROAD #04-12 123456", "123456", "Chinese", "+65 8123 4567"],
+        "signature_filled": false,
+        "drag_delta_px": [28, 20]
+      }
+    }
+  ]
+}

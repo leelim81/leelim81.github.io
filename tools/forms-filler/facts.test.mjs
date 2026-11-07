@@ -147,6 +147,20 @@ const splitMapped = mapFactsToFields(parts, splitFields);
 assert.equal(splitMapped.first, 'Alex');
 assert.equal(splitMapped.last, 'Example');
 assert.equal(splitMapped.full, 'Alex Example');
+const third = mapFactsToFields(noted, [
+  { id: 'depNric', label: 'NRIC No', group: 'Name of Dependant', type: 'text' },
+  { id: 'depSex', label: 'Male', group: 'Name of Dependant Gender', type: 'radio' },
+  { id: 'contact', label: 'Contact No', type: 'text' }
+]);
+assert.equal(third.depNric, undefined);
+assert.equal(third.depSex, undefined);
+assert.equal(third.contact, '+65 8123 4567');
+const sexed = mapFactsToFields(fromText('Sex: M\n'), [
+  { id: 'memberSex', label: 'Male', group: 'Gender', type: 'radio' },
+  { id: 'depSex', label: 'Male', group: 'Name of Dependant Gender', type: 'radio' }
+]);
+assert.equal(sexed.memberSex, 'Male');
+assert.equal(sexed.depSex, undefined);
 const noSplit = mapFactsToFields(fromText('Full name: Alex Example\n'), splitFields);
 assert.equal(noSplit.first, undefined);
 assert.equal(noSplit.last, undefined);
