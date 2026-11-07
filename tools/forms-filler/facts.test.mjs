@@ -117,4 +117,21 @@ assert.ok(asked.indexOf('title') === -1);
 assert.ok(preview(noted).indexOf('Name Tan Wei Ming') !== -1);
 assert.ok(preview(noted).indexOf('Phone +65 8123 4567') !== -1);
 
+const pubeu = [
+  { id: 'nric', label: 'NRIC NO:', type: 'text' },
+  { id: 'address', label: 'ADDRESS:', type: 'text' },
+  { id: 'hp', label: 'H/P NO:', type: 'text' },
+  { id: 'sign', label: 'Signature of Applicant', type: 'text' },
+  { id: 'first', label: 'First Name Given Name', type: 'text' },
+  { id: 'last', label: 'Last Name Family Name', type: 'text' }
+];
+const placed = mapFactsToFields(facts, pubeu);
+assert.equal(placed.nric, 'S1234567D');
+assert.equal(placed.address, '10 EXAMPLE ROAD #04-12 123456');
+assert.equal(placed.sign, undefined);
+assert.equal(placed.first, undefined);
+assert.equal(placed.last, undefined);
+const phonePlaced = mapFactsToFields(noted, pubeu);
+assert.equal(phonePlaced.hp, '+65 8123 4567');
+
 console.log('facts tests ok');

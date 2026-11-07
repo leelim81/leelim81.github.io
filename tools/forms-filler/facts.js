@@ -152,6 +152,8 @@
     if (address.street) facts.street = address.street;
     if (address.unit) facts.unit = address.unit;
     if (address.postal) facts.postal = address.postal;
+    var addressLine = [address.blk, address.street, address.unit ? '#' + address.unit : '', address.postal].filter(Boolean).join(' ');
+    if (addressLine) facts.address = addressLine;
     var residential = residentialFrom(text);
     if (residential) facts.residential = residential;
     var email = emailFrom(text);
@@ -182,21 +184,23 @@
     if (/postal/i.test(label)) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
-    if (/phone|\(hp\)|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
+    if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
+    if (/phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
     if (/nric|fin\s*number|身份证/i.test(label)) return 'nric';
     if (/date of birth|出生|\bdob\b/i.test(label)) return 'dob';
     if (/gender|性别|\bsex\b/i.test(label)) return 'sex';
     if (/\brace\b|种族/i.test(label)) return 'race';
     if (/residential|住户/i.test(label)) return 'residential';
     if (/bank/.test(label.toLowerCase()) && /name/i.test(label)) return '';
-    if (/full\s*name|applicant|姓名/i.test(label)) return 'name';
-    if (/\bname\b/i.test(label) && !/street|bank|company|user|emergency/i.test(label)) return 'name';
+    if (/full\s*name|姓名/i.test(label)) return 'name';
+    if (/\bapplicant'?s?\s+name\b/i.test(label)) return 'name';
+    if (/\bname\b/i.test(label) && !/street|bank|company|user|emergency|first|given|last|family|middle|maiden|sign/i.test(label)) return 'name';
     return '';
   }
 
   function kindOf(field) {
     var key = factKey(field);
-    if (key === 'name' || key === 'nric' || key === 'phone' || key === 'email' || key === 'street' || key === 'blk' || key === 'company' || key === 'postal' || key === 'dob') return key;
+    if (key === 'name' || key === 'nric' || key === 'phone' || key === 'email' || key === 'street' || key === 'address' || key === 'blk' || key === 'company' || key === 'postal' || key === 'dob') return key;
     var label = blob(field).toLowerCase();
     if (/street/.test(label)) return 'street';
     if (/blk|house/.test(label)) return 'blk';
@@ -212,7 +216,7 @@
     var text = String(value || '').trim();
     if (!text || PLACE.test(text)) {
       var kind0 = kindOf(field);
-      if (kind0 === 'name' || kind0 === 'phone' || kind0 === 'email' || kind0 === 'street' || kind0 === 'blk' || kind0 === 'company') return false;
+      if (kind0 === 'name' || kind0 === 'phone' || kind0 === 'email' || kind0 === 'street' || kind0 === 'address' || kind0 === 'blk' || kind0 === 'company') return false;
       if (!text) return false;
     }
     var kind = kindOf(field);
@@ -224,7 +228,7 @@
     if (kind === 'nric') return /^[STFGM]\d{7}[A-Z]$/i.test(text.replace(/\s/g, ''));
     if (kind === 'phone') return text.replace(/\D/g, '').length >= 8;
     if (kind === 'email') return /@/.test(text) && !PLACE.test(text);
-    if (kind === 'street' || kind === 'blk' || kind === 'company') return !PLACE.test(text);
+    if (kind === 'street' || kind === 'address' || kind === 'blk' || kind === 'company') return !PLACE.test(text);
     if (kind === 'postal') return /^\d{6}$/.test(text);
     if (kind === 'dob') return /^\d{2}\/\d{2}\/\d{4}$/.test(text);
     return !PLACE.test(text);

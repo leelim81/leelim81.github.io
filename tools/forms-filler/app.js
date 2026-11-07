@@ -107,7 +107,7 @@
       ? state.formName + ' · ' + state.fields.length + ' ' + (flat ? 'entry spots' : 'fields')
       : 'A fillable PDF, a flat form, or a photo of one.';
     renderRefs();
-    var ready = !!(state.formBytes && state.fields.length && !state.running && (flat || (state.refs.length && state.gpu && state.gpu.ok)));
+    var ready = !!(state.formBytes && state.fields.length && !state.running && (flat || state.refs.length));
     $('fillBtn').disabled = !ready;
     $('fillBtn').textContent = flat && !state.refs.length ? 'Open in the editor' : 'Fill from the papers';
   }
