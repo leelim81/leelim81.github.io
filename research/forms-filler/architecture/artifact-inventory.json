@@ -1,0 +1,135 @@
+[
+  {
+    "name": "smoldocling-q4",
+    "model": "docling-project/SmolDocling-256M-preview",
+    "revision": "ce51f56c4ebe36e0b1c3a55f67b261ba22a50bf8",
+    "dtype_map": {
+      "embed_tokens": "q4",
+      "vision_encoder": "q4",
+      "decoder_model_merged": "q4"
+    },
+    "files": [
+      {
+        "path": "onnx/embed_tokens_q4.onnx",
+        "bytes": 113541438
+      },
+      {
+        "path": "onnx/vision_encoder_q4.onnx",
+        "bytes": 63784944
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4.onnx",
+        "bytes": 86894835
+      }
+    ],
+    "total_bytes": 264221217,
+    "note": "Artifact inventory sum only; not downloaded/run. Excludes tokenizer/config/runtime/OCR; file existence does not prove quantized accuracy or browser compatibility."
+  },
+  {
+    "name": "florence-official-f16-supported",
+    "model": "onnx-community/Florence-2-base-ft",
+    "revision": "e88a44eaf3791a35eae0c5a47b3dbcd36e67eb6f",
+    "dtype_map": {
+      "embed_tokens": "fp16",
+      "vision_encoder": "fp16",
+      "encoder_model": "q4",
+      "decoder_model_merged": "q4"
+    },
+    "files": [
+      {
+        "path": "onnx/embed_tokens_fp16.onnx",
+        "bytes": 78780290
+      },
+      {
+        "path": "onnx/vision_encoder_fp16.onnx",
+        "bytes": 183930536
+      },
+      {
+        "path": "onnx/encoder_model_q4.onnx",
+        "bytes": 30058778
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4.onnx",
+        "bytes": 64393474
+      }
+    ],
+    "total_bytes": 357163078,
+    "note": "Artifact inventory sum only; not downloaded/run. Excludes tokenizer/config/runtime/OCR; file existence does not prove quantized accuracy or browser compatibility."
+  },
+  {
+    "name": "granite-q4",
+    "model": "onnx-community/granite-docling-258M-ONNX",
+    "revision": "e8602580df77443fc3421cf3bae0601da601e5c6",
+    "dtype_map": {
+      "embed_tokens": "q4",
+      "vision_encoder": "q4",
+      "decoder_model_merged": "q4"
+    },
+    "files": [
+      {
+        "path": "onnx/embed_tokens_q4.onnx",
+        "bytes": 437
+      },
+      {
+        "path": "onnx/embed_tokens_q4.onnx_data",
+        "bytes": 231211008
+      },
+      {
+        "path": "onnx/vision_encoder_q4.onnx",
+        "bytes": 313672
+      },
+      {
+        "path": "onnx/vision_encoder_q4.onnx_data",
+        "bytes": 63501312
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4.onnx",
+        "bytes": 282058
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4.onnx_data",
+        "bytes": 104719616
+      }
+    ],
+    "total_bytes": 400028103,
+    "note": "Artifact inventory sum only; not downloaded/run. Excludes tokenizer/config/runtime/OCR; file existence does not prove quantized accuracy or browser compatibility."
+  },
+  {
+    "name": "granite-q4f16",
+    "model": "onnx-community/granite-docling-258M-ONNX",
+    "revision": "e8602580df77443fc3421cf3bae0601da601e5c6",
+    "dtype_map": {
+      "embed_tokens": "q4f16",
+      "vision_encoder": "q4f16",
+      "decoder_model_merged": "q4f16"
+    },
+    "files": [
+      {
+        "path": "onnx/embed_tokens_q4f16.onnx",
+        "bytes": 485
+      },
+      {
+        "path": "onnx/embed_tokens_q4f16.onnx_data",
+        "bytes": 115605504
+      },
+      {
+        "path": "onnx/vision_encoder_q4f16.onnx",
+        "bytes": 315763
+      },
+      {
+        "path": "onnx/vision_encoder_q4f16.onnx_data",
+        "bytes": 54753792
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4f16.onnx",
+        "bytes": 283790
+      },
+      {
+        "path": "onnx/decoder_model_merged_q4f16.onnx_data",
+        "bytes": 93352576
+      }
+    ],
+    "total_bytes": 264311910,
+    "note": "Artifact inventory sum only; not downloaded/run. Excludes tokenizer/config/runtime/OCR; file existence does not prove quantized accuracy or browser compatibility."
+  }
+]

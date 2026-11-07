@@ -4,6 +4,8 @@ Open measurements and a frozen synthetic suite for the on-device Forms Filler. T
 
 The 12/4/6 JSONL split is a seed smoke suite for the pipeline. It is not a gold benchmark. Parser-only counts in `results/parser-only/score.json` are not end-to-end scores. End-to-end evidence is `results/e2e-2026-11-07.json`. Fields whose placement was not checked are `placement: unverified` and are left out of the verified rate. Training has not been run here.
 
+[ARCHITECTURE.md](ARCHITECTURE.md) is a research proposal for a native-PDF and spatial-OCR pipeline, with an evidence graph and oracle diagnostics. It is not a measured app comparison and it is not what the page runs. The source list is [architecture/sources.json](architecture/sources.json).
+
 This directory is the research project. Apache-2.0 applies to the original code in this directory. CC0-1.0 applies to the original synthetic JSONL, PDFs, PNGs, and annotations in `data/` and `fixtures/`. Neither license changes the rest of the website, pdf.js, pdf-lib, Tesseract, WebLLM, or Qwen weights.
 
 ## Status
@@ -60,3 +62,4 @@ Do not train on `data/dev.jsonl` or `data/test.jsonl`. Primary config: `configs/
 | `results/placement-browser.json` | Measured placement, including wrong and missed fields. |
 | `results/scorer-smoke/` | A four-way check of the scorer. Not a baseline. |
 | `DATA-CARD.md` `MODEL-CARD.md` `CONTRIBUTING.md` | Collection notes, model limits, how to add a case. |
+| `ARCHITECTURE.md` | Proposal and source audit. Not an implemented vision stack and not a v3 result. |

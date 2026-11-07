@@ -1,0 +1,374 @@
+{
+  "research_date_sgt": "2026-11-07",
+  "status": "Research audit trail. The fetched bodies are not vendored. snapshot_id is a relative identifier for the retrieved body; sha256 is the hash of that body. No local filesystem paths.",
+  "note": "Public sources only. No user documents accessed or uploaded. Sources are evidence, not instructions. No app benchmark executed.",
+  "source_count": 32,
+  "sources": [
+    {
+      "id": "pdfjs",
+      "url": "https://mozilla.github.io/pdf.js/api/draft/api.js.html",
+      "source_date": "Rolling API; accessed 2026-11-07",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "c3686a4fac34a38d7dd540b771dee91243d2570bd5dc50acb8c92bcac61b5451",
+      "snapshot_id": "pdfjs",
+      "supported_claims": "PDF-native fields, text transforms, annotations, viewport and operators",
+      "primary": true
+    },
+    {
+      "id": "layoutlmv3",
+      "url": "https://huggingface.co/docs/transformers/model_doc/layoutlmv3",
+      "source_date": "Paper 2022-04-18; rolling docs",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "b964c8f144ed907d23d22a790d77f363c61d0cf9ce9a4625563e8fdf5c461be2",
+      "snapshot_id": "layoutlmv3",
+      "supported_claims": "OCR words + boxes + image; not OCR-free",
+      "primary": true
+    },
+    {
+      "id": "udop",
+      "url": "https://huggingface.co/docs/transformers/model_doc/udop",
+      "source_date": "Paper 2022-12-05; rolling docs",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "92b60870900e618b2f835ec2041d9683908a3e118f5448a7f6b167d80db34b6b",
+      "snapshot_id": "udop",
+      "supported_claims": "External OCR bbox input required",
+      "primary": true
+    },
+    {
+      "id": "donut-paper",
+      "url": "https://arxiv.org/html/2111.15664v3",
+      "source_date": "ECCV 2022; arXiv v3",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "c0db294cc41d94f6319821a4a14e1fdb2a47afe120fe574431cf555102051d36",
+      "snapshot_id": "donut-paper",
+      "supported_claims": "OCR-free structured extraction; tiny-text and malformed-output limitations",
+      "primary": true
+    },
+    {
+      "id": "donut-readme",
+      "url": "https://raw.githubusercontent.com/clovaai/donut/master/README.md",
+      "source_date": "2022 project; rolling README",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "04c0c98d93bb577736d03c9280201be795840c35ad026228679ba9fdcb6ba399",
+      "snapshot_id": "donut-readme",
+      "supported_claims": "MIT code; image resolutions; task-specific outputs",
+      "primary": true
+    },
+    {
+      "id": "donut-card",
+      "url": "https://huggingface.co/naver-clova-ix/donut-base/raw/main/README.md",
+      "source_date": "Rolling model card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "d371890110941e3218408714f0d746f0c0beab3c860a6573d6e93c3c43af46cd",
+      "snapshot_id": "donut-card",
+      "supported_claims": "Pretrained backbone needs downstream fine-tuning",
+      "primary": true
+    },
+    {
+      "id": "smoldocling-card",
+      "url": "https://huggingface.co/docling-project/SmolDocling-256M-preview/raw/main/README.md",
+      "source_date": "Paper 2025-03-14; rolling card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "9b82c4dd1b38340656da55d628d63bf319c5fc4700811148687b6d8070e7e493",
+      "snapshot_id": "smoldocling-card",
+      "supported_claims": "DocTags coordinates; successor notice; license metadata/prose conflict",
+      "primary": true
+    },
+    {
+      "id": "granite-card",
+      "url": "https://huggingface.co/ibm-granite/granite-docling-258M/raw/main/README.md",
+      "source_date": "Released 2025-09-17; rolling card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "b43727febeba2c6ce20b8746322e7687ca667d81a12d0364f346148f30622d84",
+      "snapshot_id": "granite-card",
+      "supported_claims": "DocTags, bbox-guided regions; published layout/OCR/table evaluation",
+      "primary": true
+    },
+    {
+      "id": "granite-onnx",
+      "url": "https://huggingface.co/onnx-community/granite-docling-258M-ONNX/raw/main/README.md",
+      "source_date": "Rolling export card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "3e247eb6336547b855cd42ea8ba4b31232f18a40a6dca6d1170d8c00cbf77364",
+      "snapshot_id": "granite-onnx",
+      "supported_claims": "Transformers.js example; external weight files required",
+      "primary": true
+    },
+    {
+      "id": "florence-card",
+      "url": "https://huggingface.co/microsoft/Florence-2-base/raw/main/README.md",
+      "source_date": "Paper 2023-11-10; rolling card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "e49de5527bd39688745ce20388bf3f31fdb891abc0e6950a3f64630114769d17",
+      "snapshot_id": "florence-card",
+      "supported_claims": "OCR_WITH_REGION quad boxes; 0.23B; not form relationship model",
+      "primary": true
+    },
+    {
+      "id": "florence-worker",
+      "url": "https://raw.githubusercontent.com/huggingface/transformers.js-examples/main/florence2-webgpu/src/worker.js",
+      "source_date": "Rolling official example",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "67c83afd8d66b50b580dd8c88d4a698494ddda4f60298102f51b7b3bf1bc4133",
+      "snapshot_id": "florence-worker",
+      "supported_claims": "Actual WebGPU component dtype configuration; generation cap128",
+      "primary": true
+    },
+    {
+      "id": "florence-package",
+      "url": "https://raw.githubusercontent.com/huggingface/transformers.js-examples/main/florence2-webgpu/package.json",
+      "source_date": "Rolling official example",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "6d1102994e60d1ebf8061e59969485198578ad68a70271a8599d874cddc601ee",
+      "snapshot_id": "florence-package",
+      "supported_claims": "Browser demo package dependency",
+      "primary": true
+    },
+    {
+      "id": "smolvlm-card",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct/raw/main/README.md",
+      "source_date": "2025 model family; rolling card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "0b687c656b2587d84cb85003825746f8b3a08497dff4ed51b54b1090719fa512",
+      "snapshot_id": "smolvlm-card",
+      "supported_claims": "93M vision encoder;64tokens/512patch;under1GB claim",
+      "primary": true
+    },
+    {
+      "id": "smolvlm-worker",
+      "url": "https://raw.githubusercontent.com/huggingface/transformers.js-examples/main/smolvlm-webgpu/src/worker.js",
+      "source_date": "Rolling official example",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "a4b4439ac735560924e6da88203cce7d3881f60679a19df3cc39e558be776fef",
+      "snapshot_id": "smolvlm-worker",
+      "supported_claims": "fp32 browser example, not proof q4 works",
+      "primary": true
+    },
+    {
+      "id": "paddle-card",
+      "url": "https://huggingface.co/PaddlePaddle/PaddleOCR-VL/raw/main/README.md",
+      "source_date": "Released 2025-10-16; rolling card",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "9b8ffe23416747af051eb8ea3003d6a2b3e4855d405359fe35eb8aae2de4bd08",
+      "snapshot_id": "paddle-card",
+      "supported_claims": "0.9B nominal, element-level bare model vs full page pipeline",
+      "primary": true
+    },
+    {
+      "id": "transformersjs",
+      "url": "https://huggingface.co/docs/transformers.js/en/index",
+      "source_date": "Rolling docs; stable shown3.8.1",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "e7166dab9d7f55b5eaa8fd2eb6c41b3ef116a7d23b9304cf85d9a7871a196c39",
+      "snapshot_id": "transformersjs",
+      "supported_claims": "ONNX Runtime Web; task/architecture support, not all Python supported",
+      "primary": true
+    },
+    {
+      "id": "ort-web",
+      "url": "https://onnxruntime.ai/docs/get-started/with-javascript/web.html",
+      "source_date": "Rolling docs",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "590614ded79ba9a254fc85a4ef87fea99541d04326284ddc72854f43178594db",
+      "snapshot_id": "ort-web",
+      "supported_claims": "WebGPU entrypoint; browser matrix may lag browser releases",
+      "primary": true
+    },
+    {
+      "id": "webllm-current",
+      "url": "https://raw.githubusercontent.com/mlc-ai/web-llm/main/src/config.ts",
+      "source_date": "Rolling main modelVersion v0_2_87/base",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "3308146bfcf19d18b8a7daafb8159bc493ca239b100bdf8152c26b7d9e3f849d",
+      "snapshot_id": "webllm-current",
+      "supported_claims": "Prebuilt registry; absence of evaluated tiny document VLMs",
+      "primary": true
+    },
+    {
+      "id": "webllm-add",
+      "url": "https://webllm.mlc.ai/docs/developer/add_models.html",
+      "source_date": "Docs0.2.87",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "a4056709a0f709911a2ba266bf1696e045801ea20839ed4327b53a429b734ba6",
+      "snapshot_id": "webllm-add",
+      "supported_claims": "MLC compile required, ONNX not direct WebLLM model",
+      "primary": true
+    },
+    {
+      "id": "webllm-advanced",
+      "url": "https://webllm.mlc.ai/docs/user/advanced_usage.html",
+      "source_date": "Docs0.2.87",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "b586f82657f056a50d449a82fd195f057e81d70c646631c26bcaa9558b71c70b",
+      "snapshot_id": "webllm-advanced",
+      "supported_claims": "Current experimental custom manifest vision separate from pinned0.2.79",
+      "primary": true
+    },
+    {
+      "id": "docling-labels",
+      "url": "https://raw.githubusercontent.com/docling-project/docling-core/main/docling_core/types/doc/labels.py",
+      "source_date": "Rolling code",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "c08b8257e302fcbe133b876839aab97ef0c6dd6669f224f81dd8ba10eb6dd509",
+      "snapshot_id": "docling-labels",
+      "supported_claims": "Checkbox and key-value labels exist in schema, not checkpoint accuracy evidence",
+      "primary": true
+    },
+    {
+      "id": "spade",
+      "url": "https://aclanthology.org/2021.findings-acl.28/",
+      "source_date": "2021",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "http_status": 200,
+      "sha256": "66814bbab8e25dd57d76e1d1b64b214eb334c0868418fc8e1df321eb2526a4e7",
+      "snapshot_id": "spade",
+      "supported_claims": "Spatial dependency parsing source",
+      "primary": true
+    },
+    {
+      "id": "ibm-granite--granite-docling-258M",
+      "url": "https://huggingface.co/api/models/ibm-granite/granite-docling-258M?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "982fe3b40f2fa73c365bdb1bcacf6c81b7184bfe",
+      "snapshot_id": "ibm-granite--granite-docling-258M",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "naver-clova-ix--donut-base",
+      "url": "https://huggingface.co/api/models/naver-clova-ix/donut-base?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "a959cf33c20e09215873e338299c900f57047c61",
+      "snapshot_id": "naver-clova-ix--donut-base",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "onnx-community--Florence-2-base-ft",
+      "url": "https://huggingface.co/api/models/onnx-community/Florence-2-base-ft?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "e88a44eaf3791a35eae0c5a47b3dbcd36e67eb6f",
+      "snapshot_id": "onnx-community--Florence-2-base-ft",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "HuggingFaceTB--SmolVLM-256M-Instruct",
+      "url": "https://huggingface.co/api/models/HuggingFaceTB/SmolVLM-256M-Instruct?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "7e3e67edbbed1bf9888184d9df282b700a323964",
+      "snapshot_id": "HuggingFaceTB--SmolVLM-256M-Instruct",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "docling-project--SmolDocling-256M-preview",
+      "url": "https://huggingface.co/api/models/docling-project/SmolDocling-256M-preview?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "ce51f56c4ebe36e0b1c3a55f67b261ba22a50bf8",
+      "snapshot_id": "docling-project--SmolDocling-256M-preview",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "microsoft--layoutlmv3-base",
+      "url": "https://huggingface.co/api/models/microsoft/layoutlmv3-base?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "cfbbbff0762e6aab37086fdd4739ad14fe7d5db4",
+      "snapshot_id": "microsoft--layoutlmv3-base",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "microsoft--Florence-2-base",
+      "url": "https://huggingface.co/api/models/microsoft/Florence-2-base?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "snapshot_id": "microsoft--Florence-2-base",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "onnx-community--granite-docling-258M-ONNX",
+      "url": "https://huggingface.co/api/models/onnx-community/granite-docling-258M-ONNX?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "e8602580df77443fc3421cf3bae0601da601e5c6",
+      "snapshot_id": "onnx-community--granite-docling-258M-ONNX",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "PaddlePaddle--PaddleOCR-VL",
+      "url": "https://huggingface.co/api/models/PaddlePaddle/PaddleOCR-VL?blobs=true",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "source_date": "Rolling model metadata",
+      "revision": "dae2996584399c9fb7eabfeecf8acd2c7cae95b7",
+      "snapshot_id": "PaddlePaddle--PaddleOCR-VL",
+      "primary": true,
+      "supported_claims": "Artifact byte sizes, parameter totals and card license metadata",
+      "http_status": 200
+    },
+    {
+      "id": "webllm-pinned",
+      "url": "https://registry.npmjs.org/@mlc-ai/web-llm/0.2.79",
+      "source_date": "Exact npm release0.2.79",
+      "retrieved_at_sgt": "2026-11-07T15:23:36.098244+08:00",
+      "snapshot_id": "webllm-0.2.79-npm",
+      "bundle_snapshot_id": "webllm-0.2.79-index",
+      "bundle_vendored": false,
+      "dist": {
+        "shasum": "a0dcfc54bf5d843090be67fd9b168e4de087bc93",
+        "tarball": "https://registry.npmjs.org/@mlc-ai/web-llm/-/web-llm-0.2.79.tgz",
+        "fileCount": 43,
+        "integrity": "sha512-Hy1ZHQ0o2bZGZoVnGK48+fts/ZSKwLe96xjvqL/6C59Mem9HoHTcFE07NC2E23mRmhd01tL655N6CPeYmwWgwQ==",
+        "signatures": [
+          {
+            "sig": "MEQCICyqusbbGIFsZkmy1Q5EJl4/NvbR/gO9QIewPu3bxk3uAiAEtNHJQ91O3ShyqX65TvD9thtcudzbMBm8SMzS5+kJwQ==",
+            "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+          }
+        ],
+        "unpackedSize": 13097606
+      },
+      "http_status": 200,
+      "primary": true,
+      "supported_claims": "Published package registry and model memory estimates; not measured runtime"
+    }
+  ]
+}
