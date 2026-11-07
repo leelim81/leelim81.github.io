@@ -27,6 +27,17 @@
       });
     });
   }
+  function putAll(name, entries) {
+    return open(name).then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('kv', 'readwrite');
+        var store = tx.objectStore('kv');
+        (entries || []).forEach(function (entry) { store.put(entry.value, entry.key); });
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
   function clear(name) {
     return open(name).then(function (db) {
       return new Promise(function (resolve, reject) {
@@ -37,5 +48,5 @@
       });
     });
   }
-  global.DeskDB = { get: get, set: set, clear: clear };
+  global.DeskDB = { get: get, set: set, putAll: putAll, clear: clear };
 })(window);

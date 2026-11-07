@@ -1,7 +1,7 @@
 /* Two uploads, a local model, then the existing editor. */
 (function () {
   var DB = 'tools-forms-filler';
-  var EDITOR_DB = 'tools-edit-sign-pdf';
+  var EDITOR_DB = 'tools-forms-editor';
   var state = {
     gpu: null,
     formBytes: null,
@@ -557,12 +557,14 @@
       });
     }
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
-    await DeskDB.set(EDITOR_DB, 'pdf', bytes);
-    await DeskDB.set(EDITOR_DB, 'session', { fileName: fileName, zoom: 1, current: 0, pages: pages });
+    await DeskDB.putAll(EDITOR_DB, [
+      { key: 'pdf', value: bytes },
+      { key: 'session', value: { fileName: fileName, zoom: 1, current: 0, pages: pages, epoch: Date.now(), source: 'forms' } }
+    ]);
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;
     refreshLabels();
-    location.href = '../pdf-editor/';
+    location.href = '../pdf-editor/?desk=forms';
   }
 
   var saveTimer = 0;

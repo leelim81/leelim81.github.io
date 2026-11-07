@@ -3,7 +3,15 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  var DB = 'tools-edit-sign-pdf';
+  function currentDesk() {
+    try {
+      return new URLSearchParams(location.search).get('desk') === 'forms' ? 'forms' : 'edit';
+    } catch (err) {
+      return 'edit';
+    }
+  }
+  var desk = currentDesk();
+  var DB = desk === 'forms' ? 'tools-forms-editor' : 'tools-edit-sign-pdf';
   var SIG_KEY = 'tools-saved-signatures';
   var FONTS = ['Caveat', 'Dancing Script', 'Great Vibes', 'Pacifico'];
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -23,8 +31,10 @@
     strokes: [],
     activeStroke: null,
     activePointer: null,
-    drawing: false
+    drawing: false,
+    epoch: 0
   };
+  var closed = false;
 
   function $(id) { return document.getElementById(id); }
   function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
@@ -66,6 +76,25 @@
       });
     });
   }
+  function idbSave(pdfBytes, session) {
+    var epoch = session && session.epoch;
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('kv', 'readwrite');
+        var store = tx.objectStore('kv');
+        var getReq = store.get('session');
+        getReq.onsuccess = function () {
+          if (closed) return;
+          var existing = getReq.result;
+          if (existing && existing.epoch && epoch && existing.epoch > epoch) return;
+          store.put(pdfBytes, 'pdf');
+          store.put(session, 'session');
+        };
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
   function idbClear() {
     return openDb().then(function (db) {
       return new Promise(function (resolve, reject) {
@@ -98,6 +127,8 @@
         fileName: state.fileName,
         zoom: state.zoom,
         current: state.current,
+        epoch: state.epoch,
+        source: desk,
         pages: state.pages.map(function (p) {
           return {
             id: p.id,
@@ -107,8 +138,7 @@
           };
         })
       };
-      await idbSet('pdf', new Uint8Array(state.pdfBytes));
-      await idbSet('session', session);
+      await idbSave(new Uint8Array(state.pdfBytes), session);
       if (gen !== saveGen) return;
       var el = $('saveState');
       el.dataset.gen = String(Number(el.dataset.gen || 0) + 1);
@@ -135,6 +165,8 @@
     $('downloadBtn').hidden = true;
     $('startOver').hidden = true;
     $('pages').innerHTML = '';
+    var name = $('fileName');
+    if (name) name.textContent = '';
     setSaveStatus('');
   }
 
@@ -444,6 +476,8 @@
       state.zoom = 1;
     }
     state.selectedId = null;
+    state.epoch = session && session.epoch ? session.epoch : Date.now();
+    closed = false;
     showWorkspace();
     if (!session) await fitWidth(false);
     await renderAll();
@@ -976,8 +1010,12 @@
       scheduleSave();
     });
     $('startOver').addEventListener('click', async function () {
-      if (!confirm('Clear this document and its marks from this browser? Saved signatures stay.')) return;
+      var which = desk === 'forms' ? 'this filled form' : 'this document';
+      if (!confirm('Clear ' + which + ' and its marks from this browser? Saved signatures stay.')) return;
       clearTimeout(saveTimer);
+      closed = true;
+      state.epoch = 0;
+      state.pdfBytes = null;
       await idbClear();
       if (state.doc) { try { await state.doc.destroy(); } catch (e) {} }
       state.pdfBytes = null;
@@ -1125,14 +1163,29 @@
     try {
       var pdf = await idbGet('pdf');
       var session = await idbGet('session');
-      if (pdf && session && session.pages && session.pages.length) {
+      var usable = pdf && session && session.pages && session.pages.length && session.source !== (desk === 'forms' ? 'edit' : 'forms');
+      if (usable) {
         await loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
         setSaveStatus('Saved');
         $('saveState').dataset.gen = '1';
+      } else if (desk === 'forms') {
+        showEmpty();
+        toast('No filled form is waiting. Go back to Forms Filler and choose Fill again.');
       }
     } catch (err) {
+      showEmpty();
       toast('A saved document was found but could not be restored.');
     }
   }
+  window.addEventListener('pageshow', function (event) {
+    if (!event.persisted || !state.epoch) return;
+    idbGet('session').then(function (session) {
+      if (!session || !session.epoch || session.epoch <= state.epoch) return null;
+      return idbGet('pdf').then(function (pdf) {
+        if (!pdf) return null;
+        return loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
+      });
+    }).catch(function () {});
+  });
   boot();
 })();
