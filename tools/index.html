@@ -10,11 +10,8 @@
 <link rel="stylesheet" href="shared/base.css">
 <link rel="stylesheet" href="hub.css">
 <script>
-try {
-  var t = localStorage.getItem('tools-theme');
-  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
-  document.documentElement.dataset.theme = t;
-} catch (e) {}
+document.documentElement.dataset.theme = 'paper';
+try { localStorage.removeItem('tools-theme'); } catch (e) {}
 </script>
 </head>
 <body>
@@ -23,7 +20,6 @@ try {
 <header class="bar">
   <a class="mark" href="../">Lee Lim</a>
   <p class="bar-kicker">The desk</p>
-  <button id="themeToggle" type="button">Night</button>
 </header>
 <div class="scroll-rule" aria-hidden="true"></div>
 

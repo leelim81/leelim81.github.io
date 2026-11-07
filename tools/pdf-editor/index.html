@@ -10,11 +10,8 @@
 <link rel="stylesheet" href="../shared/base.css">
 <link rel="stylesheet" href="editor.css">
 <script>
-try {
-  var t = localStorage.getItem('tools-theme');
-  if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper';
-  document.documentElement.dataset.theme = t;
-} catch (e) {}
+document.documentElement.dataset.theme = 'paper';
+try { localStorage.removeItem('tools-theme'); } catch (e) {}
 </script>
 </head>
 <body>
@@ -28,7 +25,6 @@ try {
     <span id="saveState" data-gen="0" aria-live="polite"></span>
     <button id="startOver" type="button" class="btn" hidden>Start over</button>
     <button id="downloadBtn" type="button" class="btn wax" hidden>Download</button>
-    <button id="themeToggle" type="button">Night</button>
   </header>
   <p class="privacy">Your files never leave this device. Opening, editing, and exporting all happen in this browser.</p>
 

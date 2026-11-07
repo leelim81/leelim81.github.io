@@ -2,29 +2,8 @@
 (function () {
   var root = document.documentElement;
 
-  function applyTheme(theme) {
-    root.dataset.theme = theme;
-    try { localStorage.setItem('tools-theme', theme); } catch (e) {}
-    var btn = document.getElementById('themeToggle');
-    if (!btn) return;
-    var night = theme === 'night';
-    btn.setAttribute('aria-pressed', night ? 'true' : 'false');
-    btn.textContent = night ? 'Paper' : 'Night';
-  }
-
-  var stored = null;
-  try { stored = localStorage.getItem('tools-theme'); } catch (e) {}
-  if (!root.dataset.theme) {
-    var initial = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'paper');
-    root.dataset.theme = initial;
-  }
-  applyTheme(root.dataset.theme || 'paper');
-
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest && e.target.closest('#themeToggle');
-    if (!btn) return;
-    applyTheme(root.dataset.theme === 'night' ? 'paper' : 'night');
-  });
+  root.dataset.theme = 'paper';
+  try { localStorage.removeItem('tools-theme'); } catch (e) {}
 
   if (!document.querySelector('.grain')) {
     var grain = document.createElement('div');

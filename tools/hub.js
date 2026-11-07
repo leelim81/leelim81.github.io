@@ -230,7 +230,7 @@
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform2f(uMouse, mouse.x, mouse.y);
       gl.uniform1f(uTime, (now - start) / 1000);
-      gl.uniform1f(uNight, document.documentElement.dataset.theme === 'night' ? 1 : 0);
+      gl.uniform1f(uNight, 0);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       canvas.classList.add('ready');
     }
