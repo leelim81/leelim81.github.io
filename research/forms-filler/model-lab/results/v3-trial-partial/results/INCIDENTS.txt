@@ -1,0 +1,1 @@
+box rebooted ~15:19 SGT; qwen3 free dev run lost (not rerun); /tmp venvs + HF cache lost, rebuilt under .venv and ./hf

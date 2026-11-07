@@ -1,0 +1,11 @@
+{
+ "tag": "qwen3-0.6b-q8",
+ "split": "dev",
+ "mode": "schemareq",
+ "model_calls": 180,
+ "truncated_96": 64,
+ "max_prompt_tokens": 299,
+ "sec_mean": 2.11,
+ "sec_max": 2.82,
+ "runtime": "llama.cpp b12182 CPU 4 threads; NOT WebGPU"
+}

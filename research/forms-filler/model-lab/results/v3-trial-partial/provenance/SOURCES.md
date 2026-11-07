@@ -1,0 +1,6 @@
+- v3 data: cloud artifact forms-filler-lab-v3 (zip sha256 00e90daf38f7b007b4f8905df30ebe8b9a04abda472ce85ea0966dce8ecb68e1), used unchanged and not copied here. Data file hashes are in v3-data.sha256.
+- Postfilter: production commit 9c2d5b80637b99a8d628287cd51ab5f2307fc15e, standalone runner zip sha256 13e9dcd26b3db8f85a6d20fc49c2f42a0175016ca3fd509af49fbdce4e2f6a16 (`node postfilter.mjs --self-check` passed). File hashes are in postfilter-9c2d5b8.VERSION.
+- Runtime: llama.cpp b12182 (binary llama.tgz; source tarball src.tgz for convert_hf_to_gguf.py and gguf-py 0.19.0).
+- Official GGUFs: Qwen/Qwen2.5-0.5B-Instruct-GGUF@9217f5db q4_k_m, Qwen/Qwen3-0.6B-GGUF@23749fef Q8_0, Qwen/Qwen2.5-1.5B-Instruct-GGUF@91cad511 q4_k_m (all Apache-2.0).
+- Own GGUF: Qwen/Qwen2.5-0.5B-Instruct@7ae55760 → `convert_hf_to_gguf.py --outtype f16` → `llama-quantize Q4_K_M`. That gives 398 MB, against 491 MB for the official q4_k_m (different tensor-type choices). A tuned model is compared only against this own-pipeline base.
+- Python: torch 2.15.0+cpu, transformers 5.22.2, peft 0.21.2, accelerate 1.15.0, Python 3.13.5. Node 18+.

@@ -1,0 +1,143 @@
+[
+ {
+  "template": "gate_log",
+  "label": "Post mailbox",
+  "n": 15,
+  "examples": [
+   "54 NORTH QUAY 433517",
+   "125 PALM ROAD 379032"
+  ]
+ },
+ {
+  "template": "tenancy_mail",
+  "label": "Status if written",
+  "n": 15,
+  "examples": [
+   "Not",
+   "Not"
+  ]
+ },
+ {
+  "template": "tenancy_mail",
+  "label": "Occupation here",
+  "n": 14,
+  "examples": [
+   "Not",
+   "Not"
+  ]
+ },
+ {
+  "template": "tenancy_mail",
+  "label": "Reachable at",
+  "n": 14,
+  "examples": [
+   "Not",
+   "Not"
+  ]
+ },
+ {
+  "template": "clinic_self",
+  "label": "Designation here",
+  "n": 9,
+  "examples": [
+   "Patient",
+   "Designation"
+  ]
+ },
+ {
+  "template": "parcel_slip",
+  "label": "Status if written",
+  "n": 7,
+  "examples": [
+   "nowhere",
+   "nowhere"
+  ]
+ },
+ {
+  "template": "clinic_self",
+  "label": "Desk inbox",
+  "n": 5,
+  "examples": [
+   "Desk inbox",
+   "Not"
+  ]
+ },
+ {
+  "template": "parcel_slip",
+  "label": "Member name",
+  "n": 5,
+  "examples": [
+   "Quinn Koh",
+   "Liam Ong"
+  ]
+ },
+ {
+  "template": "tenancy_mail",
+  "label": "Designation here",
+  "n": 3,
+  "examples": [
+   "Designation",
+   "Designation"
+  ]
+ },
+ {
+  "template": "school_form",
+  "label": "Designation here",
+  "n": 3,
+  "examples": [
+   "Foreigner",
+   "Foreigner"
+  ]
+ },
+ {
+  "template": "gate_log",
+  "label": "Status if written",
+  "n": 3,
+  "examples": [
+   "Status if",
+   "Status if"
+  ]
+ },
+ {
+  "template": "school_form",
+  "label": "Reachable at",
+  "n": 3,
+  "examples": [
+   "Reachable at school",
+   "Reachable at"
+  ]
+ },
+ {
+  "template": "school_form",
+  "label": "Site address",
+  "n": 3,
+  "examples": [
+   "School",
+   "School"
+  ]
+ },
+ {
+  "template": "clinic_self",
+  "label": "Occupation here",
+  "n": 1,
+  "examples": [
+   "Patient"
+  ]
+ },
+ {
+  "template": "clinic_self",
+  "label": "Status if written",
+  "n": 1,
+  "examples": [
+   "Status if"
+  ]
+ },
+ {
+  "template": "parcel_slip",
+  "label": "Applicant name",
+  "n": 1,
+  "examples": [
+   "Boris Koh"
+  ]
+ }
+]
