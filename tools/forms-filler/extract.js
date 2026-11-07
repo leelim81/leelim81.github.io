@@ -250,9 +250,41 @@
     });
   }
 
+  async function glyphText(worker, canvas, box) {
+    if (!box) return '';
+    var pad = 6;
+    var width = Math.max(1, (box.x1 || 0) - (box.x0 || 0));
+    var height = Math.max(1, (box.y1 || 0) - (box.y0 || 0));
+    var crop = document.createElement('canvas');
+    crop.width = width + pad * 2;
+    crop.height = height + pad * 2;
+    var ctx = crop.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, crop.width, crop.height);
+    ctx.drawImage(canvas, box.x0 || 0, box.y0 || 0, width, height, pad, pad, width, height);
+    try { await worker.setParameters({ tessedit_pageseg_mode: '10' }); } catch (err) {}
+    var result = await worker.recognize(crop);
+    return result && result.data && result.data.text ? result.data.text.replace(/\s/g, '') : '';
+  }
+
+  async function dropDisputedEmails(worker, canvas, words) {
+    for (var i = 0; i < (words || []).length; i++) {
+      var word = words[i];
+      if (!word || !word.symbols || !/@/.test(word.text || '')) continue;
+      var at = -1;
+      for (var s = 0; s < word.symbols.length; s++) if (word.symbols[s].text === '@') at = s;
+      if (at <= 0) continue;
+      var prev = word.symbols[at - 1];
+      if (!prev || !prev.text || prev.text.length !== 1) continue;
+      var again = await glyphText(worker, canvas, prev.bbox);
+      if (again && again !== prev.text) word.text = '';
+    }
+  }
+
   async function recognizeCanvas(canvas, scale, pageWidth, pageHeight) {
     var worker = await ocrWorker();
     var best = { text: '', items: [] };
+    var bestWords = null;
     var modes = ['6', '11'];
     for (var m = 0; m < modes.length; m++) {
       try { await worker.setParameters({ tessedit_pageseg_mode: modes[m] }); } catch (err) {}
@@ -260,7 +292,14 @@
       var packed = linesFromWords(result && result.data && result.data.words);
       var letters = (packed.text.match(/[A-Za-z]{3,}/g) || []).length;
       var bestLetters = (best.text.match(/[A-Za-z]{3,}/g) || []).length;
-      if (letters > bestLetters) best = packed;
+      if (letters > bestLetters) {
+        best = packed;
+        bestWords = result && result.data && result.data.words;
+      }
+    }
+    if (bestWords) {
+      await dropDisputedEmails(worker, canvas, bestWords);
+      best = linesFromWords(bestWords);
     }
     var packed = best;
     return {

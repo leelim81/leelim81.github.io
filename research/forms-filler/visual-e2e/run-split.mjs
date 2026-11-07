@@ -9,9 +9,7 @@ const { chromium } = pkg;
 const root = dirname(fileURLToPath(import.meta.url));
 const split = process.argv[2];
 const mode = process.argv[3] || 'score';
-if (!['development', 'calibration', 'test'].includes(split)) {
-  throw new Error('split must be development, calibration, or test');
-}
+if (!/^[a-z0-9-]+$/.test(split)) throw new Error('bad split name');
 if (split === 'test' && !existsSync(join(root, 'FROZEN-e2e.json'))) {
   throw new Error('Refusing the test split before FROZEN-e2e.json exists');
 }

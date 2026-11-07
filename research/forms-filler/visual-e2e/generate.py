@@ -6,7 +6,7 @@ must not read it.
 """
 import json
 import math
-import random
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -160,6 +160,82 @@ def draw_page(lines, labels, angle, blur, sigma, seed):
     return turned, mapped
 
 
+def draw_underlines(lines, labels, angle, blur, sigma, seed):
+    w, h = int(PAGE_W * SCALE), int(PAGE_H * SCALE)
+    im = Image.new('RGB', (w, h), 'white')
+    draw = ImageDraw.Draw(im)
+    y = 70
+    for line in lines:
+        draw.text((48, y), line, fill='black', font=FONT)
+        y += 46
+    box_px = []
+    top = max(y + 30, 200)
+    for i, label in enumerate(labels):
+        y0 = top + i * 84
+        draw.text((48, y0), label, fill='black', font=FONT_SM)
+        line_y = y0 + 40
+        draw.line([(48, line_y), (760, line_y)], fill='black', width=6)
+        box_px.append((48, line_y - 8, 712, 16))
+    turned = im.rotate(angle, expand=True, fillcolor='white', resample=Image.Resampling.BICUBIC)
+    turned = turned.filter(ImageFilter.GaussianBlur(radius=blur))
+    import numpy as np
+    arr = np.asarray(turned).astype(np.int16)
+    nw, nh = turned.size
+    noise = np.random.default_rng(seed).integers(-sigma, sigma + 1, size=(nh, nw), dtype=np.int16)
+    arr += noise[:, :, None]
+    np.clip(arr, 0, 255, out=arr)
+    turned = Image.fromarray(arr.astype(np.uint8), 'RGB')
+    mapped = []
+    for x0, y0, bw, bh in box_px:
+        corners = [rotate_point(x, yy, w, h, angle, nw, nh) for x, yy in ((x0, y0), (x0 + bw, y0), (x0, y0 + bh), (x0 + bw, y0 + bh))]
+        xs = [p[0] for p in corners]
+        ys = [p[1] for p in corners]
+        mapped.append((min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)))
+    return turned, mapped
+
+
+def write_stack():
+    """Second development layout. Does not rewrite the boxed intake sheets."""
+    spec_labels = ['Member name', 'Member FIN', 'Member birth date', 'Member handset', 'Member inbox', 'Member street', 'Member mailbox']
+    modes = ['single', 'patient_other', 'conflict', 'single']
+    given = ['Suki', 'Tess', 'Ulf', 'Wynn']
+    records = []
+    dest = ROOT / 'fixtures' / 'development-stack'
+    dest.mkdir(parents=True, exist_ok=True)
+    for index, mode in enumerate(modes):
+        p = person('development', 20 + index)
+        p['name'] = f'{given[index]} Sample'
+        p['email'] = f'{given[index].lower()}.sample{1 if index == 0 else 20 + index}@example.com'
+        p['id'] = f'v2-development-stack-{index}'
+        angle = round((index - 1.5) * 0.8, 2)
+        form, boxes = draw_underlines(['member stack', 'Synthetic raster. Not a real form.'], spec_labels, angle, 0.35, 7, 20261120 + index)
+        ref, _ = draw_underlines(reference_lines(mode, p), [], angle * 0.5, 0.35, 7, 20261130 + index)
+        stem = f'development-stack-{index:02d}'
+        form.save(dest / f'{stem}.form.png')
+        ref.save(dest / f'{stem}.reference.png')
+        fields = gold_fields(mode, p, spec_labels)
+        for field, box in zip(fields, boxes):
+            field['box_px'] = [round(v, 2) for v in box]
+        records.append({
+            'id': stem,
+            'split': 'development-stack',
+            'template_id': 'member_stack',
+            'label_family': 'V2',
+            'person_id': p['id'],
+            'layout': 'underline',
+            'ambiguity': mode,
+            'rotation_deg': angle,
+            'blur': 0.35,
+            'noise_sigma': 7,
+            'image_px': list(form.size),
+            'fields': fields,
+            'other_values': {'name': [p['other_name']], 'dob': [p['other_dob']]},
+            'printed_reference_lines': reference_lines(mode, p),
+        })
+    (ROOT / 'stack-key.json').write_text(json.dumps(records, indent=2) + '\n')
+    print('stack', len(records))
+
+
 def main():
     out_root = ROOT / 'fixtures'
     if out_root.exists():
@@ -207,4 +283,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == 'stack':
+        write_stack()
+    else:
+        main()

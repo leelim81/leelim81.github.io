@@ -37,6 +37,8 @@ On the four development forms, which were not the held-out look, the probe place
 
 One native widget PDF, `test-claim_widget-00`, still goes through the text layer. Chrome 156 wrote six values. The name baseline was at x=182, y=764, in the name box. The mailbox stayed empty. A development raster, after OCR, showed a review list (`Nia Sample`, the NRIC, the date, the address, each with the OCR line). Leaving the boxes unchecked exported a PDF that did not contain that name. Screenshots: [raster-review.png](visual-e2e/results/screenshots/raster-review.png), [raster-skipped-export.png](visual-e2e/results/screenshots/raster-skipped-export.png), [native-text-layer-export.png](visual-e2e/results/screenshots/native-text-layer-export.png).
 
+A later development pass is recorded in [visual-e2e/LEDGER.md](visual-e2e/LEDGER.md). It does not replace the held-out numbers above and it does not turn OCR autofill on. On the original four boxed development forms, accepting handset, inbox, and mailbox labels raised correct probe fills from 10 to 16 out of 22 answerable fields, still with 0 wrong. An email whose single-glyph reread disagrees is dropped instead of corrected. The holder-sheet split was not scored again.
+
 OCR assets and their sha256 are in [tools/forms-filler/vendor/tesseract/OCR-ASSETS.json](../tools/forms-filler/vendor/tesseract/OCR-ASSETS.json). pdf.js 3.11.174 and pdf-lib 1.17.1 are in [vendor/pdf/PDF-ASSETS.json](../tools/forms-filler/vendor/pdf/PDF-ASSETS.json). The core file requires WebAssembly SIMD. This run used Chrome 156.0.8078.47, Node v22.23.4, and Linux. No model was downloaded. A phone was not used.
 
 ## Parser fixture benchmark (visual-gold-1)

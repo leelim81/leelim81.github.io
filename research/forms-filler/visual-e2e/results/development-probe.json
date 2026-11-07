@@ -5,7 +5,7 @@
   "rows": [
     {
       "id": "development-intake_sheet-00",
-      "ms": 11949,
+      "ms": 11938,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Nia Sample\nNRIC: S2000086D\nDate of birth: 01/01/1990\nPhone: +65 80000000\nEmail: nia.sample0@example.com\nAddress: 12 QUAY LANE 304300",
@@ -248,6 +248,32 @@
           "page": 0
         },
         {
+          "id": "visitor_handset",
+          "label": "Visitor handset",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 568.6761678543152,
+            "width": 206.81314330958037,
+            "height": 28.01741884402213
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_inbox",
+          "label": "Visitor inbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 537.5835312747427,
+            "width": 206.3420427553444,
+            "height": 28.488519398258177
+          },
+          "page": 0
+        },
+        {
           "id": "visitor_street",
           "label": "Visitor street",
           "type": "text",
@@ -257,6 +283,19 @@
             "y": 506.01979414093427,
             "width": 206.81314330958037,
             "height": 27.546318289786257
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_mailbox",
+          "label": "Visitor mailbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 490.944576405384,
+            "width": 206.3420427553444,
+            "height": 12
           },
           "page": 0
         }
@@ -326,6 +365,48 @@
           "hard": null
         },
         {
+          "fieldId": "visitor_handset",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "80000000",
+              "role": "applicant",
+              "quote": "Phone: +65 80000000",
+              "line": 5
+            }
+          ],
+          "decision": "autofill",
+          "value": "80000000",
+          "factId": "f3",
+          "quote": "Phone: +65 80000000",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "nia.sample0@example.com",
+              "role": "applicant",
+              "quote": "Email: nia.sample0@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "autofill",
+          "value": "nia.sample0@example.com",
+          "factId": "f4",
+          "quote": "Email: nia.sample0@example.com",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
           "fieldId": "visitor_street",
           "kind": "address",
           "geometryTrusted": true,
@@ -345,6 +426,17 @@
           "quote": "Address: 12 QUAY LANE 304300",
           "reason": "explicit_single_source",
           "hard": null
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "kind": "mailbox",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "mailbox_not_address",
+          "hard": "type"
         }
       ],
       "baseline": [
@@ -370,8 +462,29 @@
           "reason": "legacy_blank"
         },
         {
+          "fieldId": "visitor_handset",
+          "label": "Visitor handset",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "label": "Visitor inbox",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
           "fieldId": "visitor_street",
           "label": "Visitor street",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "label": "Visitor mailbox",
           "decision": "abstain",
           "value": "",
           "reason": "legacy_blank"
@@ -397,6 +510,18 @@
           "w": 55.044
         },
         {
+          "text": "80000000",
+          "x": 206.45764053840065,
+          "y": 572.6761678543152,
+          "w": 48.928
+        },
+        {
+          "text": "nia.sample0@example.com",
+          "x": 206.45764053840065,
+          "y": 541.5835312747427,
+          "w": 135.87199999999999
+        },
+        {
           "text": "12 QUAY LANE 304300",
           "x": 206.45764053840065,
           "y": 510.0197941409343,
@@ -406,10 +531,10 @@
     },
     {
       "id": "development-intake_sheet-01",
-      "ms": 11344,
+      "ms": 11506,
       "kind": "flat",
       "channel": "ocr",
-      "text": "Applicant\nFull name: Otto Sample\nNRIC: T2000099B\nDate of birth: 02/02/1991\nPhone: +65 80000001\nEmail: otto.samplel@example.com\nAddress: 13 QUAY LANE 304301\nPatient\nFull name: Kim Voss\nDate of birth: 03/03/1977",
+      "text": "Applicant\nFull name: Otto Sample\nNRIC: T2000099B\nDate of birth: 02/02/1991\nPhone: +65 80000001\nEmail:\nAddress: 13 QUAY LANE 304301\nPatient\nFull name: Kim Voss\nDate of birth: 03/03/1977",
       "words": [
         {
           "text": "Applicant",
@@ -544,15 +669,6 @@
           "y": 689.1425322213798,
           "w": 38,
           "h": 10.5,
-          "page": 0
-        },
-        {
-          "text": "otto.samplel@example.com",
-          "confidence": 86.33747863769531,
-          "x": 70,
-          "y": 685.6425322213798,
-          "w": 181.5,
-          "h": 14,
           "page": 0
         },
         {
@@ -717,6 +833,32 @@
           "page": 0
         },
         {
+          "id": "visitor_inbox",
+          "label": "Visitor inbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 46.53078202995008,
+            "y": 599.4650582362729,
+            "width": 242.0442179700499,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_handset",
+          "label": "Visitor handset",
+          "type": "text",
+          "untrusted": true,
+          "rect": {
+            "x": 196.0232945091514,
+            "y": 569.7645590682197,
+            "width": 226.71381031613976,
+            "height": 63.97587354409313
+          },
+          "page": 0
+        },
+        {
           "id": "visitor_street",
           "label": "Visitor street",
           "type": "text",
@@ -726,6 +868,19 @@
             "y": 535.1139767054908,
             "width": 226.71381031613976,
             "height": 29.325291181364378
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_mailbox",
+          "label": "Visitor mailbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 195.52828618968385,
+            "y": 517.7886855241264,
+            "width": 227.20881863560732,
+            "height": 12
           },
           "page": 0
         }
@@ -754,6 +909,28 @@
           "hard": "source"
         },
         {
+          "fieldId": "visitor_inbox",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
+          "fieldId": "visitor_handset",
+          "kind": "phone",
+          "geometryTrusted": false,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
           "fieldId": "visitor_street",
           "kind": "address",
           "geometryTrusted": true,
@@ -763,6 +940,17 @@
           "value": "",
           "reason": "no_source",
           "hard": "source"
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "kind": "mailbox",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "mailbox_not_address",
+          "hard": "type"
         }
       ],
       "baseline": [
@@ -781,8 +969,29 @@
           "reason": "legacy_blank"
         },
         {
+          "fieldId": "visitor_inbox",
+          "label": "Visitor inbox",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_handset",
+          "label": "Visitor handset",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
           "fieldId": "visitor_street",
           "label": "Visitor street",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "label": "Visitor mailbox",
           "decision": "abstain",
           "value": "",
           "reason": "legacy_blank"
@@ -792,7 +1001,7 @@
     },
     {
       "id": "development-intake_sheet-02",
-      "ms": 11736,
+      "ms": 11757,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Prim Sample\nNRIC: S2000112G\nDate of birth: 03/03/1992\nPhone: +65 80000002\nEmail: prim.sample2@example.com\nAddress: 14 QUAY LANE 304302\nApplicant\nFull name: Kim Voss\nDate of birth: 03/03/1977",
@@ -1116,6 +1325,32 @@
           "page": 0
         },
         {
+          "id": "visitor_handset",
+          "label": "Visitor handset",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 585.8661800486618,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_inbox",
+          "label": "Visitor inbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 553.0519059205191,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
           "id": "visitor_street",
           "label": "Visitor street",
           "type": "text",
@@ -1125,6 +1360,19 @@
             "y": 520.720194647202,
             "width": 216.18815896188158,
             "height": 28.648418491484108
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_mailbox",
+          "label": "Visitor mailbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 503.3479318734793,
+            "width": 216.18815896188158,
+            "height": 12
           },
           "page": 0
         }
@@ -1204,6 +1452,48 @@
           "hard": "conflict"
         },
         {
+          "fieldId": "visitor_handset",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "80000002",
+              "role": "applicant",
+              "quote": "Phone: +65 80000002",
+              "line": 5
+            }
+          ],
+          "decision": "autofill",
+          "value": "80000002",
+          "factId": "f3",
+          "quote": "Phone: +65 80000002",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "prim.sample2@example.com",
+              "role": "applicant",
+              "quote": "Email: prim.sample2@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "autofill",
+          "value": "prim.sample2@example.com",
+          "factId": "f4",
+          "quote": "Email: prim.sample2@example.com",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
           "fieldId": "visitor_street",
           "kind": "address",
           "geometryTrusted": true,
@@ -1223,6 +1513,17 @@
           "quote": "Address: 14 QUAY LANE 304302",
           "reason": "explicit_single_source",
           "hard": null
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "kind": "mailbox",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "mailbox_not_address",
+          "hard": "type"
         }
       ],
       "baseline": [
@@ -1248,8 +1549,29 @@
           "reason": "legacy_blank"
         },
         {
+          "fieldId": "visitor_handset",
+          "label": "Visitor handset",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "label": "Visitor inbox",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
           "fieldId": "visitor_street",
           "label": "Visitor street",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "label": "Visitor mailbox",
           "decision": "abstain",
           "value": "",
           "reason": "legacy_blank"
@@ -1263,6 +1585,18 @@
           "w": 58.707
         },
         {
+          "text": "80000002",
+          "x": 202.26358475263584,
+          "y": 589.8661800486618,
+          "w": 48.928
+        },
+        {
+          "text": "prim.sample2@example.com",
+          "x": 202.26358475263584,
+          "y": 557.0519059205191,
+          "w": 142.582
+        },
+        {
           "text": "14 QUAY LANE 304302",
           "x": 202.26358475263584,
           "y": 524.720194647202,
@@ -1272,7 +1606,7 @@
     },
     {
       "id": "development-intake_sheet-03",
-      "ms": 11468,
+      "ms": 11487,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Reed Sample\nNRIC: T2000125E\nDate of birth: 04/04/1993\nPhone: +65 80000003\nEmail: reed.sample3@example.com\nAddress: 15 QUAY LANE 304303",
@@ -1515,6 +1849,32 @@
           "page": 0
         },
         {
+          "id": "visitor_handset",
+          "label": "Visitor handset",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 578.345629510826,
+            "width": 211.85244587008822,
+            "height": 28.22293504410584
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_inbox",
+          "label": "Visitor inbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 546.3769045709703,
+            "width": 211.8524458700882,
+            "height": 29.17722534081804
+          },
+          "page": 0
+        },
+        {
           "id": "visitor_street",
           "label": "Visitor street",
           "type": "text",
@@ -1524,6 +1884,19 @@
             "y": 513.9310344827586,
             "width": 211.85244587008822,
             "height": 28.22293504410584
+          },
+          "page": 0
+        },
+        {
+          "id": "visitor_mailbox",
+          "label": "Visitor mailbox",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.78668805132318,
+            "y": 497.70809943865277,
+            "width": 211.37530072173217,
+            "height": 12
           },
           "page": 0
         }
@@ -1593,6 +1966,48 @@
           "hard": null
         },
         {
+          "fieldId": "visitor_handset",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "80000003",
+              "role": "applicant",
+              "quote": "Phone: +65 80000003",
+              "line": 5
+            }
+          ],
+          "decision": "autofill",
+          "value": "80000003",
+          "factId": "f3",
+          "quote": "Phone: +65 80000003",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "reed.sample3@example.com",
+              "role": "applicant",
+              "quote": "Email: reed.sample3@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "autofill",
+          "value": "reed.sample3@example.com",
+          "factId": "f4",
+          "quote": "Email: reed.sample3@example.com",
+          "reason": "explicit_single_source",
+          "hard": null
+        },
+        {
           "fieldId": "visitor_street",
           "kind": "address",
           "geometryTrusted": true,
@@ -1612,6 +2027,17 @@
           "quote": "Address: 15 QUAY LANE 304303",
           "reason": "explicit_single_source",
           "hard": null
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "kind": "mailbox",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "mailbox_not_address",
+          "hard": "type"
         }
       ],
       "baseline": [
@@ -1637,8 +2063,29 @@
           "reason": "legacy_blank"
         },
         {
+          "fieldId": "visitor_handset",
+          "label": "Visitor handset",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_inbox",
+          "label": "Visitor inbox",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
           "fieldId": "visitor_street",
           "label": "Visitor street",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "visitor_mailbox",
+          "label": "Visitor mailbox",
           "decision": "abstain",
           "value": "",
           "reason": "legacy_blank"
@@ -1662,6 +2109,18 @@
           "x": 204.30954290296717,
           "y": 614.7914995990377,
           "w": 55.044
+        },
+        {
+          "text": "80000003",
+          "x": 204.30954290296717,
+          "y": 582.345629510826,
+          "w": 48.928
+        },
+        {
+          "text": "reed.sample3@example.com",
+          "x": 204.30954290296717,
+          "y": 550.3769045709703,
+          "w": 143.209
         },
         {
           "text": "15 QUAY LANE 304303",
