@@ -61,6 +61,16 @@ The reference text was mostly right. Three labels never became fields: handset, 
 
 OCR autofill stays off. Eighteen name fills on the earlier calibration were already below the minimum of 59, and this round did not create a new calibration or a new held-out. The old holder-sheet numbers were not used to choose these changes.
 
+## Rejected: bridge six-pixel gaps in horizontal rules
+
+| | |
+| --- | --- |
+| Error class | Rotated underlines. Before this try, `development-stack` found 7, 6, 1, and 3 fields. |
+| Hypothesis | Allowing a six-pixel gap inside a horizontal ink run would reconnect a rotated underline after deskew. |
+| Change | `rasterGeometry` treated up to six white pixels as part of the same run, and lowered the dark-pixel fraction from 0.6 to 0.45. |
+| Dev result | Underlines rose to 7, 7, 4, and 3 fields. Probe coverage on that set went from 13/22 to 17/22, still 0 wrong. The original four boxed sheets fell from 16/22 to 12/22 correct, also 0 wrong. Time stayed about 12 s. |
+| Why rejected | The boxed development set got worse. The change was reverted. The holder-sheet split was not scored. |
+
 ## Next experiment that is still reasonable
 
-A line finder that keeps a short underline after a measured deskew, checked on `development-stack` and on the existing `spots.test.mjs` pages, without touching the holder-sheet split. Cost is a geometry change with a real chance of extra fields. It is the main unused local step. Another OCR model would be a new download and is out of scope.
+A deskew that records its transform and looks for lines in the upright image without changing the boxed-page ink mask. That is separate from gap-bridging. An optional PaddleOCR tiny challenger is written up in the 7 November memo and is not loaded. The dictionary flags in Tesseract 5.1.1 only apply at worker creation, so a later `setParameters` call is not that experiment.

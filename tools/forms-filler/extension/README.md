@@ -11,6 +11,8 @@ The extension cannot read the website’s IndexedDB. In Forms Filler, use **Expo
 3. Choose **Load unpacked** and select this folder (`tools/forms-filler/extension`).
 4. Pin the extension if you want the button visible.
 
+On a fresh Chromium profile the shortcut Ctrl+Shift+Y is assigned to **Activate the extension**. That opens this popup. The icon may stay hidden until then. Google Chrome from the Web Store build ignores `--load-extension`; use Chromium or load the folder from `chrome://extensions`.
+
 ## Use
 
 1. Open the form page.
