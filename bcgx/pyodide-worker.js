@@ -74,21 +74,23 @@ function infer(packages, source) {
 async function runUser(id, payload) {
   const source = String(payload.source || "");
   const tests = payload.tests || [];
-  const py = await ensure(id, infer(payload.packages, source));
+  const py = await ensure(id, infer(["numpy", "pandas"].concat(payload.packages || []), source));
   const driver =
     "import sys, io, json, traceback\n" +
+    "import numpy as np\n" +
+    "import pandas as pd\n" +
     "_out, _err = io.StringIO(), io.StringIO()\n" +
     "_old_out, _old_err = sys.stdout, sys.stderr\n" +
     "sys.stdout, sys.stderr = _out, _err\n" +
     "_payload = {'ok': True, 'error': None, 'traceback': None, 'tests': []}\n" +
-    "_ns = {'__name__': '__main__'}\n" +
+    "_ns = {'__name__': '__main__', 'np': np, 'pd': pd}\n" +
     "_user = " + JSON.stringify(source) + "\n" +
     "_tests = json.loads(" + JSON.stringify(JSON.stringify(tests)) + ")\n" +
     "try:\n" +
-    "    exec(_user, _ns)\n" +
+    "    exec(compile(_user, '<user>', 'exec'), _ns)\n" +
     "    for _t in _tests:\n" +
     "        try:\n" +
-    "            exec(_t['code'], _ns)\n" +
+    "            exec(compile(_t['code'], '<test>', 'exec'), _ns)\n" +
     "            _payload['tests'].append({'name': _t['name'], 'passed': True})\n" +
     "        except Exception as _e:\n" +
     "            _payload['tests'].append({'name': _t['name'], 'passed': False, 'message': str(_e), 'traceback': traceback.format_exc()[-5000:]})\n" +

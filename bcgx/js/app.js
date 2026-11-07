@@ -24380,7 +24380,7 @@ function leftBody(q) {
     return `<textarea class="casebox" data-act="notes" placeholder="Notes stay with this task">${esc(notes)}</textarea>`;
   }
   if (S.leftTab === "rules") {
-    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. Coding tasks are all-or-nothing: every test must pass. Numeric answers are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during the mock, the same way you should sit the real 90 minutes.</p></div>`;
+    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. Coding tasks are all-or-nothing: every test must pass. Numeric answers are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during the mock, the same way you should sit the real 90 minutes.</p><p>pandas and numpy are already imported as <code>pd</code> and <code>np</code>. You can still write those imports yourself.</p></div>`;
   }
   if (S.leftTab === "info") {
     const g = S.bank.groups.find((x) => x.id === q.group);
@@ -24440,7 +24440,7 @@ function consoleBlock() {
   if (out || err) {
     html += `<div class="console">${out ? esc(out) : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}</div>`;
   } else if (!run.running && !run.status) {
-    html += `<div class="empty">Console output appears here.</div>`;
+    html += `<div class="empty">Console output appears here. pandas and numpy are already imported as pd and np.</div>`;
   }
   return html;
 }
@@ -24501,7 +24501,7 @@ function renderIde(q) {
     <section class="work-col">
       <div data-pane="code" style="display:flex;flex-direction:column;flex:1;min-height:0">
         <div class="editor-tools">
-          <span class="langpill">${q.type === "sql" ? "SQLite" : q.type === "python" ? "Python 3" : q.type}</span>
+          <span class="langpill">${q.type === "sql" ? "SQLite" : q.type === "python" ? "Python 3 \xB7 pd, np ready" : q.type}</span>
           ${S.mode === "mock" ? `<span class="langpill">Autocomplete off</span>` : ""}
           <span class="run-status" id="run-status"></span>
           <span class="spacer"></span>
@@ -24632,7 +24632,7 @@ function renderSandbox() {
     <section class="work-col">
       <div class="editor-tools">
         <button class="btn small" data-act="back-scratch" title="${esc(tip("Back", "Ctrl+B"))}">Back</button>
-        <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3"}</span>
+        <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3 \xB7 pd, np ready"}</span>
         <span class="run-status" id="run-status"></span>
         <span class="spacer"></span>
         <button class="btn small" data-act="format" title="${esc(tip("Format", "Shift+Alt+F"))}">Format</button>
