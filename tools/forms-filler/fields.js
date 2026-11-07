@@ -683,6 +683,7 @@
         };
         field.pageWidth = view.width / 1.4;
         field.pageHeight = view.height / 1.4;
+        if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
         field.lineH = (field.lineH || 12) * ((sx + sy) / 2);
         fields.push(field);
       });

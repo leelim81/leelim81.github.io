@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-07",
+  "method": "Local Chromium. Forms Filler parser and geometry only. No WebLLM, no quantized model, no fine-tune.",
+  "training": "not run. A separate worker owns CPU baseline and LoRA. Do not treat this file as a completed training result.",
+  "reference": {
+    "label": "SYNTHETIC DEMO REFERENCE — not a real person",
+    "name": "Alex Example",
+    "sex": "Male",
+    "nric": "S1234567D",
+    "dob": "14/03/1992",
+    "race": "Chinese",
+    "phone": "+65 8123 4567",
+    "email": "alex.example@example.com",
+    "address": "10 EXAMPLE ROAD #04-12 123456",
+    "company": "Example Press"
+  },
+  "scoring": {
+    "verified_success_rate": "Count only fields whose placement was checked on a screenshot or an exported page. Exclude placement_unverified. Do not treat an unverified brochure as zero wrong.",
+    "parser_only_is_separate": "results/parser-only/score.json (test 30 correct, 6 missed, 0 wrong, 18 abstain) and the earlier 14/14 facts.js check are not end-to-end scores."
+  },
+  "verified": [
+    {
+      "form": "Group hospitalisation claim",
+      "role": "development",
+      "screenshot": "results/screenshots/hospital-dob-2026-11-07.png",
+      "before": {"missed": ["date of birth"], "wrong": []},
+      "after": {
+        "correct": ["member name", "member nric", "member sex", "member date of birth", "address", "phone", "email", "page-2 member name"],
+        "wrong": [],
+        "abstained": ["dependant name", "dependant nric", "dependant sex", "dependant date of birth"],
+        "placement": [
+          {"text": "Alex Example", "x": 253, "y": 676, "where": "member name"},
+          {"text": "S1234567D", "x": 762, "y": 676, "where": "member nric"},
+          {"text": "X", "x": 559, "y": 716, "where": "member male"},
+          {"text": "14/03/1992", "x": 558, "y": 799, "where": "member date of birth cell"},
+          {"text": "10 EXAMPLE ROAD #04-12 123456", "x": 207, "y": 960, "where": "address"},
+          {"text": "+65 8123 4567", "x": 169, "y": 1031, "where": "contact"},
+          {"text": "alex.example@example.com", "x": 745, "y": 1031, "where": "email"},
+          {"text": "Alex Example", "x": 197, "y": 1813, "where": "page 2 member name"}
+        ]
+      }
+    },
+    {
+      "form": "PUBEU membership, vector",
+      "role": "development",
+      "screenshot": "results/screenshots/pubeu-rows-2026-11-07.png",
+      "checked": "screenshot from the prior fill on this date; remapped after the date-column change with the same seven values and zero untrusted fields",
+      "correct": ["name", "nric", "date of birth", "address", "postal", "race", "phone"],
+      "wrong": [],
+      "abstained": ["signature"]
+    },
+    {
+      "form": "HDBSU membership scan",
+      "role": "development",
+      "screenshot": "results/screenshots/hdbsu-name-abstain-2026-11-07.png",
+      "checked": "screenshot shows only the NRIC value. Mapper after the date-column change still assigns only S1234567D.",
+      "correct": ["nric"],
+      "wrong": [],
+      "missed": ["name", "date of birth", "sex", "address", "phone", "email"],
+      "abstained": ["Name to be printed", "Name to be printed on cord"]
+    }
+  ],
+  "not_in_verified_rate": [
+    {
+      "form": "NTUC membership brochure",
+      "status": "review_required",
+      "placement": "unverified",
+      "why": "Landscape scan. All 3 detected lines are marked untrusted, so nothing is written. Earlier coordinates were not confirmed on the printed strip and are not a pass.",
+      "mapped": {}
+    },
+    {
+      "form": "PUBEU rotated noisy photo",
+      "status": "unchanged_this_pass",
+      "placement": "from the earlier fill the same day, not recaptured",
+      "correct": ["date of birth", "address", "postal", "race"],
+      "wrong": [],
+      "missed": ["name", "nric", "phone"],
+      "note": "Excluded from this commit's verified rate because it was not rechecked after the date-column change."
+    }
+  ]
+}

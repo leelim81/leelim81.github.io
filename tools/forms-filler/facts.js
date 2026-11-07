@@ -262,6 +262,7 @@
     var out = [];
     (fields || []).forEach(function (field) {
       if (!field || field.type === 'radio' || field.type === 'checkbox') return;
+      if (field.untrusted) { out.push(String(field.label || 'line')); return; }
       if (factKey(field)) return;
       var label = blob(field);
       if (/\bname\b|possport|\bprinted\b|\bnome\b/i.test(label)) out.push(String(field.label || 'line'));
@@ -315,6 +316,7 @@
   function mapFactsToFields(facts, fields) {
     var out = {};
     (fields || []).forEach(function (field) {
+      if (field && field.untrusted) return;
       var key = factKey(field);
       if (!key || !facts || !facts[key]) return;
       var value = facts[key];

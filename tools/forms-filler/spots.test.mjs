@@ -78,4 +78,28 @@ const memberNames = member.filter((field) => /Name of Member/.test(field.label))
 assert.equal(memberNames.length, 1, 'member name is one box');
 assert.ok(Math.abs(memberNames[0].rect.y - 555) < 8, 'member name sits on its label row');
 assert.equal(member.filter((field) => /NRIC/.test(field.label)).length, 1);
+const dated = layout({
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 47, y: 554, w: 81, h: 9, str: 'Name of Member (Claimant)' },
+    { x: 302, y: 514, w: 76, h: 9, str: 'Date of Birth (dd/mm/yyyy)' },
+    { x: 47, y: 474, w: 57, h: 9, str: 'Name of Dependant' },
+    { x: 302, y: 435, w: 76, h: 9, str: 'Date of Birth (dd/mm/yyyy)' }
+  ],
+  lines: [
+    { x: 298, y: 524, w: 85 },
+    { x: 298, y: 485, w: 85 },
+    { x: 298, y: 445, w: 85 },
+    { x: 298, y: 405, w: 85 }
+  ],
+  squares: []
+});
+const births = dated.filter((field) => /Date of Birth/.test(field.label));
+assert.equal(births.length, 2, 'each date caption keeps its own cell');
+const memberDob = births.find((field) => field.rect.y > 470);
+const dependantDob = births.find((field) => field.rect.y < 470);
+assert.ok(memberDob && !memberDob.group, 'member date stays with the member');
+assert.ok(dependantDob && /dependant/i.test(dependantDob.group || ''), 'dependant date stays with the dependant');
 console.log('spots tests ok', fields.length, 'fields');

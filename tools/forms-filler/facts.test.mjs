@@ -176,6 +176,12 @@ assert.equal(unsafe.card, undefined);
 assert.equal(unsafe.sex, undefined);
 assert.equal(unsafe.dob, undefined);
 assert.equal(unsafe.member, 'Alex Example');
+const columnDob = mapFactsToFields(fromText('Date of birth: 14 Mar 1992\n'), [
+  { id: 'memberDob', label: 'Date of Birth (dd/mm/yyyy)', type: 'text' },
+  { id: 'depDob', label: 'Date of Birth (dd/mm/yyyy)', group: 'Name of Dependant', type: 'text' }
+]);
+assert.equal(columnDob.memberDob, '14/03/1992');
+assert.equal(columnDob.depDob, undefined);
 assert.equal(unsafe.nric, 'S1234567D');
 assert.equal(accept({ id: 'dob', label: 'Date of Birth', type: 'text' }, 'Alex Example'), false);
 assert.equal(accept({ id: 'sex', label: 'Sex', type: 'text' }, 'Alex Example'), false);

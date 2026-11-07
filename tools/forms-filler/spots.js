@@ -245,7 +245,13 @@
         } else if (dy >= 8 && dy <= 36 && text.x >= slot.x - 30 && text.x <= slot.x + Math.min(slot.w * 0.55, 110)) {
           pairs.push({ si: si, ti: ti, score: hint + 18 + dy + Math.abs(text.x - slot.x) * 0.15 - longer });
         } else if (slot.w < width * 0.72 && dy <= -2 && dy >= -16 && overlap && text.w < 150 && words(text.str).length < 6) {
-          pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
+          var floor = slots.some(function (other, index) {
+            if (index === si) return false;
+            var below = text.y - (other.lineY != null ? other.lineY : other.y);
+            if (below < 8 || below > 42) return false;
+            return text.x + 6 > other.x && text.x < other.x + other.w;
+          });
+          if (!floor) pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
         }
       });
     });
@@ -352,15 +358,17 @@
   function dedupeSlots(slots, texts) {
     var drop = {};
     function lineY(slot) { return slot.lineY != null ? slot.lineY : slot.y; }
-    function labelDist(slot) {
+    function labelDelta(slot) {
       var want = normLabel(slot.label);
-      var best = 1e9;
+      var best = null;
+      var bestAbs = 1e9;
       texts.forEach(function (text) {
-        if (normLabel(text.str) !== want) return;
-        var d = Math.abs(text.y - lineY(slot));
-        if (d < best) best = d;
+        var got = normLabel(text.str);
+        if (!(got === want || got.indexOf(want) === 0 || want.indexOf(got) === 0)) return;
+        var delta = text.y - lineY(slot);
+        if (Math.abs(delta) < bestAbs) { bestAbs = Math.abs(delta); best = delta; }
       });
-      return best;
+      return best == null ? 1e9 : best;
     }
     for (var i = 0; i < slots.length; i++) {
       if (drop[i] || slots[i].type === 'radio') continue;
@@ -376,12 +384,69 @@
         var inter = Math.max(0, overlapW) * Math.max(0, overlapH);
         if (!(same && dy < 42) && !(inter > smaller * 0.45 && dy < 18)) continue;
         var lose = j;
-        if (same) lose = labelDist(a) <= labelDist(b) ? j : i;
-        else lose = (a.w * a.h) >= (b.w * b.h) ? j : i;
+        if (same) {
+          var da = labelDelta(a);
+          var db = labelDelta(b);
+          var ceilingA = da < -2 && da > -20;
+          var ceilingB = db < -2 && db > -20;
+          var floorA = da > 4 && da <= 42;
+          var floorB = db > 4 && db <= 42;
+          if (ceilingA && floorB) lose = i;
+          else if (ceilingB && floorA) lose = j;
+          else lose = Math.abs(da) <= Math.abs(db) ? j : i;
+        } else lose = (a.w * a.h) >= (b.w * b.h) ? j : i;
         drop[lose] = true;
       }
     }
     return slots.filter(function (_, index) { return !drop[index]; });
+  }
+
+  function moveCaptionToFloor(slots, texts) {
+    slots.forEach(function (slot) {
+      var y = slot.lineY != null ? slot.lineY : slot.y;
+      var cap = null;
+      texts.forEach(function (text) {
+        var got = normLabel(text.str);
+        var want = normLabel(slot.label);
+        if (!(got === want || got.indexOf(want) === 0 || want.indexOf(got) === 0)) return;
+        var delta = text.y - y;
+        if (delta < -2 && delta > -20) cap = text;
+      });
+      if (!cap) return;
+      var floor = null;
+      slots.forEach(function (other) {
+        if (other === slot || other.label) return;
+        var below = cap.y - (other.lineY != null ? other.lineY : other.y);
+        if (below < 8 || below > 42) return;
+        if (cap.x < other.x - 4 || cap.x > other.x + other.w) return;
+        floor = other;
+      });
+      if (!floor) return;
+      floor.label = slot.label;
+      slot.drop = true;
+    });
+    return slots.filter(function (slot) { return !slot.drop && slot.label; });
+  }
+
+  function splitOnCaptions(runs, texts) {
+    var cue = /name|nric|fin|date|birth|address|e-?mail|phone|age|occupation|sex|gender|postal|race|contact/i;
+    var out = [];
+    runs.forEach(function (run) {
+      var caps = texts.filter(function (text) {
+        var dy = text.y - run.y;
+        if (dy < 6 || dy > 40) return false;
+        if (text.x < run.x + 24 || text.x > run.x + run.w - 24) return false;
+        return cue.test(text.str);
+      }).sort(function (a, b) { return a.x - b.x; });
+      if (!caps.length) { out.push(run); return; }
+      var cursor = run.x;
+      caps.forEach(function (cap) {
+        if (cap.x - cursor >= 26) out.push({ x: cursor, y: run.y, w: cap.x - cursor, n: 1 });
+        cursor = cap.x;
+      });
+      if (run.x + run.w - cursor >= 26) out.push({ x: cursor, y: run.y, w: run.x + run.w - cursor, n: 1 });
+    });
+    return out;
   }
 
   function layout(page) {
@@ -421,6 +486,7 @@
       return cover / run.w < 0.55;
     });
     runs = runs.reduce(function (all, run) { return all.concat(splitWideGaps(run)); }, []);
+    runs = splitOnCaptions(runs, texts);
 
     var pairs = pairSquares(squares, texts);
     var optionSet = new Set(pairs.map(function (pair) { return pair.text; }));
@@ -441,8 +507,9 @@
       });
       if (best) slot.label = best.label;
     });
-    var labeled = mergeStacks(slots);
-    slots = labeled.filter(function (slot) { return !!slot.label; });
+    slots = mergeStacks(slots);
+    slots = moveCaptionToFloor(slots, texts);
+    slots = slots.filter(function (slot) { return !!slot.label; });
     slots.forEach(function (slot) { widenSlot(slot, texts, width); });
     slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
     texts.forEach(function (text) {
@@ -477,11 +544,32 @@
     });
     slots = dedupeSlots(slots, texts);
     slots.forEach(function (slot) {
+      var y = slot.lineY != null ? slot.lineY : slot.y;
+      var nearest = null;
+      var nearestDy = 80;
+      slots.forEach(function (other) {
+        if (other === slot || !/\bname\b/i.test(other.label || '')) return;
+        var dy = (other.lineY != null ? other.lineY : other.y) - y;
+        if (dy < 8 || dy > 78 || dy >= nearestDy) return;
+        nearest = other;
+        nearestDy = dy;
+      });
+      if (!slot.group && nearest && /dependant|dependent|spouse|\bchild\b|officer/i.test(nearest.label)) slot.group = nearest.label;
       slots.forEach(function (other) {
         if (other === slot || slot.group) return;
-        if (Math.abs((other.lineY != null ? other.lineY : other.y) - (slot.lineY != null ? slot.lineY : slot.y)) > 8) return;
+        if (Math.abs((other.lineY != null ? other.lineY : other.y) - y) > 8) return;
         if (/dependant|dependent|spouse|\bchild\b|officer/i.test(other.label)) slot.group = other.label;
       });
+      var own = normLabel(slot.label);
+      var nearLabel = texts.some(function (text) {
+        var textName = normLabel(text.str);
+        if (!(textName === own || own.indexOf(textName) === 0 || textName.indexOf(own) === 0)) return false;
+        var dy = Math.abs(text.y - y);
+        var beside = text.x + text.w <= slot.x + 30 && slot.x - (text.x + text.w) < 140;
+        var over = text.x < slot.x + slot.w && text.x + text.w > slot.x - 8;
+        return dy <= 36 && (beside || over);
+      });
+      if (!nearLabel) slot.untrusted = true;
     });
 
     var fields = [];
@@ -504,6 +592,7 @@
         type: 'text',
         options: [],
         group: slot.group || '',
+        untrusted: !!slot.untrusted,
         rect: { x: slot.x, y: slot.y, width: slot.w, height: Math.max(12, slot.h) },
         lineH: 12
       });

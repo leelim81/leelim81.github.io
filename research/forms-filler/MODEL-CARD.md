@@ -19,7 +19,7 @@ The production prompt is stored on each JSONL row. WebLLM 0.2.79 is the package 
 
 ## What has been scored
 
-The synthetic 12/4/6 split is a smoke check. Do not cite it as a benchmark of the product.
+The synthetic 12/4/6 split is a smoke check. Do not cite it as a benchmark of the product. Training is not complete. No tuned weights will be marked done until a separate measured bundle is added.
 
 `results/parser-only/score.json` is the deterministic parser in `tools/forms-filler/facts.js` on the frozen letters. On test it was 30 correct, 6 missed, 0 wrong, 18 abstentions. The six misses are occupation. That file is not a Qwen score.
 
