@@ -1,0 +1,128 @@
+{
+  "research_date_sgt": "2026-11-07",
+  "status": "proposed_not_executed",
+  "scope": "Browser-only no-upload form filling; no production changes or inference performed by this research",
+  "shared_protocol": {
+    "splits": [
+      "development",
+      "calibration",
+      "untouched_audit"
+    ],
+    "split_unit": "form/template/issuer/person cluster; variants and pages stay together",
+    "lawfulness": "Known lawful local fixtures; publish only redistributable data or aggregate metrics",
+    "strata": [
+      "native_vs_scanned",
+      "rotation_underlines",
+      "boxes_and_marks",
+      "ambiguous_email_glyphs",
+      "multi_person_roles",
+      "conflicting_sources",
+      "unsupported_fields",
+      "long_multipage"
+    ],
+    "preregister": [
+      "acceptance_policy",
+      "risk_target",
+      "finite_arms",
+      "resource_envelope_against_device_baseline"
+    ],
+    "no_invented_numeric_user_budget": true,
+    "no_confidence_lowering_to_force_coverage": true
+  },
+  "measurements": [
+    "exact_string_match",
+    "email_identifier_exact_match",
+    "candidate_field_recall_precision",
+    "label_field_edge_accuracy",
+    "placement_inside_target",
+    "wrong_value_rate_among_accepted",
+    "correct_autofill_coverage",
+    "review_precision",
+    "wrong_person_transfer",
+    "unsupported_fill",
+    "final_completion_accuracy",
+    "manual_corrections",
+    "explicit_confirmations",
+    "paired_completion_time",
+    "cold_unique_transfer_bytes",
+    "warm_cache_bytes",
+    "p50_p95_latency",
+    "initialization_ms",
+    "observable_peak_process_memory_with_limitations",
+    "crashes_reloads",
+    "offline_and_no_document_upload_audit"
+  ],
+  "experiments": [
+    {
+      "id": "E1",
+      "priority": 1,
+      "hypothesis": "A distinct OCR family adds useful exact recognition or disagreement signals without a generative model",
+      "arms": [
+        "current Tesseract",
+        "Tesseract fixed rectified line crops",
+        "Paddle v6tiny same crops with internaldetector retained",
+        "Paddle v6tiny fullpage"
+      ],
+      "runtime": "Official paddleocr-js0.4.2; pinnedmatchingORT; WASMsinglethreadfirst; WebGPU optional separatearm",
+      "artifacts": {
+        "det_archive_bytes": 1792000,
+        "rec_archive_bytes": 4526080,
+        "model_pair_bytes": 6318080,
+        "complete_download_bytes": null,
+        "peak_memory_bytes": null
+      },
+      "development_pass": "Paired exact-match review quality or error-detection improves without new identity errors",
+      "production_pass": "Fresh audit supports preregistered selective-risk target; representative phones fit preregistered resource envelope",
+      "fail": "No reproducible benefit, identity regressions, runtime incompatibility or resource breach",
+      "default_loading": "off",
+      "stop_after": "Frozen arms; one calibration choice then fresh audit; no indefinite model shopping"
+    },
+    {
+      "id": "E2",
+      "priority": 2,
+      "hypothesis": "Geometry-led rectified crops improve rotatedunderlines without damagingglyphs",
+      "arms": [
+        "current route",
+        "separate geometry branch plusPSM7",
+        "same branch plusPSM13 and initialization-only noDAWG config"
+      ],
+      "new_weights_bytes": 0,
+      "optional_geometry_dependency": "OpenCV distribution if justified; no custombuild size measured",
+      "pass": "Paired gain on rotatedunderlinedstratum; no boxed/native regression; zero new wrongrole or unsupportedautofills in audit; resource envelope met",
+      "fail": "Template-only gain, lost glyph strokes, no robust improvement or device cost breach",
+      "stop_after": "Predeclared preprocessingarms; no thresholds added after auditlooks"
+    },
+    {
+      "id": "E3",
+      "priority": 3,
+      "hypothesis": "Explicit scoped confirmation once beats repeated passive review safely",
+      "arms": [
+        "current review",
+        "sourceperson rolebinding plusconflictpanel andmagnified crop confirmonce reuse"
+      ],
+      "new_weights_bytes": 0,
+      "pass": "Lower paired median completiontime/correctioneffort with nondecreasingfinalaccuracy, zero crossperson/conflictbypasses, no upload or persistencewithoutoptin",
+      "fail": "More effort, reducedaccuracy, accidental confirmation, scopeleak or privacyregression",
+      "stop_after": "One finitepairedworkflow study; do not call userconfirmedvalues OCRcertified"
+    }
+  ],
+  "statistical_cautions": {
+    "zero_accepted_predictions": "Acceptederror undefined; not provenzero",
+    "zero_error_bound": "One-sided95% iid fixedacceptancerule:1-0.05**(1/n)",
+    "illustrative_n18_upper_error": 0.1533175539572782,
+    "illustrative_one_percent_n": 299,
+    "one_percent_is_not_user_requirement": true,
+    "cluster_dependence": "Fieldcounts not independenttrials; preregister clusterlevel anyunsafe fill risk separately",
+    "repeated_test_looks": "Inspectedtest isdevelopment; freshauditrequired",
+    "engine_agreement": "Correlated mistakes possible; never correctnessproof"
+  },
+  "licensing_gate": "Apache2.0 SDK and officialtinycheckpointcards verified separately; preservearchive/dependency notices; complete trainingdatasetrights not independently established",
+  "rejected_routes": [
+    "identity/email guesscorrection",
+    "arbitrarythresholdsweeps onsameinspectedforms",
+    "samePaddleweights as independentmajorityvotes",
+    "FlaskRapidOCRWeb as browserlocalproof",
+    "newlargeVLMweights bydefault",
+    "confidence89 as calibratedprobability"
+  ]
+}

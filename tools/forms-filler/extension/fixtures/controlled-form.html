@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Controlled synthetic form</title></head>
+<body>
+<label for="mail">Email</label>
+<input id="mail" name="email" autocomplete="email">
+<p id="mirror"></p>
+<script>
+var el = document.getElementById('mail');
+var seen = { input: 0, change: 0 };
+el.addEventListener('input', function () {
+  seen.input += 1;
+  document.getElementById('mirror').textContent = el.value;
+});
+el.addEventListener('change', function () { seen.change += 1; });
+window.__seen = seen;
+</script>
+</body>
+</html>

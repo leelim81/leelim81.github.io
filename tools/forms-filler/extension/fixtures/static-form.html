@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Static synthetic form</title></head>
+<body>
+<form id="job">
+  <label for="n">Full name</label><input id="n" name="name" autocomplete="name">
+  <label for="e">Email</label><input id="e" name="email" autocomplete="email">
+  <label for="p">Phone</label><input id="p" autocomplete="tel">
+  <label for="city">City</label>
+  <select id="city" name="city"><option value="">Choose</option><option value="North">North</option></select>
+  <label for="note">Note</label><textarea id="note"></textarea>
+  <input id="pw" type="password" autocomplete="current-password" name="password">
+  <input id="otp" autocomplete="one-time-code" name="otp">
+  <input id="hid" type="hidden" name="email" value="">
+  <label for="ro">Readonly</label><input id="ro" readonly value="keep-me">
+  <label for="dis">Disabled</label><input id="dis" disabled value="">
+  <label for="filled">Email</label><input id="filled" autocomplete="email" value="already@example.com">
+  <button type="submit">Send</button>
+</form>
+<iframe title="other" src="about:blank"></iframe>
+<div id="host"></div>
+<p id="submitted">no</p>
+<script>
+document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<label>Email <input name="email" autocomplete="email"></label>';
+document.getElementById('job').addEventListener('submit', function (event) {
+  event.preventDefault();
+  document.getElementById('submitted').textContent = 'yes';
+});
+</script>
+</body>
+</html>

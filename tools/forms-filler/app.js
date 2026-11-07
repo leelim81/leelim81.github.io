@@ -540,11 +540,40 @@
           return row;
         });
       }
+      if (window.FormProfiles && window.FormEvidence) {
+        try {
+          var loaded = await FormProfiles.load();
+          if (loaded.ok) {
+            var ingested = FormProfiles.ingest(loaded.vault, FormEvidence.extract(notesAll));
+            state.profileId = ingested.profileId || '';
+            var stored = await FormProfiles.persist(ingested.vault);
+            if (!stored.ok && $('profileMsg')) $('profileMsg').textContent = stored.reason === 'quota' ? 'This browser has no room to store more values.' : 'This browser blocked local storage. Nothing was saved.';
+            if (window.FormProfileUI) FormProfileUI.paint();
+          }
+        } catch (err) {}
+      }
       var reviews = decisions.filter(function (row) { return row.decision === 'review' && row.value; });
       var confirmed = [];
       if (reviews.length && $('reviewBox')) {
         confirmed = await confirmReviews(reviews);
         if (!current()) return;
+        if (confirmed.length && state.profileId && window.FormProfiles) {
+          try {
+            var live = await FormProfiles.load();
+            if (live.ok) {
+              var next = live.vault;
+              confirmed.forEach(function (fieldId) {
+                var row = null;
+                for (var r = 0; r < reviews.length; r++) if (reviews[r].fieldId === fieldId) row = reviews[r];
+                if (!row) return;
+                var saved = FormProfiles.confirmFact(next, state.profileId, row.kind, row.value);
+                if (saved.ok) next = saved.vault;
+              });
+              await FormProfiles.persist(next);
+              if (window.FormProfileUI) FormProfileUI.paint();
+            }
+          } catch (err) {}
+        }
       }
       if (!current()) return;
       state.handedOff = true;
@@ -592,6 +621,12 @@
       bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: true });
     }
     var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+    if (window.FormEvidence) {
+      state.fields.forEach(function (field) {
+        field.factKey = FormEvidence.fieldKind(field);
+        field.profileId = state.profileId || '';
+      });
+    }
     var boxes = state.kind === 'flat' && window.FormSpots ? FormSpots.annotations(state.fields, values) : {};
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {

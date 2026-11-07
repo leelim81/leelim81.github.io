@@ -233,6 +233,19 @@
       body.textContent = ann.text || '';
       body.addEventListener('input', function () {
         ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+        if (window.FormProfiles && ann.type === 'text' && ann.factKey && ann.profileId && ann.text !== ann.seedText) {
+          FormProfiles.load().then(function (loaded) {
+            if (!loaded.ok) return null;
+            var noted = FormProfiles.noteFieldEdit(loaded.vault, {
+              profileId: ann.profileId,
+              key: ann.factKey,
+              value: ann.text,
+              seed: ann.seedText
+            });
+            if (!noted.changed) return null;
+            return FormProfiles.persist(noted.vault);
+          }).catch(function () {});
+        }
         fitTextHeight(el, ann);
         scheduleSave();
       });

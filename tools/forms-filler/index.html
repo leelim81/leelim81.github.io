@@ -57,6 +57,29 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
     <p id="modelDetail" class="note"></p>
   </div>
+  <section id="profileBox" class="review" aria-labelledby="profileTitle">
+    <h2 id="profileTitle">Saved values</h2>
+    <p class="review-quote">Stored in this browser only. Not an account and not synced. On a shared computer, clear them when you are done. Unconfirmed reads stay here until you confirm them. The extension uses confirmed values only, from an export file you download yourself.</p>
+    <p id="profileMsg" role="status"></p>
+    <div class="row">
+      <label>Person <select id="profilePick"></select></label>
+      <button id="profileAdd" type="button" class="btn">New person</button>
+      <button id="profileDelete" type="button" class="btn">Delete person</button>
+    </div>
+    <ul id="profileFacts" class="review-list"></ul>
+    <div id="profilePending"></div>
+    <div class="row">
+      <label>Key <select id="factKey"></select></label>
+      <input id="factLabel" type="text" placeholder="Custom label" hidden>
+      <input id="factValue" type="text" placeholder="Value">
+      <button id="factAdd" type="button" class="btn">Add value</button>
+    </div>
+    <div class="row">
+      <button id="profileExport" type="button" class="btn">Export confirmed values</button>
+      <label class="btn">Import <input id="profileImport" type="file" accept="application/json,.json" hidden></label>
+      <button id="profileClear" type="button" class="btn">Clear all saved values</button>
+    </div>
+  </section>
   <div id="reviewBox" class="review" hidden>
     <p id="reviewLead"></p>
     <ul id="reviewList" class="review-list"></ul>
@@ -88,6 +111,8 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
 <script src="evidence.js"></script>
 <script src="select.js"></script>
 <script src="thresholds.js"></script>
+<script src="profiles.js"></script>
+<script src="profiles-ui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

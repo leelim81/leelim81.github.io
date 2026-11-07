@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Forms Filler profiles",
+  "version": "0.1.0",
+  "description": "Fill the current page from a profile you imported on this device. Nothing is uploaded.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Forms Filler profiles"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "background": {
+    "service_worker": "sw.js"
+  }
+}

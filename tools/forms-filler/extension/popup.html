@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Forms Filler profiles</title>
+<style>
+  body { font: 14px/1.4 sans-serif; margin: 12px; width: 320px; color: #1a1612; }
+  p { margin: 0 0 8px; }
+  button, select { font: inherit; }
+  ul { list-style: none; padding: 0; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .warn { font-size: 12px; }
+</style>
+</head>
+<body>
+<p class="warn">Saved on this browser only. Not synced to an account. On a shared computer, clear the profile when you are done.</p>
+<p><label>Profile <select id="profile"></select></label></p>
+<p><label>Import JSON <input id="file" type="file" accept="application/json,.json"></label></p>
+<p id="status" role="status"></p>
+<ul id="preview"></ul>
+<p>
+  <button id="look" type="button">Preview this page</button>
+  <button id="fill" type="button">Fill checked empty fields</button>
+</p>
+<script src="match.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
