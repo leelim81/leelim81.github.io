@@ -1,0 +1,8 @@
+accelerate==1.15.0
+huggingface_hub==2.4.0
+peft==0.21.2
+safetensors==0.8.0
+tokenizers==0.23.3
+torch==2.15.0+cpu
+transformers==5.22.2
+Python 3.13.5

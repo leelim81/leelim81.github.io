@@ -25,3 +25,4 @@ jobs:
       - run: node research/forms-filler/scripts/export_parser_baseline.mjs
       - run: python3 research/forms-filler/scripts/score_parser_baseline.py
       - run: python3 research/forms-filler/scripts/check_parser_score.py
+      - run: python3 research/forms-filler/model-lab/scripts/check_lab.py

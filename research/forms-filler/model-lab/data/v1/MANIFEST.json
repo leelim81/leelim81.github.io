@@ -1,0 +1,44 @@
+{
+ "train": {
+  "n": 900,
+  "sha256": "d8b5fc523e2b2e608c2ab1727833fc2310d5574e2189aa44ced2fdc689264ce3",
+  "null_frac": 0.488,
+  "templates": [
+   "letter",
+   "nric_card",
+   "payslip",
+   "utility"
+  ],
+  "label_families": [
+   "A",
+   "B"
+  ]
+ },
+ "dev": {
+  "n": 40,
+  "sha256": "9372355861ae6fe5c9d450efcae19cd7e63b307c2f5241b9683c9529d00b248b",
+  "null_frac": 0.408,
+  "templates": [
+   "chat",
+   "letter",
+   "nric_card"
+  ],
+  "label_families": [
+   "A",
+   "B"
+  ]
+ },
+ "test": {
+  "n": 80,
+  "sha256": "2b2b953c8dc47b374e678ed9aa6ff6df212316af229cc17b41c140bba1506186",
+  "null_frac": 0.713,
+  "templates": [
+   "chat",
+   "clinic",
+   "workpass"
+  ],
+  "label_families": [
+   "C"
+  ]
+ }
+}

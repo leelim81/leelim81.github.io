@@ -8,7 +8,7 @@ This directory is the research project. Apache-2.0 applies to the original code 
 
 ## Status
 
-No fine-tune has been trained in this repository. No browser model was run: the measurement browser had no WebGPU adapter. No CPU baseline of Qwen2.5-0.5B or Qwen3-0.6B has been scored here. Configs in `configs/` are pending.
+No fine-tune has been trained in this repository. No browser model was run: the measurement browser had no WebGPU adapter. CPU bf16 baselines for Qwen2.5-0.5B and Qwen3-0.6B are in [model-lab](model-lab/README.md). They are partial, the wrong-fill rates are high, and the LoRA run was still training when those files were packed. The 1.5B model was not measured.
 
 What is measured:
 
