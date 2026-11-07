@@ -1,0 +1,3 @@
+runs/base_Qwen2.5-0.5B-Instruct_test.jsonl {'tp': 161, 'wrong': 112, 'fp_on_null': 191, 'fn': 94, 'tn': 722, 'precision': 0.347, 'recall': 0.439, 'wrong_fill_rate': 0.653, 'abstain_acc': 0.791}
+runs/base_Qwen3-0.6B_test.jsonl {'tp': 204, 'wrong': 117, 'fp_on_null': 139, 'fn': 46, 'tn': 774, 'precision': 0.443, 'recall': 0.556, 'wrong_fill_rate': 0.557, 'abstain_acc': 0.848}
+runs/lora_e1_test.jsonl {'tp': 170, 'wrong': 50, 'fp_on_null': 65, 'fn': 147, 'tn': 848, 'precision': 0.596, 'recall': 0.463, 'wrong_fill_rate': 0.404, 'abstain_acc': 0.929}

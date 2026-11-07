@@ -8,7 +8,7 @@ This directory is the research project. Apache-2.0 applies to the original code 
 
 ## Status
 
-No fine-tune has been trained in this repository. No browser model was run: the measurement browser had no WebGPU adapter. CPU bf16 baselines for Qwen2.5-0.5B and Qwen3-0.6B are in [model-lab](model-lab/README.md). They are partial, the wrong-fill rates are high, and the LoRA run was still training when those files were packed. The 1.5B model was not measured.
+No browser model was run here. CPU bf16 baselines and the finished `lora_e1` run are in [model-lab](model-lab/README.md). That LoRA improved the leaky dev split and then failed the held-out test (80 of 80 replies were invalid JSON). It is not deployed. The next fixture is [model-lab/v2/CONTRACT.md](model-lab/v2/CONTRACT.md). The 1.5B model is still unmeasured.
 
 What is measured:
 

@@ -1,48 +1,40 @@
 # Model lab
 
-CPU baselines for a compact form-filling model. This directory is separate from the 12/4/6 smoke JSONL and from `results/e2e-2026-11-07.json`.
+CPU measurements for a compact form-filling model. The 12/4/6 smoke suite and `results/e2e-2026-11-07.json` stay where they are. This directory does not replace them.
 
-Status: base-model measurements only. The LoRA run in `configs/lora_e1.json` was still training when this bundle was packed (about step 800 of 900). No adapter, no tuned scores, and no claim that a small model beats the site's 1.5B browser model. That 1.5B model was not measured: bf16 needs about 3.1 GB and was left unloaded on the shared 16 GB host.
+Code under `scripts/` is Apache-2.0 (`../LICENSE`). Synthetic JSONL in `data/` is CC0-1.0 (`../FIXTURES-CC0.txt`). Qwen base weights remain Apache-2.0. No adapter weights are published.
 
-## What was measured
+## v1 is a negative result
 
-| Piece | What it is |
-|---|---|
-| `data/v1` | 1,020 synthetic examples. Train 900, dev 40, test 80. Frozen hashes in `data/v1/FROZEN.sha256`. |
-| `results/base_*.jsonl` | Raw greedy generations and parsed JSON for Qwen2.5-0.5B-Instruct and Qwen3-0.6B. |
-| `results/prod_base_qwen25-0.5b.jsonl` | The same 0.5B model on the site's production prompt, 22 smoke records. |
-| `results/TABLE.md` | Counts with the filled-field denominator written out. |
+`data/v1` is frozen (900 train, 40 dev, 80 test). Dev is not template-disjoint: it shares letter and NRIC-card templates and label families A and B with train. Test label family C was unseen. Test is 71.3% null. v1 test has been scored, so it is diagnostic only.
 
-Both base models are Apache-2.0 Qwen weights. Inference here is Hugging Face bf16 on CPU. The browser runtime is `@mlc-ai/web-llm@0.2.79` with q4f16 or q4f32 weights and a JSON schema. Those constraints were not applied. A CPU bf16 number is not a browser number.
+`lora_e1` trained for one epoch on those 900 rows (5634 seconds, peak 4819 MB). Dev precision was 0.941 and recall 0.974. The official test was precision 0 and recall 0 because 80 of 80 replies were invalid JSON. A later salvage of pairs inside those strings is in `results/lenient_test_diagnostic.txt` (precision 0.596, recall 0.463, wrong-fill 0.404). That salvage is not the official score and not a browser score. Nothing was merged or converted for the site.
 
-## Data, and what it does not prove
+Loss fell quickly on the training format. That is consistent with format fitting, and it is not by itself proof of memorization. The test also changed the label wording and left decoding unconstrained, and checkbox labels broke the JSON. Those are separate confounds.
 
-`scripts/gen.py` (seed 20261107) writes `data/train.jsonl`, `data/dev.jsonl`, and `data/test.jsonl` in the current directory. The frozen copy lives at `data/v1/` so a regenerate does not overwrite it. Identities are invented. NRIC and FIN strings only have a valid checksum.
+The production-prompt smoke on 22 records and 44 fields, still unconstrained bf16:
 
-| split | n | templates | label families | null share |
-|---|---|---|---|---|
-| train | 900 | nric_card, letter, payslip, utility | A, B | 0.488 |
-| dev | 40 | chat, nric_card, letter | A, B | 0.408 |
-| test | 80 | clinic, workpass, chat | C, unseen label wording | 0.713 |
+| | matched | value mismatch | unsupported fills | missed | correct empty |
+|---|---|---|---|---|---|
+| base 0.5B | 10 | 0 | 12 | 0 | 22 |
+| lora_e1 | 9 | 1 | 10 | 0 | 24 |
 
-Dev is not template-disjoint from train. It shares letter and nric_card, and both label families A and B. Use it only as a rough check. Test label wording is family C, which train does not use. Test still shares the chat template with dev. About 71% of test fields are null, so abstention can look strong while recall stays weak.
+Do not quote the base run as "0 wrong." Twelve of its twenty-two fills were unsupported. Qwen2.5-1.5B was not measured. Details and denominators are in `results/TABLE.md`. Raw generations are the `results/*.jsonl` files.
 
-Code in `scripts/` is Apache-2.0 (`../LICENSE`). The synthetic JSONL is CC0-1.0 (`../FIXTURES-CC0.txt`). Qwen weights stay under their own Apache-2.0 terms. Nothing here relicenses the website.
+## Paths
 
-## Check the stored results
+`scripts/gen.py` writes `data/train.jsonl` in the current directory. The frozen files are `data/v1/`. `scripts/regen_v1.sh` regenerates in a temp directory and compares. It does not link `data/` at itself.
 
-From a fresh environment, scoring and the hash check need only the Python standard library. Model weights are not downloaded.
+`scripts/train.py` and `scripts/evalm.py` read `data/v1/<split>.jsonl` directly. Do not create `data/train.jsonl` by linking `v1` into `data`.
 
 ```bash
 cd research/forms-filler/model-lab
 python3 scripts/check_lab.py
 ```
 
-That checks `data/v1` and `scripts/gen.py` against `FROZEN.sha256`, rescores every stored prediction file, and regenerates the JSONL in a temporary directory. The temporary files must match `data/v1`. The check deletes that directory and does not modify `data/v1`.
+That checks hashes, rescores the stored predictions, regenerates v1 in a temp directory, and checks that v2 is disjoint and stable. It does not download weights.
 
-## Install the versions that produced the baselines
-
-These pins are the box environment that wrote the result files (Python 3.13.5). This publishing machine did not reinstall them.
+To reinstall the box stack that produced v1 (Python 3.13.5; not reinstalled here):
 
 ```bash
 cd research/forms-filler/model-lab
@@ -52,21 +44,8 @@ pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
 pip install accelerate==1.15.0 huggingface_hub==2.4.0 peft==0.21.2 safetensors==0.8.0 tokenizers==0.23.3 transformers==5.22.2
 ```
 
-`requirements-lock.txt` records the same versions, including `torch==2.15.0+cpu`.
+`requirements-lock.txt` is that list, including `torch==2.15.0+cpu`.
 
-Re-running a baseline reads `data/v1` and writes a new result file. It does not replace the frozen JSONL.
+## v2
 
-```bash
-python3 scripts/evalm.py --model Qwen/Qwen2.5-0.5B-Instruct --split dev --out results/rerun_0.5b_dev --threads 4
-python3 scripts/prodeval.py --model Qwen/Qwen2.5-0.5B-Instruct --out results/rerun_prod_0.5b --threads 4
-```
-
-`prodeval.py` defaults to `research/forms-filler/data`, the 22-record smoke suite. It does not score `data/v1`.
-
-Do not start `scripts/train.py` to duplicate the run that was still going. When an adapter arrives, evaluate it and publish the raw JSONL before changing the table.
-
-## How to read the negatives
-
-- Qwen2.5-0.5B test: wrong-fill rate 0.674 of 331 filled fields (87 value mismatches and 136 fills on null gold). Recall 0.294. 23 of 80 forms did not parse; those replies are scored as empty, which adds 274 abstentions and 94 misses.
-- Qwen3-0.6B test: parsed every form, recall 0.556, and still a wrong-fill rate of 0.557 of 460 filled fields.
-- Production-prompt 0.5B: 10 matched fills, 0 value mismatches, and 12 spurious fills, so 12 of 22 fills were unsupported. Parse failures were 0 on this small set. That is not "0 wrong."
+`v2/CONTRACT.md` and `data/v2/` are the next fixture. Train, dev, and test are split by template, person, and label family. The prompt and schema match the site's `askRest` request. Gold keeps citizenship and bank empty unless the excerpt states them, and it does not treat a clinic patient's date as the applicant's. There is no v2 training result yet. Do not change the live default model from these files.

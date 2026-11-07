@@ -1,0 +1,15 @@
+{
+ "tp": 9,
+ "wrong": 1,
+ "fp_on_null": 10,
+ "fn": 0,
+ "tn": 24,
+ "parse_fail": 0,
+ "n": 44,
+ "records": 22,
+ "model": "Qwen/Qwen2.5-0.5B-Instruct",
+ "adapter": "adapters/lora_e1",
+ "sec": 19,
+ "peak_rss_MB": 1511,
+ "note": "model_fields only; parser handles the rest; bf16 CPU, no schema-constrained decoding"
+}

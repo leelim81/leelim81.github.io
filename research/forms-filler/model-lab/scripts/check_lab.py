@@ -157,10 +157,66 @@ def check_regen():
     print("regen matches data/v1 and did not modify it")
 
 
+def check_lora():
+    dev = json.loads((ROOT / "results/lora_e1_dev.metrics.json").read_text(encoding="utf-8"))
+    test = json.loads((ROOT / "results/lora_e1_test.metrics.json").read_text(encoding="utf-8"))
+    prod = json.loads((ROOT / "results/prod_lora_e1.metrics.json").read_text(encoding="utf-8"))
+    if dev["precision"] != 0.941 or dev["recall"] != 0.974 or dev["parse_fail"] != 0:
+        fail("lora dev metrics")
+    if test["parse_fail"] != 80 or test["tp"] != 0 or test["recall"] != 0.0 or test["n_forms"] != 80:
+        fail("lora test metrics")
+    if test["tp"] + test["wrong"] + test["fp_on_null"] != 0:
+        fail("official tuned test produced fills; the stored failure was total parse loss")
+    if prod["tp"] != 9 or prod["wrong"] != 1 or prod["fp_on_null"] != 10 or prod["fn"] != 0 or prod["tn"] != 24:
+        fail("prod lora partition")
+    # rescore official files
+    for name in ("lora_e1_dev", "lora_e1_test"):
+        rows = load_jsonl(ROOT / "results" / (name + ".jsonl"))
+        got = score(rows)
+        stored = json.loads((ROOT / "results" / (name + ".metrics.json")).read_text(encoding="utf-8"))
+        for key in COUNT_KEYS:
+            if got[key] != stored[key]:
+                fail(name + " rescore " + key)
+    print("lora official scores match; test parse_fail 80/80 is a failure, not a zero wrong-fill")
+
+
+def check_v2():
+    expect = {
+        "train": "86c42a7f06cf09d4cc5544a26751c9652ec25ffa35d476e8f5a1d0953b7f2d4e",
+        "dev": "630e72f0871050d5c15c92f41759d47d9b63e651f5616f4d606b7d2de6f164a0",
+        "test": "d3b36c744e9bed4a56558f94390b79a7e688f35a25671e99e3d8c221753cde02",
+    }
+    rows = []
+    for split, digest in expect.items():
+        path = ROOT / "data/v2" / (split + ".jsonl")
+        if sha256(path) != digest:
+            fail("v2 " + split)
+        rows.extend(load_jsonl(path))
+    def bag(split, key):
+        return {row[key] for row in rows if row["split"] == split}
+    for left, right in (("train", "dev"), ("train", "test"), ("dev", "test")):
+        if bag(left, "template_id") & bag(right, "template_id"):
+            fail("v2 template overlap " + left)
+        if bag(left, "label_family") & bag(right, "label_family"):
+            fail("v2 family overlap " + left)
+        if bag(left, "persona_id") & bag(right, "persona_id"):
+            fail("v2 person overlap " + left)
+    before = sha256(ROOT / "data/v1/train.jsonl")
+    subprocess.check_call([sys.executable, str(ROOT / "scripts/gen_v2.py")], cwd=ROOT)
+    for split, digest in expect.items():
+        if sha256(ROOT / "data/v2" / (split + ".jsonl")) != digest:
+            fail("v2 regen " + split)
+    if sha256(ROOT / "data/v1/train.jsonl") != before:
+        fail("v2 regen touched v1")
+    print("v2 frozen, disjoint, regen stable")
+
+
 def main():
     check_hashes()
     check_scores()
     check_regen()
+    check_lora()
+    check_v2()
     print("model-lab checks passed")
 
 

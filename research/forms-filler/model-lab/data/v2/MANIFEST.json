@@ -1,0 +1,45 @@
+{
+  "train": {
+    "n": 360,
+    "sha256": "86c42a7f06cf09d4cc5544a26751c9652ec25ffa35d476e8f5a1d0953b7f2d4e",
+    "templates": [
+      "chat",
+      "checkbox_note",
+      "letter",
+      "nric_card",
+      "payslip",
+      "utility"
+    ],
+    "label_families": [
+      "A",
+      "B",
+      "F"
+    ],
+    "personas": 360
+  },
+  "dev": {
+    "n": 36,
+    "sha256": "630e72f0871050d5c15c92f41759d47d9b63e651f5616f4d606b7d2de6f164a0",
+    "templates": [
+      "courier_note",
+      "visitor_slip"
+    ],
+    "label_families": [
+      "D"
+    ],
+    "personas": 36
+  },
+  "test": {
+    "n": 36,
+    "sha256": "d3b36c744e9bed4a56558f94390b79a7e688f35a25671e99e3d8c221753cde02",
+    "templates": [
+      "claim_note",
+      "clinic_copy",
+      "work_pass"
+    ],
+    "label_families": [
+      "E"
+    ],
+    "personas": 36
+  }
+}

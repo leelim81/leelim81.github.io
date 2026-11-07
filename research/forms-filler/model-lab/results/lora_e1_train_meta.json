@@ -1,0 +1,12 @@
+{
+ "model": "Qwen/Qwen2.5-0.5B-Instruct",
+ "out": "adapters/lora_e1",
+ "epochs": 1.0,
+ "lr": 0.0002,
+ "r": 16,
+ "threads": 4,
+ "accum": 4,
+ "train_sec": 5634,
+ "peak_rss_MB": 4819,
+ "examples_seen": 900
+}
