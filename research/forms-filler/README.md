@@ -6,6 +6,8 @@ The 12/4/6 JSONL split is a seed smoke suite for the pipeline. It is not a gold 
 
 [ARCHITECTURE.md](ARCHITECTURE.md) is a research proposal for a native-PDF and spatial-OCR pipeline, with an evidence graph and oracle diagnostics. It is not a measured app comparison and it is not what the page runs. The source list is [architecture/sources.json](architecture/sources.json).
 
+[SCORECARD.md](SCORECARD.md) defines the visual-gold metrics and the commands that reproduce the committed results. The fixtures are synthetic. Human edit time was not measured.
+
 This directory is the research project. Apache-2.0 applies to the original code in this directory. CC0-1.0 applies to the original synthetic JSONL, PDFs, PNGs, and annotations in `data/` and `fixtures/`. Neither license changes the rest of the website, pdf.js, pdf-lib, Tesseract, WebLLM, or Qwen weights.
 
 ## Status

@@ -1,0 +1,127 @@
+/* Evidence records from a reference. Role comes from an explicit heading or
+   from the words on that line, not from which block appears first. */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.FormEvidence = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  var HEAD = /^(applicant|patient|dependant|dependent|member|claimant)\s*:?\s*$/i;
+  var SAME = /patient is the applicant|applicant is the patient|the applicant is the patient/i;
+
+  function kindOfLabel(label) {
+    var s = String(label || '').trim().toLowerCase();
+    if (/^(post mailbox|po mailbox|p\.?o\.? mailbox|mailbox)$/.test(s)) return 'mailbox';
+    if (/^(e-?mail|inbox|reply email)$/.test(s)) return 'email';
+    if (/^(phone|tel|mobile|day phone|callback number|contact number)$/.test(s)) return 'phone';
+    if (/^(date of birth|dob|birth date)$/.test(s)) return 'dob';
+    if (/^(nric|fin|nric\/fin|identity number|identification number)$/.test(s)) return 'nric';
+    if (/^(address|premises|dwelling|home address|street)$/.test(s)) return 'address';
+    if (/^(postal|postal code)$/.test(s)) return 'postal';
+    if (/^(full name|name)$/.test(s)) return 'name';
+    return '';
+  }
+
+  function fieldKind(field) {
+    var s = ((field && field.label) || '') + ' ' + ((field && field.id) || '');
+    s = s.toLowerCase();
+    if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
+    if (/e-?mail|\binbox\b/.test(s)) return 'email';
+    if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
+    if (/birth|\bdob\b/.test(s)) return 'dob';
+    if (/nric|\bfin\b|identity number|identification/.test(s)) return 'nric';
+    if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
+    if (/postal/.test(s)) return 'postal';
+    if (/\bname\b/.test(s) && !/user|street|bank/.test(s)) return 'name';
+    return 'other';
+  }
+
+  function fieldRole(field) {
+    var s = (((field && field.group) || '') + ' ' + ((field && field.label) || '')).toLowerCase();
+    if (/dependant|dependent|spouse|\bchild\b|\bpatient\b/.test(s)) return 'other';
+    if (/applicant|member|claimant/.test(s)) return 'applicant';
+    return 'unspecified';
+  }
+
+  function normValue(kind, value) {
+    var text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+    if (kind === 'dob') {
+      var m = text.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})$/);
+      if (!m) return '';
+      return ('0' + m[1]).slice(-2) + '/' + ('0' + m[2]).slice(-2) + '/' + m[3];
+    }
+    if (kind === 'phone') {
+      var digits = text.replace(/\D/g, '');
+      if (digits.length < 8) return '';
+      return digits.slice(-8);
+    }
+    if (kind === 'email') {
+      return /@/.test(text) ? text.toLowerCase() : '';
+    }
+    if (kind === 'nric') {
+      var id = text.replace(/\s/g, '').toUpperCase();
+      return /^[STFGM]\d{7}[A-Z]$/.test(id) ? id : '';
+    }
+    return text;
+  }
+
+  function extract(text) {
+    var raw = String(text || '');
+    var same = SAME.test(raw);
+    var section = '';
+    var facts = [];
+    var seq = 0;
+    raw.split(/\n/).forEach(function (line, index) {
+      var trimmed = line.trim();
+      var heading = trimmed.match(HEAD);
+      if (heading) {
+        section = heading[1].toLowerCase();
+        if (section === 'dependent') section = 'dependant';
+        if (section === 'member' || section === 'claimant') section = 'applicant';
+        return;
+      }
+      var labeled = trimmed.match(/^([^:]{2,40}):\s*(.+)$/);
+      if (!labeled) return;
+      var kind = kindOfLabel(labeled[1]);
+      if (!kind) return;
+      var value = normValue(kind, labeled[2]);
+      if (!value) return;
+      var role = section || 'unscoped';
+      var explicit = !!section || /^(full name)$/i.test(labeled[1].trim());
+      if (!section && /^full name$/i.test(labeled[1].trim())) role = 'applicant';
+      var linked = false;
+      if (same && (role === 'patient' || role === 'applicant')) {
+        role = 'applicant';
+        linked = true;
+      }
+      facts.push({
+        id: 'f' + (seq++),
+        kind: kind,
+        role: role,
+        value: value,
+        explicit: explicit,
+        samePerson: linked,
+        line: index + 1,
+        quote: trimmed.slice(0, 180)
+      });
+    });
+    return { facts: facts, samePerson: same, people: people(facts) };
+  }
+
+  function people(facts) {
+    var roles = {};
+    facts.forEach(function (fact) {
+      if (fact.role === 'unscoped') return;
+      roles[fact.role] = true;
+    });
+    return Object.keys(roles);
+  }
+
+  return {
+    extract: extract,
+    fieldKind: fieldKind,
+    fieldRole: fieldRole,
+    normValue: normValue,
+    kindOfLabel: kindOfLabel
+  };
+});

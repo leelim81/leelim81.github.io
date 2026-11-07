@@ -1,0 +1,32 @@
+{
+  "seed": 20261111,
+  "splits": {
+    "development": {
+      "records": 8,
+      "sha256": "e0090312a0b3269aeb09f4ecc81244dba1be528a7cfffc0d617bc08e431d8dd4",
+      "templates": [
+        "desk_widget"
+      ],
+      "label_family": "D",
+      "people": 8
+    },
+    "calibration": {
+      "records": 36,
+      "sha256": "d908e947e02fc81654d3c88af9fdf822625bf56d5f605749cd4c38ccdf1a68ea",
+      "templates": [
+        "gate_widget"
+      ],
+      "label_family": "C",
+      "people": 36
+    },
+    "test": {
+      "records": 32,
+      "sha256": "eea3fd16126de6404b2b1b947f7e87680300796833214bd3122aa7acfc433ab0",
+      "templates": [
+        "claim_widget"
+      ],
+      "label_family": "T",
+      "people": 16
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "forms-filler-visual-gold",
+  "private": true,
+  "type": "module",
+  "description": "Synthetic visual fixtures and the visual-gold scorecard. No model download.",
+  "dependencies": {
+    "pdf-lib": "1.17.1"
+  }
+}
