@@ -2,7 +2,7 @@
 
 This page is the replication guide for the evidence selector in Forms Filler. The numbers below were produced by the commands in [How to rerun](#how-to-rerun) on the committed fixtures. It is a text-and-widget benchmark on synthetic forms. It is not a camera study, not a browser-model study, and not a statement that a fill is safe for a real person.
 
-Baseline behavior is `fromText` plus `mapFactsToFields` as published on commit `56ec0d8e83c67a87d756bebce807fec3eb7ec6f2`. The candidate is `evidence.js` and `select.js` on this change, with types turned on or off by [visual-gold/FROZEN.json](visual-gold/FROZEN.json). That file was written from the calibration split only. The test split was scored after the file existed.
+Baseline behavior is `fromText` plus `mapFactsToFields` as published on commit `56ec0d8e83c67a87d756bebce807fec3eb7ec6f2`. The candidate selector, fixtures, and scored files were committed as `506b9106a1f996fc868e3b06738913d181e8cb38`. Types are turned on or off by [visual-gold/FROZEN.json](visual-gold/FROZEN.json). That file was written from the calibration split only. The test split was scored after the file existed.
 
 Code in `tools/forms-filler/` and `visual-gold/*.mjs` is Apache-2.0. The generated forms, references, and gold JSONL are CC0, same as [FIXTURES-CC0.txt](FIXTURES-CC0.txt). No private document and no identity-card fixture is in this set.
 
