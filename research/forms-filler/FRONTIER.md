@@ -2,7 +2,7 @@
 
 This is the qualification of the local Forms Filler work, not a merge request. Pull request 13 (`cursor/local-profiles-1412`) is open onto pull request 12 (`cursor/evidence-scorecard-1412`). Pull request 12 is open onto `main`. Neither was merged. Scan autofill is not ready. Native filling, review, the profile store, and extension 0.1.0 are qualified only inside the limits below.
 
-The behavior under test is commit `ff02b88952aab7be53d4aad4c31fd17c56911aee` plus this qualification commit, which adds the audit family and does not change the filler gates. OCR autofill in `tools/forms-filler/thresholds.js` is false for every type. `research/forms-filler/visual-e2e/VISUAL-GATES.json` was not edited. `FROZEN-e2e.json` was not edited.
+The filler behavior under test is `ff02b88952aab7be53d4aad4c31fd17c56911aee`. This qualification, including the audit family, is `25e982f76a0a509bd015fbd83bf9e9525eca9b7c`. It does not change the filler gates. OCR autofill in `tools/forms-filler/thresholds.js` is false for every type. `research/forms-filler/visual-e2e/VISUAL-GATES.json` was not edited. `FROZEN-e2e.json` was not edited.
 
 ## What was frozen before the look
 
