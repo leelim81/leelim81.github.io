@@ -187,6 +187,9 @@
       properties[key] = { type: 'string', description: description || key };
     });
     var required = Array.isArray(source.required) ? source.required.filter(function (key) { return properties[key]; }) : [];
+    // WebLLM 0.2.79 compiles this string with xgrammar. Property type stays
+    // "string"; a null union is not sent. JSON null and the strings null
+    // and undefined are emptied after parse instead of being written out.
     return JSON.stringify({
       type: 'object',
       properties: properties,
@@ -218,7 +221,17 @@
       response_format: { type: 'json_object', schema: asciiSchema(schema) }
     }), limit, 'The private model did not answer.');
     var text = replyText(reply);
-    try { return JSON.parse(text); } catch (err) { return {}; }
+    var data;
+    try { data = JSON.parse(text); } catch (err) { return {}; }
+    if (global.FormFacts && FormFacts.coerceModelObject) return FormFacts.coerceModelObject(data);
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+    var out = {};
+    Object.keys(data).forEach(function (key) {
+      if (data[key] == null) { out[key] = ''; return; }
+      var raw = String(data[key]).trim();
+      out[key] = /^(null|undefined)$/i.test(raw) ? '' : raw;
+    });
+    return out;
   }
 
   function applyTestState(partial) {

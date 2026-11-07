@@ -67,15 +67,37 @@
 
   function dobFrom(text) {
     var raw = String(text || '');
-    var near = raw.match(/(?:date of b\w+|dob|出生)[\s\S]{0,60}?(\d{2})[-\/.](\d{2})[-\/.](\d{4})/i)
-      || raw.match(/\b(\d{2})[-\/.](\d{2})[-\/.](\d{4})\s+[MF]\b/);
-    if (near) return near[1] + '/' + near[2] + '/' + near[3];
-    var months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
-    var named = raw.match(/(?:date of birth|dob|born)[^\n]{0,48}?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/i);
-    if (!named) return '';
-    var month = months[named[2].slice(0, 3).toLowerCase()];
-    if (!month) return '';
-    return ('0' + named[1]).slice(-2) + '/' + month + '/' + named[3];
+    var found = [];
+    function push(index, date) {
+      var norm = normDate(date);
+      if (norm) found.push({ index: index, date: norm });
+    }
+    var match;
+    var numeric = /(?:date of b\w+|dob|出生|born)[\s\S]{0,40}?(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})/ig;
+    while ((match = numeric.exec(raw))) push(match.index, match[1] + '/' + match[2] + '/' + match[3]);
+    var sexed = /\b(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})\s+[MF]\b/ig;
+    while ((match = sexed.exec(raw))) push(match.index, match[1] + '/' + match[2] + '/' + match[3]);
+    var named = /(?:date of birth|dob|born)[^\n]{0,48}?(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/ig;
+    while ((match = named.exec(raw))) push(match.index, match[1] + ' ' + match[2] + ' ' + match[3]);
+    var ranked = found.map(function (item) {
+      var lineStart = raw.lastIndexOf('\n', Math.max(0, item.index - 1)) + 1;
+      var lineEnd = raw.indexOf('\n', item.index);
+      if (lineEnd < 0) lineEnd = raw.length;
+      var section = '';
+      raw.slice(0, lineStart).split(/\n/).forEach(function (prior) {
+        var heading = prior.trim().match(/^(patient|applicant|member|claimant|worker|dependant|dependent|spouse|child|nurse|visitor|resident)\b[:\s-]*$/i);
+        if (heading) section = heading[1].toLowerCase();
+      });
+      return { date: item.date, index: item.index, role: dateRole(section, raw.slice(lineStart, lineEnd), raw) };
+    }).filter(function (item) {
+      if (item.role === 'applicant' || item.role === 'same') return true;
+      return item.role === 'unscoped' && !mixedPeople(raw);
+    });
+    ranked.sort(function (a, b) {
+      var rank = function (role) { return role === 'applicant' || role === 'same' ? 0 : 1; };
+      return rank(a.role) - rank(b.role) || a.index - b.index;
+    });
+    return ranked.length ? ranked[0].date : '';
   }
 
   function emailFrom(text) {
@@ -130,7 +152,7 @@
       out.street = addr[2].replace(/\s+/g, ' ').trim().toUpperCase();
       out.unit = addr[3].replace(/\s/g, '');
     }
-    var labeled = raw.match(/\b(?:premises|home address|residential address|mailing address)\s*[:\-]\s*([^\n.]{4,120})/i);
+    var labeled = raw.match(/\b(?:premises|home address|residential address|mailing address)\s*[:\-]\s*([^\n.;]{4,120})/i);
     if (labeled) {
       var line = labeled[1].replace(/\s+/g, ' ').trim().replace(/[.,;]+$/, '');
       var tail = line.match(/^(.*?)(?:\s+)(\d{6})$/);
@@ -169,6 +191,7 @@
     else if (address.labeled) facts.address = address.labeled;
     var residential = residentialFrom(text);
     if (residential) facts.residential = residential;
+    if (residential) facts.citizenship = residential;
     var email = emailFrom(text);
     if (email) facts.email = email;
     var phone = phoneFrom(text);
@@ -190,11 +213,16 @@
     return word;
   }
 
-  function residentialFrom(text) {
-    var raw = String(text || '');
-    if (/singapore\s+citizen/i.test(raw)) return 'Singapore Citizen';
-    if (/permanent\s+resident/i.test(raw)) return 'Permanent Resident';
+  function statedStatus(text) {
+    var kind = applicableCitizenship(text);
+    if (kind === 'singapore') return 'Singapore Citizen';
+    if (kind === 'pr') return 'Permanent Resident';
+    if (kind === 'foreigner') return 'Foreigner';
     return '';
+  }
+
+  function residentialFrom(text) {
+    return statedStatus(text);
   }
 
   function blob(field) {
@@ -258,6 +286,7 @@
     if (/gender|性别|\bsex\b/i.test(label)) return 'sex';
     if (/\brace\b|种族/i.test(label)) return 'race';
     if (/residential|住户/i.test(label)) return 'residential';
+    if (/citizen|nationalit/.test(label)) return 'citizenship';
     if (/bank/.test(label.toLowerCase()) && /name/i.test(label)) return '';
     if (/\bname\b/i.test(label) && /dependant|dependent|officer|union/.test(label)) return '';
     if (/business\s+name|disregarded entity/i.test(label)) return 'company';
@@ -298,44 +327,186 @@
     return found;
   }
 
+  function modelScalar(value) {
+    if (value == null) return '';
+    var text = String(value).replace(/\s+/g, ' ').trim();
+    if (/^(null|undefined)$/i.test(text)) return '';
+    return text;
+  }
+
+  function placeholder(text) {
+    return /not specified|unspecified|\bunknown\b|n\/a|\bnil\b/i.test(text);
+  }
+
+  function explicitSamePerson(hay) {
+    return /patient is the applicant|applicant is the patient|the applicant is the patient|patient and the applicant are the same/i.test(hay);
+  }
+
+  function mixedPeople(hay) {
+    return /\bpatient\b/i.test(hay) && /\b(applicant|member|claimant)\b/i.test(hay) && !explicitSamePerson(hay);
+  }
+
+  function linesWithSection(hay) {
+    var section = '';
+    var out = [];
+    String(hay || '').split(/\n/).forEach(function (line) {
+      var trimmed = line.trim();
+      var heading = trimmed.match(/^(patient|applicant|member|claimant|worker|dependant|dependent|spouse|child|nurse|visitor|resident)\b[:\s-]*$/i);
+      if (heading) {
+        section = heading[1].toLowerCase();
+        return;
+      }
+      if (trimmed) out.push({ section: section, text: trimmed });
+    });
+    return out;
+  }
+
+  function dateRole(section, sentence, hay) {
+    var lower = (section + ' ' + sentence).toLowerCase();
+    var patient = section === 'patient' || /\bpatient\b/.test(lower);
+    var applicant = section === 'applicant' || section === 'member' || section === 'claimant' || section === 'worker' || /\b(applicant|member|claimant|worker)\b|\bfull name\b/.test(lower);
+    var other = section === 'dependant' || section === 'dependent' || section === 'spouse' || section === 'child' || section === 'nurse' || section === 'visitor' || section === 'resident' || /\banother person\b|\baccompanied by\b|\b(dependant|dependent|spouse|child|nurse|visitor|resident)\b/.test(lower);
+    if (other && !applicant) return 'other';
+    if (patient && applicant && !explicitSamePerson(sentence) && !explicitSamePerson(hay)) return 'ambiguous';
+    if (patient && explicitSamePerson(hay) && !other) return 'same';
+    if (patient && !applicant) return 'patient';
+    if (applicant) return 'applicant';
+    return 'unscoped';
+  }
+
   function dateAllowed(value, corpus) {
     var want = normDate(value);
     if (!want) return false;
     var hay = String(corpus || '');
-    var patientIsApplicant = /patient is the applicant|applicant is the patient|the applicant is the patient/i.test(hay);
-    var sentences = hay.replace(/(\d{1,2})\.(\d{1,2})\.(\d{4})/g, '$1/$2/$3').split(/[\n.;]+/);
-    var hits = [];
-    sentences.forEach(function (sentence) {
-      if (datesInSentence(sentence).indexOf(want) !== -1) hits.push(sentence);
+    var mixed = mixedPeople(hay);
+    var ok = false;
+    linesWithSection(hay).forEach(function (row) {
+      row.text.replace(/(\d{1,2})\.(\d{1,2})\.(\d{4})/g, '$1/$2/$3').split(/[.;]+/).forEach(function (sentence) {
+        if (datesInSentence(sentence).indexOf(want) === -1) return;
+        var role = dateRole(row.section, sentence, hay);
+        if (role === 'applicant' || role === 'same' || (role === 'unscoped' && !mixed)) ok = true;
+      });
     });
-    if (!hits.length) return false;
-    function otherPerson(sentence) {
-      if (patientIsApplicant) return false;
-      var lower = sentence.toLowerCase();
-      var aboutPatient = /\bpatient\b|\banother person\b|\baccompanied by\b/.test(lower);
-      var aboutApplicant = /\bapplicant\b|\bfull name\b|\bthe worker\b|\bthe member\b/.test(lower);
-      return aboutPatient && !aboutApplicant;
+    return ok;
+  }
+
+  function citizenshipField(field) {
+    return /citizen|nationalit|residential status|residency|\bforeigner\b/.test(blob(field).toLowerCase());
+  }
+
+  function bankField(field) {
+    var label = blob(field).toLowerCase();
+    return /\bbank\b|\bgiro\b|\bledger\b|\bpayee\b|\bsettlement\b|\baccount\b/.test(label) && !/e-?mail|holder/.test(label);
+  }
+
+  function dobField(field) {
+    return /birth|\bdob\b|date of birth/.test(blob(field).toLowerCase());
+  }
+
+  function evidenceField(field) {
+    return citizenshipField(field) || bankField(field) || dobField(field);
+  }
+
+  function citizenshipKind(value) {
+    var text = String(value || '').trim().toLowerCase().replace(/\s+/g, ' ').replace(/^a\s+/, '');
+    if (text === 'singapore' || text === 'singaporean' || text === 'singapore citizen') return 'singapore';
+    if (text === 'permanent resident' || text === 'pr') return 'pr';
+    if (text === 'foreigner') return 'foreigner';
+    return '';
+  }
+
+  function statementKind(sentence) {
+    var trimmed = String(sentence || '').trim();
+    if (/^(?:a\s+)?(singapore citizen|singaporean|permanent resident|foreigner)$/i.test(trimmed)) return citizenshipKind(trimmed);
+    var labeled = trimmed.match(/(?:citizenship|nationality|residential status|residency)\s*[:\-]?\s*(singapore citizen|singaporean|permanent resident|foreigner|singapore|not specified|unspecified|unknown|n\/a|nil)\b/i);
+    if (labeled) {
+      if (/not specified|unspecified|unknown|n\/a|nil/i.test(labeled[1])) return 'placeholder';
+      return citizenshipKind(labeled[1]);
     }
-    return hits.some(function (sentence) { return !otherPerson(sentence); });
+    var said = sentence.match(/\b(?:applicant|member|claimant)\b[^.\n]{0,60}\b(?:is|as)\b[^.\n]{0,24}\b(?:a\s+)?(singapore citizen|singaporean|permanent resident|foreigner)\b/i);
+    return said ? citizenshipKind(said[1]) : '';
+  }
+
+  function statementRole(section, sentence, hay) {
+    var inline = sentence.match(/\b(patient|applicant|member|claimant|dependant|dependent|spouse|child)(?:'s|s)?\s+(?:citizenship|nationality|residential status|residency)\b/i);
+    var who = inline ? inline[1].toLowerCase() : section;
+    if (who === 'patient') return explicitSamePerson(hay) ? 'same' : 'patient';
+    if (who === 'dependant' || who === 'dependent' || who === 'spouse' || who === 'child') return 'other';
+    if (who === 'applicant' || who === 'member' || who === 'claimant') return 'applicant';
+    if (mixedPeople(hay)) return 'ambiguous';
+    return 'applicant';
+  }
+
+  function applicableCitizenship(hay) {
+    var kinds = [];
+    linesWithSection(hay).forEach(function (row) {
+      row.text.split(/[.;]+/).forEach(function (sentence) {
+        var kind = statementKind(sentence);
+        if (!kind || kind === 'placeholder') return;
+        var role = statementRole(row.section, sentence, hay);
+        if (role === 'applicant' || role === 'same') kinds.push(kind);
+      });
+    });
+    var uniq = kinds.filter(function (kind, index) { return kinds.indexOf(kind) === index; });
+    return uniq.length === 1 ? uniq[0] : '';
+  }
+
+  function prepareCitizenship(field, value, corpus) {
+    var want = citizenshipKind(value);
+    var stated = applicableCitizenship(corpus);
+    if (!want || !stated || want !== stated) return '';
+    var options = field && field.options || [];
+    for (var i = 0; i < options.length; i++) {
+      if (citizenshipKind(options[i]) === stated) return String(options[i]);
+    }
+    if (stated === 'singapore') return 'Singapore Citizen';
+    if (stated === 'pr') return 'Permanent Resident';
+    return 'Foreigner';
+  }
+
+  function sameAccount(a, b) {
+    if (a === b) return true;
+    var left = a.replace(/^0+/, '');
+    var right = b.replace(/^0+/, '');
+    return left.length >= 6 && left === right;
+  }
+
+  function bankValue(value, corpus) {
+    var digits = String(value || '').replace(/\D/g, '');
+    if (digits.length < 6) return '';
+    var found = '';
+    var pattern = /\b(?:bank account(?:\s*(?:number|no\.?))?|account\s*(?:number|no\.?)|giro|ledger|payee|settlement)\b[^0-9\n]{0,24}([0-9][0-9\s-]{4,}[0-9])/ig;
+    var match;
+    while ((match = pattern.exec(String(corpus || '')))) {
+      var run = match[1].replace(/\D/g, '');
+      if (sameAccount(digits, run)) found = run;
+    }
+    return found;
+  }
+
+  function prepareModelValue(field, value, corpus) {
+    var text = modelScalar(value);
+    if (!text || placeholder(text)) return '';
+    if (citizenshipField(field)) return prepareCitizenship(field, text, corpus);
+    if (bankField(field)) return bankValue(text, corpus);
+    if (dobField(field)) return dateAllowed(text, corpus) ? normDate(text) : '';
+    return text;
   }
 
   function allowModelValue(field, value, corpus) {
-    var text = String(value || '').trim();
-    if (!text) return false;
-    var label = blob(field).toLowerCase();
-    var hay = String(corpus || '');
-    if (/not specified|unspecified|unknown|n\/a|nil/i.test(text)) return false;
-    if (/citizen|nationalit|residential status|residency|\bforeigner\b/.test(label)) {
-      if (/^singapore$/i.test(text)) return false;
-      if (!/singapore\s+citizen|permanent\s+resident|\bforeigner\b/i.test(hay)) return false;
-      return /citizen|permanent|foreign/i.test(text);
-    }
-    if (/\bbank\b|\bgiro\b|\baccount\b|\bledger\b|\bpayee\b|\bsettlement\b/.test(label) && !/e-?mail|holder/.test(label)) {
-      var digits = text.replace(/\D/g, '');
-      return digits.length >= 6 && hay.replace(/\D/g, '').indexOf(digits) !== -1;
-    }
-    if (/birth|\bdob\b|date of birth/.test(label)) return dateAllowed(text, hay);
+    var text = modelScalar(value);
+    if (!text || placeholder(text)) return false;
+    if (evidenceField(field)) return prepareModelValue(field, text, corpus) !== '';
     return true;
+  }
+
+  function coerceModelObject(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
+    var out = {};
+    Object.keys(data).forEach(function (key) {
+      out[key] = modelScalar(data[key]);
+    });
+    return out;
   }
 
   function reviewLabels(fields) {
@@ -386,6 +557,7 @@
     if (kind === 'street' || kind === 'address' || kind === 'blk' || kind === 'company') return !PLACE.test(text);
     if (kind === 'postal') return /^\d{6}$/.test(text);
     if (kind === 'dob') return /^\d{2}\/\d{2}\/\d{4}$/.test(text);
+    if (citizenshipField(field)) return citizenshipKind(text) !== '';
     return !PLACE.test(text);
   }
 
@@ -403,6 +575,10 @@
       if (field.type === 'radio' || field.type === 'checkbox') {
         if (same(field.label, value)) out[field.id] = field.label;
         return;
+      }
+      if (field.options && field.options.length && (key === 'citizenship' || key === 'residential')) {
+        var option = field.options.filter(function (item) { return citizenshipKind(item) && citizenshipKind(item) === citizenshipKind(value); })[0];
+        if (option) { out[field.id] = option; return; }
       }
       if (accept(field, value)) out[field.id] = value;
     });
@@ -481,6 +657,10 @@
     mapFactsToFields: mapFactsToFields,
     reviewLabels: reviewLabels,
     allowModelValue: allowModelValue,
+    prepareModelValue: prepareModelValue,
+    modelScalar: modelScalar,
+    coerceModelObject: coerceModelObject,
+    evidenceField: evidenceField,
     modelFields: modelFields,
     preview: preview,
     accept: accept,

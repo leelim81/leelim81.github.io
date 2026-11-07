@@ -1,8 +1,9 @@
 import { createRequire } from 'module';
+import { readFileSync } from 'fs';
 import assert from 'assert';
 
 const require = createRequire(import.meta.url);
-const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue } = require('./facts.js');
+const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject } = require('./facts.js');
 
 const ocr = `REPUBLIC OF SINGAPORE
 IDENTITY CARD NO. S1234567D
@@ -103,7 +104,8 @@ assert.equal(noted.phone, '+65 8123 4567');
 assert.equal(noted.email, 'wei.ming.tan@example.com');
 assert.equal(noted.dob, '14/03/1992');
 assert.equal(noted.company, 'Harbour Books');
-assert.equal(noted.residential, undefined);
+assert.equal(noted.citizenship, 'Singapore Citizen');
+assert.equal(mapFactsToFields(noted, [{ id: 'nationality', label: 'Nationality', type: 'text' }]).nationality, 'Singapore Citizen');
 const asked = modelFields([
   { id: 'company', label: 'Company Name in Full', type: 'text' },
   { id: 'hp', label: '(HP)', type: 'text' },
@@ -194,9 +196,20 @@ const premises = fromText('Premises: 44 CEDAR WALK 161616\n');
 assert.equal(premises.address, '44 CEDAR WALK 161616');
 assert.equal(premises.postal, '161616');
 assert.equal(fromText('Premises: 44 CEDAR WALK 161616. Handset was not given.').address, '44 CEDAR WALK 161616');
+assert.equal(fromText('Premises: 44 CEDAR WALK 161616; Handset was not given.').address, '44 CEDAR WALK 161616');
+const premisesCard = fromText('Full name: Alex Example\nPremises: 44 CEDAR WALK 161616. Next of kin is Pat Example.\n');
+assert.equal(premisesCard.name, 'Alex Example');
+assert.equal(premisesCard.address, '44 CEDAR WALK 161616');
+assert.equal(premisesCard.postal, '161616');
 assert.equal(fromText('The file number 123456 is not an address.').address, undefined);
 assert.equal(fromText('44 HARBOUR LANE 161616').name, undefined);
 const otherDob = 'CLINIC COPY about another person\nPatient listed: Pat Example born 01/01/1980.\nAccompanied by applicant.\nFull name: Alex Example\n';
+assert.equal(fromText('Patient\nDate of birth: 01/01/1980\nApplicant\nThe applicant was born on 14 March 1992.\n').dob, '14/03/1992');
+assert.equal(fromText('Patient\nDate of birth: 01/01/1980\nApplicant\nFull name: Alex Example\n').dob, undefined);
+assert.equal(fromText('The patient is the applicant.\nPatient born 14/03/1992.\n').dob, '14/03/1992');
+assert.equal(fromText('Citizenship: Singapore\n').citizenship, 'Singapore Citizen');
+assert.equal(fromText('Citizenship: Singaporean\n').citizenship, 'Singapore Citizen');
+assert.equal(fromText('NRIC S1234567D\nAddress: 10 EXAMPLE ROAD SINGAPORE 123456\n').citizenship, undefined);
 assert.equal(allowModelValue({ id: 'dob', label: 'Applicant date of birth', type: 'text' }, '01/01/1980', otherDob), false);
 assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '02/02/1990', 'The patient is the applicant. Patient born 02/02/1990.'), true);
 assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '14/03/1992', 'The applicant was born on 14 March 1992.'), true);
@@ -204,8 +217,51 @@ assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }
 assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Not specified', 'Full name: Alex Example'), false);
 assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'REPUBLIC OF SINGAPORE\nFull name: Alex'), false);
 assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Permanent Resident', 'Citizenship: Permanent Resident'), true);
+assert.equal(prepareModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'Citizenship: Singapore'), 'Singapore Citizen');
+assert.equal(prepareModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singaporean', 'Citizenship: Singaporean'), 'Singapore Citizen');
+assert.equal(prepareModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore Citizen', 'The applicant is a Singaporean.'), 'Singapore Citizen');
+assert.equal(prepareModelValue({ id: 'nat', label: 'Nationality', type: 'dropdown', options: ['Singaporean', 'Malaysian'] }, 'Singapore', 'Citizenship: Singapore'), 'Singaporean');
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore Citizen', 'NRIC S1234567D\nAddress: 10 EXAMPLE ROAD SINGAPORE 123456'), false);
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'Citizenship: Not specified'), false);
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'Patient\nCitizenship: Singapore\nApplicant\nName: Alex Example\n'), false);
+assert.equal(prepareModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'Patient\nCitizenship: Foreigner\nApplicant\nCitizenship: Singapore\n'), 'Singapore Citizen');
+assert.equal(accept({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore Citizen'), true);
+assert.equal(accept({ id: 'addr', label: 'Address', type: 'text' }, 'Singapore'), false);
+const bothPeople = 'Patient\nDate of birth: 01/01/1980\nApplicant\nDate of birth: 14/03/1992\n';
+assert.equal(allowModelValue({ id: 'dob', label: 'Applicant date of birth', type: 'text' }, '01/01/1980', bothPeople), false);
+assert.equal(prepareModelValue({ id: 'dob', label: 'Applicant date of birth', type: 'text' }, '14 March 1992', bothPeople), '14/03/1992');
+const samePerson = 'Patient\nThe patient is the applicant.\nDate of birth: 14/03/1992\nNurse\nDate of birth: 01/01/1980\n';
+assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '14/03/1992', samePerson), true);
+assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '01/01/1980', samePerson), false);
+const accounts = 'NRIC S1234567D\nPhone +65 8123 4567\nBank account number: 5566778899\n';
+assert.equal(prepareModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '5566778899', accounts), '5566778899');
+assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '1234567', accounts), false);
+assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '81234567', accounts), false);
+assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '667788', accounts), false);
+assert.equal(prepareModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '12345678', 'Bank account number: 0012345678'), '0012345678');
 assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, 'Harbour Press', 'Employer: Harbour Press'), false);
 assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '0012345678', 'Bank account number: 0012345678'), true);
 assert.equal(allowModelValue({ id: 'bank', label: 'GIRO ledger', type: 'text' }, 'Harbour Press', 'Employer: Harbour Press'), false);
 assert.equal(allowModelValue({ id: 'bank', label: 'Credit ledger', type: 'text' }, '0012345678', 'Ledger account 0012345678'), true);
+assert.equal(modelScalar(null), '');
+assert.equal(modelScalar('null'), '');
+assert.equal(modelScalar('Not specified'), 'Not specified');
+assert.deepEqual(coerceModelObject({ dob: null, citizenship: 'null', name: 'Alex Example' }), { dob: '', citizenship: '', name: 'Alex Example' });
 console.log('facts tests ok');
+
+// Supported false negatives, not model scores:
+// - Singapore inferred from an address, a letterhead, or an NRIC prefix
+// - an unlabeled citizenship line when the page also has a separate patient and applicant
+// - two different explicit citizenship statements for the applicant
+// - a premises line containing "No." is cut at that period
+// - a date that is not in the applicant's own sentence or section when both a patient and an applicant are present
+// - a bank number that drops, adds, or borrows digits, other than leading zeros
+// - the printed answers Not specified, null, and n/a are left blank
+// A mocked completeJson result is an integration check, not model accuracy.
+const llm = readFileSync(new URL('./llm.js', import.meta.url), 'utf8');
+assert.match(llm, /@mlc-ai\/web-llm@0\.2\.79/);
+assert.match(llm, /type: 'string'/);
+assert.match(llm, /required: required/);
+assert.match(llm, /coerceModelObject/);
+assert.doesNotMatch(llm, /\[\s*'string'\s*,\s*'null'\s*\]/);
+console.log('schema stays WebLLM 0.2.79 string properties');

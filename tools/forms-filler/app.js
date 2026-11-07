@@ -437,11 +437,15 @@
   function rowsFrom(seeded, guessed, notes) {
     return state.fields.map(function (field) {
       if (seeded && seeded[field.id]) return proposalFrom(field, seeded[field.id], 'facts');
-      var raw = guessed && guessed[field.id] != null ? String(guessed[field.id]) : '';
-      var row = proposalFrom(field, raw, 'model');
-      if (row.value && notes && !bestSupported(row.value, notes)) row.value = '';
-      if (row.source === 'model' && row.value && window.FormFacts && FormFacts.allowModelValue && !FormFacts.allowModelValue(field, row.value, notes)) row.value = '';
-      return row;
+      var incoming = guessed && Object.prototype.hasOwnProperty.call(guessed, field.id) ? guessed[field.id] : '';
+      var raw = window.FormFacts && FormFacts.modelScalar ? FormFacts.modelScalar(incoming) : (incoming == null ? '' : String(incoming));
+      if (window.FormFacts && FormFacts.evidenceField && FormFacts.evidenceField(field)) {
+        raw = FormFacts.prepareModelValue(field, incoming, notes);
+      } else if (raw && notes) {
+        raw = bestSupported(raw, notes) || '';
+        if (raw && window.FormFacts && FormFacts.allowModelValue && !FormFacts.allowModelValue(field, raw, notes)) raw = '';
+      }
+      return proposalFrom(field, raw, 'model');
     });
   }
 
