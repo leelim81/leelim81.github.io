@@ -169,19 +169,109 @@
     return out;
   }
 
+  function unique(list) {
+    var out = [];
+    list.forEach(function (item) {
+      if (item && out.indexOf(item) === -1) out.push(item);
+    });
+    return out;
+  }
+
+  /* When a line is a person heading, later values belong to that person.
+     A second applicant value is a conflict, not the first one in reading order. */
+  function applicantLines(text) {
+    var roleOf = {
+      applicant: 'applicant', member: 'applicant', claimant: 'applicant', worker: 'applicant',
+      patient: 'patient', dependant: 'dependant', dependent: 'dependant',
+      spouse: 'other', child: 'other', nurse: 'other', visitor: 'other', resident: 'other',
+      witness: 'other', guardian: 'other', parent: 'other', sibling: 'other', doctor: 'other'
+    };
+    var lines = String(text || '').split(/\n/);
+    var section = '';
+    var headed = false;
+    var kept = [];
+    lines.forEach(function (line) {
+      var trimmed = line.trim();
+      var bare = trimmed.match(/^([A-Za-z][A-Za-z'’\-]{1,24}):?$/);
+      if (bare && roleOf[bare[1].toLowerCase()]) {
+        section = roleOf[bare[1].toLowerCase()];
+        headed = true;
+        return;
+      }
+      if (section === 'applicant') kept.push(trimmed);
+    });
+    return headed ? kept.join('\n') : null;
+  }
+
+  function labelledNames(text) {
+    var found = [];
+    var re = /\bfull name\b[ \t]*[:\-][ \t]*([A-Za-z][A-Za-z'’.\-]+(?:[ \t]+[A-Za-z][A-Za-z'’.\-]+){1,5})/ig;
+    var match;
+    while ((match = re.exec(String(text || '')))) found.push(match[1].replace(/\s+/g, ' ').trim());
+    return unique(found);
+  }
+
+  function labelledEmails(text) {
+    return unique(String(text || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/ig) || []);
+  }
+
+  function labelledPhones(text) {
+    var found = [];
+    var re = /(?:phone|mobile|\btel\b|contact)\s*(?:no\.?|number)?\s*[:\-]\s*(\+?\d[\d\s()-]{7,})/ig;
+    var match;
+    while ((match = re.exec(String(text || '')))) {
+      var digits = match[1].replace(/\D/g, '');
+      if (digits.length >= 8 && digits.length <= 15) found.push(match[1].replace(/\s+/g, ' ').trim());
+    }
+    return unique(found);
+  }
+
   function fromText(text) {
     var facts = {};
-    var nric = nricFrom(text);
-    if (nric) facts.nric = nric;
-    var name = nameFrom(text);
-    if (name) facts.name = name;
+    var scope = applicantLines(text);
+    var scoped = scope != null;
+    var nameSource = scoped ? scope : text;
+    var names = labelledNames(nameSource);
+    if (names.length > 1) facts.conflict = true;
+    else if (names.length === 1) facts.name = names[0];
+    else if (!scoped) {
+      var name = nameFrom(text);
+      if (name) facts.name = name;
+    }
+    var nricSource = scoped ? scope : text;
+    var nricHits = [];
+    var nricRe = /(?:^|[^A-Z0-9$~])([STFGM])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
+    var nricMatch;
+    while ((nricMatch = nricRe.exec(String(nricSource || '')))) nricHits.push((nricMatch[1] + nricMatch[2] + nricMatch[3]).toUpperCase());
+    nricHits = unique(nricHits);
+    if (nricHits.length > 1) facts.conflict = true;
+    else if (nricHits.length === 1) facts.nric = nricHits[0];
+    else if (!scoped) {
+      var nric = nricFrom(text);
+      if (nric) facts.nric = nric;
+    }
+    var mailSource = scoped ? scope : text;
+    var emails = labelledEmails(mailSource);
+    if (emails.length > 1) facts.conflict = true;
+    else if (emails.length === 1) facts.email = emails[0];
+    var phoneSource = scoped ? scope : text;
+    var phones = labelledPhones(phoneSource);
+    if (phones.length > 1) facts.conflict = true;
+    else if (phones.length === 1) facts.phone = phones[0];
+    else if (!scoped) {
+      var phone = phoneFrom(text);
+      if (phone) facts.phone = phone;
+    }
     var dob = dobFrom(text);
     if (dob) facts.dob = dob;
-    var sex = sexFrom(text);
+    var body = scoped ? scope : text;
+    var sex = sexFrom(body);
     if (sex) facts.sex = sex;
-    var race = raceFrom(text);
+    var race = raceFrom(body);
     if (race) facts.race = race;
-    var address = addressFrom(text);
+    var addressLabels = (String(body).match(/\baddress\b\s*[:\-]/ig) || []).length;
+    var address = addressLabels > 1 ? {} : addressFrom(body);
+    if (addressLabels > 1) facts.conflict = true;
     if (address.blk) facts.blk = address.blk;
     if (address.street) facts.street = address.street;
     if (address.unit) facts.unit = address.unit;
@@ -192,14 +282,10 @@
     var residential = residentialFrom(text);
     if (residential) facts.residential = residential;
     if (residential) facts.citizenship = residential;
-    var email = emailFrom(text);
-    if (email) facts.email = email;
-    var phone = phoneFrom(text);
-    if (phone) facts.phone = phone;
-    var company = companyFrom(text);
+    var company = companyFrom(body);
     if (company) facts.company = company;
-    var firstName = explicitPart(text, /\bfirst\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
-    var lastName = explicitPart(text, /\b(?:last|family|surname)\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
+    var firstName = explicitPart(body, /\bfirst\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
+    var lastName = explicitPart(body, /\b(?:last|family|surname)\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
     if (firstName) facts.firstName = firstName;
     if (lastName) facts.lastName = lastName;
     return facts;

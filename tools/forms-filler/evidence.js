@@ -5,7 +5,13 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.FormEvidence = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  var HEAD = /^(applicant|patient|dependant|dependent|member|claimant)\s*:?\s*$/i;
+  var ROLE = {
+    applicant: 'applicant', member: 'applicant', claimant: 'applicant', worker: 'applicant',
+    patient: 'patient', dependant: 'dependant', dependent: 'dependant',
+    spouse: 'other', child: 'other', nurse: 'other', visitor: 'other', resident: 'other',
+    witness: 'other', guardian: 'other', parent: 'other', sibling: 'other', doctor: 'other'
+  };
+  var HEAD = new RegExp('^(' + Object.keys(ROLE).join('|') + ')\\s*:?\\s*$', 'i');
   var SAME = /patient is the applicant|applicant is the patient|the applicant is the patient/i;
 
   function kindOfLabel(label) {
@@ -71,21 +77,30 @@
     var section = '';
     var facts = [];
     var seq = 0;
+    var cursor = 0;
     raw.split(/\n/).forEach(function (line, index) {
       var trimmed = line.trim();
       var heading = trimmed.match(HEAD);
       if (heading) {
-        section = heading[1].toLowerCase();
-        if (section === 'dependent') section = 'dependant';
-        if (section === 'member' || section === 'claimant') section = 'applicant';
+        section = ROLE[heading[1].toLowerCase()] || 'other';
+        cursor += line.length + 1;
         return;
       }
       var labeled = trimmed.match(/^([^:]{2,40}):\s*(.+)$/);
-      if (!labeled) return;
+      if (!labeled) {
+        cursor += line.length + 1;
+        return;
+      }
       var kind = kindOfLabel(labeled[1]);
-      if (!kind) return;
+      if (!kind) {
+        cursor += line.length + 1;
+        return;
+      }
       var value = normValue(kind, labeled[2]);
-      if (!value) return;
+      if (!value) {
+        cursor += line.length + 1;
+        return;
+      }
       var role = section || 'unscoped';
       var explicit = !!section || /^(full name)$/i.test(labeled[1].trim());
       if (!section && /^full name$/i.test(labeled[1].trim())) role = 'applicant';
@@ -94,6 +109,8 @@
         role = 'applicant';
         linked = true;
       }
+      var at = line.indexOf(labeled[2]);
+      if (at < 0) at = 0;
       facts.push({
         id: 'f' + (seq++),
         kind: kind,
@@ -102,8 +119,11 @@
         explicit: explicit,
         samePerson: linked,
         line: index + 1,
+        start: cursor + at,
+        end: cursor + at + labeled[2].length,
         quote: trimmed.slice(0, 180)
       });
+      cursor += line.length + 1;
     });
     return { facts: facts, samePerson: same, people: people(facts) };
   }

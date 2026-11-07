@@ -77,6 +77,8 @@ for (const record of key) {
   rows.push({
     id: record.id,
     note: record.note,
+    diagnosis: 'dev-oracle-not-a-score',
+    missClass: missed.length && wrong === 0 ? 'not_detected' : (wrong ? 'wrong_association' : 'none'),
     candidates: detected.length,
     labels: detected.map((field) => field.label),
     kinds: detected.map((field) => field.kind),

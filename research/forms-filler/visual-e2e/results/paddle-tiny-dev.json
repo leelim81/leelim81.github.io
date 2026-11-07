@@ -57,7 +57,17 @@
     "jsHeapAfterInit": 186683388,
     "jsHeapAfterDispose": 193182737,
     "chromeRssPeakKb": 1799744,
-    "note": "usedJSHeapSize did not fall after dispose. The RSS figure is the sum of Chrome process RSS during the run, not a phone budget and not peak WASM heap."
+    "boundary": "usedJSHeapSize is the JavaScript heap in that page. It does not include the WASM linear memory. The RSS figure is the sum of Chrome process RSS during the run, so it includes the browser, the worker, and other Chrome processes. dispose() was called. The heap number did not return to the start. That is not evidence the model stayed allocated, and it is not a phone budget."
+  },
+  "threading": {
+    "numThreads": 1,
+    "simd": true,
+    "proxy": false,
+    "requestedBackend": "wasm",
+    "observedProviders": "wasm",
+    "file": "ort-wasm-simd-threaded.jsep.wasm",
+    "sharedArrayBuffer": true,
+    "why": "This trial server sent Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy: require-corp. The threaded build ONNX Runtime Web 1.24.3 publishes can use SharedArrayBuffer under those headers. This does not mean every WASM file requires cross-origin isolation. The same package has no non-threaded ort-wasm-simd.wasm."
   },
   "email": {
     "printed": "suki.sample1@example.com",

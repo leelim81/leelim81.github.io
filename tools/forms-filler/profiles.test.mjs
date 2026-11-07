@@ -40,6 +40,16 @@ const conflict = P.ingest(P.empty(), {
 assert.equal(conflict.profileId, '');
 assert.equal(conflict.vault.profiles.length, 0);
 assert.ok(conflict.vault.pending.length >= 2);
+assert.ok(conflict.vault.pending.every((row) => row.quote));
+
+const spouse = P.ingest(P.empty(), {
+  facts: [
+    { kind: 'name', role: 'applicant', value: 'Ulf Sample', quote: 'Full name: Ulf Sample' },
+    { kind: 'phone', role: 'other', value: '+65 80000099', quote: 'Phone: +65 80000099' }
+  ]
+});
+assert.equal(spouse.vault.profiles[0].facts.some((fact) => fact.value === '+65 80000099'), false);
+assert.equal(spouse.vault.pending.some((row) => row.reason === 'other-person' && row.role === 'other'), true);
 
 const echo = P.noteFieldEdit(confirmed.vault, {
   profileId: ada.id, key: 'email', value: 'ada.fixed@example.com', seed: 'ada.fixed@example.com'

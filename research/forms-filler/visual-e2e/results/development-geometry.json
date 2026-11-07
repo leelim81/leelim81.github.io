@@ -18,7 +18,9 @@
       "wrongAssociation": 0,
       "missed": [
         "Applicant name"
-      ]
+      ],
+      "diagnosis": "dev-oracle-not-a-score",
+      "missClass": "not_detected"
     },
     {
       "id": "two-column",
@@ -38,7 +40,9 @@
       "wrongAssociation": 0,
       "missed": [
         "Applicant name"
-      ]
+      ],
+      "diagnosis": "dev-oracle-not-a-score",
+      "missClass": "not_detected"
     },
     {
       "id": "narrow-rules",
@@ -52,7 +56,9 @@
         "Applicant name",
         "Applicant phone",
         "Applicant inbox"
-      ]
+      ],
+      "diagnosis": "dev-oracle-not-a-score",
+      "missClass": "not_detected"
     },
     {
       "id": "nearby-box",
@@ -68,7 +74,9 @@
       ],
       "correctAssociation": 2,
       "wrongAssociation": 0,
-      "missed": []
+      "missed": [],
+      "diagnosis": "dev-oracle-not-a-score",
+      "missClass": "none"
     },
     {
       "id": "close-labels",
@@ -80,7 +88,9 @@
       "wrongAssociation": 0,
       "missed": [
         "Applicant name"
-      ]
+      ],
+      "diagnosis": "dev-oracle-not-a-score",
+      "missClass": "not_detected"
     }
   ]
 }

@@ -243,6 +243,18 @@ assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }
 assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '0012345678', 'Bank account number: 0012345678'), true);
 assert.equal(allowModelValue({ id: 'bank', label: 'GIRO ledger', type: 'text' }, 'Harbour Press', 'Employer: Harbour Press'), false);
 assert.equal(allowModelValue({ id: 'bank', label: 'Credit ledger', type: 'text' }, '0012345678', 'Ledger account 0012345678'), true);
+const patientFirst = 'Patient\nFull name: Kim Voss\nDate of birth: 03/03/1977\nApplicant\nFull name: Ulf Sample\nEmail: ulf.sample22@example.com\nPhone: +65 80000022\n';
+const patientFirstFacts = fromText(patientFirst);
+assert.equal(patientFirstFacts.name, 'Ulf Sample');
+assert.equal(patientFirstFacts.email, 'ulf.sample22@example.com');
+assert.equal(patientFirstFacts.dob, undefined);
+const twoApplicants = fromText('Applicant\nFull name: Ulf Sample\nApplicant\nFull name: Kim Voss\n');
+assert.equal(twoApplicants.name, undefined);
+assert.equal(twoApplicants.conflict, true);
+const repeatedPhone = fromText('Applicant\nPhone: +65 80000022\nPhone: +65 80000023\n');
+assert.equal(repeatedPhone.phone, undefined);
+assert.equal(repeatedPhone.conflict, true);
+
 assert.equal(modelScalar(null), '');
 assert.equal(modelScalar('null'), '');
 assert.equal(modelScalar('Not specified'), 'Not specified');
