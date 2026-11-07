@@ -1,0 +1,74 @@
+{
+  "status": "ran-once",
+  "wiredIntoApp": false,
+  "browser": "Google Chrome headless, desktop Linux",
+  "mobile": "not tested",
+  "sdk": {
+    "name": "@paddleocr/paddleocr-js",
+    "version": "0.4.2",
+    "license": "Apache-2.0",
+    "tarball": "https://registry.npmjs.org/@paddleocr/paddleocr-js/-/paddleocr-js-0.4.2.tgz",
+    "tarballBytes": 7346941,
+    "tarballSha256": "3b9ae2ce7214b17cb5a4c5dfd3b6c168a51c0ed442642126e71016ea9be9d114"
+  },
+  "models": {
+    "det": {
+      "name": "PP-OCRv6_tiny_det",
+      "url": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv6_tiny_det_onnx_infer.tar",
+      "bytes": 1792000,
+      "sha256": "ff6ab415b0a6e0c488550f2fb5d5046f1719848df220b2dc21b56402a65bc05d",
+      "onnxBytes": 1780590
+    },
+    "rec": {
+      "name": "PP-OCRv6_tiny_rec",
+      "url": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_inference_model/paddle3.0.0/PP-OCRv6_tiny_rec_onnx_infer.tar",
+      "bytes": 4526080,
+      "sha256": "1e13b22717b1edd89d4cde4fda272b6c17d5b505c97c2baea99da1a3a2d54b29",
+      "onnxBytes": 4462639
+    },
+    "weightBytes": 6318080
+  },
+  "runtime": {
+    "onnxruntime-web": "1.24.3",
+    "license": "MIT",
+    "requested": { "backend": "wasm", "numThreads": 1, "proxy": false },
+    "providersObserved": { "det": "wasm", "rec": "wasm", "webgpuAvailable": false },
+    "nonThreadedWasmInThisRelease": false,
+    "fileFetched": "ort-wasm-simd-threaded.jsep.wasm",
+    "wasmBytes": 25014754,
+    "wasmSha256": "2e0a3d0e3f6b7c13ecfaba38c13691fd19c9ed470e72f9d7d8416ca59ab6dbcd",
+    "wasmMjsBytes": 46595,
+    "workerBytes": 11341486,
+    "workerSha256": "477db3f009c118823a5f9ebe15f1e96c1c464165715ba28a9884290f61addf52",
+    "note": "numThreads was 1. The worker still fetched the threaded JSEP wasm. ORT 1.24.3 does not publish ort-wasm-simd.wasm. SharedArrayBuffer was present because the trial server sent COOP and COEP. The 12,361,745-byte non-JSEP wasm was not requested."
+  },
+  "coldLocalhostBytes": 54140625,
+  "startupMs": 1070,
+  "pages": [
+    { "id": "stack-00-ref", "ms": 1544, "boxes": 7, "lines": 7 },
+    { "id": "stack-00-form", "ms": 909, "boxes": 9, "lines": 9 },
+    { "id": "stack-02-ref", "ms": 968, "boxes": 10, "lines": 10 },
+    { "id": "stack-00-ref-crop", "ms": 397, "boxes": 5, "lines": 5 }
+  ],
+  "fullPageMiddleMs": 968,
+  "tesseractSameImagesMs": [1060, 503, 572, 251],
+  "memory": {
+    "jsHeapBefore": 186498489,
+    "jsHeapAfterInit": 186683388,
+    "jsHeapAfterDispose": 193182737,
+    "chromeRssPeakKb": 1799744,
+    "note": "usedJSHeapSize did not fall after dispose. The RSS figure is the sum of Chrome process RSS during the run, not a phone budget and not peak WASM heap."
+  },
+  "email": {
+    "printed": "suki.sample1@example.com",
+    "paddle": "suki.sample1@example.com",
+    "tesseract": "suki.samplel@example.com",
+    "decision": "The strings disagree. That flags review. It is not a vote, and it does not turn OCR autofill on."
+  },
+  "conflictText": {
+    "bothEnginesSaw": ["Ulf Sample", "Kim Voss"],
+    "formFactsKept": "Ulf Sample",
+    "note": "fromText still returns one name. Paddle did not change person separation."
+  },
+  "outputShape": "items[].text plus items[].poly as four [x, y] points. metrics.detectedBoxes counts text lines, not blank fields."
+}

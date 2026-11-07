@@ -81,6 +81,36 @@ OCR autofill stays off. Eighteen name fills on the earlier calibration were alre
 | Dev result | Underline sheets: fields 7, 6, 4, 7 (was 7, 6, 1, 3). Correct probe fills 19/22, was 13/22. Wrong 0. Wrong-person 0. All 19 painted values sat inside the detected rule. Boxed intake sheets stayed 16/22 correct, 0 wrong, same 7, 6, 7, 7 fields. Native `development-desk_widget-00` is still an AcroForm with 7 widgets. `spots.test.mjs` still finds 6 fields. About 12 s per form. |
 | Why kept | The gain is on the underline set only. Identity gates and the boxed path did not move. Autofill stays off. The holder-sheet split was not scored. |
 
-## Not started
+## Kept, with a correction: geometry dedup, not kind dedup
 
-PP-OCRv6 tiny is still an optional later challenger. Its two archives are 6,318,080 bytes. The worker, ONNX Runtime, and OpenCV are extra and were not downloaded. Tesseract dictionary flags still have to be set when the worker is created. The three answerable underline fields that remain unfilled are not enough reason to sweep more thresholds.
+The 19/22 underline figure dropped a second field when that kind was already present. That hides a second person or a second phone. The rule now skips a line only when an existing field already occupies it, or when the same label text already sits on that line. Two different labels of the same kind both stay. Two known labels on one line, or two stacked labels of the same kind, add nothing.
+
+| Set | Correct | Wrong | Wrong person |
+| --- | ---: | ---: | ---: |
+| Underline development, kind dedup (previous commit) | 19/22 | 0 | 0 |
+| Underline development, geometry dedup | 18/22 | 0 | 0 |
+| Boxed intake development | 16/22 | 0 | 0 |
+
+New development sheets, not used to move the 45% cutoff:
+
+| Sheet | Candidates | Wrong association | What was left out |
+| --- | ---: | ---: | --- |
+| Repeated roles, long rules | 3 | 0 | Applicant name. Patient name and both phones stayed. |
+| Two columns, each rule under 45% of the width | 3 | 0 | Applicant name. No column swap. |
+| Narrow rules | 0 | 0 | All three. The long-rule path abstains. |
+| Box next to a long rule | 2 | 0 | Nothing. |
+| Two labels on one rule | 0 | 0 | The rule stayed empty. |
+
+`node research/forms-filler/visual-e2e/geometry-check.mjs` reads those PDFs. `python3 generate.py geometry` rewrites the PNGs from seed 20261141. Autofill stays off. The holder-sheet split was not scored.
+
+## Ran once: PP-OCRv6 tiny, not installed
+
+`@paddleocr/paddleocr-js` 0.4.2, Apache-2.0. Models `PP-OCRv6_tiny_det` and `PP-OCRv6_tiny_rec`, 1,792,000 and 4,526,080 bytes, sha256 in `results/paddle-tiny-dev.json`. The app does not download them.
+
+The worker was asked for WASM, one thread, and no proxy. It fetched `ort-wasm-simd-threaded.jsep.wasm`, 25,014,754 bytes. ONNX Runtime Web 1.24.3 does not publish a non-threaded `ort-wasm-simd.wasm`. The 12,361,745-byte non-JSEP file was not used. Cold localhost responses were 54,140,625 bytes, including the 11,341,486-byte worker. Startup was 1,070 ms. Full-page predict times were 1,544, 909, and 968 ms. A crop of the same reference was 397 ms. Tesseract on those same images was 1,060, 503, 572, and 251 ms. Chrome RSS peaked at 1,799,744 KB. `usedJSHeapSize` went from 186,498,489 to 193,182,737 after `dispose()` and did not return to the start. This was desktop Chrome with COOP and COEP. A phone was not tested.
+
+On `development-stack-00` the printed email is `suki.sample1@example.com`. Paddle read `sample1`. Tesseract read `samplel`. The disagreement stays a review flag. It is not a vote and it does not enable OCR autofill. Both engines read Ulf Sample and Kim Voss on the two-applicant reference. `FormFacts.fromText` still kept only Ulf Sample. Paddle's polygons are text lines, not blank fields. The form-fill counts above are still the Tesseract path.
+
+## Not next
+
+Another pass over the 45% cutoff would be fitted to these 22 answers. The dictionary flags in Tesseract 5.1.1 still have to be set when the worker is created. A larger Paddle model was not downloaded.

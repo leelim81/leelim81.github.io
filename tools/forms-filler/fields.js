@@ -708,24 +708,54 @@
     var primary = FormSpots.layout(page);
     var rules = underlineRules(source);
     if (!rules.length || !global.FormEvidence) return primary;
-    var taken = {};
-    primary.forEach(function (field) { taken[FormEvidence.fieldKind(field)] = true; });
     rules.forEach(function (line) {
-      var best = null;
-      var bestDy = 90;
+      var x = line.x * scale;
+      var y = line.y * scale;
+      var width = Math.max(40, line.w * scale);
+      var occupied = primary.some(function (field) {
+        var rect = field.rect || {};
+        var overlap = Math.min((rect.x || 0) + (rect.width || 0), x + width) - Math.max(rect.x || 0, x);
+        return Math.abs((rect.y || 0) - y) < 18 && overlap > Math.min(rect.width || 0, width) * 0.45;
+      });
+      if (occupied) return;
+      var candidates = [];
       texts.forEach(function (text) {
         var dy = text.y - line.y;
-        if (dy < 8 || dy > 80 || dy >= bestDy) return;
+        if (dy < 8 || dy > 80) return;
         if (text.x > line.x + line.w || text.x + text.w < line.x) return;
-        best = text;
-        bestDy = dy;
+        candidates.push({ text: text, dy: dy });
       });
-      if (!best) return;
-      var kind = FormEvidence.fieldKind({ label: best.str });
-      if (!kind || kind === 'other' || taken[kind]) return;
-      taken[kind] = true;
+      var known = [];
+      candidates.forEach(function (item) {
+        var itemKind = FormEvidence.fieldKind({ label: item.text.str });
+        if (!itemKind || itemKind === 'other') return;
+        item.kind = itemKind;
+        known.push(item);
+      });
+      if (!known.length) return;
+      var best = known[0].text;
+      var kind = known[0].kind;
+      if (known.length > 1) {
+        var sameKind = known.every(function (item) { return item.kind === kind; });
+        var ys = known.map(function (item) { return item.text.y; });
+        var spread = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+        if (!sameKind || spread > 18) return;
+        known.sort(function (a, b) { return a.text.x - b.text.x; });
+        best = { str: known.map(function (item) { return item.text.str; }).join(' ') };
+        kind = FormEvidence.fieldKind({ label: best.str });
+      }
+      if (!kind || kind === 'other') return;
+      var labelKey = String(best.str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      var repeated = primary.some(function (field) {
+        var rect = field.rect || {};
+        var have = String(field.label || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (have !== labelKey) return false;
+        var overlap = Math.min((rect.x || 0) + (rect.width || 0), x + width) - Math.max(rect.x || 0, x);
+        return Math.abs((rect.y || 0) - y) < 32 && overlap > 20;
+      });
+      if (repeated) return;
       primary.push({
-        id: 'rule-' + kind,
+        id: 'rule-' + Math.round(line.x) + '-' + Math.round(line.y),
         label: best.str,
         type: 'text',
         options: [],
@@ -735,12 +765,7 @@
         page: 0,
         pageWidth: 595,
         pageHeight: source.height * scale,
-        rect: {
-          x: line.x * scale,
-          y: line.y * scale,
-          width: Math.max(40, line.w * scale),
-          height: 16
-        },
+        rect: { x: x, y: y, width: width, height: 16 },
         lineH: 12
       });
     });

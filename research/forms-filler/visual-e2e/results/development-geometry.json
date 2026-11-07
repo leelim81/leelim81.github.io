@@ -1,0 +1,86 @@
+{
+  "rows": [
+    {
+      "id": "repeated-roles",
+      "note": "Two people, long rules.",
+      "candidates": 3,
+      "labels": [
+        "Patient name",
+        "Applicant phone",
+        "Patient phone"
+      ],
+      "kinds": [
+        "name",
+        "phone",
+        "phone"
+      ],
+      "correctAssociation": 3,
+      "wrongAssociation": 0,
+      "missed": [
+        "Applicant name"
+      ]
+    },
+    {
+      "id": "two-column",
+      "note": "Two columns. Each rule is under 45 percent of the page.",
+      "candidates": 3,
+      "labels": [
+        "Patient name",
+        "Patient phone",
+        "Applicant phone"
+      ],
+      "kinds": [
+        "name",
+        "phone",
+        "phone"
+      ],
+      "correctAssociation": 3,
+      "wrongAssociation": 0,
+      "missed": [
+        "Applicant name"
+      ]
+    },
+    {
+      "id": "narrow-rules",
+      "note": "Rules narrower than the long-rule cutoff.",
+      "candidates": 0,
+      "labels": [],
+      "kinds": [],
+      "correctAssociation": 0,
+      "wrongAssociation": 0,
+      "missed": [
+        "Applicant name",
+        "Applicant phone",
+        "Applicant inbox"
+      ]
+    },
+    {
+      "id": "nearby-box",
+      "note": "A box beside a long rule.",
+      "candidates": 2,
+      "labels": [
+        "Visitor name",
+        "Visitor handset"
+      ],
+      "kinds": [
+        "name",
+        "phone"
+      ],
+      "correctAssociation": 2,
+      "wrongAssociation": 0,
+      "missed": []
+    },
+    {
+      "id": "close-labels",
+      "note": "Two labels sit on one long rule. The rule should stay empty.",
+      "candidates": 0,
+      "labels": [],
+      "kinds": [],
+      "correctAssociation": 0,
+      "wrongAssociation": 0,
+      "missed": [
+        "Applicant name"
+      ]
+    }
+  ]
+}

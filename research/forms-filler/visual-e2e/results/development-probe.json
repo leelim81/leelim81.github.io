@@ -5,7 +5,7 @@
   "rows": [
     {
       "id": "development-intake_sheet-00",
-      "ms": 11938,
+      "ms": 11688,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Nia Sample\nNRIC: S2000086D\nDate of birth: 01/01/1990\nPhone: +65 80000000\nEmail: nia.sample0@example.com\nAddress: 12 QUAY LANE 304300",
@@ -531,7 +531,7 @@
     },
     {
       "id": "development-intake_sheet-01",
-      "ms": 11506,
+      "ms": 11131,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Otto Sample\nNRIC: T2000099B\nDate of birth: 02/02/1991\nPhone: +65 80000001\nEmail:\nAddress: 13 QUAY LANE 304301\nPatient\nFull name: Kim Voss\nDate of birth: 03/03/1977",
@@ -1001,7 +1001,7 @@
     },
     {
       "id": "development-intake_sheet-02",
-      "ms": 11757,
+      "ms": 11584,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Prim Sample\nNRIC: S2000112G\nDate of birth: 03/03/1992\nPhone: +65 80000002\nEmail: prim.sample2@example.com\nAddress: 14 QUAY LANE 304302\nApplicant\nFull name: Kim Voss\nDate of birth: 03/03/1977",
@@ -1606,7 +1606,7 @@
     },
     {
       "id": "development-intake_sheet-03",
-      "ms": 11487,
+      "ms": 11445,
       "kind": "flat",
       "channel": "ocr",
       "text": "Applicant\nFull name: Reed Sample\nNRIC: T2000125E\nDate of birth: 04/04/1993\nPhone: +65 80000003\nEmail: reed.sample3@example.com\nAddress: 15 QUAY LANE 304303",
