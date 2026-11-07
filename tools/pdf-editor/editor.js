@@ -299,6 +299,9 @@
   function startMove(e, el, ann) {
     var rect = el.parentElement.getBoundingClientRect();
     var origin = { x: e.clientX, y: e.clientY, ax: ann.x, ay: ann.y };
+    if (el.setPointerCapture && e.pointerId != null) {
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    }
     function move(ev) {
       ann.x = clamp(origin.ax + (ev.clientX - origin.x) / rect.width, 0, 1 - ann.w);
       ann.y = clamp(origin.ay + (ev.clientY - origin.y) / rect.height, 0, 1 - ann.h);
@@ -307,6 +310,9 @@
     function up() {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      if (el.releasePointerCapture && e.pointerId != null) {
+        try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
       saveNow();
     }
     window.addEventListener('pointermove', move);
@@ -479,7 +485,7 @@
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     closed = false;
     showWorkspace();
-    if (!session) await fitWidth(false);
+    if (!session || session.fit) await fitWidth(false);
     await renderAll();
     if (state.pages[state.current] && state.pages[state.current].el) {
       state.pages[state.current].el.scrollIntoView();

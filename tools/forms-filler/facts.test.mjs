@@ -134,4 +134,22 @@ assert.equal(placed.last, undefined);
 const phonePlaced = mapFactsToFields(noted, pubeu);
 assert.equal(phonePlaced.hp, '+65 8123 4567');
 
+const parts = fromText('First name: Alex\nLast name: Example\nFull name: Alex Example\n');
+assert.equal(parts.firstName, 'Alex');
+assert.equal(parts.lastName, 'Example');
+assert.equal(parts.name, 'Alex Example');
+const splitFields = [
+  { id: 'first', label: 'First Name Given Name', type: 'text' },
+  { id: 'last', label: 'Last Name Family Name', type: 'text' },
+  { id: 'full', label: 'Full Name', type: 'text' }
+];
+const splitMapped = mapFactsToFields(parts, splitFields);
+assert.equal(splitMapped.first, 'Alex');
+assert.equal(splitMapped.last, 'Example');
+assert.equal(splitMapped.full, 'Alex Example');
+const noSplit = mapFactsToFields(fromText('Full name: Alex Example\n'), splitFields);
+assert.equal(noSplit.first, undefined);
+assert.equal(noSplit.last, undefined);
+assert.equal(noSplit.full, 'Alex Example');
+
 console.log('facts tests ok');

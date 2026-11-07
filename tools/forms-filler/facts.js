@@ -162,7 +162,19 @@
     if (phone) facts.phone = phone;
     var company = companyFrom(text);
     if (company) facts.company = company;
+    var firstName = explicitPart(text, /\bfirst\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
+    var lastName = explicitPart(text, /\b(?:last|family|surname)\s+name\b\s*[:\-]\s*([A-Za-z][A-Za-z'’.\-]+)/i);
+    if (firstName) facts.firstName = firstName;
+    if (lastName) facts.lastName = lastName;
     return facts;
+  }
+
+  function explicitPart(text, pattern) {
+    var found = String(text || '').match(pattern);
+    if (!found) return '';
+    var word = found[1].replace(/\s+/g, ' ').trim();
+    if (!/^[A-Za-z][A-Za-z'’.\-]{1,30}$/.test(word)) return '';
+    return word;
   }
 
   function residentialFrom(text) {
@@ -178,13 +190,13 @@
 
   function factKey(field) {
     var label = blob(field);
+    if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
     if (/unit\s*no/i.test(label)) return 'unit';
     if (/postal/i.test(label)) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
-    if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
     if (/nric|fin\s*number|身份证/i.test(label)) return 'nric';
     if (/date of birth|出生|\bdob\b/i.test(label)) return 'dob';
@@ -192,6 +204,10 @@
     if (/\brace\b|种族/i.test(label)) return 'race';
     if (/residential|住户/i.test(label)) return 'residential';
     if (/bank/.test(label.toLowerCase()) && /name/i.test(label)) return '';
+    if (/\bname\b/i.test(label) && /dependant|dependent|officer|union/.test(label)) return '';
+    if (/business\s+name|disregarded entity/i.test(label)) return 'company';
+    if (/\bfirst\b/i.test(label) && /\bname\b/i.test(label)) return 'firstName';
+    if (/\b(last|family|surname)\b/i.test(label) && /\bname\b/i.test(label)) return 'lastName';
     if (/full\s*name|姓名/i.test(label)) return 'name';
     if (/\bapplicant'?s?\s+name\b/i.test(label)) return 'name';
     if (/\bname\b/i.test(label) && !/street|bank|company|user|emergency|first|given|last|family|middle|maiden|sign/i.test(label)) return 'name';
@@ -200,7 +216,7 @@
 
   function kindOf(field) {
     var key = factKey(field);
-    if (key === 'name' || key === 'nric' || key === 'phone' || key === 'email' || key === 'street' || key === 'address' || key === 'blk' || key === 'company' || key === 'postal' || key === 'dob') return key;
+    if (key === 'name' || key === 'firstName' || key === 'lastName' || key === 'nric' || key === 'phone' || key === 'email' || key === 'street' || key === 'address' || key === 'blk' || key === 'company' || key === 'postal' || key === 'dob') return key;
     var label = blob(field).toLowerCase();
     if (/street/.test(label)) return 'street';
     if (/blk|house/.test(label)) return 'blk';
@@ -220,6 +236,7 @@
       if (!text) return false;
     }
     var kind = kindOf(field);
+    if (kind === 'firstName' || kind === 'lastName') return /^[A-Za-z][A-Za-z'’.\-]{1,30}$/.test(text);
     if (kind === 'name') {
       if (PLACE.test(text)) return false;
       if (/^(chinese|malay|indian|eurasian|male|female)$/i.test(text)) return false;

@@ -1,0 +1,22 @@
+{
+  "id": "persona-alex-example",
+  "synthetic": true,
+  "text": "SYNTHETIC DEMO REFERENCE — not a real person\nFull name: Alex Example\nFirst name: Alex\nLast name: Example\nNRIC/FIN: S1234567D\nDate of birth: 14 Mar 1992\nSex: M\nRace: CHINESE\nPhone: +65 8123 4567\nEmail: alex.example@example.com\nCompany: Example Press\nAPT BLK 10 EXAMPLE ROAD #04-12\n123456\n",
+  "expect": {
+    "name": "Alex Example",
+    "firstName": "Alex",
+    "lastName": "Example",
+    "nric": "S1234567D",
+    "dob": "14/03/1992",
+    "sex": "Male",
+    "race": "Chinese",
+    "phone": "+65 8123 4567",
+    "email": "alex.example@example.com",
+    "company": "Example Press",
+    "blk": "10",
+    "street": "EXAMPLE ROAD",
+    "unit": "04-12",
+    "postal": "123456"
+  },
+  "must_stay_blank_without_explicit_fact": ["residential"]
+}

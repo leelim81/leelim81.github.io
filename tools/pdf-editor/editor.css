@@ -135,7 +135,7 @@ body { overflow: hidden; }
 .ann.rect { border: 2px solid #1a1612; }
 .ann.ellipse { border: 2px solid #1a1612; border-radius: 50%; }
 .ann img { width: 100%; height: 100%; display: block; pointer-events: none; }
-.grip, .handle, .ann-del {
+.handle, .ann-del {
   position: absolute;
   display: none;
   padding: 0;
@@ -144,8 +144,23 @@ body { overflow: hidden; }
   color: #1a1612;
   z-index: 2;
 }
-.ann.selected .grip, .ann.selected .handle, .ann.selected .ann-del { display: block; }
-.grip { left: 50%; top: -16px; width: 36px; height: 12px; transform: translateX(-50%); cursor: grab; }
+.grip {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 1px solid #1a1612;
+  background: #fff;
+  color: #1a1612;
+  z-index: 3;
+  left: 50%;
+  top: -16px;
+  width: 44px;
+  height: 16px;
+  transform: translateX(-50%);
+  cursor: grab;
+  touch-action: none;
+}
+.ann.selected .handle, .ann.selected .ann-del { display: block; }
 .handle { width: 12px; height: 12px; background: #fff; }
 .handle.nw { left: -7px; top: -7px; cursor: nwse-resize; }
 .handle.ne { right: -7px; top: -7px; cursor: nesw-resize; }

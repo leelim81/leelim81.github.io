@@ -50,4 +50,13 @@ assert.ok(pageBoxes.some((box) => box.text === 'X'));
 assert.equal(pageBoxes.filter((box) => box.text === 'X').length, 1);
 const name = pageBoxes.find((box) => box.text === 'Tan Wei Ming');
 assert.ok(name.y > 0 && name.y < 1 && name.w > 0.1);
+const wide = layout({
+  page: 0,
+  width: 612,
+  height: 792,
+  texts: [{ x: 57, y: 641, w: 32, h: 9, str: 'NAME:' }],
+  lines: [{ x: 101, y: 640, w: 454 }],
+  squares: []
+});
+assert.ok(wide.some((field) => field.label === 'NAME:'), 'a wide name rule is kept');
 console.log('spots tests ok', fields.length, 'fields');

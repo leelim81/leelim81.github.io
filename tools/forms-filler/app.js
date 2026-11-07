@@ -559,7 +559,7 @@
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, current: 0, pages: pages, epoch: Date.now(), source: 'forms' } }
+      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms' } }
     ]);
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;

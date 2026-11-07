@@ -1,0 +1,168 @@
+{
+  "frozen_at": "2026-11-07",
+  "pipeline_note": "The eight-plus downloaded public blanks below were already opened during quality work. They are development only. Held-out URLs were not in that audit. PDFs are not redistributed. FUNSD, XFUND, and FormGym files are not downloaded.",
+  "browser_runtime": {
+    "package": "@mlc-ai/web-llm@0.2.79",
+    "default_if_shader_f16": "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
+    "fallback_without_shader_f16": "Qwen2.5-0.5B-Instruct-q4f32_1-MLC",
+    "train_first": "Qwen2.5-0.5B-Instruct",
+    "challenger": "Qwen3-0.6B",
+    "rejected_larger": [
+      "Qwen3-1.7B-q4f16_1-MLC",
+      "Qwen3.5-0.8B-q4f16_1-MLC"
+    ]
+  },
+  "development_seen": [
+    {
+      "id": "dev-00",
+      "role": "development",
+      "title": "NTUC Membership application hardcopy form",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/f12a26579548407c9baa33ba8647af47?v=ab19badf",
+      "sha256": "6be13bf44923bec94a3751b57d7937b709f700d30333d70c6b8c96917492916d",
+      "pages": 2,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-01",
+      "role": "development",
+      "title": "NTUC Membership GIRO form",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/07b73a0bb5c54e9d996778bc8c27ed2b?v=35486213",
+      "sha256": "33c918a16277b667dc00e97f9cdacf4e9654f27cec05816ec73ea5f0fbee680b",
+      "pages": 2,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-02",
+      "role": "development",
+      "title": "Membership Subscription Check-Off Form",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/933f03f4b6e84e1f97ad2144e9350b6e?v=b617d30a",
+      "sha256": "fbc22d9c66351814b543067021e2d633b2f82d228ab0c089b22d0dd1f0b7e14a",
+      "pages": 1,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-03",
+      "role": "development",
+      "title": "Group Hospitalisation Benefit Claim Form",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/39ca018399ec4ceb957d56b6f9c1bd6b?v=8d74b50c",
+      "sha256": "582412ec7bea4303cc2c80ddfe597e90f940388f4c17c98c643fbf806bb62b15",
+      "pages": 2,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-04",
+      "role": "development",
+      "title": "NTUC Thrift Form",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/9af1a6c9458a434ebe04892c1caf820c?v=a56fef87",
+      "sha256": "a15730c94b6989a36c624583fbf52981a0fc91dd2f82cf335356525b68677356",
+      "pages": 2,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-05",
+      "role": "development",
+      "title": "Membership Application Form (PUBEU)",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/eade35d83967445aa07ba6f11d1f7a4f?v=b65548db",
+      "sha256": "f34187614c5f78ea8fff9e013bd463f6a4fe94486c50a1f4730acb075028a791",
+      "pages": 1,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-06",
+      "role": "development",
+      "title": "Membership Application Form (HDBSU)",
+      "url": "https://alep-p-001.sitecorecontenthub.cloud/api/public/content/9cda3b88bd2d48ab810c7707bb7576a2?v=3603868e",
+      "sha256": "2fbd540aa4412b0b31dc76204ecc00daf5f0d599020f20e3d295a843d74ac3cb",
+      "pages": 2,
+      "acro_count": 0,
+      "seen": true
+    },
+    {
+      "id": "dev-07",
+      "role": "development",
+      "title": "IRS Form W-9",
+      "url": "https://www.irs.gov/pub/irs-pdf/fw9.pdf",
+      "sha256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53",
+      "pages": 6,
+      "acro_count": 27,
+      "seen": true
+    },
+    {
+      "id": "dev-08",
+      "role": "development",
+      "title": "IRS Form W-4",
+      "url": "https://www.irs.gov/pub/irs-pdf/fw4.pdf",
+      "sha256": "92444d8856ce55d9e25dca8b6d1420634fc68b11e1ab1f760916ea29ddd312b2",
+      "pages": 5,
+      "acro_count": 54,
+      "seen": true
+    },
+    {
+      "id": "dev-09",
+      "role": "development",
+      "title": "USCIS Form I-9",
+      "url": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf",
+      "sha256": "780f348c34df694bb0b4dbbfaf9f22b99b9757b80d16a37ba89aadf069597281",
+      "pages": 4,
+      "acro_count": 133,
+      "seen": true
+    }
+  ],
+  "held_out_unseen": [
+    {
+      "id": "test-irs-w8ben",
+      "role": "test",
+      "title": "IRS Form W-8BEN",
+      "url": "https://www.irs.gov/pub/irs-pdf/fw8ben.pdf",
+      "seen_in_audit": false,
+      "sha256": "b821dc1172c91b348a65675529cc792782f11fc1ae8579df92d627113203f918",
+      "bytes": 67700,
+      "http": 200,
+      "local_copy": "not in git; /tmp/form-audit/heldout/test-irs-w8ben.pdf"
+    },
+    {
+      "id": "test-irs-ss4",
+      "role": "test",
+      "title": "IRS Form SS-4",
+      "url": "https://www.irs.gov/pub/irs-pdf/fss4.pdf",
+      "seen_in_audit": false,
+      "sha256": "23d295529950b05979596cf58d559db6c433a4ec852407b1820265c117cb3ca2",
+      "bytes": 122921,
+      "http": 200,
+      "local_copy": "not in git; /tmp/form-audit/heldout/test-irs-ss4.pdf"
+    },
+    {
+      "id": "test-irs-w7",
+      "role": "test",
+      "title": "IRS Form W-7",
+      "url": "https://www.irs.gov/pub/irs-pdf/fw7.pdf",
+      "seen_in_audit": false,
+      "sha256": "0917902b7fd3caaf63a4562fea3d23765fdfd4715f3b2470adb56a930556a943",
+      "bytes": 97654,
+      "http": 200,
+      "local_copy": "not in git; /tmp/form-audit/heldout/test-irs-w7.pdf"
+    }
+  ],
+  "excluded_datasets": [
+    "FUNSD",
+    "XFUND",
+    "FormGym",
+    "FormFactory"
+  ],
+  "parser_gold": "tools/forms-filler/eval/gold-synthetic.json",
+  "private_exclusion": "Stored outside the repo. The scorer refuses paths matching lee-nric, nric-ocr, or /workspace/ff without printing file contents.",
+  "cpu_handoff": {
+    "this_vm": "No torch, no /tmp/lv, about 4.7 GB MemAvailable. Training was not started here.",
+    "shared_box_venv": "/tmp/lv",
+    "primary_base": "Qwen/Qwen2.5-0.5B-Instruct",
+    "challenger_base": "Qwen/Qwen3-0.6B",
+    "command": "bash tools/forms-filler/eval/train-pilot.sh",
+    "measured_elsewhere": "0.6-0.85 s/step, seq 256, peak RSS 2551 MB, bf16 LoRA r=8 on q/k/v/o. That measurement is from the shared box, not this VM."
+  }
+}

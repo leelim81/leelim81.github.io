@@ -42,12 +42,25 @@
       if (type === 'radio' || type === 'dropdown') {
         try { options = field.getOptions().map(String); } catch (err) { options = []; }
       }
+      var rect = null;
+      var pageIndex = 0;
+      try {
+        var widgets = field.acroField && field.acroField.getWidgets ? field.acroField.getWidgets() : [];
+        if (widgets.length && widgets[0].getRectangle) rect = widgets[0].getRectangle();
+        var pref = widgets.length && widgets[0].dict ? widgets[0].dict.get(PDFLib.PDFName.of('P')) : null;
+        var pages = doc.getPages();
+        for (var pi = 0; pi < pages.length; pi++) {
+          if (pref && pages[pi].ref === pref) pageIndex = pi;
+        }
+      } catch (err) {}
       fields.push({
         id: field.getName(),
         label: prettify(field.getName()),
         type: type,
         options: options,
-        source: 'acro'
+        source: 'acro',
+        rect: rect,
+        page: pageIndex
       });
     });
     return fields;
@@ -676,11 +689,74 @@
     return fields;
   }
 
+  function opaqueLabel(label) {
+    var text = String(label || '');
+    if (/topmost|subform|readorder|page\d|f\d+_\d+|c\d+_\d+/i.test(text)) return true;
+    var letters = text.replace(/[^A-Za-z]/g, '');
+    return letters.length < 3;
+  }
+
+  async function labelAcro(bytes, fields) {
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var textsByPage = {};
+    var limit = Math.min(pdf.numPages, 8);
+    for (var p = 1; p <= limit; p++) {
+      var page = await pdf.getPage(p);
+      var content = await page.getTextContent();
+      textsByPage[p - 1] = content.items.filter(function (item) {
+        return item.str && String(item.str).trim() && (item.width || 0) < 560;
+      }).map(function (item) {
+        return {
+          x: item.transform[4],
+          y: item.transform[5],
+          w: item.width || 8,
+          h: item.height || 8,
+          str: String(item.str).replace(/\s+/g, ' ').trim()
+        };
+      });
+    }
+    function clipLabel(str) {
+      var cut = String(str || '').replace(/\s+/g, ' ').trim().split('.')[0];
+      var parts = cut.split(/\s+/).filter(Boolean);
+      if (parts.length > 8) parts = parts.slice(0, 6);
+      var s = parts.join(' ').replace(/[:,\s]+$/, '');
+      if (s.length < 3 || s.length > 72) return '';
+      if (!/^[A-Z]/.test(s)) return '';
+      if (/^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
+      return s;
+    }
+    fields.forEach(function (field) {
+      if (!field.rect || !opaqueLabel(field.label)) return;
+      var texts = textsByPage[field.page || 0] || [];
+      var best = '';
+      var bestScore = 1e9;
+      texts.forEach(function (text) {
+        var clipped = clipLabel(text.str);
+        if (!clipped) return;
+        var fieldish = /name|address|city|state|zip|tin|ssn|ein|account|exempt|business|requester|street|postal|phone|email/i.test(clipped);
+        if (field.type === 'text' && !fieldish) return;
+        var above = text.y - (field.rect.y + (field.rect.height || 10));
+        var gap = field.rect.x - (text.x + text.w);
+        var score = null;
+        if (above >= -4 && above <= 28 && Math.abs(text.x - field.rect.x) < 80) score = above + Math.abs(text.x - field.rect.x) * 0.05;
+        else if (gap >= -8 && gap <= 80 && Math.abs(text.y - field.rect.y) <= 10) score = 12 + gap * 0.2;
+        if (score != null && score < bestScore) {
+          bestScore = score;
+          best = clipped;
+        }
+      });
+      if (best) field.label = best;
+    });
+  }
+
   async function read(bytes, progress) {
     say(progress, 'Opening the PDF…');
     var doc = await PDFLib.PDFDocument.load(copy(bytes));
     var fields = readAcro(doc);
-    if (fields.length) return { kind: 'acro', fields: fields };
+    if (fields.length) {
+      try { await labelAcro(bytes, fields); } catch (err) {}
+      return { kind: 'acro', fields: fields };
+    }
     say(progress, 'Finding the blank lines…');
     fields = await readFlat(bytes, progress);
     return { kind: 'flat', fields: fields };

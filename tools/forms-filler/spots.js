@@ -32,6 +32,13 @@
     if (s.charAt(0) === '(' && s.length > 5) return '';
     if (/^(the|and|for|with|that|this|from|your|will|are|was|has|have|not|but|any|all|per|via)$/i.test(s)) return '';
     if (/sumame|surname|underline|please underline/i.test(s)) return '';
+    if (/[\\|]/.test(s)) return '';
+    var letters = s.replace(/[^A-Za-z]/g, '');
+    if (letters.length >= 5) {
+      var vowels = (letters.match(/[aeiou]/ig) || []).length;
+      if (vowels / letters.length < 0.2) return '';
+    }
+    if ((s.match(/[^A-Za-z0-9\s:./#'()\-&,]/g) || []).length > 0) return '';
     s = s.replace(/\.$/, '').trim();
     if (/^(page|form|union|membership application)$/i.test(s)) return '';
     return s.replace(/\s*\($/, '').trim();
@@ -347,12 +354,20 @@
       return square.w >= 5 && square.w <= 18 && square.h >= 5 && square.h <= 18
         && Math.abs(square.w - square.h) <= 5
         && square.y > 90 && square.y < height - 95;
+    }).filter(function (square, index, all) {
+      for (var j = 0; j < index; j++) {
+        var other = all[j];
+        var overlapW = Math.min(square.x + square.w, other.x + other.w) - Math.max(square.x, other.x);
+        var overlapH = Math.min(square.y + square.h, other.y + other.h) - Math.max(square.y, other.y);
+        if (overlapW > square.w * 0.45 && overlapH > square.h * 0.45) return false;
+      }
+      return true;
     });
     var rawLines = (page.lines || []).filter(function (line) {
       return line.w >= 8 && line.y > 90 && line.y < height - 70 && !onSquareEdge(line, squares);
     });
     var runs = mergeRuns(rawLines).filter(function (run) {
-      if (run.w < 26 || run.w >= width * 0.74) return false;
+      if (run.w < 26 || run.w >= width * 0.93) return false;
       var cover = 0;
       coverTexts.forEach(function (text) {
         var str = String(text.str || '');
@@ -388,6 +403,35 @@
     var labeled = mergeStacks(slots);
     slots = labeled.filter(function (slot) { return !!slot.label; });
     slots.forEach(function (slot) { widenSlot(slot, texts, width); });
+    texts.forEach(function (text) {
+      var bare = String(text.str || '').replace(/[:\s]+$/, '');
+      if (words(bare).length > 6 || bare.length > 42) return;
+      if (!/:\s*$/.test(text.str) && !/^(name|nric(\s*no\.?)?|address|e-?mail|email)\b/i.test(bare)) return;
+      var already = slots.some(function (slot) {
+        var same = String(slot.label || '').replace(/[:\s]+$/, '').toLowerCase() === bare.toLowerCase();
+        var dy = Math.abs((slot.lineY != null ? slot.lineY : slot.y) - text.y);
+        return same && dy < 28;
+      });
+      if (already) return;
+      var start = text.x + text.w + 4;
+      var end = columnEnd(start, width);
+      texts.forEach(function (other) {
+        if (other === text) return;
+        if (Math.abs(other.y - text.y) > 6) return;
+        if (other.x >= start - 2 && other.x < end) end = other.x - 4;
+      });
+      if (end - start < 36) return;
+      slots.push({
+        x: start,
+        y: text.y + 1,
+        w: end - start,
+        h: 12,
+        label: bare,
+        type: 'text',
+        lines: 1,
+        lineY: text.y
+      });
+    });
     slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
 
     var fields = [];
