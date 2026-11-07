@@ -148,4 +148,4 @@ Development frontier after this batch: underline sheets 18/22 correct, boxed she
 
 Native AcroForm reading and filling is the existing path. This batch did not change it. `spots.test.mjs` still finds 6 fields. OCR suggestions stay review-only. The profile store keeps confirmed corrections, sends another person to pending, and does not treat a signature as a fact. The extension package is still `forms-filler-profiles-0.1.0.zip` because those sources did not change.
 
-Pull request 13 depends on pull request 12. Neither is a release merge. A new held-out look waits until a disjoint family is frozen. The holder-sheet split stays unscored.
+Pull request 13 depends on pull request 12. Neither is a release merge. The one audit family and the stopping point are in [../FRONTIER.md](../FRONTIER.md). That family has been looked at. It is a regression set. The holder-sheet split stays unscored.

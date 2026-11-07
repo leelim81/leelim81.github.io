@@ -1,0 +1,77 @@
+{
+  "family": "audit-quill",
+  "seed": 20261150,
+  "looked": true,
+  "purpose": "One audit look after this file. Not a population sample. Not a copy of intake, member stack, or holder sheets.",
+  "gates": "tools/forms-filler/thresholds.js ocrAutofill all false. Do not edit from this look.",
+  "templates": [
+    "quill_widget",
+    "quill_band",
+    "quill_card"
+  ],
+  "people": [
+    "Lior Quill",
+    "Nils Quill",
+    "Oda Quill",
+    "Ned Brook"
+  ],
+  "street": "BIRCH COURT",
+  "overlap": {
+    "templates": [],
+    "streets": [],
+    "names": []
+  },
+  "files": {
+    "fixtures/audit-quill/quill-band-00.form.pdf": {
+      "bytes": 1375885,
+      "sha256": "54d2259e4f0640355d88dfff027a3d8907e0e85796dfb5958c8cf812b458e1f1"
+    },
+    "fixtures/audit-quill/quill-band-00.reference.pdf": {
+      "bytes": 1281573,
+      "sha256": "f7a0ae77d74ca20c476001250b312dbe0e940953d60dc7e959a4893e53c7e06b"
+    },
+    "fixtures/audit-quill/quill-card-00.form.pdf": {
+      "bytes": 1301387,
+      "sha256": "90f3d2113248db99d496d74528863756134ec5e4f97438a102c5b7afcafd7e12"
+    },
+    "fixtures/audit-quill/quill-card-00.reference.pdf": {
+      "bytes": 1266278,
+      "sha256": "a802ee82285b1d9ead480078c2a5d032f5f999f07d2de4f3903c397a5de0d5ee"
+    },
+    "fixtures/audit-quill/quill-native-00.form.pdf": {
+      "bytes": 4090,
+      "sha256": "3215125b8a6de21a2265383fe2d0e9ebf2d018a3a64b74a4a9e62755cab04645"
+    },
+    "fixtures/audit-quill/quill-native-00.reference.pdf": {
+      "bytes": 1134,
+      "sha256": "39053d6b20a0c9cb76b3a9ab8240f29c1e896aa6e41e68d266e17920e290634b"
+    },
+    "fixtures/audit-quill/quill-native-01.form.pdf": {
+      "bytes": 4090,
+      "sha256": "3215125b8a6de21a2265383fe2d0e9ebf2d018a3a64b74a4a9e62755cab04645"
+    },
+    "fixtures/audit-quill/quill-native-01.reference.pdf": {
+      "bytes": 1223,
+      "sha256": "8552d51e00c9246e68bd00f16734f45e479a7e882a7ed938901d988f461c2ff4"
+    },
+    "fixtures/audit-quill/quill-native-02.form.pdf": {
+      "bytes": 4090,
+      "sha256": "3215125b8a6de21a2265383fe2d0e9ebf2d018a3a64b74a4a9e62755cab04645"
+    },
+    "fixtures/audit-quill/quill-native-02.reference.pdf": {
+      "bytes": 1189,
+      "sha256": "fefa7271f357de75e3aa914d0f4a318627c1435e5653bc75c60b3f99c5b612b4"
+    },
+    "gold/audit.jsonl": {
+      "bytes": 6552,
+      "sha256": "40c66741577586da298d444574f840b3d0e41bc4973901ff5c1c495004723a6f"
+    }
+  },
+  "codeHashes": {
+    "tools/forms-filler/facts.js": "daaceba8ec96fc4bd78776c4f068932a3e2dd168d38d5ad141a917adf7484fd9",
+    "tools/forms-filler/evidence.js": "8cde7e1a6e605f299bcbed43f28b155b63de4c29f0cf6de4966baacf292444f4",
+    "tools/forms-filler/select.js": "5ef7579ab591b133f37a33783108ea7e45414e2f96261e87a9982868d611721e",
+    "tools/forms-filler/thresholds.js": "613044bf6e5331fe907aaddb3f0bfbb034f8a24e976e6ae160c2ff6e5c0eb270",
+    "tools/forms-filler/fields.js": "de8048fcfff84639e819004c50acce101ac24689f6dd90faa17a872fea718a24"
+  }
+}

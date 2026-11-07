@@ -15,7 +15,7 @@
     {
       "name": "preview names the empty fields and protects the filled email",
       "ok": true,
-      "detail": "Full name \u2190 Ada Example\nEmail \u2190 ada@example.com\nPhone \u2190 80000000\nCity has no saved value.\nNote has no saved value.\npassword left alone (secret).\notp left alone (secret).\nemail left alone (secret).\nReadonly left alone (readonly).\nDisabled le"
+      "detail": "Full name ← Ada Example\nEmail ← ada@example.com\nPhone ← 80000000\nCity has no saved value.\nNote has no saved value.\npassword left alone (secret).\notp left alone (secret).\nemail left alone (secret).\nReadonly left alone (readonly).\nDisabled le"
     },
     {
       "name": "popup fill wrote empty fields through activeTab",
@@ -83,14 +83,9 @@
       "detail": ""
     },
     {
-      "name": "extension imported the OCR export and filled the page",
-      "ok": true,
-      "detail": "cora.fixed@example.com; mirror matched; input and change events fired"
-    },
-    {
-      "name": "removing the extension copy leaves the site profile",
-      "ok": true,
-      "detail": "site profiles stayed 1; extension profile options became 0"
+      "name": "shortcut opens the popup again for the export import",
+      "ok": false,
+      "detail": ""
     }
   ],
   "limits": [
@@ -98,7 +93,6 @@
     "The unpinned extension is not in the puzzle menu on this Chromium build. The assigned Activate shortcut opens the same popup as the toolbar button and is what granted activeTab.",
     "Shadow DOM and cross-origin frames are not filled.",
     "Human confirmation time was not measured.",
-    "The export click started a browser download, and saveAs could not copy its temp file: download.saveAs: ENOENT: no such file or directory, copyfile '/tmp/playwright-artifacts-WZ6mdZ/ccbb2141-c6be-43c4-b582-9ef53675f0bd' -> '/workspace/research/forms-filler/visual-e2e/results/cora-export.json'",
-    "The site store and the extension store are separate copies. Remove imported copy clears only chrome.storage.local."
+    "The export click started a browser download, and saveAs could not copy its temp file: download.saveAs: ENOENT: no such file or directory, copyfile '/tmp/playwright-artifacts-4L15YR/4f66e35a-3586-4154-873b-66519ed66cd1' -> '/workspace/research/forms-filler/visual-e2e/results/cora-export.json'"
   ]
 }

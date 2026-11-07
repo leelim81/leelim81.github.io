@@ -233,9 +233,15 @@ const exported = JSON.parse(readFileSync(exportPath, 'utf8'));
 check('export contains the confirmed correction and custom key', exported.profiles.some((p) => p.facts.some((f) => f.value === corrected) && p.facts.some((f) => f.label === 'Desk code' && f.value === '42')));
 check('export omits unconfirmed patient facts', !JSON.stringify(exported).includes('Bea Example'));
 
+const again = await context.newPage();
+await again.goto('http://127.0.0.1:8765/tools/forms-filler/extension/fixtures/static-form.html');
+await again.bringToFront();
+await again.locator('#n').click();
+await new Promise((r) => setTimeout(r, 400));
 pressShortcut();
-await new Promise((r) => setTimeout(r, 800));
+await new Promise((r) => setTimeout(r, 1200));
 popup = cdpPages().find((p) => p.url().includes('popup.html'));
+check('shortcut opens the popup again for the export import', !!popup, popup && popup.url());
 if (popup) {
   await popup.setInputFiles('#file', exportPath);
   await popup.locator('#status', { hasText: 'Imported' }).waitFor();

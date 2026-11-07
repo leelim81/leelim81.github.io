@@ -1,0 +1,17 @@
+{
+  "gate": "tools/forms-filler/thresholds.js",
+  "note": "Computed from the one extraction in audit-score.json. FROZEN-e2e.json has no text-layer map, so the runner's own candidate column left native rows as review. This file is the page gate. It did not change a threshold.",
+  "answerable": 28,
+  "notAnswerable": 7,
+  "automatic": 17,
+  "correct": 17,
+  "wrong": 0,
+  "wrongPerson": 0,
+  "review": 2,
+  "reviewCorrect": 2,
+  "answerableUntyped": 9,
+  "automaticCoverage": 0.607,
+  "usefulIfReviewsConfirmed": 0.679,
+  "wrongFillUpper95": 0.162,
+  "populationClaim": false
+}
