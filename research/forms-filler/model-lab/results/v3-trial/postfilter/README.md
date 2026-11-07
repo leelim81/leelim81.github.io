@@ -1,6 +1,6 @@
 # Production postfilter at 9c2d5b8
 
-Use this bundle to score raw model generations with the page logic from commit `9c2d5b80637b99a8d628287cd51ab5f2307fc15e`. The snapshot inside `forms-filler-lab-v3-34e608d.zip` is older and does not contain these guards.
+Use this bundle to score raw model generations with the page logic from commit `e658ea8420e0906012c29aae31d156699a7911c1`. The snapshot inside `forms-filler-lab-v3-34e608d.zip` is older and does not contain these guards.
 
 Frozen v3 JSONL is not in this zip. Point the rows at the v3 data you already have.
 

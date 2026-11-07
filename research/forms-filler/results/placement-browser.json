@@ -4,7 +4,7 @@
   "reason": "This browser reported no WebGPU adapter. No Qwen weights were loaded.",
   "runtime": "Forms Filler parser plus flat-form geometry in Chromium. Not a CPU LoRA run and not a quantized model score.",
   "synthetic_reference": "Alex Example, S1234567D, 14/03/1992, 10 EXAMPLE ROAD #04-12 123456, +65 8123 4567, alex.example@example.com, Chinese, Example Press",
-  "earlier_live_baseline_commit": "511d9d284f432bba2f678a3e82eaaa5762265bb4",
+  "earlier_live_baseline_commit": "18c9259a65ae26b9674b091e013ea79f1e8323f4",
   "cases": [
     {
       "form": "Group Hospitalisation Benefit Claim",

@@ -18,7 +18,7 @@ That reruns the trial `score3.py` on the frozen `data/v3/dev.jsonl`. It checks t
 | --- | --- |
 | v3 rows | train 480, dev 180, test 180, hashes in `provenance/v3-data.sha256`. Same bytes as `data/v3/`. |
 | v2 train | 360 rows, sha256 `86c42a7f…2d4e`. Not the set scored here. |
-| Postfilter | commit `9c2d5b80637b99a8d628287cd51ab5f2307fc15e`, runner zip sha256 `13e9dcd2…6a16`. |
+| Postfilter | commit `e658ea8420e0906012c29aae31d156699a7911c1`, runner zip sha256 `13e9dcd2…6a16`. |
 | Runtime | llama.cpp b12182, 4 CPU threads, temperature 0, seed 0, 96 tokens, context 1024. Not WebGPU and not the browser. |
 | GGUF | Official Qwen2.5-1.5B and 0.5B `q4_k_m`, Qwen3-0.6B `Q8_0` (no official q4). Hashes in `provenance/GGUF.sha256`. |
 

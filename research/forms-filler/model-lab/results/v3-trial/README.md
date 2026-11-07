@@ -17,7 +17,7 @@ The check rescores the frozen raw and postfilter JSONL with `scripts/score3.py` 
 
 ## Inputs
 - v3 data is already in `model-lab/data/v3/` (480 train, 180 dev, 180 test). File hashes are in `provenance/v3-data.sha256`. The standalone data zip was sha256 `00e90daf38f7b007b4f8905df30ebe8b9a04abda472ce85ea0966dce8ecb68e1`.
-- Postfilter commit `9c2d5b80637b99a8d628287cd51ab5f2307fc15e`. `postfilter/` is the published copy: filter code byte-identical, synthetic self-test. See `postfilter/DIST.md`.
+- Postfilter commit `e658ea8420e0906012c29aae31d156699a7911c1`. That git id is the rewritten history of the same tree; the guard file hashes are unchanged. `postfilter/` is the published copy: filter code byte-identical, synthetic self-test. See `postfilter/DIST.md`.
 - Normalizer: `v2/v2-bundle/scripts/score_v2.py`. `score3.py` adds the wrong-person date split and does not repair JSON.
 - llama.cpp b12182 is not in git. `llama.tgz` sha256 `c1dbfdb9cbef7ee50b6ab08142d6424184d68b242906837770439ed118c57d99`. Source tarball `src.tgz` sha256 `adc18ac17ece6139a009399181dc31accb5ab5337115180df7b7006e56deaeef` (convert_hf_to_gguf.py, gguf-py 0.19.0).
 
