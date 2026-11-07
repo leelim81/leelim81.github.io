@@ -39,6 +39,15 @@ const one = decideAll(
   open
 );
 assert.equal(one[0].decision, 'autofill');
+const ocrHeld = decideAll(
+  [{ id: 'name', label: 'Applicant name', type: 'text' }],
+  packet,
+  { autofill: { name: true }, ocrAutofill: { name: false } },
+  { channel: 'ocr' }
+);
+assert.equal(ocrHeld[0].decision, 'review');
+assert.equal(ocrHeld[0].reason, 'type_not_cleared');
+assert.equal(ocrHeld[0].value, 'Mina Fixture');
 assert.ok(!extract(packet).facts.some((fact) => fact.role === 'applicant' && fact.value === 'Pat Example'));
 
 const conflict = decideAll(

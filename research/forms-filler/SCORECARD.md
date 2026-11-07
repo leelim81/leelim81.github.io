@@ -1,6 +1,47 @@
-# Visual gold scorecard (version visual-gold-1)
+# Forms Filler scorecard
 
-This page is the replication guide for the evidence selector in Forms Filler. The numbers below were produced by the commands in [How to rerun](#how-to-rerun) on the committed fixtures. It is a text-and-widget benchmark on synthetic forms. It is not a camera study, not a browser-model study, and not a statement that a fill is safe for a real person.
+Two benchmarks are in this folder. They are not the same measurement.
+
+| | Parser fixture benchmark | End-to-end visual benchmark |
+| --- | --- | --- |
+| Version | visual-gold-1 | visual-e2e-1 |
+| What the program read | The generator's `reference_text` string, plus a `geometry_trusted` flag | Pixels in an image-only PDF, through pdf.js and Tesseract in Chrome |
+| Forms | Vector PDFs, including a copy labeled clean-scan or noisy | Raster pages with rotation, blur, and noise. No text layer |
+| Held-out automatic fills | 112 correct out of 183 answerable fields on 32 forms. Wrong-fill 0. 95% upper bound 0.026 | 0 automatic fills. The gate stayed off |
+| What it does not say | It does not establish a 2% wrong-fill gate, and it is not an OCR result | It does not establish reliability for OCR autofill |
+
+Human edits, human time, phones, Safari, and Firefox were not measured in either benchmark.
+
+## End-to-end visual benchmark (visual-e2e-1)
+
+The parser benchmark fed the scorer two pieces of oracle data: the reference text the generator had just drawn, and a flag that marked a vector page "untrusted" without photographing it. The filler page never read that JSON. A native widget PDF was a real text-layer read. A file that only changed a flag was not an OCR test. That boundary is now explicit, and the visual benchmark does not use those inputs.
+
+Committed files under [visual-e2e/fixtures](visual-e2e/fixtures) are image-only PDFs. A check of one development form with pdf.js returned 0 text items. The browser renders the page, deskews it, reads words with Tesseract (LSTM, English), and finds boxes from the ink. Role comes from an OCR'd heading such as `Applicant` or `Patient`, not from a column in the answer key. The answer key is applied only after the browser returns. `run-split.mjs` passes PDF bytes and the gate. It does not pass gold text, rotation, or a person id.
+
+The gate was written in [visual-e2e/VISUAL-GATES.json](visual-e2e/VISUAL-GATES.json) before the held-out look. Identity autofill needs at least 59 calibration fills and a 95% upper bound of at most 0.05. Other types need 29 fills and a bound of at most 0.10. Zero errors on a smaller sample do not clear it. A 2% bound would need 149 zero-error fills. This set is not that large.
+
+Calibration probe, 22 raster forms, types forced on so the error rate can be seen. This probe is not what the page ships.
+
+| Kind | Automatic | Wrong | 95% upper | Minimum n | Enabled |
+| --- | ---: | ---: | ---: | ---: | --- |
+| name | 18 | 0 | 0.153 | 59 | no |
+| date of birth | 9 | 0 | 0.283 | 59 | no |
+| email | 18 | 3 | 0.377 | 29 | no |
+| NRIC, phone, address, postal, mailbox | 0 | 0 | undefined | 29 or 59 | no |
+
+Name had no wrong fill and no wrong-person fill. Eighteen fills are not enough, and the upper bound is 15.3%, above 5%. Email had three wrong fills. In those, Tesseract read a digit `1` as `l`. The page leaves OCR values as review. [FROZEN-e2e.json](visual-e2e/FROZEN-e2e.json) records that. [thresholds.js](../tools/forms-filler/thresholds.js) keeps `ocrAutofill` false. Text-layer autofill for the six types from the parser benchmark is unchanged, so a native widget PDF still fills.
+
+Held-out look after the freeze, 14 raster forms, 79 answerable fields. The shipped gate wrote 0 automatic fills. Wrong-fill is undefined, not zero. Thirty-one values were review suggestions. Twenty-seven of those matched the answer key. Suggestion precision on this look is 0.871. That is not coverage and it was not used to turn a type on. The same OCR text scored with the old `fromText` mapper wrote 13 automatic fills, 9 correct and 4 wrong (wrong-fill 0.308, 0 wrong-person). Raw rows: [visual-e2e/results/test-score.json](visual-e2e/results/test-score.json) and [calibration-probe.json](visual-e2e/results/calibration-probe.json).
+
+On the four development forms, which were not the held-out look, the probe placed 10 values and all 10 read back inside the detected box. That is a placement check on the development set. Held-out autofill placement was not measured, because the frozen gate exported none.
+
+One native widget PDF, `test-claim_widget-00`, still goes through the text layer. Chrome 156 wrote six values. The name baseline was at x=182, y=764, in the name box. The mailbox stayed empty. A development raster, after OCR, showed a review list (`Nia Sample`, the NRIC, the date, the address, each with the OCR line). Leaving the boxes unchecked exported a PDF that did not contain that name. Screenshots: [raster-review.png](visual-e2e/results/screenshots/raster-review.png), [raster-skipped-export.png](visual-e2e/results/screenshots/raster-skipped-export.png), [native-text-layer-export.png](visual-e2e/results/screenshots/native-text-layer-export.png).
+
+OCR assets and their sha256 are in [tools/forms-filler/vendor/tesseract/OCR-ASSETS.json](../tools/forms-filler/vendor/tesseract/OCR-ASSETS.json). pdf.js 3.11.174 and pdf-lib 1.17.1 are in [vendor/pdf/PDF-ASSETS.json](../tools/forms-filler/vendor/pdf/PDF-ASSETS.json). The core file requires WebAssembly SIMD. This run used Chrome 156.0.8078.47, Node v22.23.4, and Linux. No model was downloaded. A phone was not used.
+
+## Parser fixture benchmark (visual-gold-1)
+
+The numbers below were produced by the commands in [How to rerun](#how-to-rerun) on the committed vector fixtures. Read them as a text-and-widget selector test. The 112/183 figure is not a visual OCR result and does not establish a 2% gate.
 
 Baseline behavior is `fromText` plus `mapFactsToFields` as published on commit `56ec0d8e83c67a87d756bebce807fec3eb7ec6f2`. The candidate selector, fixtures, and scored files were committed as `506b9106a1f996fc868e3b06738913d181e8cb38`. Types are turned on or off by [visual-gold/FROZEN.json](visual-gold/FROZEN.json). That file was written from the calibration split only. The test split was scored after the file existed.
 
@@ -73,7 +114,7 @@ Seed `20261111`. Generator: [visual-gold/generate.mjs](visual-gold/generate.mjs)
 
 No person id, template id, or label string is shared across splits. The v3 text test was not read. Test records 0–7 also have a `clean_scan` and a `noisy_photo` twin. Those twins share a person, so the form-level rates cluster on `template:person` via `cluster` in the gold. The field-level rates still count each row and are labeled as not independent.
 
-`noisy_photo` in this set means the gold marks geometry untrusted. The PDF is the same vector drawing, not a camera photo. The node scorecard is evidence selection given fields and reference text. It is not an OCR accuracy test.
+`noisy_photo` in this set means the gold marks geometry untrusted. The PDF is the same vector drawing, not a camera photo. The node scorecard passes that flag and the generator's reference text into the selector. It is not an OCR accuracy test. The raster benchmark above is the OCR measurement.
 
 Hashes of the gold files are in [visual-gold/MANIFEST.json](visual-gold/MANIFEST.json).
 
@@ -158,3 +199,28 @@ Expected test print from `score-all.mjs`: candidate coverage about 0.612, wrong-
 Re-running `calibrate.mjs` rewrites `FROZEN.json` from the calibration file. Do not edit [GATES.json](visual-gold/GATES.json) after looking at [gold/test.jsonl](visual-gold/gold/test.jsonl).
 
 The browser export is not part of `score-all.mjs`. It needs Chrome and the static files served from the repo root. This run used `http://127.0.0.1:8765` and Chrome 156.
+
+### Replay the raster benchmark
+
+From a checkout that already contains `visual-e2e/fixtures` and `visual-e2e/results`, the arithmetic does not need Chrome:
+
+```bash
+cd research/forms-filler/visual-e2e
+node join.mjs calibration probe
+node join.mjs test score
+```
+
+A fresh OCR run needs Chrome, a static server at the repo root, and the vendored files. It does not need a network if those files are present. `pdf-lib` for regenerating PDFs is pinned in `visual-e2e/package.json` at 1.17.1.
+
+```bash
+cd research/forms-filler/visual-e2e
+npm install
+python3 generate.py
+node embed.mjs
+# serve the repo root at http://127.0.0.1:8765
+node run-split.mjs calibration probe
+node calibrate-e2e.mjs
+node run-split.mjs test score
+```
+
+`run-split.mjs test` exits if `FROZEN-e2e.json` is missing. Do not edit `VISUAL-GATES.json` after reading `gold/test.jsonl`. Regenerating the PDFs changes the pixels, so the committed `results/` would no longer match until you rerun OCR. The held-out numbers in this file are from the committed PDFs, not from a later regeneration.

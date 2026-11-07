@@ -7,7 +7,7 @@
 
   function pdfjs() {
     if (!global.pdfjsLib) throw new Error('pdf.js is not loaded');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf/pdf.worker.min.js', global.location.href).href;
     return pdfjsLib;
   }
 
@@ -39,13 +39,24 @@
     return parts.join('\n');
   }
 
+  function vendorBase() {
+    return new URL('vendor/tesseract/', global.location.href).href;
+  }
+
   function ocrWorker() {
     if (workerPromise) return workerPromise;
     if (!global.Tesseract) {
       workerPromise = Promise.reject(new Error('OCR is not loaded'));
       return workerPromise;
     }
-    workerPromise = Tesseract.createWorker('eng');
+    var base = vendorBase();
+    workerPromise = Tesseract.createWorker('eng', 1, {
+      workerPath: base + 'worker.min.js',
+      corePath: base + 'tesseract-core-simd-lstm.wasm.js',
+      langPath: base.replace(/\/$/, ''),
+      gzip: true,
+      cacheMethod: 'none'
+    });
     workerPromise.catch(function () { workerPromise = null; });
     return workerPromise;
   }
@@ -140,8 +151,11 @@
     return result && result.data && result.data.text ? result.data.text : '';
   }
 
-  async function wordBoxes(source) {
+  async function wordBoxes(source, psm) {
     var worker = await ocrWorker();
+    if (psm) {
+      try { await worker.setParameters({ tessedit_pageseg_mode: String(psm) }); } catch (err) {}
+    }
     var timer;
     var timeout = new Promise(function (_, reject) {
       timer = setTimeout(function () {
@@ -180,6 +194,147 @@
       parts.push(await imageText(buf, 'image/png'));
     }
     return parts.join('\n');
+  }
+
+  function linesFromWords(words) {
+    var items = (words || []).map(function (word) {
+      var box = word.bbox || {};
+      return {
+        text: String(word.text || '').trim(),
+        x0: box.x0 || 0,
+        y0: box.y0 || 0,
+        x1: box.x1 || box.x0 || 0,
+        y1: box.y1 || box.y0 || 0,
+        confidence: word.confidence == null ? null : word.confidence
+      };
+    }).filter(function (word) {
+      return word.text && (word.confidence == null || word.confidence >= 20);
+    });
+    items.sort(function (a, b) {
+      var dy = ((a.y0 + a.y1) / 2) - ((b.y0 + b.y1) / 2);
+      if (Math.abs(dy) > 8) return dy;
+      return a.x0 - b.x0;
+    });
+    var lines = [];
+    items.forEach(function (word) {
+      var mid = (word.y0 + word.y1) / 2;
+      var line = lines.length ? lines[lines.length - 1] : null;
+      var lineMid = line ? (line.y0 + line.y1) / 2 : 0;
+      if (!line || Math.abs(mid - lineMid) > 12) {
+        lines.push({ y0: word.y0, y1: word.y1, words: [word] });
+      } else {
+        line.words.push(word);
+        line.y0 = Math.min(line.y0, word.y0);
+        line.y1 = Math.max(line.y1, word.y1);
+      }
+    });
+    return {
+      items: items,
+      text: lines.map(function (line) {
+        line.words.sort(function (a, b) { return a.x0 - b.x0; });
+        return line.words.map(function (word) { return word.text; }).join(' ').replace(/\s+/g, ' ').trim();
+      }).filter(Boolean).join('\n')
+    };
+  }
+
+  function mapWords(items, scale, pageHeight) {
+    return items.map(function (word) {
+      return {
+        text: word.text,
+        confidence: word.confidence,
+        x: word.x0 / scale,
+        y: pageHeight - (word.y1 / scale),
+        w: Math.max(0, word.x1 - word.x0) / scale,
+        h: Math.max(0, word.y1 - word.y0) / scale
+      };
+    });
+  }
+
+  async function recognizeCanvas(canvas, scale, pageWidth, pageHeight) {
+    var worker = await ocrWorker();
+    var best = { text: '', items: [] };
+    var modes = ['6', '11'];
+    for (var m = 0; m < modes.length; m++) {
+      try { await worker.setParameters({ tessedit_pageseg_mode: modes[m] }); } catch (err) {}
+      var result = await worker.recognize(canvas);
+      var packed = linesFromWords(result && result.data && result.data.words);
+      var letters = (packed.text.match(/[A-Za-z]{3,}/g) || []).length;
+      var bestLetters = (best.text.match(/[A-Za-z]{3,}/g) || []).length;
+      if (letters > bestLetters) best = packed;
+    }
+    var packed = best;
+    return {
+      text: packed.text,
+      channel: 'ocr',
+      words: mapWords(packed.items, scale, pageHeight),
+      transform: {
+        kind: 'render-ocr',
+        scale: scale,
+        pageWidth: pageWidth,
+        pageHeight: pageHeight,
+        rotationDeg: 0,
+        deskew: 'none'
+      }
+    };
+  }
+
+  async function spatialPdf(bytes) {
+    var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
+    var parts = [];
+    var words = [];
+    var pages = Math.min(pdf.numPages, 2);
+    for (var i = 1; i <= pages; i++) {
+      var page = await pdf.getPage(i);
+      var base = page.getViewport({ scale: 1 });
+      var scale = 2;
+      var viewport = page.getViewport({ scale: scale });
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+      var seen = await recognizeCanvas(canvas, scale, base.width, base.height);
+      if (seen.text) parts.push(seen.text);
+      seen.words.forEach(function (word) {
+        word.page = i - 1;
+        words.push(word);
+      });
+    }
+    return {
+      text: parts.join('\n'),
+      channel: 'ocr',
+      words: words,
+      transform: {
+        kind: 'render-ocr',
+        scale: 2,
+        pages: pages,
+        rotationDeg: 0,
+        deskew: 'none'
+      }
+    };
+  }
+
+  async function spatial(bytes, mime) {
+    var isPdf = !mime || mime === 'application/pdf';
+    if (!isPdf) {
+      var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
+      var maxW = 1600;
+      var scale = bmp.width > maxW ? bmp.width / maxW : 1;
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width / scale));
+      canvas.height = Math.max(1, Math.round(bmp.height / scale));
+      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      if (bmp.close) bmp.close();
+      var pageWidth = canvas.width / 2;
+      var pageHeight = canvas.height / 2;
+      return recognizeCanvas(canvas, canvas.width / pageWidth, pageWidth, pageHeight);
+    }
+    var text = await textLayer(bytes);
+    if (text.replace(/\s+/g, '').length >= 40) {
+      return { text: text, channel: 'text-layer', words: [], transform: { kind: 'pdf-text-layer' } };
+    }
+    var seen = await spatialPdf(bytes);
+    if (text.trim()) seen.text = (text + '\n' + seen.text).trim();
+    return seen;
   }
 
   async function fromPdf(bytes) {
@@ -268,6 +423,7 @@
     fromPdf: fromPdf,
     imageText: imageText,
     wordBoxes: wordBoxes,
+    spatial: spatial,
     chunks: chunks,
     retrieve: retrieve
   };

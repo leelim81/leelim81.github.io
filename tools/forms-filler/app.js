@@ -317,7 +317,13 @@
     var failed = false;
     try {
       var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
-      text = isPdf ? await FormExtract.fromPdf(ref.bytes) : await FormExtract.imageText(ref.bytes, ref.mime || 'image/png');
+      var spatial = window.FormExtract && FormExtract.spatial
+        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
+        : { text: '', channel: 'text-layer' };
+      text = spatial.text || '';
+      ref.channel = spatial.channel || 'text-layer';
+      ref.words = spatial.words || [];
+      ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
     }
@@ -519,7 +525,8 @@
       state.modelNote = 'skipped';
       paintModel();
       var frozen = window.FormThresholds || { autofill: {} };
-      var decisions = window.FormSelect ? FormSelect.decideAll(state.fields, notesAll, frozen) : [];
+      var channel = state.refs.some(function (ref) { return ref.channel === 'ocr'; }) ? 'ocr' : 'text-layer';
+      var decisions = window.FormSelect ? FormSelect.decideAll(state.fields, notesAll, frozen, { channel: channel }) : [];
       function proposalsFrom(confirmed) {
         var allow = {};
         (confirmed || []).forEach(function (id) { allow[id] = true; });

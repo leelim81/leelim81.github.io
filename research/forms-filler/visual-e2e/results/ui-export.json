@@ -1,0 +1,81 @@
+{
+  "chrome": "Google Chrome 156.0.8078.47",
+  "nativePositions": [
+    {
+      "s": "claim_widget (synthetic)",
+      "x": 40,
+      "y": 800
+    },
+    {
+      "s": "Claimant name",
+      "x": 40,
+      "y": 764
+    },
+    {
+      "s": "FIN or NRIC",
+      "x": 40,
+      "y": 728
+    },
+    {
+      "s": "Date of birth (dd/mm/yyyy)",
+      "x": 40,
+      "y": 692
+    },
+    {
+      "s": "Callback number",
+      "x": 40,
+      "y": 656
+    },
+    {
+      "s": "Reply email",
+      "x": 40,
+      "y": 620
+    },
+    {
+      "s": "Dwelling",
+      "x": 40,
+      "y": 584
+    },
+    {
+      "s": "PO mailbox",
+      "x": 40,
+      "y": 548
+    },
+    {
+      "s": "Asha Fixture",
+      "x": 182,
+      "y": 764
+    },
+    {
+      "s": "S1000084Z",
+      "x": 182,
+      "y": 728
+    },
+    {
+      "s": "01/01/1990",
+      "x": 182,
+      "y": 692
+    },
+    {
+      "s": "81000000",
+      "x": 182,
+      "y": 656
+    },
+    {
+      "s": "asha.fixture0@example.com",
+      "x": 182,
+      "y": 620
+    },
+    {
+      "s": "10 PALM ROAD 208400",
+      "x": 182,
+      "y": 584
+    }
+  ],
+  "rasterChannel": [
+    "ready"
+  ],
+  "reviewText": "name: Nia Sample\nSource: Full name: Nia Sample\nnric: S2000086D\nSource: NRIC: S2000086D\ndob: 01/01/1990\nSource: Date of birth: 01/01/1990\naddress: 12 QUAY LANE 304300\nSource: Address: 12 QUAY LANE 304300",
+  "skippedExportHasName": false,
+  "skippedText": ""
+}

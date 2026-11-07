@@ -1,0 +1,96 @@
+{
+  "scorecard": "visual-e2e-1",
+  "source": "calibration probe only",
+  "ocrAutofill": {
+    "name": false,
+    "nric": false,
+    "dob": false,
+    "phone": false,
+    "email": false,
+    "address": false,
+    "postal": false,
+    "mailbox": false
+  },
+  "detail": {
+    "name": {
+      "automatic": 18,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.1533175539572782,
+      "minimum": 59,
+      "limit": 0.05,
+      "enabled": false,
+      "because": "n 18 is below 59, so reliability is not established"
+    },
+    "nric": {
+      "automatic": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "minimum": 59,
+      "limit": 0.05,
+      "enabled": false,
+      "because": "n 0 is below 59, so reliability is not established"
+    },
+    "dob": {
+      "automatic": 9,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.2831288355631135,
+      "minimum": 59,
+      "limit": 0.05,
+      "enabled": false,
+      "because": "n 9 is below 59, so reliability is not established"
+    },
+    "phone": {
+      "automatic": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "minimum": 29,
+      "limit": 0.1,
+      "enabled": false,
+      "because": "n 0 is below 29, so reliability is not established"
+    },
+    "email": {
+      "automatic": 18,
+      "wrong": 3,
+      "wrongPerson": 0,
+      "upper": 0.3766791509598427,
+      "minimum": 29,
+      "limit": 0.1,
+      "enabled": false,
+      "because": "n 18 is below 29, so reliability is not established; 3 wrong fill(s), 0 wrong-person"
+    },
+    "address": {
+      "automatic": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "minimum": 29,
+      "limit": 0.1,
+      "enabled": false,
+      "because": "n 0 is below 29, so reliability is not established"
+    },
+    "postal": {
+      "automatic": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "minimum": 29,
+      "limit": 0.1,
+      "enabled": false,
+      "because": "n 0 is below 29, so reliability is not established"
+    },
+    "mailbox": {
+      "automatic": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "minimum": 29,
+      "limit": 0.1,
+      "enabled": false,
+      "because": "n 0 is below 29, so reliability is not established"
+    }
+  }
+}

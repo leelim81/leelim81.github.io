@@ -38,8 +38,9 @@
     return fact.kind + '|' + fact.role;
   }
 
-  function decideAll(fields, text, frozen) {
+  function decideAll(fields, text, frozen, meta) {
     if (!ev) throw new Error('FormEvidence is not loaded');
+    var channel = meta && meta.channel === 'ocr' ? 'ocr' : 'text-layer';
     var packet = ev.extract(text);
     var conflicts = {};
     var byKey = {};
@@ -53,7 +54,7 @@
       byKey[key].forEach(function (fact) { values[fact.value] = true; });
       if (Object.keys(values).length > 1) conflicts[key] = true;
     });
-    var allow = (frozen && frozen.autofill) || {};
+    var allow = channel === 'ocr' ? ((frozen && frozen.ocrAutofill) || {}) : ((frozen && frozen.autofill) || {});
     return (fields || []).map(function (field) {
       var kind = ev.fieldKind(field);
       var matches = packet.facts.filter(function (fact) { return eligible(fact, field, packet); });
@@ -62,6 +63,7 @@
         fieldId: field.id,
         kind: kind,
         geometryTrusted: trusted,
+        channel: channel,
         candidates: matches.map(function (fact) {
           return { factId: fact.id, value: fact.value, role: fact.role, quote: fact.quote, line: fact.line };
         })

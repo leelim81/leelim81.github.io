@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 visual-gold/node_modules/
+visual-e2e/node_modules/
