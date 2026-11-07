@@ -8,7 +8,7 @@ This directory is the research project. Apache-2.0 applies to the original code 
 
 ## Status
 
-No browser model was run here. CPU bf16 baselines and the finished `lora_e1` run are in [model-lab](model-lab/README.md). That LoRA improved the leaky dev split and then failed the held-out test (80 of 80 replies were invalid JSON). It is not deployed. The next fixture is [model-lab/v2/CONTRACT.md](model-lab/v2/CONTRACT.md). The 1.5B model is still unmeasured.
+No browser model was run here. The finished `lora_e1` run failed its held-out test and is not deployed: [model-lab](model-lab/README.md). Quantized CPU baselines, including the current 1.5B, are in [model-lab/results/v2-quantized](model-lab/results/v2-quantized/README.md). They are not a reason to change the live model. v2 was an invalid training distribution and its test is used. v3 is the pending fixture in [model-lab/v3/CONTRACT.md](model-lab/v3/CONTRACT.md) and has not been trained. `results/mock-evidence-2026-11-07.json` is a mocked page check that invented citizenship and a patient's date were dropped. It is not an inference result.
 
 What is measured:
 

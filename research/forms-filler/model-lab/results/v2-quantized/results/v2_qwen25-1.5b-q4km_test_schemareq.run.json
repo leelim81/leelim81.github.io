@@ -1,0 +1,11 @@
+{
+ "tag": "qwen25-1.5b-q4km",
+ "split": "test",
+ "mode": "schemareq",
+ "model_calls": 12,
+ "truncated_96": 0,
+ "max_prompt_tokens": 228,
+ "sec_mean": 2.1,
+ "sec_max": 2.19,
+ "runtime": "llama.cpp b12182 CPU 4 threads; NOT WebGPU"
+}

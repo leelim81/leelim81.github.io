@@ -1,0 +1,14 @@
+{
+ "supported_correct": 4,
+ "supported_wrong": 0,
+ "spurious_unsupported_fill": 12,
+ "missed": 6,
+ "correct_empty": 22,
+ "malformed": 6,
+ "fields": 44,
+ "tag": "qwen25-1.5b-q4km",
+ "set": "prod",
+ "mode": "schema",
+ "sec_per_item": 3.86,
+ "runtime": "llama.cpp b12182 CPU, NOT WebGPU/WebLLM"
+}

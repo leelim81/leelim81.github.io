@@ -186,10 +186,12 @@
       var description = String(item.description || key).replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 48);
       properties[key] = { type: 'string', description: description || key };
     });
+    var required = Array.isArray(source.required) ? source.required.filter(function (key) { return properties[key]; }) : [];
     return JSON.stringify({
       type: 'object',
       properties: properties,
-      additionalProperties: false
+      additionalProperties: false,
+      required: required
     });
   }
 

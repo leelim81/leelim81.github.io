@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 import assert from 'assert';
 
 const require = createRequire(import.meta.url);
-const { fromText, mapFactsToFields, accept, modelFields, preview } = require('./facts.js');
+const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue } = require('./facts.js');
 
 const ocr = `REPUBLIC OF SINGAPORE
 IDENTITY CARD NO. S1234567D
@@ -190,4 +190,22 @@ assert.equal(noSplit.first, undefined);
 assert.equal(noSplit.last, undefined);
 assert.equal(noSplit.full, 'Alex Example');
 
+const premises = fromText('Premises: 44 CEDAR WALK 161616\n');
+assert.equal(premises.address, '44 CEDAR WALK 161616');
+assert.equal(premises.postal, '161616');
+assert.equal(fromText('Premises: 44 CEDAR WALK 161616. Handset was not given.').address, '44 CEDAR WALK 161616');
+assert.equal(fromText('The file number 123456 is not an address.').address, undefined);
+assert.equal(fromText('44 HARBOUR LANE 161616').name, undefined);
+const otherDob = 'CLINIC COPY about another person\nPatient listed: Pat Example born 01/01/1980.\nAccompanied by applicant.\nFull name: Alex Example\n';
+assert.equal(allowModelValue({ id: 'dob', label: 'Applicant date of birth', type: 'text' }, '01/01/1980', otherDob), false);
+assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '02/02/1990', 'The patient is the applicant. Patient born 02/02/1990.'), true);
+assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '14/03/1992', 'The applicant was born on 14 March 1992.'), true);
+assert.equal(allowModelValue({ id: 'dob', label: 'Date of birth', type: 'text' }, '14/03/1992', 'The applicant was born on 14.03.1992.'), true);
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Not specified', 'Full name: Alex Example'), false);
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Singapore', 'REPUBLIC OF SINGAPORE\nFull name: Alex'), false);
+assert.equal(allowModelValue({ id: 'cit', label: 'Citizenship', type: 'text' }, 'Permanent Resident', 'Citizenship: Permanent Resident'), true);
+assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, 'Harbour Press', 'Employer: Harbour Press'), false);
+assert.equal(allowModelValue({ id: 'bank', label: 'Bank account', type: 'text' }, '0012345678', 'Bank account number: 0012345678'), true);
+assert.equal(allowModelValue({ id: 'bank', label: 'GIRO ledger', type: 'text' }, 'Harbour Press', 'Employer: Harbour Press'), false);
+assert.equal(allowModelValue({ id: 'bank', label: 'Credit ledger', type: 'text' }, '0012345678', 'Ledger account 0012345678'), true);
 console.log('facts tests ok');

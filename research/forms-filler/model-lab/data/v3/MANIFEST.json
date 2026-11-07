@@ -1,0 +1,59 @@
+{
+  "train": {
+    "n": 480,
+    "sha256": "11e2ac69475f970b94595639a584656b55a4db5eff17957b0c07d83b3539a403",
+    "model_calls": 480,
+    "templates": [
+      "bank_letter",
+      "card_scan",
+      "emergency_note",
+      "employer_letter",
+      "pay_advice",
+      "power_bill",
+      "text_message",
+      "tickbox_form"
+    ],
+    "label_families": [
+      "A",
+      "B",
+      "C"
+    ],
+    "null_frac": 0.683
+  },
+  "dev": {
+    "n": 180,
+    "sha256": "6a703d22ee3ebd8e39fa868a4cbb133a1f6e60733f159c0d11556c3e975906f9",
+    "model_calls": 180,
+    "templates": [
+      "clinic_self",
+      "gate_log",
+      "hr_memo",
+      "parcel_slip",
+      "school_form",
+      "tenancy_mail"
+    ],
+    "label_families": [
+      "D",
+      "E"
+    ],
+    "null_frac": 0.622
+  },
+  "test": {
+    "n": 180,
+    "sha256": "92936e65321e904613d08a309d9f76f00dd219bdd9079347da3983709799978c",
+    "model_calls": 180,
+    "templates": [
+      "foreign_pass",
+      "hostel_register",
+      "insurer_email",
+      "rebate_claim",
+      "union_ballot",
+      "ward_note"
+    ],
+    "label_families": [
+      "F",
+      "G"
+    ],
+    "null_frac": 0.5
+  }
+}

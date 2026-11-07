@@ -1,0 +1,5 @@
+qwen25-0.5b-q4km v2 VmHWM:	  781928 kB
+qwen3-0.6b-q8 v2 VmHWM:	 2041844 kB
+{"supported_correct": 4, "supported_wrong": 0, "spurious_unsupported_fill": 12, "missed": 6, "correct_empty": 22, "malformed": 6, "fields": 44, "tag": "qwen25-1.5b-q4km", "set": "prod", "mode": "schema", "sec_per_item": 3.86, "runtime": "llama.cpp b12182 CPU, NOT WebGPU/WebLLM"}
+{"supported_correct": 5, "supported_wrong": 0, "spurious_unsupported_fill": 18, "missed": 5, "correct_empty": 16, "malformed": 0, "fields": 44, "tag": "qwen25-1.5b-q4km", "set": "prod", "mode": "free", "sec_per_item": 3.02, "runtime": "llama.cpp b12182 CPU, NOT WebGPU/WebLLM"}
+qwen25-1.5b-q4km v2 VmHWM:	 2420688 kB

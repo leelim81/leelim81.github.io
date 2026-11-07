@@ -1,0 +1,169 @@
+{
+  "by_split": {
+    "train": {
+      "records": 480,
+      "model_calls": 480,
+      "templates": [
+        "bank_letter",
+        "card_scan",
+        "emergency_note",
+        "employer_letter",
+        "pay_advice",
+        "power_bill",
+        "text_message",
+        "tickbox_form"
+      ],
+      "families": [
+        "A",
+        "B",
+        "C"
+      ],
+      "tasks": {
+        "name": {
+          "positive": 360,
+          "negative": 60
+        },
+        "dob": {
+          "positive": 60,
+          "negative": 120
+        },
+        "phone": {
+          "positive": 80,
+          "negative": 240
+        },
+        "email": {
+          "positive": 120,
+          "negative": 360
+        },
+        "address": {
+          "positive": 20,
+          "negative": 420
+        },
+        "job": {
+          "positive": 120,
+          "negative": 200
+        },
+        "citizenship": {
+          "positive": 20,
+          "negative": 280
+        },
+        "bank": {
+          "positive": 120,
+          "negative": 260
+        },
+        "other_person": {
+          "positive_patient_is_applicant": 20,
+          "negative_other_person": 20
+        }
+      }
+    },
+    "dev": {
+      "records": 180,
+      "model_calls": 180,
+      "templates": [
+        "clinic_self",
+        "gate_log",
+        "hr_memo",
+        "parcel_slip",
+        "school_form",
+        "tenancy_mail"
+      ],
+      "families": [
+        "D",
+        "E"
+      ],
+      "tasks": {
+        "name": {
+          "positive": 150,
+          "negative": 30
+        },
+        "dob": {
+          "positive": 60,
+          "negative": 120
+        },
+        "phone": {
+          "positive": 90,
+          "negative": 90
+        },
+        "email": {
+          "positive": 60,
+          "negative": 120
+        },
+        "address": {
+          "positive": 30,
+          "negative": 60
+        },
+        "job": {
+          "positive": 60,
+          "negative": 120
+        },
+        "citizenship": {
+          "positive": 30,
+          "negative": 150
+        },
+        "bank": {
+          "positive": 30,
+          "negative": 150
+        },
+        "other_person": {
+          "positive_patient_is_applicant": 30,
+          "negative_other_person": 30
+        }
+      }
+    },
+    "test": {
+      "records": 180,
+      "model_calls": 180,
+      "templates": [
+        "foreign_pass",
+        "hostel_register",
+        "insurer_email",
+        "rebate_claim",
+        "union_ballot",
+        "ward_note"
+      ],
+      "families": [
+        "F",
+        "G"
+      ],
+      "tasks": {
+        "name": {
+          "positive": 150,
+          "negative": 30
+        },
+        "dob": {
+          "positive": 30,
+          "negative": 90
+        },
+        "phone": {
+          "positive": 60,
+          "negative": 60
+        },
+        "email": {
+          "positive": 60,
+          "negative": 60
+        },
+        "address": {
+          "positive": 30,
+          "negative": 30
+        },
+        "job": {
+          "positive": 30,
+          "negative": 30
+        },
+        "citizenship": {
+          "positive": 30,
+          "negative": 90
+        },
+        "bank": {
+          "positive": 30,
+          "negative": 30
+        },
+        "other_person": {
+          "positive_patient_is_applicant": 30,
+          "negative_other_person": 30
+        }
+      }
+    }
+  }
+}

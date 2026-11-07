@@ -59,6 +59,7 @@
       if (words.filter(function (word) { return JUNK[word.toLowerCase()]; }).length >= words.length - 1) continue;
       if (words.every(function (word) { return JUNK[word.toLowerCase()]; })) continue;
       if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD'; })) continue;
+      if (/\b\d{6}\b/.test(lines[i]) || /\b(lane|road|street|avenue|ave|walk|close|quay|drive|crescent)\b/i.test(lines[i])) continue;
       return words.join(' ');
     }
     return '';
@@ -129,9 +130,20 @@
       out.street = addr[2].replace(/\s+/g, ' ').trim().toUpperCase();
       out.unit = addr[3].replace(/\s/g, '');
     }
-    var after = addr ? raw.slice(raw.indexOf(addr[0]) + addr[0].length) : raw;
-    var postal = after.match(/\b(\d{6})\b/) || raw.match(/\b(\d{6})\b/);
-    if (postal) out.postal = postal[1];
+    var labeled = raw.match(/\b(?:premises|home address|residential address|mailing address)\s*[:\-]\s*([^\n.]{4,120})/i);
+    if (labeled) {
+      var line = labeled[1].replace(/\s+/g, ' ').trim().replace(/[.,;]+$/, '');
+      var tail = line.match(/^(.*?)(?:\s+)(\d{6})$/);
+      if (tail && tail[1].replace(/\d/g, '').trim().length > 2) {
+        out.postal = tail[2];
+        out.labeled = (tail[1].trim() + ' ' + tail[2]).replace(/\s+/g, ' ');
+      } else if (!/^\d{6}$/.test(line)) {
+        out.labeled = line;
+      }
+    }
+    var after = addr ? raw.slice(raw.indexOf(addr[0]) + addr[0].length) : '';
+    var postal = after.match(/\b(\d{6})\b/);
+    if (!out.postal && postal) out.postal = postal[1];
     return out;
   }
 
@@ -153,7 +165,8 @@
     if (address.unit) facts.unit = address.unit;
     if (address.postal) facts.postal = address.postal;
     var addressLine = [address.blk, address.street, address.unit ? '#' + address.unit : '', address.postal].filter(Boolean).join(' ');
-    if (addressLine) facts.address = addressLine;
+    if (address.blk || address.street) facts.address = addressLine;
+    else if (address.labeled) facts.address = address.labeled;
     var residential = residentialFrom(text);
     if (residential) facts.residential = residential;
     var email = emailFrom(text);
@@ -256,6 +269,73 @@
       return cleanNameLabel(label) ? 'name' : '';
     }
     return '';
+  }
+
+  function normDate(value) {
+    var text = String(value || '').trim();
+    var numeric = text.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})$/);
+    if (numeric) return ('0' + numeric[1]).slice(-2) + '/' + ('0' + numeric[2]).slice(-2) + '/' + numeric[3];
+    var months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+    var named = text.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/);
+    if (!named) return '';
+    var month = months[named[2].slice(0, 3).toLowerCase()];
+    return month ? ('0' + named[1]).slice(-2) + '/' + month + '/' + named[3] : '';
+  }
+
+  function datesInSentence(sentence) {
+    var found = [];
+    var months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+    var numeric = /(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})/g;
+    var match;
+    while ((match = numeric.exec(sentence))) {
+      found.push(('0' + match[1]).slice(-2) + '/' + ('0' + match[2]).slice(-2) + '/' + match[3]);
+    }
+    var named = /(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/g;
+    while ((match = named.exec(sentence))) {
+      var month = months[match[2].slice(0, 3).toLowerCase()];
+      if (month) found.push(('0' + match[1]).slice(-2) + '/' + month + '/' + match[3]);
+    }
+    return found;
+  }
+
+  function dateAllowed(value, corpus) {
+    var want = normDate(value);
+    if (!want) return false;
+    var hay = String(corpus || '');
+    var patientIsApplicant = /patient is the applicant|applicant is the patient|the applicant is the patient/i.test(hay);
+    var sentences = hay.replace(/(\d{1,2})\.(\d{1,2})\.(\d{4})/g, '$1/$2/$3').split(/[\n.;]+/);
+    var hits = [];
+    sentences.forEach(function (sentence) {
+      if (datesInSentence(sentence).indexOf(want) !== -1) hits.push(sentence);
+    });
+    if (!hits.length) return false;
+    function otherPerson(sentence) {
+      if (patientIsApplicant) return false;
+      var lower = sentence.toLowerCase();
+      var aboutPatient = /\bpatient\b|\banother person\b|\baccompanied by\b/.test(lower);
+      var aboutApplicant = /\bapplicant\b|\bfull name\b|\bthe worker\b|\bthe member\b/.test(lower);
+      return aboutPatient && !aboutApplicant;
+    }
+    return hits.some(function (sentence) { return !otherPerson(sentence); });
+  }
+
+  function allowModelValue(field, value, corpus) {
+    var text = String(value || '').trim();
+    if (!text) return false;
+    var label = blob(field).toLowerCase();
+    var hay = String(corpus || '');
+    if (/not specified|unspecified|unknown|n\/a|nil/i.test(text)) return false;
+    if (/citizen|nationalit|residential status|residency|\bforeigner\b/.test(label)) {
+      if (/^singapore$/i.test(text)) return false;
+      if (!/singapore\s+citizen|permanent\s+resident|\bforeigner\b/i.test(hay)) return false;
+      return /citizen|permanent|foreign/i.test(text);
+    }
+    if (/\bbank\b|\bgiro\b|\baccount\b|\bledger\b|\bpayee\b|\bsettlement\b/.test(label) && !/e-?mail|holder/.test(label)) {
+      var digits = text.replace(/\D/g, '');
+      return digits.length >= 6 && hay.replace(/\D/g, '').indexOf(digits) !== -1;
+    }
+    if (/birth|\bdob\b|date of birth/.test(label)) return dateAllowed(text, hay);
+    return true;
   }
 
   function reviewLabels(fields) {
@@ -400,6 +480,7 @@
     fromText: fromText,
     mapFactsToFields: mapFactsToFields,
     reviewLabels: reviewLabels,
+    allowModelValue: allowModelValue,
     modelFields: modelFields,
     preview: preview,
     accept: accept,

@@ -1,0 +1,21 @@
+{
+  "kind": "integration-negative",
+  "inference": false,
+  "note": "FormLLM.completeJson was replaced in the page before Fill. This is not a model measurement and not a WebGPU result.",
+  "date": "2026-11-07",
+  "method": "local Chromium, python http.server, visitor-form.pdf plus a synthetic clinic PDF",
+  "excerpt_contained_patient_dob": true,
+  "excerpt_contained_applicant_name": true,
+  "schema_required": ["full_name", "address", "dob", "nationality", "emergency_name"],
+  "mocked_return": {
+    "full_name": "Singapore",
+    "address": "Singapore",
+    "dob": "01/01/1980",
+    "nationality": "Not specified",
+    "emergency_name": "Singapore"
+  },
+  "patient_dob_in_filled_pdf": false,
+  "not_specified_in_filled_pdf": false,
+  "bare_singapore_in_filled_pdf": false,
+  "filled_pdf_text": "Visitor registration  Club membership desk. One sheet per person.  Full name  NRIC / FIN  Address  Phone  Email  Date of birth  Nationality  Registering as   Visitor   Member  Emergency contact  Emergency phone  I agree to the club rules"
+}

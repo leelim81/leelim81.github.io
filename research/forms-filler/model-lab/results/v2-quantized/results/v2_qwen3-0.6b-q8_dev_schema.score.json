@@ -1,0 +1,14 @@
+{
+  "forms": 18,
+  "parse_fail_forms": 0,
+  "parse_success_forms": 18,
+  "matched": 16,
+  "value_mismatch": 2,
+  "spurious_unsupported": 0,
+  "missed": 36,
+  "correct_empty": 18,
+  "filled_fields": 18,
+  "wrong_fill_rate_among_filled": 0.111,
+  "recall_among_supported": 0.296,
+  "note": "wrong_fill_rate divides by filled fields only. Parse failures are empty answers and are not a success."
+}

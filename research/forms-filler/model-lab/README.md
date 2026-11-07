@@ -2,6 +2,8 @@
 
 CPU measurements for a compact form-filling model. The 12/4/6 smoke suite and `results/e2e-2026-11-07.json` stay where they are. This directory does not replace them.
 
+**v1 LoRA failed** the held-out test (invalid JSON on 80 of 80 forms) and is not deployed. **v2 quantized baselines** are in `results/v2-quantized/README.md`: llama.cpp b12182, GGUF q4_k_m for the 1.5B and 0.5B, Qwen3-0.6B at Q8 because no official q4 exists. Dev could not support a LoRA. The frozen dev winners still copied the clinic patient's date into the applicant date on every test call. **v3** (`data/v3/`, [contract](v3/CONTRACT.md), not trained) is the replacement fixture. v2 data stays frozen.
+
 Code under `scripts/` is Apache-2.0 (`../LICENSE`). Synthetic JSONL in `data/` is CC0-1.0 (`../FIXTURES-CC0.txt`). Qwen base weights remain Apache-2.0. No adapter weights are published.
 
 ## v1 is a negative result

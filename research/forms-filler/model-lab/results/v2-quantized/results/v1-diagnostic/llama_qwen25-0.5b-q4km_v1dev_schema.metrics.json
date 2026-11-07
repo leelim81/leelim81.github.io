@@ -1,0 +1,20 @@
+{
+ "tp": 189,
+ "wrong": 126,
+ "fp_on_null": 210,
+ "fn": 64,
+ "tn": 51,
+ "parse_fail": 5,
+ "n": 640,
+ "precision": 0.36,
+ "recall": 0.499,
+ "wrong_fill_rate": 0.64,
+ "abstain_acc": 0.195,
+ "field_acc": 0.375,
+ "form_exact": 0.0,
+ "tag": "qwen25-0.5b-q4km",
+ "set": "v1dev",
+ "mode": "schema",
+ "sec_per_item": 4.0,
+ "runtime": "llama.cpp b12182 CPU, NOT WebGPU/WebLLM"
+}

@@ -1,0 +1,14 @@
+{
+ "supported_correct": 10,
+ "supported_wrong": 0,
+ "spurious_unsupported_fill": 13,
+ "missed": 0,
+ "correct_empty": 21,
+ "malformed": 0,
+ "fields": 44,
+ "tag": "qwen3-0.6b-q8",
+ "set": "prod",
+ "mode": "free",
+ "sec_per_item": 1.89,
+ "runtime": "llama.cpp b12182 CPU, NOT WebGPU/WebLLM"
+}

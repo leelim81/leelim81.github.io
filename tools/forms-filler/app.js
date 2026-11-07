@@ -431,7 +431,7 @@
       'Fields: ' + fields.map(function (field) { return field.id + ' = ' + plainLabel(field); }).join('; '),
       'Excerpt: ' + String(corpusText || '').slice(0, 900)
     ].join('\n');
-    return await FormLLM.completeJson(prompt, { type: 'object', properties: properties }, 12000) || {};
+    return await FormLLM.completeJson(prompt, { type: 'object', properties: properties, additionalProperties: false, required: Object.keys(properties) }, 12000) || {};
   }
 
   function rowsFrom(seeded, guessed, notes) {
@@ -440,6 +440,7 @@
       var raw = guessed && guessed[field.id] != null ? String(guessed[field.id]) : '';
       var row = proposalFrom(field, raw, 'model');
       if (row.value && notes && !bestSupported(row.value, notes)) row.value = '';
+      if (row.source === 'model' && row.value && window.FormFacts && FormFacts.allowModelValue && !FormFacts.allowModelValue(field, row.value, notes)) row.value = '';
       return row;
     });
   }

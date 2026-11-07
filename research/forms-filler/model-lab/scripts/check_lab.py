@@ -201,14 +201,47 @@ def check_v2():
             fail("v2 family overlap " + left)
         if bag(left, "persona_id") & bag(right, "persona_id"):
             fail("v2 person overlap " + left)
-    before = sha256(ROOT / "data/v1/train.jsonl")
-    subprocess.check_call([sys.executable, str(ROOT / "scripts/gen_v2.py")], cwd=ROOT)
+    print("v2 frozen and disjoint; not regenerated, because later parser fixes would change it")
+    check_v3()
+
+
+def check_v3():
+    expect = {
+        "train": "11e2ac69475f970b94595639a584656b55a4db5eff17957b0c07d83b3539a403",
+        "dev": "6a703d22ee3ebd8e39fa868a4cbb133a1f6e60733f159c0d11556c3e975906f9",
+        "test": "92936e65321e904613d08a309d9f76f00dd219bdd9079347da3983709799978c",
+    }
     for split, digest in expect.items():
-        if sha256(ROOT / "data/v2" / (split + ".jsonl")) != digest:
-            fail("v2 regen " + split)
-    if sha256(ROOT / "data/v1/train.jsonl") != before:
-        fail("v2 regen touched v1")
-    print("v2 frozen, disjoint, regen stable")
+        if sha256(ROOT / "data" / "v3" / (split + ".jsonl")) != digest:
+            fail("v3 hash " + split)
+    rows = []
+    for split in expect:
+        path = ROOT / "data" / "v3" / (split + ".jsonl")
+        rows.extend(load_jsonl(path))
+    def bag(split, key):
+        return {row[key] for row in rows if row["split"] == split}
+    for left, right in (("train", "dev"), ("train", "test"), ("dev", "test")):
+        if bag(left, "template_id") & bag(right, "template_id"):
+            fail("v3 templates " + left)
+        if bag(left, "label_family") & bag(right, "label_family"):
+            fail("v3 families " + left)
+        if bag(left, "persona_id") & bag(right, "persona_id"):
+            fail("v3 people " + left)
+        names_l = {row["parser_facts"].get("name") for row in rows if row["split"] == left and row["parser_facts"].get("name")}
+        names_r = {row["parser_facts"].get("name") for row in rows if row["split"] == right and row["parser_facts"].get("name")}
+        if names_l & names_r:
+            fail("v3 names " + left)
+        labels_l = {field["label"] for row in rows if row["split"] == left for field in row["fields"]}
+        labels_r = {field["label"] for row in rows if row["split"] == right for field in row["fields"]}
+        if labels_l & labels_r:
+            fail("v3 label wording " + left)
+    dev_calls = sum(1 for row in rows if row["split"] == "dev" and row["model_fields"])
+    test_calls = sum(1 for row in rows if row["split"] == "test" and row["model_fields"])
+    if dev_calls < 150 or test_calls < 150:
+        fail("v3 model calls")
+    if len(bag("dev", "template_id")) < 6 or len(bag("test", "template_id")) < 6:
+        fail("v3 template families")
+    print("v3 disjoint", "dev_calls", dev_calls, "test_calls", test_calls)
 
 
 def main():

@@ -1,0 +1,4 @@
+qwen25-0.5b-q4km peak_rss_kB VmHWM:	 1068836 kB
+qwen25-0.5b-q4km v2 VmHWM:	  781928 kB
+qwen3-0.6b-q8 v2 VmHWM:	 2041844 kB
+qwen25-1.5b-q4km v2 VmHWM:	 2420688 kB

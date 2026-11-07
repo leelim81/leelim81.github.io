@@ -1,0 +1,1 @@
+{"frozen":"Qwen3-0.6B-Q8_0 GGUF, llama.cpp b12182, production_prompt verbatim, asciiSchema + required=all keys, temp 0, max_tokens 96, ctx 1024, no thinking","chosen_on":"v2 dev only (18 model-called records, single template)","tuning":"skipped: untrained frozen config reached 54/54 matched, 0 spurious on dev; dev cannot discriminate a LoRA","time":"2026-11-07T14:29:07+08:00"}
