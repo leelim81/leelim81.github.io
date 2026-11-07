@@ -1,0 +1,11 @@
+{
+ "tag": "own-base05-q4km",
+ "split": "dev",
+ "mode": "schemareq",
+ "model_calls": 180,
+ "truncated_96": 7,
+ "max_prompt_tokens": 316,
+ "sec_mean": 2.79,
+ "sec_max": 17.58,
+ "runtime": "llama.cpp b12182 CPU 4 threads; NOT WebGPU"
+}

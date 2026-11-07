@@ -1,0 +1,16 @@
+== own-v3lora05-q4km
+RAW        {"forms": 180, "parse_fail": 0, "matched": 251, "wrong_value": 26, "spurious_unsupported": 43, "spurious_wrong_person_dob": 30, "missed": 143, "correct_empty": 347, "wrong_fill_rate": 0.283, "recall": 0.598}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 236, "wrong_value": 13, "spurious_unsupported": 0, "spurious_wrong_person_dob": 0, "missed": 171, "correct_empty": 420, "wrong_fill_rate": 0.052, "recall": 0.562}
+== own-base05-q4km
+RAW        {"forms": 180, "parse_fail": 0, "matched": 262, "wrong_value": 58, "spurious_unsupported": 61, "spurious_wrong_person_dob": 30, "missed": 100, "correct_empty": 329, "wrong_fill_rate": 0.363, "recall": 0.624}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 232, "wrong_value": 41, "spurious_unsupported": 15, "spurious_wrong_person_dob": 0, "missed": 147, "correct_empty": 405, "wrong_fill_rate": 0.194, "recall": 0.552}
+== qwen25-0.5b-q4km
+RAW        {"forms": 180, "parse_fail": 0, "matched": 329, "wrong_value": 78, "spurious_unsupported": 325, "spurious_wrong_person_dob": 30, "missed": 13, "correct_empty": 65, "wrong_fill_rate": 0.568, "recall": 0.783}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 303, "wrong_value": 45, "spurious_unsupported": 160, "spurious_wrong_person_dob": 0, "missed": 72, "correct_empty": 260, "wrong_fill_rate": 0.404, "recall": 0.721}
+== qwen3-0.6b-q8
+RAW        {"forms": 180, "parse_fail": 9, "matched": 271, "wrong_value": 42, "spurious_unsupported": 40, "spurious_wrong_person_dob": 15, "missed": 107, "correct_empty": 365, "wrong_fill_rate": 0.264, "recall": 0.645}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 271, "wrong_value": 8, "spurious_unsupported": 10, "spurious_wrong_person_dob": 0, "missed": 141, "correct_empty": 410, "wrong_fill_rate": 0.062, "recall": 0.645}
+== qwen25-1.5b-q4km
+RAW        {"forms": 180, "parse_fail": 0, "matched": 358, "wrong_value": 50, "spurious_unsupported": 111, "spurious_wrong_person_dob": 30, "missed": 12, "correct_empty": 279, "wrong_fill_rate": 0.348, "recall": 0.852}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 330, "wrong_value": 43, "spurious_unsupported": 10, "spurious_wrong_person_dob": 0, "missed": 47, "correct_empty": 410, "wrong_fill_rate": 0.138, "recall": 0.786}
+DONE

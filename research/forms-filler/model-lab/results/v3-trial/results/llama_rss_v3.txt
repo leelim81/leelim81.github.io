@@ -1,0 +1,7 @@
+qwen25-1.5b-q4km v3 VmHWM:	 2404424 kB
+own-base05-q4km v3 VmHWM:	  969788 kB
+own-v3lora05-q4km v3 VmHWM:	  964296 kB
+own-v3lora05-q4km v3 VmHWM:	 1016748 kB
+own-base05-q4km v3 VmHWM:	  973040 kB
+qwen25-0.5b-q4km v3 VmHWM:	  939912 kB
+qwen3-0.6b-q8 v3 VmHWM:	 3855976 kB

@@ -1,0 +1,10 @@
+accelerate==1.15.0
+gguf==0.19.0  # gguf-py from llama.cpp b12182 source tarball
+huggingface_hub==2.4.0
+peft==0.21.2
+safetensors==0.8.0
+sentencepiece==0.2.3
+tokenizers==0.23.3
+torch==2.15.0+cpu
+transformers==5.22.2
+# python 3.13.5; node v24.22.1; llama.cpp b12182

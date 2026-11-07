@@ -1,0 +1,106 @@
+[
+ {
+  "id": "test-ward_note-te000",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Faye Rahman",
+  "pred": "Lee Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-insurer_email-te023",
+  "template": "insurer_email",
+  "label": "Reply letterbox",
+  "gold": "siti.ng54@example.com",
+  "pred": "+65 85997688",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te024",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Cara Yusof",
+  "pred": "Lee Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te036",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Elina Singh",
+  "pred": "Lee Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te048",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Kara Koh",
+  "pred": "Lee Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te060",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Prakash Goh",
+  "pred": "Kim Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te072",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Jules Koh",
+  "pred": "Jo Sample",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te084",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Rosa Chan",
+  "pred": "Jo Sample",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te096",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Eden Ong",
+  "pred": "Kim Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te108",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Dara Ewe",
+  "pred": "Kim Fixture",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te120",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Gita Gan",
+  "pred": "Jo Sample",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te156",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Tara Ewe",
+  "pred": "Pat Example",
+  "source": "model"
+ },
+ {
+  "id": "test-ward_note-te168",
+  "template": "ward_note",
+  "label": "Claimant name",
+  "gold": "Dinesh Arun",
+  "pred": "Pat Example",
+  "source": "model"
+ }
+]

@@ -1,0 +1,16 @@
+{
+ "model": "Qwen/Qwen2.5-0.5B-Instruct@7ae557604adf67be50417f59c2c2f167def9a775",
+ "data": "v3/forms-filler-lab-v3/data/train.jsonl",
+ "out": "adapters/v3_lora",
+ "epochs": 2.0,
+ "lr": 0.0001,
+ "r": 8,
+ "threads": 4,
+ "accum": 8,
+ "seed": 1109,
+ "train_sec": 3217,
+ "peak_rss_MB": 3741,
+ "examples_seen": 960,
+ "max_seq_tokens": 397,
+ "optimizer_steps": 120
+}

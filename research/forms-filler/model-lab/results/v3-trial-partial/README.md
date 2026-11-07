@@ -1,5 +1,7 @@
 # v3 trial, partial dev baselines
 
+Superseded by [the final trial](../v3-trial/README.md). This folder is the dev cut from before the LoRA finished and before the one test look. Do not use it as the comparison.
+
 Archive sha256 `b65aa8a389aefb1b567700fc512d57d9258faf7494a688f24642867583f76344`. This is a dev-only CPU record. The v3 test split is not scored. The 0.5B production-prompt LoRA was still training when the archive was cut (`results/v3_lora.trainlog` stops at step 460 of 480). No weights are published and the live model is unchanged.
 
 Reproduce from the repository root:

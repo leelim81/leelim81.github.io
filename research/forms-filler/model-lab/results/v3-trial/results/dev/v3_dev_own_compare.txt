@@ -1,0 +1,7 @@
+== own-base05-q4km
+RAW        {"forms": 180, "parse_fail": 7, "matched": 172, "wrong_value": 8, "spurious_unsupported": 97, "spurious_wrong_person_dob": 12, "missed": 330, "correct_empty": 731, "wrong_fill_rate": 0.405, "recall": 0.337}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 172, "wrong_value": 7, "spurious_unsupported": 57, "spurious_wrong_person_dob": 0, "missed": 331, "correct_empty": 783, "wrong_fill_rate": 0.271, "recall": 0.337}
+== own-v3lora05-q4km
+RAW        {"forms": 180, "parse_fail": 0, "matched": 188, "wrong_value": 1, "spurious_unsupported": 16, "spurious_wrong_person_dob": 1, "missed": 321, "correct_empty": 823, "wrong_fill_rate": 0.087, "recall": 0.369}
+POSTFILTER {"forms": 180, "parse_fail": 0, "matched": 188, "wrong_value": 0, "spurious_unsupported": 1, "spurious_wrong_person_dob": 0, "missed": 322, "correct_empty": 839, "wrong_fill_rate": 0.005, "recall": 0.369}
+DONE
