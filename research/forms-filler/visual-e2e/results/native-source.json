@@ -1,0 +1,303 @@
+{
+  "hypothesis": "native-pixels-of-the-same-eight-line-crops",
+  "source": {
+    "sha256": "ccfc3b242c83750b92e9fd88812709b246d6bdb06ed6f09bad7bcaeae9d69031",
+    "bytes": 1888605,
+    "width": 3442,
+    "height": 5601,
+    "sof": "0xC2"
+  },
+  "rgbaBytes": 77114568,
+  "memoryBefore": {
+    "memAvailableKiB": 4852124,
+    "memFreeKiB": 2573196,
+    "memTotalKiB": 16387280,
+    "balloonPages": 2621440,
+    "processRssKiB": 1117164
+  },
+  "memorySafe": true,
+  "prior": {
+    "surreyRgbaBytes": 115510752,
+    "surreyDecodeMs": 490,
+    "note": "Surrey full decode already completed. MemAvailable is the conservative figure; the balloon can hide more. usedJSHeapSize is not bitmap memory."
+  },
+  "production": false,
+  "reason": "Native crops did not return a name or address word. Source resolution did not restore those labels.",
+  "frame": {
+    "angle": 0,
+    "inW": 983,
+    "inH": 1600,
+    "turnW": 983,
+    "turnH": 1600,
+    "crop": {
+      "x": 16,
+      "y": 40,
+      "w": 913,
+      "h": 1516
+    },
+    "outW": 913,
+    "outH": 1516,
+    "sourceW": 983,
+    "sourceH": 1600
+  },
+  "sheet": {
+    "w": 913,
+    "h": 1516
+  },
+  "transform": {
+    "sheetToNativeX": "nativeX = (sheetX + crop.x) * (3442 / inW)",
+    "sheetToNativeY": "nativeY = (sheetY + crop.y) * (5601 / inH)",
+    "inW": 983,
+    "inH": 1600,
+    "crop": {
+      "x": 16,
+      "y": 40,
+      "w": 913,
+      "h": 1516
+    },
+    "scaleX": 3.501525940996948,
+    "scaleY": 3.500625
+  },
+  "crops": [
+    {
+      "sheet": {
+        "x": 154,
+        "y": 437,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 158,
+          "y": 1051.3333333333333,
+          "w": 637
+        }
+      },
+      "float": {
+        "x0": 595.2594099694811,
+        "y0": 1669.798125,
+        "x1": 2093.9125127161747,
+        "y1": 1795.8206249999998
+      },
+      "x": 595,
+      "y": 1669,
+      "w": 1499,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 154,
+        "y": 574,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 158,
+          "y": 914,
+          "w": 636
+        }
+      },
+      "float": {
+        "x0": 595.2594099694811,
+        "y0": 2149.38375,
+        "x1": 2093.9125127161747,
+        "y1": 2275.40625
+      },
+      "x": 595,
+      "y": 2149,
+      "w": 1499,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 152,
+        "y": 1289,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 156,
+          "y": 199,
+          "w": 636
+        }
+      },
+      "float": {
+        "x0": 588.2563580874872,
+        "y0": 4652.330625,
+        "x1": 2086.909460834181,
+        "y1": 4778.353125
+      },
+      "x": 588,
+      "y": 4652,
+      "w": 1499,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 155,
+        "y": 482,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 159,
+          "y": 1006.5,
+          "w": 635
+        }
+      },
+      "float": {
+        "x0": 598.7609359104781,
+        "y0": 1827.3262499999998,
+        "x1": 2097.4140386571717,
+        "y1": 1953.3487499999999
+      },
+      "x": 598,
+      "y": 1827,
+      "w": 1500,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 152,
+        "y": 848,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 156,
+          "y": 640.3333333333334,
+          "w": 635
+        }
+      },
+      "float": {
+        "x0": 588.2563580874872,
+        "y0": 3108.555,
+        "x1": 2086.909460834181,
+        "y1": 3234.5775
+      },
+      "x": 588,
+      "y": 3108,
+      "w": 1499,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 153,
+        "y": 894,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 157,
+          "y": 594,
+          "w": 635
+        }
+      },
+      "float": {
+        "x0": 591.7578840284842,
+        "y0": 3269.58375,
+        "x1": 2090.410986775178,
+        "y1": 3395.60625
+      },
+      "x": 591,
+      "y": 3269,
+      "w": 1500,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 153,
+        "y": 938,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 157,
+          "y": 550,
+          "w": 635
+        }
+      },
+      "float": {
+        "x0": 591.7578840284842,
+        "y0": 3423.61125,
+        "x1": 2090.410986775178,
+        "y1": 3549.63375
+      },
+      "x": 591,
+      "y": 3423,
+      "w": 1500,
+      "h": 127
+    },
+    {
+      "sheet": {
+        "x": 153,
+        "y": 1025,
+        "w": 428,
+        "h": 36,
+        "line": {
+          "x": 157,
+          "y": 463,
+          "w": 635
+        }
+      },
+      "float": {
+        "x0": 591.7578840284842,
+        "y0": 3728.165625,
+        "x1": 2090.410986775178,
+        "y1": 3854.1881249999997
+      },
+      "x": 591,
+      "y": 3728,
+      "w": 1500,
+      "h": 127,
+      "skipped": "pixel-cap"
+    }
+  ],
+  "ocrPixelsPlanned": 1332992,
+  "frozen": {
+    "crops": 7,
+    "ocrPixels": 1332992,
+    "ocrBudgetMs": 15000,
+    "psm": 7,
+    "minConfidence": 35,
+    "recolor": false
+  },
+  "decode": {
+    "ok": true,
+    "decodeMs": 270,
+    "drawMs": 2,
+    "closedBeforeOcr": true,
+    "size": {
+      "w": 3442,
+      "h": 5601
+    },
+    "heap": 28416417
+  },
+  "ocr": {
+    "ms": 239,
+    "crops": 7,
+    "pixels": 1332992,
+    "stopped": "",
+    "heap": 30467339
+  },
+  "words": [
+    {
+      "crop": 3,
+      "text": "a",
+      "confidence": 37,
+      "native": [
+        1038,
+        1827,
+        1140,
+        1954
+      ],
+      "kind": "other"
+    }
+  ],
+  "wordKinds": {
+    "other": 1
+  },
+  "fields": [],
+  "correct": 0,
+  "wrongBox": 0,
+  "falseFields": 0,
+  "upright": [
+    "Email",
+    "Name"
+  ],
+  "gatesPassed": false,
+  "verdict": "rejected",
+  "status": "measured"
+}

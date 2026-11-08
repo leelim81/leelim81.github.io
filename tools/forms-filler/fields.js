@@ -1735,5 +1735,72 @@
     };
   }
 
-  global.FormFields = { read: read, readImage: readImage, fill: fill, stageReport: stageReport, candidateReport: candidateReport };
+  /* Research only. The same eight ink-mask crops as lineLocalOcr, without OCR
+     and without a native decode. read and readImage do not call this. */
+  async function lineCropReport(bytes, mime) {
+    var opened = await openSheet(bytes, mime);
+    var h = opened.canvas.height;
+    var geo = await rasterGeometry(opened.canvas);
+    var lines = geo.lines.filter(function (line) { return line.w >= 80; });
+    lines.sort(function (a, b) { return b.w - a.w; });
+    if (lines.length > 8) lines = lines.slice(0, 8);
+    var crops = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var yLine = h - line.y;
+      var y0 = Math.max(0, Math.round(yLine - 28));
+      var y1 = Math.min(h, Math.round(yLine + 8));
+      var x0 = Math.max(0, Math.round(line.x - 4));
+      var x1 = Math.min(opened.canvas.width, Math.round(Math.min(line.x + line.w, line.x + 420) + 4));
+      var cw = Math.max(1, x1 - x0);
+      var ch = Math.max(1, y1 - y0);
+      if (cw * ch > 480 * 48) cw = Math.min(cw, 480);
+      crops.push({
+        x: x0,
+        y: y0,
+        w: cw,
+        h: ch,
+        line: { x: line.x, y: line.y, w: line.w }
+      });
+    }
+    return { frame: opened.frame, sheetW: opened.canvas.width, sheetH: h, crops: crops };
+  }
+
+  /* Research only. Places fields with the existing linker and an injected word
+     list. Not a read path. */
+  async function fieldsFromWords(bytes, mime, words) {
+    var opened = await openSheet(bytes, mime);
+    opened.canvas._ffWordOverride = words || [];
+    var fields = [];
+    try {
+      fields = await fieldsOnSheet(opened.canvas);
+    } finally {
+      opened.canvas._ffWordOverride = null;
+    }
+    return {
+      frame: opened.frame,
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          label: field.label || '',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      })
+    };
+  }
+
+  global.FormFields = {
+    read: read,
+    readImage: readImage,
+    fill: fill,
+    stageReport: stageReport,
+    candidateReport: candidateReport,
+    lineCropReport: lineCropReport,
+    fieldsFromWords: fieldsFromWords
+  };
 })(window);

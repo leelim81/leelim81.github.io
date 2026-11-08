@@ -20,10 +20,29 @@ The black Email/Name sheet still returns exactly those two labels. Page JavaScri
 
 ## Root cause
 
-The food-order labels are not lost in whole-page segmentation of a picture that is readable in strips. The same working pixels, cut into the eight longest existing lines, are still invisible to this OCR. Local crops of that sheet cannot put back detail discarded when the 3442×5601 file was reduced to 983×1600. The earlier green-ink read could see a name and an address, and those boxes missed the 8px gate. That result stands. This segmentation pass does not replace it.
+The food-order labels are not lost in whole-page segmentation of a picture that is readable in strips. The same working pixels, cut into the eight longest existing lines, are still invisible to this OCR. The same rectangles, read from the 3442×5601 pixels, are recorded in the next section. The earlier green-ink read could see a name and an address, and those boxes missed the 8px gate. That result stands. This segmentation pass does not replace it.
 
-## Native resolution was not tested
+## Native resolution, one measurement
 
-The publisher file is `files/wellcome-food-order.jpg`, 1,888,605 bytes, 3442×5601, SOF marker `0xC2` (progressive). Chrome 156.0.8078.47 has no `ImageDecoder`. `createImageBitmap(blob, sx, sy, sw, sh)` returns only the crop’s dimensions, and on a small progressive JPEG it took 15 ms against 17 ms for a full decode; a small baseline JPEG took 8 ms against 9 ms. The crop call does not skip the decode. A progressive scan cannot yield a region until the whole scan is done. Reading a native crop would therefore decode the full 3442×5601 image. That decode was not run. Native-resolution OCR is untested, not disproven. No second decoder was added.
+The publisher file was decoded in full. SHA-256 `ccfc3b242c83750b92e9fd88812709b246d6bdb06ed6f09bad7bcaeae9d69031`, 1,888,605 bytes, 3442×5601. An RGBA buffer of that size is 77,114,568 bytes. Before the decode, `MemAvailable` was 4,852,124 KiB. The earlier Surrey decode of 115,510,752 RGBA bytes had finished in 490 ms, so this buffer was allocated once. `createImageBitmap` returned 3442×5601 in 270 ms. Eight crop canvases were drawn in 2 ms, the source bitmap was closed, and only then did OCR start. `usedJSHeapSize` was about 28 MB after the decode and about 30 MB after OCR. That counter is the JavaScript heap, not the bitmap.
+
+The eight candidates are the same ink-mask lines as the strip test: width at least 80, longest first. The working frame is 983×1600, crop x 16 y 40, sheet 913×1516, angle 0. A sheet pixel maps by `native = (sheet + crop) × (3442/983, 5601/1600)`. PSM 7, confidence 35, original colors. The frozen cap is 8 crops, 1.5 million OCR pixels, and 15 seconds. Seven crops fit in 1,332,992 pixels and finished in 239 ms. The eighth, native rectangle x 591 y 3728 w 1500 h 127, would have passed 1.5 million and was not read.
+
+| Native crop | Size | Words |
+| --- | --- | --- |
+| 595, 1669 | 1499×127 | none |
+| 595, 2149 | 1499×127 | none |
+| 588, 4652 | 1499×127 | none |
+| 598, 1827 | 1500×127 | `a`, kind other, confidence 37, box 1038, 1827, 1140, 1954 |
+| 588, 3108 | 1499×127 | none |
+| 591, 3269 | 1500×127 | none |
+| 591, 3423 | 1500×127 | none |
+| 591, 3728 | 1500×127 | not read, over the pixel cap |
+
+No field was placed. Correct name or address boxes: 0. Wrong boxes: 0. False fields: 0. The black Email/Name sheet still returns those two labels. The frozen name target is original y 1295–1362 and the address target is y 1510–1578. Every selected crop starts at y 1669 or lower, so this pass did not read a native crop of those two rules. They were not among the eight longest lines, and the gold boxes were not used to add a crop.
+
+Verdict: rejected. Native pixels of this candidate set do not recover Name or Address, and they do not meet the 8px field gate. The full-frame decode stays out of the product until a budget test allows it. `read` and `readImage` are unchanged. Census pages were not upscaled or opened again. The 13 development targets stay misses, and the manual name glyph stays 1 source pixel outside the padded box.
+
+The page already says to use Place a missing line when no line is found. The next gap is that assisted path: a person can point at a line, and the role of that line is still not something the page records as a confirmed name or address. Another threshold or crop pass on this JPEG is not that gap.
 
 Census crops are not saved.
