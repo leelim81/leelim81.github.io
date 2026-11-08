@@ -360,7 +360,8 @@
   async function persist(vault, decide) {
     if (!root.DeskDB) return { ok: false, reason: 'unavailable' };
     try {
-      if (typeof decide === 'function' && root.DeskDB.update) {
+      if (typeof decide === 'function') {
+        if (!root.DeskDB.update) return { ok: false, reason: 'unavailable' };
         var outcome = await root.DeskDB.update(DB, 'vault', function (raw) {
           var current = migrate(raw);
           var decision = decide(current) || { ok: false, reason: 'cancelled' };
