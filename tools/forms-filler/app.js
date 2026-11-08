@@ -317,7 +317,13 @@
     var failed = false;
     try {
       var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
-      text = isPdf ? await FormExtract.fromPdf(ref.bytes) : await FormExtract.imageText(ref.bytes, ref.mime || 'image/png');
+      var spatial = window.FormExtract && FormExtract.spatial
+        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
+        : { text: '', channel: 'text-layer' };
+      text = spatial.text || '';
+      ref.channel = spatial.channel || 'text-layer';
+      ref.words = spatial.words || [];
+      ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
     }
@@ -449,6 +455,46 @@
     });
   }
 
+  function confirmReviews(reviews) {
+    var box = $('reviewBox');
+    var list = $('reviewList');
+    list.textContent = '';
+    $('reviewLead').textContent = reviews.length + ' value' + (reviews.length === 1 ? ' is' : 's are') + ' not written until you check ' + (reviews.length === 1 ? 'it' : 'them') + '.';
+    reviews.forEach(function (row) {
+      var li = document.createElement('li');
+      var label = document.createElement('label');
+      var boxIn = document.createElement('input');
+      boxIn.type = 'checkbox';
+      boxIn.value = row.fieldId;
+      var text = document.createElement('span');
+      text.textContent = (row.kind || 'field') + ': ' + row.value;
+      var quote = document.createElement('span');
+      quote.className = 'review-quote';
+      quote.textContent = row.quote ? ' Source: ' + row.quote : '';
+      label.appendChild(boxIn);
+      label.appendChild(text);
+      label.appendChild(quote);
+      li.appendChild(label);
+      list.appendChild(li);
+    });
+    box.hidden = false;
+    return new Promise(function (resolve) {
+      function finish(useChecked) {
+        var ids = [];
+        if (useChecked) {
+          list.querySelectorAll('input:checked').forEach(function (input) { ids.push(input.value); });
+        }
+        $('reviewUse').removeEventListener('click', onUse);
+        $('reviewSkip').removeEventListener('click', onSkip);
+        resolve(ids);
+      }
+      function onUse() { finish(true); }
+      function onSkip() { finish(false); }
+      $('reviewUse').addEventListener('click', onUse);
+      $('reviewSkip').addEventListener('click', onSkip);
+    });
+  }
+
   async function fillFromPapers() {
     if (state.running) return;
     if (!state.formBytes || !state.fields.length) return;
@@ -475,49 +521,38 @@
       var notesAll = await corpus();
       if (!current()) return;
       if (!notesAll.trim()) throw new Error('The references had no readable text.');
-      var facts = window.FormFacts ? FormFacts.fromText(notesAll) : {};
-      var seeded = window.FormFacts ? FormFacts.mapFactsToFields(facts, state.fields) : {};
-      state.seeded = seeded;
       state.notes = notesAll;
-      var rest = state.fields.filter(function (field) {
-        return !seeded[field.id] && field.type !== 'radio' && field.type !== 'checkbox';
-      });
-      var ask = window.FormFacts && FormFacts.modelFields ? FormFacts.modelFields(rest, notesAll) : [];
-      var guessed = {};
-      var gpuOk = state.gpu && state.gpu.ok;
-      if (!ask.length) {
-        state.modelNote = 'skipped';
-        paintModel();
-      } else if (!gpuOk) {
-        state.modelNote = '';
-        showGpu(state.gpu || { ok: false });
-        paintModel();
-      } else {
-        state.modelNote = '';
-        status('Checking ' + ask.length + ' field' + (ask.length === 1 ? '' : 's') + ' the papers might contain…', true);
-        $('skipModel').hidden = false;
-        showProgress({ progress: 0 });
-        try {
-          await withTimeout(FormLLM.ensure(showProgress), 12000, 'The private model did not start.');
-          if (!current()) return;
-          $('modelBox').hidden = true;
-          paintModel();
-          guessed = await withTimeout(askRest(ask, facts, notesAll), 13000, 'The private model did not answer.') || {};
-        } catch (err) {
-          guessed = {};
-          if (err && err.code === 'webgpu') showGpu({ ok: false });
-          else if (window.FormLLM && FormLLM.markFailed && FormLLM.snapshot().phase !== 'ready') FormLLM.markFailed(err && err.message);
-          paintModel();
-          status('The model did not answer in time. Opening the fields already read from the papers.', true);
-        }
-        $('skipModel').hidden = true;
-        $('modelBox').hidden = true;
+      state.modelNote = 'skipped';
+      paintModel();
+      var frozen = window.FormThresholds || { autofill: {} };
+      var channel = state.refs.some(function (ref) { return ref.channel === 'ocr'; }) ? 'ocr' : 'text-layer';
+      var decisions = window.FormSelect ? FormSelect.decideAll(state.fields, notesAll, frozen, { channel: channel }) : [];
+      function proposalsFrom(confirmed) {
+        var allow = {};
+        (confirmed || []).forEach(function (id) { allow[id] = true; });
+        return state.fields.map(function (field) {
+          var decision = null;
+          for (var i = 0; i < decisions.length; i++) if (decisions[i].fieldId === field.id) decision = decisions[i];
+          var use = decision && (decision.decision === 'autofill' || (decision.decision === 'review' && allow[field.id]));
+          var row = proposalFrom(field, use ? decision.value : '', 'facts');
+          row.quote = decision && use ? (decision.quote || '') : '';
+          row.reason = decision ? decision.reason : '';
+          return row;
+        });
+      }
+      var reviews = decisions.filter(function (row) { return row.decision === 'review' && row.value; });
+      var confirmed = [];
+      if (reviews.length && $('reviewBox')) {
+        confirmed = await confirmReviews(reviews);
         if (!current()) return;
       }
       if (!current()) return;
       state.handedOff = true;
       $('skipModel').hidden = true;
-      state.proposals = rowsFrom(seeded, guessed, notesAll);
+      if ($('reviewBox')) $('reviewBox').hidden = true;
+      state.proposals = proposalsFrom(confirmed);
+      var automatic = decisions.filter(function (row) { return row.decision === 'autofill'; }).length;
+      status('Wrote ' + automatic + ' automatic value' + (automatic === 1 ? '' : 's') + '. ' + reviews.length + ' stayed for review.', false);
       await openEditor(false);
     } catch (err) {
       if (!current()) return;

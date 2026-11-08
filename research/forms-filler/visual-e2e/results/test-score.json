@@ -1,0 +1,5007 @@
+{
+  "split": "test",
+  "mode": "score",
+  "frozen": {
+    "name": false,
+    "nric": false,
+    "dob": false,
+    "phone": false,
+    "email": false,
+    "address": false,
+    "postal": false,
+    "mailbox": false
+  },
+  "rows": [
+    {
+      "id": "test-holder_sheet-00",
+      "ms": 13265,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Tove Sample\nNRIC: S2000072D\nDate of birth: 01/01/1990\nPhone: +65 80000000\nEmail: tove.sample0O@example.com\nAddress: 12 MILL PATH 303600",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 95.43301391601562,
+          "x": 38.5,
+          "y": 780.8601036269431,
+          "w": 58,
+          "h": 13,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 95.29031372070312,
+          "x": 39,
+          "y": 763.3601036269431,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.61666107177734,
+          "x": 65,
+          "y": 762.8601036269431,
+          "w": 38,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Tove",
+          "confidence": 96.70125579833984,
+          "x": 108,
+          "y": 761.8601036269431,
+          "w": 29,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.4650650024414,
+          "x": 142,
+          "y": 757.8601036269431,
+          "w": 46.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 90.29126739501953,
+          "x": 38.5,
+          "y": 742.8601036269431,
+          "w": 36.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "S2000072D",
+          "confidence": 86.19601440429688,
+          "x": 80.5,
+          "y": 741.3601036269431,
+          "w": 73.5,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.74073791503906,
+          "x": 38,
+          "y": 722.8601036269431,
+          "w": 28.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 94.26909637451172,
+          "x": 71,
+          "y": 722.8601036269431,
+          "w": 11.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 94.26909637451172,
+          "x": 87,
+          "y": 721.8601036269431,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "01/01/1990",
+          "confidence": 96.60908508300781,
+          "x": 122,
+          "y": 720.3601036269431,
+          "w": 69.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.85891723632812,
+          "x": 38,
+          "y": 702.3601036269431,
+          "w": 42.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.94929504394531,
+          "x": 86,
+          "y": 701.8601036269431,
+          "w": 23,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000000",
+          "confidence": 96.02815246582031,
+          "x": 113.5,
+          "y": 700.3601036269431,
+          "w": 62,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 92.99114227294922,
+          "x": 37.5,
+          "y": 677.3601036269431,
+          "w": 37,
+          "h": 17.5,
+          "page": 0
+        },
+        {
+          "text": "tove.sample0O@example.com",
+          "confidence": 32.56573486328125,
+          "x": 79.5,
+          "y": 673.8601036269431,
+          "w": 181,
+          "h": 19.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.45026397705078,
+          "x": 36,
+          "y": 661.3601036269431,
+          "w": 54,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "12",
+          "confidence": 96.32115936279297,
+          "x": 96,
+          "y": 660.8601036269431,
+          "w": 14.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.32115936279297,
+          "x": 116,
+          "y": 660.3601036269431,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.87377166748047,
+          "x": 151,
+          "y": 659.3601036269431,
+          "w": 33,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303600",
+          "confidence": 96.32667541503906,
+          "x": 189.5,
+          "y": 658.3601036269431,
+          "w": 46,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.47222222222223,
+            "y": 664.4722222222222,
+            "width": 207.30555555555554,
+            "height": 29.118055555555543
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.47222222222223,
+            "y": 602.7685185185186,
+            "width": 206.83333333333331,
+            "height": 26.48148148148141
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.47222222222223,
+            "y": 538.3888888888889,
+            "width": 206.83333333333331,
+            "height": 27.583333333333258
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Tove Sample",
+              "role": "applicant",
+              "quote": "Full name: Tove Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Tove Sample",
+          "factId": "f0",
+          "quote": "Full name: Tove Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "01/01/1990",
+              "role": "applicant",
+              "quote": "Date of birth: 01/01/1990",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "01/01/1990",
+          "factId": "f2",
+          "quote": "Date of birth: 01/01/1990",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "tove.sample0o@example.com",
+              "role": "applicant",
+              "quote": "Email: tove.sample0O@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "tove.sample0o@example.com",
+          "factId": "f4",
+          "quote": "Email: tove.sample0O@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "tove.sample0O@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-01",
+      "ms": 11408,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Uma Sample\nNRIC: T2000085B\nDate of birth: 02/02/1991\nPhone: +65 80000001\nEmail: uma.samplel@example.com\nAddress: 13 MILL PATH 303601",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.03949737548828,
+          "x": 25.5,
+          "y": 790.1425322213798,
+          "w": 59.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.63655853271484,
+          "x": 26.5,
+          "y": 772.1425322213798,
+          "w": 21,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.99774169921875,
+          "x": 53.5,
+          "y": 772.1425322213798,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Uma",
+          "confidence": 96.56734466552734,
+          "x": 97.5,
+          "y": 772.1425322213798,
+          "w": 30,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.60896301269531,
+          "x": 132,
+          "y": 768.6425322213798,
+          "w": 47.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 89.68174743652344,
+          "x": 26.5,
+          "y": 751.6425322213798,
+          "w": 37,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "T2000085B",
+          "confidence": 89.88304138183594,
+          "x": 68.5,
+          "y": 751.1425322213798,
+          "w": 74,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.9768295288086,
+          "x": 26.5,
+          "y": 730.6425322213798,
+          "w": 29,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.9768295288086,
+          "x": 60,
+          "y": 730.6425322213798,
+          "w": 12,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.27714538574219,
+          "x": 76.5,
+          "y": 730.6425322213798,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "02/02/1991",
+          "confidence": 96.51298522949219,
+          "x": 112.5,
+          "y": 730.1425322213798,
+          "w": 71,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.79115295410156,
+          "x": 26,
+          "y": 710.1425322213798,
+          "w": 44,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 95.67591857910156,
+          "x": 75.5,
+          "y": 710.1425322213798,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000001",
+          "confidence": 96.57015991210938,
+          "x": 104,
+          "y": 709.6425322213798,
+          "w": 63,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.2490234375,
+          "x": 26,
+          "y": 689.1425322213798,
+          "w": 38,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "uma.samplel@example.com",
+          "confidence": 89.09783935546875,
+          "x": 70,
+          "y": 685.6425322213798,
+          "w": 185.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 95.99457550048828,
+          "x": 25,
+          "y": 668.6425322213798,
+          "w": 55.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "13",
+          "confidence": 95.84075164794922,
+          "x": 87,
+          "y": 668.6425322213798,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 95.83250427246094,
+          "x": 107.5,
+          "y": 668.1425322213798,
+          "w": 30.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.56863403320312,
+          "x": 143,
+          "y": 668.1425322213798,
+          "w": 34,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "303601",
+          "confidence": 96.4730453491211,
+          "x": 182.5,
+          "y": 667.6425322213798,
+          "w": 47,
+          "h": 10.5,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 30.070422535211268,
+            "y": 734.5211267605634,
+            "width": 258.5045774647887,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": true,
+          "rect": {
+            "x": 195.2112676056338,
+            "y": 602.9014084507043,
+            "width": 226.26760563380282,
+            "height": 63.760563380281724
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 195.70422535211267,
+            "y": 568.3943661971831,
+            "width": 226.26760563380282,
+            "height": 29.253521126760575
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Uma Sample",
+              "role": "applicant",
+              "quote": "Full name: Uma Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Uma Sample",
+          "factId": "f0",
+          "quote": "Full name: Uma Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": false,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "02/02/1991",
+              "role": "applicant",
+              "quote": "Date of birth: 02/02/1991",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "02/02/1991",
+          "factId": "f2",
+          "quote": "Date of birth: 02/02/1991",
+          "reason": "placement_untrusted",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "uma.samplel@example.com",
+              "role": "applicant",
+              "quote": "Email: uma.samplel@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "uma.samplel@example.com",
+          "factId": "f4",
+          "quote": "Email: uma.samplel@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "uma.samplel@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-02",
+      "ms": 11666,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Vail Sample\nNRIC: S2000098H\nDate of birth: 03/03/1992\nPhone: +65 80000002\nEmail: vail.sample2@example.com\nAddress: 14 MILL PATH 303602",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.94682312011719,
+          "x": 22.5,
+          "y": 778.4456928838952,
+          "w": 58.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.02973175048828,
+          "x": 23.5,
+          "y": 760.9456928838952,
+          "w": 21,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.50489807128906,
+          "x": 50,
+          "y": 761.4456928838952,
+          "w": 38.5,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Vail",
+          "confidence": 96.47603607177734,
+          "x": 93,
+          "y": 761.9456928838952,
+          "w": 22,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.81391143798828,
+          "x": 120.5,
+          "y": 759.9456928838952,
+          "w": 47,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 91.40850067138672,
+          "x": 24,
+          "y": 740.4456928838952,
+          "w": 36.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "S2000098H",
+          "confidence": 91.62571716308594,
+          "x": 66.5,
+          "y": 741.4456928838952,
+          "w": 73.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.45941162109375,
+          "x": 24,
+          "y": 719.9456928838952,
+          "w": 28.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.75186157226562,
+          "x": 57.5,
+          "y": 720.4456928838952,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.09236907958984,
+          "x": 74,
+          "y": 720.9456928838952,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "03/03/1992",
+          "confidence": 96.67634582519531,
+          "x": 109,
+          "y": 721.4456928838952,
+          "w": 70.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.82901000976562,
+          "x": 24.5,
+          "y": 699.4456928838952,
+          "w": 43,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.66264343261719,
+          "x": 73,
+          "y": 700.4456928838952,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000002",
+          "confidence": 96.54717254638672,
+          "x": 101,
+          "y": 700.4456928838952,
+          "w": 62.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.12201690673828,
+          "x": 24.5,
+          "y": 678.9456928838952,
+          "w": 37.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "vail.sample2@example.com",
+          "confidence": 87.66031646728516,
+          "x": 67.5,
+          "y": 677.4456928838952,
+          "w": 177.5,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.35121154785156,
+          "x": 24,
+          "y": 658.4456928838952,
+          "w": 55,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "14",
+          "confidence": 96.81991577148438,
+          "x": 85,
+          "y": 659.4456928838952,
+          "w": 15,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.17825317382812,
+          "x": 105,
+          "y": 659.9456928838952,
+          "w": 30.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.34040069580078,
+          "x": 140.5,
+          "y": 659.9456928838952,
+          "w": 33.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303602",
+          "confidence": 96.572021484375,
+          "x": 179.5,
+          "y": 660.9456928838952,
+          "w": 46.5,
+          "h": 10.5,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 684.7915652879157,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 618.6804541768046,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 553.0519059205191,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Vail Sample",
+              "role": "applicant",
+              "quote": "Full name: Vail Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Vail Sample",
+          "factId": "f0",
+          "quote": "Full name: Vail Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "03/03/1992",
+              "role": "applicant",
+              "quote": "Date of birth: 03/03/1992",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "03/03/1992",
+          "factId": "f2",
+          "quote": "Date of birth: 03/03/1992",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "vail.sample2@example.com",
+              "role": "applicant",
+              "quote": "Email: vail.sample2@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "vail.sample2@example.com",
+          "factId": "f4",
+          "quote": "Email: vail.sample2@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "vail.sample2@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-03",
+      "ms": 11615,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Wes Sample\nNRIC: T2000111E\nDate of birth: 04/04/1993\nPhone: +65 80000003\nEmail: wes.sample3@example.com\nAddress: 15 MILL PATH 303603",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.65272521972656,
+          "x": 35.5,
+          "y": 783.1392405063291,
+          "w": 58,
+          "h": 13,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 94.78131103515625,
+          "x": 36,
+          "y": 765.6392405063291,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 94.49311828613281,
+          "x": 62.5,
+          "y": 765.1392405063291,
+          "w": 37.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Wes",
+          "confidence": 95.424560546875,
+          "x": 105,
+          "y": 764.6392405063291,
+          "w": 28,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.94577026367188,
+          "x": 138,
+          "y": 760.6392405063291,
+          "w": 46.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 87.94450378417969,
+          "x": 35.5,
+          "y": 745.1392405063291,
+          "w": 36.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "T2000111E",
+          "confidence": 91.37468719482422,
+          "x": 77,
+          "y": 743.6392405063291,
+          "w": 70.5,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.86582946777344,
+          "x": 35.5,
+          "y": 725.1392405063291,
+          "w": 28,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.99536895751953,
+          "x": 68.5,
+          "y": 724.6392405063291,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.81262969970703,
+          "x": 84.5,
+          "y": 724.1392405063291,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "04/04/1993",
+          "confidence": 96.37582397460938,
+          "x": 119.5,
+          "y": 722.6392405063291,
+          "w": 70,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.53683471679688,
+          "x": 35,
+          "y": 704.1392405063291,
+          "w": 43,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.74884796142578,
+          "x": 83.5,
+          "y": 703.6392405063291,
+          "w": 23,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000003",
+          "confidence": 96.209228515625,
+          "x": 111,
+          "y": 702.6392405063291,
+          "w": 62,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.27532196044922,
+          "x": 34.5,
+          "y": 684.1392405063291,
+          "w": 37.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "wes.sample3@example.com",
+          "confidence": 91.35509490966797,
+          "x": 77,
+          "y": 678.6392405063291,
+          "w": 180.5,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.41041564941406,
+          "x": 33,
+          "y": 663.1392405063291,
+          "w": 55,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "15",
+          "confidence": 96.78001403808594,
+          "x": 94,
+          "y": 663.1392405063291,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 95.40028381347656,
+          "x": 114,
+          "y": 662.1392405063291,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.69502258300781,
+          "x": 149,
+          "y": 661.6392405063291,
+          "w": 33.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303603",
+          "confidence": 96.83418273925781,
+          "x": 188,
+          "y": 660.6392405063291,
+          "w": 46,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 675.206094627105,
+            "width": 211.85244587008822,
+            "height": 28.222935044105952
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 610.7914995990377,
+            "width": 211.85244587008822,
+            "height": 28.22293504410584
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 546.3769045709703,
+            "width": 211.8524458700882,
+            "height": 29.17722534081804
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Wes Sample",
+              "role": "applicant",
+              "quote": "Full name: Wes Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Wes Sample",
+          "factId": "f0",
+          "quote": "Full name: Wes Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "04/04/1993",
+              "role": "applicant",
+              "quote": "Date of birth: 04/04/1993",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "04/04/1993",
+          "factId": "f2",
+          "quote": "Date of birth: 04/04/1993",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "wes.sample3@example.com",
+              "role": "applicant",
+              "quote": "Email: wes.sample3@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "wes.sample3@example.com",
+          "factId": "f4",
+          "quote": "Email: wes.sample3@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "wes.sample3@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-04",
+      "ms": 11070,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Yael Sample\nNRIC: S2000124J\nDate of birth: 05/05/1994\nPhone: +65 80000004\nEmail: yael.sample4@example.com\nAddress: 16 MILL PATH 303604",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.19419860839844,
+          "x": 22,
+          "y": 793.8181818181819,
+          "w": 59.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.67433166503906,
+          "x": 23,
+          "y": 775.8181818181819,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.39507293701172,
+          "x": 50,
+          "y": 775.8181818181819,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Yael",
+          "confidence": 96.42941284179688,
+          "x": 94,
+          "y": 775.8181818181819,
+          "w": 26.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.24097442626953,
+          "x": 126,
+          "y": 772.8181818181819,
+          "w": 48.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 89.08960723876953,
+          "x": 23,
+          "y": 754.8181818181819,
+          "w": 37,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "S2000124J",
+          "confidence": 70.37042999267578,
+          "x": 66.5,
+          "y": 754.8181818181819,
+          "w": 71.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.95774841308594,
+          "x": 23,
+          "y": 733.8181818181819,
+          "w": 29,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.95774841308594,
+          "x": 57,
+          "y": 733.8181818181819,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.58981323242188,
+          "x": 73.5,
+          "y": 733.8181818181819,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "05/05/1994",
+          "confidence": 96.58939361572266,
+          "x": 109.5,
+          "y": 733.8181818181819,
+          "w": 72,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.47259521484375,
+          "x": 23,
+          "y": 713.3181818181819,
+          "w": 44,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.56951141357422,
+          "x": 72.5,
+          "y": 713.3181818181819,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000004",
+          "confidence": 96.23432922363281,
+          "x": 101,
+          "y": 713.3181818181819,
+          "w": 64,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 91.91989135742188,
+          "x": 23,
+          "y": 692.3181818181819,
+          "w": 38,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "yael.sample4@example.com",
+          "confidence": 44.910736083984375,
+          "x": 66.5,
+          "y": 688.8181818181819,
+          "w": 185.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.42037200927734,
+          "x": 22,
+          "y": 671.3181818181819,
+          "w": 56,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "16",
+          "confidence": 96.81605529785156,
+          "x": 84,
+          "y": 671.3181818181819,
+          "w": 15,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.73020935058594,
+          "x": 105,
+          "y": 671.3181818181819,
+          "w": 30.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.74776458740234,
+          "x": 140.5,
+          "y": 671.3181818181819,
+          "w": 34.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "303604",
+          "confidence": 96.77164459228516,
+          "x": 180.5,
+          "y": 671.3181818181819,
+          "w": 47.5,
+          "h": 10,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 24.43839061190277,
+            "y": 747.617770326907,
+            "width": 264.1366093880972,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 194.01089689857503,
+            "y": 648.3679798826488,
+            "width": 231.41659681475272,
+            "height": 29.455993294216228
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 193.512154233026,
+            "y": 577.5465213746857,
+            "width": 231.91533948030178,
+            "height": 29.954735959765344
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Yael Sample",
+              "role": "applicant",
+              "quote": "Full name: Yael Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Yael Sample",
+          "factId": "f0",
+          "quote": "Full name: Yael Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "05/05/1994",
+              "role": "applicant",
+              "quote": "Date of birth: 05/05/1994",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "05/05/1994",
+          "factId": "f2",
+          "quote": "Date of birth: 05/05/1994",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "yael.sample4@example.com",
+              "role": "applicant",
+              "quote": "Email: yael.sample4@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "yael.sample4@example.com",
+          "factId": "f4",
+          "quote": "Email: yael.sample4@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "yael.sample4@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-05",
+      "ms": 11626,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Zia Sample\nNRIC: T2000137I\nDate of birth: 06/06/1995\nPhone: +65 80000005\nEmail: zia.sample5@example.com\nAddress: 17 MILL PATH 303605",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.29586029052734,
+          "x": 22.5,
+          "y": 774.1392405063291,
+          "w": 58.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 95.44779968261719,
+          "x": 24,
+          "y": 756.6392405063291,
+          "w": 20.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.43762969970703,
+          "x": 50,
+          "y": 757.1392405063291,
+          "w": 38,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Zia",
+          "confidence": 95.69541931152344,
+          "x": 93,
+          "y": 758.1392405063291,
+          "w": 19.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.20947265625,
+          "x": 117.5,
+          "y": 755.6392405063291,
+          "w": 46.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 90.25225067138672,
+          "x": 24,
+          "y": 736.6392405063291,
+          "w": 36.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "T2000137I",
+          "confidence": 65.557373046875,
+          "x": 65.5,
+          "y": 737.1392405063291,
+          "w": 66.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.86592102050781,
+          "x": 24.5,
+          "y": 716.1392405063291,
+          "w": 28.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.58560943603516,
+          "x": 57.5,
+          "y": 716.6392405063291,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 94.73943328857422,
+          "x": 74,
+          "y": 716.6392405063291,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "06/06/1995",
+          "confidence": 96.68936920166016,
+          "x": 109,
+          "y": 717.6392405063291,
+          "w": 69.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.43663024902344,
+          "x": 25,
+          "y": 695.6392405063291,
+          "w": 43,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.8883285522461,
+          "x": 73,
+          "y": 696.6392405063291,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000005",
+          "confidence": 96.21092987060547,
+          "x": 101,
+          "y": 697.1392405063291,
+          "w": 62,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 91.87896728515625,
+          "x": 25,
+          "y": 675.1392405063291,
+          "w": 37.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "zia.sample5@example.com",
+          "confidence": 58.26255798339844,
+          "x": 68,
+          "y": 673.6392405063291,
+          "w": 173,
+          "h": 15,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.30282592773438,
+          "x": 24.5,
+          "y": 654.6392405063291,
+          "w": 54.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "17",
+          "confidence": 96.79373931884766,
+          "x": 85.5,
+          "y": 656.1392405063291,
+          "w": 14,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.7762222290039,
+          "x": 105,
+          "y": 656.1392405063291,
+          "w": 30.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.58030700683594,
+          "x": 140.5,
+          "y": 657.1392405063291,
+          "w": 33.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "303605",
+          "confidence": 96.41971588134766,
+          "x": 179,
+          "y": 657.6392405063291,
+          "w": 46.5,
+          "h": 10.5,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 675.206094627105,
+            "width": 211.85244587008822,
+            "height": 28.222935044105952
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 610.7914995990377,
+            "width": 211.85244587008822,
+            "height": 28.22293504410584
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 202.30954290296714,
+            "y": 546.3769045709703,
+            "width": 211.85244587008822,
+            "height": 28.700080192461996
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Zia Sample",
+              "role": "applicant",
+              "quote": "Full name: Zia Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Zia Sample",
+          "factId": "f0",
+          "quote": "Full name: Zia Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "06/06/1995",
+              "role": "applicant",
+              "quote": "Date of birth: 06/06/1995",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "06/06/1995",
+          "factId": "f2",
+          "quote": "Date of birth: 06/06/1995",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "zia.sample5@example.com",
+              "role": "applicant",
+              "quote": "Email: zia.sample5@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "zia.sample5@example.com",
+          "factId": "f4",
+          "quote": "Email: zia.sample5@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "zia.sample5@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-06",
+      "ms": 11894,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Arlo Sample\nNRIC: S2000150Z\nDate of birth: 07/07/1996\nPhone: +65 80000006\nEmail: arlo.sample6@example.com\nAddress: 18 MILL PATH 303606",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 95.61956024169922,
+          "x": 32,
+          "y": 785.4456928838952,
+          "w": 59,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.9526138305664,
+          "x": 33,
+          "y": 767.9456928838952,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.74161529541016,
+          "x": 59.5,
+          "y": 767.4456928838952,
+          "w": 38,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Arlo",
+          "confidence": 96.45278930664062,
+          "x": 102,
+          "y": 766.9456928838952,
+          "w": 24.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.92901611328125,
+          "x": 131.5,
+          "y": 763.4456928838952,
+          "w": 47,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 91.08013916015625,
+          "x": 32.5,
+          "y": 747.4456928838952,
+          "w": 36.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "S2000150Z",
+          "confidence": 85.07154083251953,
+          "x": 75,
+          "y": 745.9456928838952,
+          "w": 72.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.51255798339844,
+          "x": 32.5,
+          "y": 726.9456928838952,
+          "w": 28.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.82661437988281,
+          "x": 65.5,
+          "y": 726.4456928838952,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 95.91667175292969,
+          "x": 82,
+          "y": 725.9456928838952,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "07/07/1996",
+          "confidence": 96.77928924560547,
+          "x": 117.5,
+          "y": 724.9456928838952,
+          "w": 70,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.37128448486328,
+          "x": 32,
+          "y": 705.9456928838952,
+          "w": 43.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.67867279052734,
+          "x": 80.5,
+          "y": 705.9456928838952,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000006",
+          "confidence": 96.66873931884766,
+          "x": 108.5,
+          "y": 704.9456928838952,
+          "w": 62.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.02360534667969,
+          "x": 32,
+          "y": 685.9456928838952,
+          "w": 37,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "arlo.sample6@example.com",
+          "confidence": 55.896087646484375,
+          "x": 75,
+          "y": 680.9456928838952,
+          "w": 179.5,
+          "h": 15,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.64945220947266,
+          "x": 30.5,
+          "y": 664.9456928838952,
+          "w": 55,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "18",
+          "confidence": 96.86808013916016,
+          "x": 91.5,
+          "y": 664.9456928838952,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.32781219482422,
+          "x": 112,
+          "y": 664.4456928838952,
+          "w": 30,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.54129028320312,
+          "x": 147,
+          "y": 663.9456928838952,
+          "w": 33.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "303606",
+          "confidence": 96.24703216552734,
+          "x": 186,
+          "y": 662.9456928838952,
+          "w": 46.5,
+          "h": 10.5,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 684.7915652879157,
+            "width": 216.6707218167072,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 618.6804541768046,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 553.0519059205191,
+            "width": 216.6707218167072,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Arlo Sample",
+              "role": "applicant",
+              "quote": "Full name: Arlo Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Arlo Sample",
+          "factId": "f0",
+          "quote": "Full name: Arlo Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "07/07/1996",
+              "role": "applicant",
+              "quote": "Date of birth: 07/07/1996",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "07/07/1996",
+          "factId": "f2",
+          "quote": "Date of birth: 07/07/1996",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "arlo.sample6@example.com",
+              "role": "applicant",
+              "quote": "Email: arlo.sample6@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "arlo.sample6@example.com",
+          "factId": "f4",
+          "quote": "Email: arlo.sample6@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "arlo.sample6@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-07",
+      "ms": 11676,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Bryn Sample\nNRIC: T2000163H\nDate of birth: 08/08/1997\nPhone: +65 80000007\nEmail: bryn.sample7@example.com\nAddress: 19 MILL PATH 303607",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 95.63922119140625,
+          "x": 22.5,
+          "y": 787.6425322213798,
+          "w": 59.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.40360260009766,
+          "x": 23.5,
+          "y": 770.1425322213798,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.1915054321289,
+          "x": 50.5,
+          "y": 770.1425322213798,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Bryn",
+          "confidence": 96.22655487060547,
+          "x": 94.5,
+          "y": 767.1425322213798,
+          "w": 28,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 95.7130126953125,
+          "x": 128,
+          "y": 767.6425322213798,
+          "w": 48,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 92.50068664550781,
+          "x": 23.5,
+          "y": 749.1425322213798,
+          "w": 37,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "T2000163H",
+          "confidence": 91.85484313964844,
+          "x": 65.5,
+          "y": 749.6425322213798,
+          "w": 74.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 95.9015121459961,
+          "x": 23.5,
+          "y": 728.6425322213798,
+          "w": 29,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.93424224853516,
+          "x": 57.5,
+          "y": 728.6425322213798,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.45056915283203,
+          "x": 74,
+          "y": 728.6425322213798,
+          "w": 30,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "08/08/1997",
+          "confidence": 96.84261322021484,
+          "x": 109.5,
+          "y": 729.1425322213798,
+          "w": 71,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.35784149169922,
+          "x": 23.5,
+          "y": 707.6425322213798,
+          "w": 44,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.82778930664062,
+          "x": 73,
+          "y": 708.1425322213798,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000007",
+          "confidence": 95.97710418701172,
+          "x": 101,
+          "y": 708.1425322213798,
+          "w": 63.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.19831848144531,
+          "x": 24,
+          "y": 687.1425322213798,
+          "w": 37.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "bryn.sample7@example.com",
+          "confidence": 72.92542266845703,
+          "x": 67.5,
+          "y": 684.1425322213798,
+          "w": 185.5,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.7136459350586,
+          "x": 23,
+          "y": 666.1425322213798,
+          "w": 55.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "19",
+          "confidence": 96.87261962890625,
+          "x": 85,
+          "y": 666.6425322213798,
+          "w": 14,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.20518493652344,
+          "x": 105,
+          "y": 666.6425322213798,
+          "w": 30.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.64944458007812,
+          "x": 140.5,
+          "y": 666.6425322213798,
+          "w": 34,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303607",
+          "confidence": 96.77494812011719,
+          "x": 180.5,
+          "y": 667.1425322213798,
+          "w": 47,
+          "h": 10,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 196.69014084507043,
+            "y": 706.4225352112676,
+            "width": 225.77464788732394,
+            "height": 29.253521126760575
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": true,
+          "rect": {
+            "x": 196.19718309859155,
+            "y": 602.9014084507043,
+            "width": 226.26760563380282,
+            "height": 63.760563380281724
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 196.19718309859155,
+            "y": 568.3943661971831,
+            "width": 226.26760563380282,
+            "height": 29.253521126760575
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Bryn Sample",
+              "role": "applicant",
+              "quote": "Full name: Bryn Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Bryn Sample",
+          "factId": "f0",
+          "quote": "Full name: Bryn Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": false,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "08/08/1997",
+              "role": "applicant",
+              "quote": "Date of birth: 08/08/1997",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "08/08/1997",
+          "factId": "f2",
+          "quote": "Date of birth: 08/08/1997",
+          "reason": "placement_untrusted",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "bryn.sample7@example.com",
+              "role": "applicant",
+              "quote": "Email: bryn.sample7@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "bryn.sample7@example.com",
+          "factId": "f4",
+          "quote": "Email: bryn.sample7@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "bryn.sample7@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-08",
+      "ms": 12001,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Cai Sample\nNRIC: S2000176C\nDate of birth: 09/09/1998\nPhone: +65 80000008\nEmail: cai.sample8@example.com\nAddress: 20 MILL PATH 303608\nPatient\nFull name: Kim Howe\nDate of birth: 03/03/1977",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.82373809814453,
+          "x": 22.5,
+          "y": 769.8601036269431,
+          "w": 58,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.86914825439453,
+          "x": 24,
+          "y": 752.3601036269431,
+          "w": 20.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.75703430175781,
+          "x": 50,
+          "y": 752.8601036269431,
+          "w": 37.5,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Cai",
+          "confidence": 95.6932601928711,
+          "x": 93,
+          "y": 753.8601036269431,
+          "w": 20,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.35369873046875,
+          "x": 118.5,
+          "y": 751.8601036269431,
+          "w": 46.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 90.26182556152344,
+          "x": 24.5,
+          "y": 732.3601036269431,
+          "w": 36,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "S2000176C",
+          "confidence": 81.52250671386719,
+          "x": 66.5,
+          "y": 733.3601036269431,
+          "w": 73,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.96815490722656,
+          "x": 24.5,
+          "y": 711.8601036269431,
+          "w": 28.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.70238494873047,
+          "x": 57.5,
+          "y": 712.8601036269431,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.35448455810547,
+          "x": 74,
+          "y": 712.8601036269431,
+          "w": 29,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "09/09/1998",
+          "confidence": 96.70521545410156,
+          "x": 108.5,
+          "y": 713.8601036269431,
+          "w": 69.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.22843170166016,
+          "x": 25,
+          "y": 691.8601036269431,
+          "w": 43,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.88794708251953,
+          "x": 73,
+          "y": 692.8601036269431,
+          "w": 23,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000008",
+          "confidence": 96.72344207763672,
+          "x": 101,
+          "y": 693.3601036269431,
+          "w": 61.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 74.7025146484375,
+          "x": 25.5,
+          "y": 671.3601036269431,
+          "w": 37,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "cai.sample8@example.com",
+          "confidence": 86.79714965820312,
+          "x": 68.5,
+          "y": 670.3601036269431,
+          "w": 172,
+          "h": 15,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.54542541503906,
+          "x": 25,
+          "y": 651.3601036269431,
+          "w": 54.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "20",
+          "confidence": 96.7777099609375,
+          "x": 85.5,
+          "y": 652.3601036269431,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.3349609375,
+          "x": 105.5,
+          "y": 652.8601036269431,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.91046905517578,
+          "x": 140,
+          "y": 653.3601036269431,
+          "w": 33.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "303608",
+          "confidence": 96.72038269042969,
+          "x": 179,
+          "y": 654.3601036269431,
+          "w": 46,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Patient",
+          "confidence": 96.79684448242188,
+          "x": 26.5,
+          "y": 630.8601036269431,
+          "w": 43,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.51980590820312,
+          "x": 27,
+          "y": 610.8601036269431,
+          "w": 20.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.06539916992188,
+          "x": 53,
+          "y": 611.3601036269431,
+          "w": 38,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Kim",
+          "confidence": 96.67002868652344,
+          "x": 96.5,
+          "y": 612.3601036269431,
+          "w": 23,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Howe",
+          "confidence": 95.66212463378906,
+          "x": 124.5,
+          "y": 612.8601036269431,
+          "w": 34.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.78861236572266,
+          "x": 27.5,
+          "y": 590.3601036269431,
+          "w": 28,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.83317565917969,
+          "x": 60.5,
+          "y": 590.8601036269431,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.44054412841797,
+          "x": 76.5,
+          "y": 591.3601036269431,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "03/03/1977",
+          "confidence": 96.75007629394531,
+          "x": 111.5,
+          "y": 592.3601036269431,
+          "w": 69,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 53.36111111111111,
+            "y": 689.7361111111111,
+            "width": 235.21388888888887,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.47222222222223,
+            "y": 602.6111111111111,
+            "width": 206.83333333333331,
+            "height": 26.638888888888914
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.47222222222223,
+            "y": 538.3888888888889,
+            "width": 206.83333333333331,
+            "height": 27.583333333333258
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "cai.sample8@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-09",
+      "ms": 11541,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Dory Sample\nNRIC: T2000189A\nDate of birth: 10/10/1999\nPhone: +65 80000009\nEmail: dory.sample9@example.com\nAddress: 21 MILL PATH 303609\nPatient\nFull name: Kim Howe\nDate of birth: 03/03/1977",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.78276824951172,
+          "x": 29,
+          "y": 787.7799547852298,
+          "w": 59,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.11524963378906,
+          "x": 29.5,
+          "y": 770.2799547852298,
+          "w": 21.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.74348449707031,
+          "x": 56.5,
+          "y": 769.7799547852298,
+          "w": 38,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Dory",
+          "confidence": 95.9328842163086,
+          "x": 100.5,
+          "y": 766.2799547852298,
+          "w": 29.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.46529388427734,
+          "x": 135,
+          "y": 765.7799547852298,
+          "w": 46.5,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 91.7112045288086,
+          "x": 29.5,
+          "y": 749.2799547852298,
+          "w": 37,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "T2000189A",
+          "confidence": 92.31143188476562,
+          "x": 71.5,
+          "y": 748.7799547852298,
+          "w": 74,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.97595977783203,
+          "x": 29.5,
+          "y": 728.7799547852298,
+          "w": 28.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.12295532226562,
+          "x": 63,
+          "y": 728.7799547852298,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.12295532226562,
+          "x": 79.5,
+          "y": 728.2799547852298,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "10/10/1999",
+          "confidence": 96.73027038574219,
+          "x": 115.5,
+          "y": 727.7799547852298,
+          "w": 70,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.1677474975586,
+          "x": 29,
+          "y": 707.7799547852298,
+          "w": 43.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.71222686767578,
+          "x": 78,
+          "y": 707.7799547852298,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000009",
+          "confidence": 96.54124450683594,
+          "x": 106,
+          "y": 707.2799547852298,
+          "w": 63,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.10047912597656,
+          "x": 29,
+          "y": 687.2799547852298,
+          "w": 37.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "dory.sample9@example.com",
+          "confidence": 89.25245666503906,
+          "x": 72.5,
+          "y": 683.2799547852298,
+          "w": 183.5,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.4415512084961,
+          "x": 28,
+          "y": 666.7799547852298,
+          "w": 55,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "21",
+          "confidence": 96.79094696044922,
+          "x": 89,
+          "y": 666.7799547852298,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 95.67273712158203,
+          "x": 109.5,
+          "y": 666.2799547852298,
+          "w": 30.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.77692413330078,
+          "x": 145,
+          "y": 665.7799547852298,
+          "w": 34,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303609",
+          "confidence": 96.92337799072266,
+          "x": 184.5,
+          "y": 665.2799547852298,
+          "w": 46.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Patient",
+          "confidence": 96.71005249023438,
+          "x": 28.5,
+          "y": 646.2799547852298,
+          "w": 44,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 95.99763488769531,
+          "x": 28.5,
+          "y": 625.7799547852298,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.39034271240234,
+          "x": 55,
+          "y": 625.2799547852298,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Kim",
+          "confidence": 96.87911224365234,
+          "x": 99.5,
+          "y": 625.2799547852298,
+          "w": 23,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Howe",
+          "confidence": 95.76182556152344,
+          "x": 128,
+          "y": 624.7799547852298,
+          "w": 35,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.5886459350586,
+          "x": 28,
+          "y": 605.2799547852298,
+          "w": 29,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.97954559326172,
+          "x": 62,
+          "y": 604.7799547852298,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.75424194335938,
+          "x": 78.5,
+          "y": 604.7799547852298,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "03/03/1977",
+          "confidence": 96.64237976074219,
+          "x": 114,
+          "y": 603.7799547852298,
+          "w": 70.5,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 53.20344544708778,
+            "y": 722.744599398414,
+            "width": 235.37155455291222,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 198.17063166529942,
+            "y": 628.7030352748154,
+            "width": 221.1115668580804,
+            "height": 29.0836751435603
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 198.17063166529942,
+            "y": 561.3445447087777,
+            "width": 221.1115668580804,
+            "height": 28.595570139458573
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "dory.sample9@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-10",
+      "ms": 11774,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Elin Sample\nNRIC: S2000202F\nDate of birth: 11/11/1990\nPhone: +65 80000010\nEmail: elin.samplel0@example.com\nAddress: 22 MILL PATH 303610\nApplicant\nFull name: Kim Howe\nDate of birth: 03/03/1977",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 95.80520629882812,
+          "x": 22.5,
+          "y": 783.2799547852298,
+          "w": 59,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.24991607666016,
+          "x": 23.5,
+          "y": 765.7799547852298,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.66512298583984,
+          "x": 50,
+          "y": 765.7799547852298,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Elin",
+          "confidence": 96.70528411865234,
+          "x": 94.5,
+          "y": 766.2799547852298,
+          "w": 22,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.80738830566406,
+          "x": 122.5,
+          "y": 763.7799547852298,
+          "w": 47,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 92.05691528320312,
+          "x": 23.5,
+          "y": 744.7799547852298,
+          "w": 37,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "S2000202F",
+          "confidence": 90.47998809814453,
+          "x": 66.5,
+          "y": 745.2799547852298,
+          "w": 73,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.9188003540039,
+          "x": 24,
+          "y": 724.2799547852298,
+          "w": 28.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 95.72721099853516,
+          "x": 57.5,
+          "y": 724.7799547852298,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 95.72721099853516,
+          "x": 74,
+          "y": 724.7799547852298,
+          "w": 29.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "11/11/1990",
+          "confidence": 96.8584976196289,
+          "x": 110,
+          "y": 724.7799547852298,
+          "w": 68.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.11585235595703,
+          "x": 24,
+          "y": 703.7799547852298,
+          "w": 43.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.13182067871094,
+          "x": 73,
+          "y": 704.2799547852298,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000010",
+          "confidence": 96.22392272949219,
+          "x": 101,
+          "y": 704.2799547852298,
+          "w": 63,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.16309356689453,
+          "x": 24,
+          "y": 683.2799547852298,
+          "w": 38,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "elin.samplel0@example.com",
+          "confidence": 81.03453063964844,
+          "x": 67.5,
+          "y": 680.7799547852298,
+          "w": 187,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.13230895996094,
+          "x": 23.5,
+          "y": 662.2799547852298,
+          "w": 55,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "22",
+          "confidence": 96.11512756347656,
+          "x": 84.5,
+          "y": 662.7799547852298,
+          "w": 15,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 95.74249267578125,
+          "x": 105,
+          "y": 663.2799547852298,
+          "w": 30.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 95.96215057373047,
+          "x": 140.5,
+          "y": 663.2799547852298,
+          "w": 34,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303610",
+          "confidence": 96.79061126708984,
+          "x": 180,
+          "y": 663.7799547852298,
+          "w": 47,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Applicant",
+          "confidence": 95.97299194335938,
+          "x": 23.5,
+          "y": 638.7799547852298,
+          "w": 59,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.01164245605469,
+          "x": 25,
+          "y": 621.2799547852298,
+          "w": 21,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.77796173095703,
+          "x": 51.5,
+          "y": 621.2799547852298,
+          "w": 38,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Kim",
+          "confidence": 96.39996337890625,
+          "x": 95.5,
+          "y": 621.7799547852298,
+          "w": 23.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Howe",
+          "confidence": 95.95781707763672,
+          "x": 124.5,
+          "y": 622.2799547852298,
+          "w": 35,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.81736755371094,
+          "x": 25,
+          "y": 600.7799547852298,
+          "w": 29,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.96700286865234,
+          "x": 58.5,
+          "y": 600.7799547852298,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.686279296875,
+          "x": 75,
+          "y": 600.7799547852298,
+          "w": 30,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "03/03/1977",
+          "confidence": 96.5110092163086,
+          "x": 110.5,
+          "y": 601.2799547852298,
+          "w": 70.5,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 197.19161184210526,
+            "y": 697.2870065789473,
+            "width": 221.65707236842104,
+            "height": 28.636513157894797
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 197.19161184210526,
+            "y": 629.2730263157895,
+            "width": 222.14638157894737,
+            "height": 29.12582236842104
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 197.68092105263156,
+            "y": 561.7483552631579,
+            "width": 221.65707236842104,
+            "height": 29.12582236842104
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Elin Sample",
+              "role": "applicant",
+              "quote": "Full name: Elin Sample",
+              "line": 2
+            },
+            {
+              "factId": "f6",
+              "value": "Kim Howe",
+              "role": "applicant",
+              "quote": "Full name: Kim Howe",
+              "line": 9
+            }
+          ],
+          "decision": "abstain",
+          "value": "",
+          "reason": "conflict",
+          "hard": "conflict"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "11/11/1990",
+              "role": "applicant",
+              "quote": "Date of birth: 11/11/1990",
+              "line": 4
+            },
+            {
+              "factId": "f7",
+              "value": "03/03/1977",
+              "role": "applicant",
+              "quote": "Date of birth: 03/03/1977",
+              "line": 10
+            }
+          ],
+          "decision": "abstain",
+          "value": "",
+          "reason": "conflict",
+          "hard": "conflict"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "elin.samplel0@example.com",
+              "role": "applicant",
+              "quote": "Email: elin.samplel0@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "elin.samplel0@example.com",
+          "factId": "f4",
+          "quote": "Email: elin.samplel0@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "elin.samplel0@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-11",
+      "ms": 12016,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Frost Sample\nNRIC: T2000215D\nDate of birth: 12/12/1991\nPhone: +65 80000011\nEmail: frost.sample11@example.com\nAddress: 23 MILL PATH 303611\nApplicant\nFull name: Kim Howe\nDate of birth: 03/03/1977",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 95.69898986816406,
+          "x": 38.5,
+          "y": 780.8601036269431,
+          "w": 58,
+          "h": 13,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.18002319335938,
+          "x": 39,
+          "y": 763.8601036269431,
+          "w": 21,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.59769439697266,
+          "x": 65,
+          "y": 762.8601036269431,
+          "w": 38,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Frost",
+          "confidence": 96.93257904052734,
+          "x": 108.5,
+          "y": 761.8601036269431,
+          "w": 31,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.15715026855469,
+          "x": 144.5,
+          "y": 757.8601036269431,
+          "w": 46.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 89.60623931884766,
+          "x": 38.5,
+          "y": 742.8601036269431,
+          "w": 36.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "T2000215D",
+          "confidence": 91.27584838867188,
+          "x": 80,
+          "y": 741.3601036269431,
+          "w": 73,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.80193328857422,
+          "x": 38,
+          "y": 722.8601036269431,
+          "w": 28.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.159912109375,
+          "x": 71,
+          "y": 722.8601036269431,
+          "w": 11.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 95.78964233398438,
+          "x": 87,
+          "y": 721.8601036269431,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "12/12/1991",
+          "confidence": 96.614501953125,
+          "x": 122.5,
+          "y": 720.3601036269431,
+          "w": 69,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.96857452392578,
+          "x": 38,
+          "y": 702.3601036269431,
+          "w": 42.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.19732666015625,
+          "x": 86,
+          "y": 701.8601036269431,
+          "w": 23,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000011",
+          "confidence": 96.19732666015625,
+          "x": 113.5,
+          "y": 700.3601036269431,
+          "w": 60.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.38998413085938,
+          "x": 37.5,
+          "y": 677.3601036269431,
+          "w": 37,
+          "h": 17.5,
+          "page": 0
+        },
+        {
+          "text": "frost.sample11@example.com",
+          "confidence": 63.42222595214844,
+          "x": 79.5,
+          "y": 673.8601036269431,
+          "w": 188.5,
+          "h": 20.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.75272369384766,
+          "x": 36,
+          "y": 661.3601036269431,
+          "w": 54,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "23",
+          "confidence": 96.9423828125,
+          "x": 96,
+          "y": 661.3601036269431,
+          "w": 14.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.72032928466797,
+          "x": 116,
+          "y": 660.3601036269431,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.51615142822266,
+          "x": 151,
+          "y": 659.3601036269431,
+          "w": 33,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303611",
+          "confidence": 96.7178955078125,
+          "x": 189.5,
+          "y": 658.3601036269431,
+          "w": 45,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Applicant",
+          "confidence": 96.47711944580078,
+          "x": 35.5,
+          "y": 638.8601036269431,
+          "w": 58,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.68238067626953,
+          "x": 36,
+          "y": 621.8601036269431,
+          "w": 21,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.27690887451172,
+          "x": 62,
+          "y": 620.8601036269431,
+          "w": 38,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Kim",
+          "confidence": 96.12176513671875,
+          "x": 105.5,
+          "y": 620.3601036269431,
+          "w": 22.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Howe",
+          "confidence": 96.0887222290039,
+          "x": 133.5,
+          "y": 619.3601036269431,
+          "w": 34.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.72364044189453,
+          "x": 35.5,
+          "y": 601.3601036269431,
+          "w": 28.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 95.22315216064453,
+          "x": 68.5,
+          "y": 600.8601036269431,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 95.22315216064453,
+          "x": 84.5,
+          "y": 600.3601036269431,
+          "w": 29.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "03/03/1977",
+          "confidence": 96.29020690917969,
+          "x": 119.5,
+          "y": 598.8601036269431,
+          "w": 69.5,
+          "h": 11,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 663.3673792557403,
+            "width": 206.3420427553444,
+            "height": 28.488519398258177
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 600.2399049881235,
+            "width": 206.3420427553444,
+            "height": 28.01741884402213
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 204.45764053840063,
+            "y": 537.5835312747427,
+            "width": 206.3420427553444,
+            "height": 28.488519398258177
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Frost Sample",
+              "role": "applicant",
+              "quote": "Full name: Frost Sample",
+              "line": 2
+            },
+            {
+              "factId": "f6",
+              "value": "Kim Howe",
+              "role": "applicant",
+              "quote": "Full name: Kim Howe",
+              "line": 9
+            }
+          ],
+          "decision": "abstain",
+          "value": "",
+          "reason": "conflict",
+          "hard": "conflict"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "12/12/1991",
+              "role": "applicant",
+              "quote": "Date of birth: 12/12/1991",
+              "line": 4
+            },
+            {
+              "factId": "f7",
+              "value": "03/03/1977",
+              "role": "applicant",
+              "quote": "Date of birth: 03/03/1977",
+              "line": 10
+            }
+          ],
+          "decision": "abstain",
+          "value": "",
+          "reason": "conflict",
+          "hard": "conflict"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "frost.sample11@example.com",
+              "role": "applicant",
+              "quote": "Email: frost.sample11@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "frost.sample11@example.com",
+          "factId": "f4",
+          "quote": "Email: frost.sample11@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "frost.sample11@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-12",
+      "ms": 11281,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Tove Sample\nNRIC: S2000228Z2\nDate of birth: 13/01/1992\nPhone: +65 80000012\nAddress: 24 MILL PATH 303612",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.32910919189453,
+          "x": 25.5,
+          "y": 790.1425322213798,
+          "w": 59.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 95.72239685058594,
+          "x": 26.5,
+          "y": 772.1425322213798,
+          "w": 21,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.15174865722656,
+          "x": 53.5,
+          "y": 772.1425322213798,
+          "w": 38.5,
+          "h": 8,
+          "page": 0
+        },
+        {
+          "text": "Tove",
+          "confidence": 96.61602020263672,
+          "x": 97,
+          "y": 772.1425322213798,
+          "w": 30,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 96.2776870727539,
+          "x": 131.5,
+          "y": 768.6425322213798,
+          "w": 48,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 90.85447692871094,
+          "x": 26.5,
+          "y": 751.6425322213798,
+          "w": 37,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "S2000228Z2",
+          "confidence": 54.11808776855469,
+          "x": 69.5,
+          "y": 751.1425322213798,
+          "w": 73.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.97643280029297,
+          "x": 26.5,
+          "y": 730.6425322213798,
+          "w": 29,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.98080444335938,
+          "x": 60,
+          "y": 730.6425322213798,
+          "w": 12,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.62887573242188,
+          "x": 76.5,
+          "y": 730.6425322213798,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "13/01/1992",
+          "confidence": 96.61375427246094,
+          "x": 113,
+          "y": 730.1425322213798,
+          "w": 70.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.61206817626953,
+          "x": 26,
+          "y": 710.1425322213798,
+          "w": 44,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.82025909423828,
+          "x": 75.5,
+          "y": 710.1425322213798,
+          "w": 23.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000012",
+          "confidence": 96.36205291748047,
+          "x": 104,
+          "y": 709.6425322213798,
+          "w": 63,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.49809265136719,
+          "x": 25,
+          "y": 689.1425322213798,
+          "w": 55.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "24",
+          "confidence": 96.9241714477539,
+          "x": 86.5,
+          "y": 689.1425322213798,
+          "w": 15.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 95.22332000732422,
+          "x": 107.5,
+          "y": 689.1425322213798,
+          "w": 30.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 95.80184936523438,
+          "x": 143,
+          "y": 688.6425322213798,
+          "w": 34,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303612",
+          "confidence": 96.77207946777344,
+          "x": 182.5,
+          "y": 688.6425322213798,
+          "w": 47,
+          "h": 10,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 30.1955074875208,
+            "y": 736.5823627287854,
+            "width": 258.3794925124792,
+            "height": 12
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": true,
+          "rect": {
+            "x": 196.0232945091514,
+            "y": 604.4151414309484,
+            "width": 227.20881863560732,
+            "height": 63.97587354409313
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 195.52828618968385,
+            "y": 570.7545757071548,
+            "width": 227.70382695507487,
+            "height": 28.33527454242926
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Tove Sample",
+              "role": "applicant",
+              "quote": "Full name: Tove Sample",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Tove Sample",
+          "factId": "f0",
+          "quote": "Full name: Tove Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": false,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f1",
+              "value": "13/01/1992",
+              "role": "applicant",
+              "quote": "Date of birth: 13/01/1992",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "13/01/1992",
+          "factId": "f1",
+          "quote": "Date of birth: 13/01/1992",
+          "reason": "placement_untrusted",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source",
+          "hard": "source"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "test-holder_sheet-13",
+      "ms": 11874,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "The patient is the applicant\nPatient\nFull name: Uma Sample\nNRIC: T2000241C\nDate of birth: 14/02/1993\nPhone: +65 80000013\nEmail: uma.sample1l3@example.com\nAddress: 25 MILL PATH 303613",
+      "words": [
+        {
+          "text": "The",
+          "confidence": 95.50967407226562,
+          "x": 22.5,
+          "y": 781.4456928838952,
+          "w": 23.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "patient",
+          "confidence": 96.60994720458984,
+          "x": 51.5,
+          "y": 778.9456928838952,
+          "w": 42,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "is",
+          "confidence": 96.71427917480469,
+          "x": 98.5,
+          "y": 782.4456928838952,
+          "w": 9,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "the",
+          "confidence": 96.73714447021484,
+          "x": 112,
+          "y": 782.9456928838952,
+          "w": 19.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "applicant",
+          "confidence": 96.64360809326172,
+          "x": 136,
+          "y": 779.9456928838952,
+          "w": 57,
+          "h": 14,
+          "page": 0
+        },
+        {
+          "text": "Patient",
+          "confidence": 95.46450805664062,
+          "x": 23.5,
+          "y": 760.9456928838952,
+          "w": 43.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.26502990722656,
+          "x": 24,
+          "y": 740.4456928838952,
+          "w": 21,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.58731842041016,
+          "x": 50.5,
+          "y": 740.9456928838952,
+          "w": 38,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "Uma",
+          "confidence": 96.59099578857422,
+          "x": 94,
+          "y": 741.4456928838952,
+          "w": 29.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "Sample",
+          "confidence": 95.09427642822266,
+          "x": 128.5,
+          "y": 739.4456928838952,
+          "w": 46.5,
+          "h": 13.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 91.09371948242188,
+          "x": 24,
+          "y": 719.9456928838952,
+          "w": 36.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "T2000241C",
+          "confidence": 90.15739440917969,
+          "x": 65.5,
+          "y": 720.9456928838952,
+          "w": 74.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.15895080566406,
+          "x": 24.5,
+          "y": 699.4456928838952,
+          "w": 28.5,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 95.63687896728516,
+          "x": 58,
+          "y": 699.9456928838952,
+          "w": 11.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 95.63687896728516,
+          "x": 74,
+          "y": 700.4456928838952,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "14/02/1993",
+          "confidence": 96.48818969726562,
+          "x": 110,
+          "y": 700.9456928838952,
+          "w": 69.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.80121612548828,
+          "x": 24.5,
+          "y": 678.9456928838952,
+          "w": 43.5,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 95.70161437988281,
+          "x": 73.5,
+          "y": 679.9456928838952,
+          "w": 23,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "80000013",
+          "confidence": 96.38417053222656,
+          "x": 101.5,
+          "y": 679.9456928838952,
+          "w": 62.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.15089416503906,
+          "x": 25,
+          "y": 658.4456928838952,
+          "w": 37.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "uma.sample1l3@example.com",
+          "confidence": 39.885704040527344,
+          "x": 68.5,
+          "y": 656.9456928838952,
+          "w": 191,
+          "h": 14.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.02228546142578,
+          "x": 24.5,
+          "y": 637.9456928838952,
+          "w": 54.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "25",
+          "confidence": 96.92638397216797,
+          "x": 85,
+          "y": 638.9456928838952,
+          "w": 15,
+          "h": 10,
+          "page": 0
+        },
+        {
+          "text": "MILL",
+          "confidence": 96.84693908691406,
+          "x": 105.5,
+          "y": 638.9456928838952,
+          "w": 30,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "PATH",
+          "confidence": 96.40766906738281,
+          "x": 140.5,
+          "y": 639.4456928838952,
+          "w": 34,
+          "h": 10.5,
+          "page": 0
+        },
+        {
+          "text": "303613",
+          "confidence": 96.87286376953125,
+          "x": 180,
+          "y": 640.4456928838952,
+          "w": 46.5,
+          "h": 10.5,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "holder_name",
+          "label": "Holder name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 684.7915652879157,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_birth_date",
+          "label": "Holder birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 618.6804541768046,
+            "width": 216.6707218167072,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        },
+        {
+          "id": "holder_reply_email",
+          "label": "Holder reply email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 200.26358475263584,
+            "y": 553.0519059205191,
+            "width": 216.18815896188158,
+            "height": 28.40713706407132
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "holder_name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Uma Sample",
+              "role": "applicant",
+              "quote": "Full name: Uma Sample",
+              "line": 3
+            }
+          ],
+          "decision": "review",
+          "value": "Uma Sample",
+          "factId": "f0",
+          "quote": "Full name: Uma Sample",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "14/02/1993",
+              "role": "applicant",
+              "quote": "Date of birth: 14/02/1993",
+              "line": 5
+            }
+          ],
+          "decision": "review",
+          "value": "14/02/1993",
+          "factId": "f2",
+          "quote": "Date of birth: 14/02/1993",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "uma.sample1l3@example.com",
+              "role": "applicant",
+              "quote": "Email: uma.sample1l3@example.com",
+              "line": 7
+            }
+          ],
+          "decision": "review",
+          "value": "uma.sample1l3@example.com",
+          "factId": "f4",
+          "quote": "Email: uma.sample1l3@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "holder_name",
+          "label": "Holder name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_birth_date",
+          "label": "Holder birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "holder_reply_email",
+          "label": "Holder reply email",
+          "decision": "autofill",
+          "value": "uma.sample1l3@example.com",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    }
+  ]
+}

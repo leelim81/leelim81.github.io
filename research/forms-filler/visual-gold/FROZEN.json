@@ -1,0 +1,96 @@
+{
+  "scorecard": "visual-gold-1",
+  "source": "calibration only",
+  "autofill": {
+    "name": true,
+    "nric": true,
+    "dob": true,
+    "phone": true,
+    "email": true,
+    "address": true,
+    "postal": false,
+    "mailbox": false
+  },
+  "report": {
+    "name": {
+      "automatic": 30,
+      "correct": 30,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.09503385285530408,
+      "limit": 0.1,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "nric": {
+      "automatic": 30,
+      "correct": 30,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.09503385285530408,
+      "limit": 0.1,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "dob": {
+      "automatic": 30,
+      "correct": 30,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.09503385285530408,
+      "limit": 0.1,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "phone": {
+      "automatic": 30,
+      "correct": 30,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.09503385285530408,
+      "limit": 0.15,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "email": {
+      "automatic": 24,
+      "correct": 24,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.1173461561549487,
+      "limit": 0.15,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "address": {
+      "automatic": 30,
+      "correct": 30,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": 0.09503385285530408,
+      "limit": 0.15,
+      "enabled": true,
+      "because": "calibration gate passed"
+    },
+    "postal": {
+      "automatic": 0,
+      "correct": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "limit": 0.15,
+      "enabled": false,
+      "because": "upper bound above the gate or no automatic fills"
+    },
+    "mailbox": {
+      "automatic": 0,
+      "correct": 0,
+      "wrong": 0,
+      "wrongPerson": 0,
+      "upper": null,
+      "limit": 0.15,
+      "enabled": false,
+      "because": "upper bound above the gate or no automatic fills"
+    }
+  }
+}

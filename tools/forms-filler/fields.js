@@ -68,7 +68,7 @@
 
   function pdfjs() {
     if (!global.pdfjsLib) throw new Error('pdf.js is not loaded');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf/pdf.worker.min.js', global.location.href).href;
     return pdfjsLib;
   }
 
@@ -209,7 +209,8 @@
     if (fields.length >= 4 && glyphs >= 12) return fields;
     say(progress, 'Reading the scan…');
     var raster = await readRasterPdf(bytes, progress);
-    return raster.length > fields.length ? raster : fields;
+    if (raster.fields.length > fields.length) return { fields: raster.fields, bytes: raster.sheet && raster.sheet.bytes, deskewDeg: raster.sheet && raster.sheet.deskewDeg };
+    return fields;
   }
 
   function canvasFromBitmap(bmp, maxW) {
@@ -399,7 +400,7 @@
 
   async function wordsOn(canvas) {
     if (!global.FormExtract || !FormExtract.wordBoxes) return [];
-    var words = await FormExtract.wordBoxes(canvas);
+    var words = await FormExtract.wordBoxes(canvas, 11);
     var h = canvas.height;
     return (words || []).map(function (word) {
       var box = word.bbox || {};
@@ -662,33 +663,43 @@
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
+    var sheet = null;
     for (var p = 1; p <= limit; p++) {
       say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
       var page = await pdf.getPage(p);
-      var view = page.getViewport({ scale: 1.4 });
+      var view = page.getViewport({ scale: 2 });
       var canvas = document.createElement('canvas');
       canvas.width = Math.ceil(view.width);
       canvas.height = Math.ceil(view.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
-      var found = await fieldsOnSheet(canvas, progress);
-      var sx = (view.width / 1.4) / 595;
-      var sy = (view.height / 1.4) / (canvas.height * (595 / canvas.width));
+      var angle = await bestLineAngle(canvas);
+      var turned = angle ? rotateCanvas(canvas, angle) : canvas;
+      var found = await fieldsOnSheet(turned, progress);
+      var pageW = 595;
+      var pageH = turned.height * (pageW / turned.width);
       found.forEach(function (field) {
         field.page = p - 1;
-        field.rect = {
-          x: field.rect.x * sx,
-          y: field.rect.y * sy,
-          width: field.rect.width * sx,
-          height: field.rect.height * sy
-        };
-        field.pageWidth = view.width / 1.4;
-        field.pageHeight = view.height / 1.4;
+        field.pageWidth = pageW;
+        field.pageHeight = pageH;
         if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
-        field.lineH = (field.lineH || 12) * ((sx + sy) / 2);
         fields.push(field);
       });
+      if (p === 1) {
+        var blob = await new Promise(function (resolve) { turned.toBlob(resolve, 'image/jpeg', 0.92); });
+        var jpeg = new Uint8Array(await blob.arrayBuffer());
+        var doc = await PDFLib.PDFDocument.create();
+        var image = await doc.embedJpg(jpeg);
+        var sheetPage = doc.addPage([pageW, pageH]);
+        sheetPage.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
+        sheet = {
+          bytes: new Uint8Array(await doc.save()),
+          deskewDeg: angle,
+          pageWidth: pageW,
+          pageHeight: pageH
+        };
+      }
     }
-    return fields;
+    return { fields: fields, sheet: sheet };
   }
 
   function opaqueLabel(label) {
@@ -760,8 +771,9 @@
       return { kind: 'acro', fields: fields };
     }
     say(progress, 'Finding the blank lines…');
-    fields = await readFlat(bytes, progress);
-    return { kind: 'flat', fields: fields };
+    var flat = await readFlat(bytes, progress);
+    if (flat && flat.fields) return { kind: 'flat', fields: flat.fields, bytes: flat.bytes || null, deskewDeg: flat.deskewDeg || 0 };
+    return { kind: 'flat', fields: flat || [] };
   }
 
   async function readImage(bytes, mime, progress) {

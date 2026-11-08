@@ -1,0 +1,28 @@
+{
+  "scorecard": "visual-e2e-1",
+  "benchmark": "end-to-end raster OCR",
+  "distinct_from": "visual-gold-1 parser fixture benchmark",
+  "frozen_before_test": true,
+  "alpha": 0.05,
+  "bound": "one-sided Clopper-Pearson upper bound on the probe automatic-fill error rate",
+  "identity_kinds": ["name", "nric", "dob"],
+  "identity_wrong_fill_upper_max": 0.05,
+  "other_wrong_fill_upper_max": 0.10,
+  "require_zero_wrong_person_on_calibration": true,
+  "require_zero_wrong_on_calibration": true,
+  "minimum_automatic_fills": {
+    "name": 59,
+    "nric": 59,
+    "dob": 59,
+    "phone": 29,
+    "email": 29,
+    "address": 29,
+    "postal": 29,
+    "mailbox": 29
+  },
+  "why_these_minimums": "With zero errors, 59 fills is the smallest n whose 95% upper bound is at most 0.05, and 29 is the smallest whose bound is at most 0.10. A smaller n cannot clear the budget. Zero observed errors on fewer fills does not enable autofill.",
+  "two_percent_not_established": "A 2% upper bound would need at least 149 zero-error automatic fills. This gate is not that budget, and the visual-gold-1 result of 112 fills is not this benchmark.",
+  "if_not_met": "ocrAutofill stays false. The page keeps the value as review. Reliability is not established.",
+  "probe": "Calibration scores the hard gates with every type forced on. That probe is not what the page ships. The page ships ocrAutofill from FROZEN-e2e.json.",
+  "inputs_the_browser_must_not_receive": ["gold jsonl", "printed answer text", "geometry_trusted", "person role", "rotation_deg"]
+}

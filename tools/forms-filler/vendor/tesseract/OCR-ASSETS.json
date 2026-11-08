@@ -1,0 +1,32 @@
+{
+  "benchmark": "visual-e2e-1",
+  "note": "Local copies so a checkout can OCR without a network fetch. The page loads these paths. It does not download a language model at run time.",
+  "requires": "WebAssembly SIMD. Chrome 156 on this machine has it. A browser without SIMD will fail to start the core file named below.",
+  "files": [
+    {
+      "file": "tesseract.min.js",
+      "package": "tesseract.js@5.1.1",
+      "url": "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+      "sha256": "a8e29918d098b2b06e1012bdaeffb4aec0445c5d5654709023e0bd1f442a80e8"
+    },
+    {
+      "file": "worker.min.js",
+      "package": "tesseract.js@5.1.1",
+      "url": "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+      "sha256": "aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc"
+    },
+    {
+      "file": "tesseract-core-simd-lstm.wasm.js",
+      "package": "tesseract.js-core@5.1.1",
+      "url": "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/tesseract-core-simd-lstm.wasm.js",
+      "sha256": "ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf"
+    },
+    {
+      "file": "eng.traineddata.gz",
+      "package": "@tesseract.js-data/eng@1.0.0 / 4.0.0",
+      "url": "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0/eng.traineddata.gz",
+      "sha256": "ed350f3752f81ee8f38769edc14d92d997dababe23b565c59879372cc46a2468"
+    }
+  ],
+  "license": "Tesseract.js and tesseract.js-core are Apache-2.0. The English traineddata is the Tesseract 4.0.0 eng model redistributed by the tesseract.js-data package."
+}

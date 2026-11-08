@@ -57,6 +57,14 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
     <p id="modelDetail" class="note"></p>
   </div>
+  <div id="reviewBox" class="review" hidden>
+    <p id="reviewLead"></p>
+    <ul id="reviewList" class="review-list"></ul>
+    <div class="row">
+      <button id="reviewUse" type="button" class="btn wax">Use checked values</button>
+      <button id="reviewSkip" type="button" class="btn">Leave them blank</button>
+    </div>
+  </div>
   <div id="failBox" class="gpu-warn" hidden>
     <p id="failText"></p>
     <div class="row">
@@ -65,9 +73,9 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     </div>
   </div>
 </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="vendor/pdf/pdf.min.js"></script>
+<script src="vendor/pdf/pdf-lib.min.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
 <script src="../shared/usage.js"></script>
 <script src="../shared/idb.js"></script>
 <script src="../shared/chrome.js"></script>
@@ -77,6 +85,9 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
 <script src="fields.js"></script>
 <script src="sanitize.js"></script>
 <script src="facts.js"></script>
+<script src="evidence.js"></script>
+<script src="select.js"></script>
+<script src="thresholds.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
