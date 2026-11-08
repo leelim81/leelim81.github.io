@@ -652,38 +652,52 @@
     return lines;
   }
 
-  async function drawAnn(out, page, font, ann, pw, ph) {
-    var x = ann.x * pw;
-    var y = ph - (ann.y + ann.h) * ph;
-    var w = Math.max(1, ann.w * pw);
-    var h = Math.max(1, ann.h * ph);
+  function placedFrame(page) {
+    if (!window.FormCoords) return null;
+    var rotation = FormCoords.normRotation(page.getRotation().angle || 0);
+    if (rotation == null) return null;
+    var crop = page.getCropBox();
+    if (!crop || !(crop.width > 0) || !(crop.height > 0)) return null;
+    return { crop: crop, rotation: rotation };
+  }
+
+  async function drawAnn(out, page, font, ann) {
+    var frame = placedFrame(page);
+    if (!frame) return;
+    var box = FormCoords.boxOf(ann, frame.crop, frame.rotation);
+    var width = Math.max(1, box.width);
+    var height = Math.max(1, box.height);
+    var spin = PDFLib.degrees(box.rotate);
     if (ann.type === 'whiteout') {
-      page.drawRectangle({ x: x, y: y, width: w, height: h, color: PDFLib.rgb(1, 1, 1) });
+      page.drawRectangle({ x: box.x, y: box.y, width: width, height: height, color: PDFLib.rgb(1, 1, 1), rotate: spin });
     } else if (ann.type === 'highlight') {
       page.drawRectangle({
-        x: x, y: y, width: w, height: h,
+        x: box.x, y: box.y, width: width, height: height,
         color: PDFLib.rgb(1, 0.9, 0.2),
         opacity: 0.45,
-        blendMode: PDFLib.BlendMode.Multiply
+        blendMode: PDFLib.BlendMode.Multiply,
+        rotate: spin
       });
     } else if (ann.type === 'rect') {
-      page.drawRectangle({ x: x, y: y, width: w, height: h, borderColor: hexToRgb(ann.color), borderWidth: 1.6 });
+      page.drawRectangle({ x: box.x, y: box.y, width: width, height: height, borderColor: hexToRgb(ann.color), borderWidth: 1.6, rotate: spin });
     } else if (ann.type === 'ellipse') {
+      var center = FormCoords.fractionToPdf(ann.x + ann.w / 2, ann.y + ann.h / 2, frame.crop, frame.rotation);
       page.drawEllipse({
-        x: x + w / 2, y: y + h / 2,
-        xScale: Math.max(1, w / 2), yScale: Math.max(1, h / 2),
-        borderColor: hexToRgb(ann.color), borderWidth: 1.6
+        x: center.x, y: center.y,
+        xScale: Math.max(1, box.width / 2), yScale: Math.max(1, box.height / 2),
+        borderColor: hexToRgb(ann.color), borderWidth: 1.6,
+        rotate: spin
       });
     } else if (ann.type === 'text' || ann.type === 'date') {
       if (!ann.text) return;
       var size = ann.fontSize || 16;
-      var lines = wrapText(ann.text, font, size, Math.max(8, w - 2));
+      var lines = wrapText(ann.text, font, size, Math.max(8, box.width - 2));
       var ok = lines.every(function (line) { return !line || canEncode(font, line); });
       if (!ok) {
         var scale = 3;
         var canvas = document.createElement('canvas');
-        canvas.width = Math.max(2, Math.floor(w * scale));
-        canvas.height = Math.max(2, Math.floor(h * scale));
+        canvas.width = Math.max(2, Math.floor(width * scale));
+        canvas.height = Math.max(2, Math.floor(height * scale));
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = ann.color || '#1a1612';
         ctx.font = (size * scale) + 'px Helvetica, Arial, sans-serif';
@@ -692,19 +706,30 @@
           ctx.fillText(line, 2, i * size * scale * 1.3);
         });
         var img = await out.embedPng(await canvasToPng(canvas));
-        page.drawImage(img, { x: x, y: y, width: w, height: h });
+        page.drawImage(img, { x: box.x, y: box.y, width: width, height: height, rotate: spin });
         return;
       }
-      var baseline = y + h - size * 0.85;
+      var origin = FormCoords.textOrigin(ann, frame.crop, frame.rotation, size);
+      var sunk = size * 0.85;
       var lineH = size * 1.3;
       lines.forEach(function (line) {
-        if (baseline < y - size) return;
-        if (line) page.drawText(line, { x: x + 1, y: baseline, size: size, font: font, color: hexToRgb(ann.color) });
-        baseline -= lineH;
+        if (sunk > height + size) return;
+        var shift = sunk - size * 0.85;
+        if (line) {
+          page.drawText(line, {
+            x: origin.x + origin.down.x * shift,
+            y: origin.y + origin.down.y * shift,
+            size: size,
+            font: font,
+            color: hexToRgb(ann.color),
+            rotate: PDFLib.degrees(origin.rotate)
+          });
+        }
+        sunk += lineH;
       });
     } else if (ann.dataUrl) {
       var embedded = await embedDataUrl(out, ann.dataUrl);
-      page.drawImage(embedded, { x: x, y: y, width: w, height: h });
+      page.drawImage(embedded, { x: box.x, y: box.y, width: width, height: height, rotate: spin });
     }
   }
 
@@ -718,9 +743,8 @@
         var keptFont = await kept.embedFont(PDFLib.StandardFonts.Helvetica);
         for (var k = 0; k < state.pages.length; k++) {
           var keptPage = kept.getPages()[k];
-          var keptSize = keptPage.getSize();
           for (var ak = 0; ak < state.pages[k].annotations.length; ak++) {
-            await drawAnn(kept, keptPage, keptFont, state.pages[k].annotations[ak], keptSize.width, keptSize.height);
+            await drawAnn(kept, keptPage, keptFont, state.pages[k].annotations[ak]);
           }
         }
         return kept.save();
@@ -735,9 +759,8 @@
       var total = ((copied.getRotation().angle || 0) + (rec.rotation || 0)) % 360;
       copied.setRotation(PDFLib.degrees(total));
       out.addPage(copied);
-      var size = copied.getSize();
       for (var a = 0; a < rec.annotations.length; a++) {
-        await drawAnn(out, copied, font, rec.annotations[a], size.width, size.height);
+        await drawAnn(out, copied, font, rec.annotations[a]);
       }
     }
     return out.save();
@@ -1021,21 +1044,18 @@
   async function frameAllowsPlace() {
     var rec = currentPage();
     if (!rec || !state.pdfBytes || !state.doc) return { ok: false, reason: 'Open a page first.' };
-    if (rec.rotation) return { ok: false, reason: 'This page was rotated in the editor. A saved value is not placed on a rotated page. Rotate it back, or type on a copy you straighten first.' };
+    if (!window.FormCoords) return { ok: false, reason: 'The page scale tools did not load, so a saved value is not placed.' };
     var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
     var lib = src.getPages()[rec.srcIndex];
     if (!lib) return { ok: false, reason: 'That page could not be read.' };
-    var media = lib.getMediaBox();
-    var crop = lib.getCropBox();
-    var angle = ((lib.getRotation().angle || 0) % 360 + 360) % 360;
-    if (angle) return { ok: false, reason: 'This page is rotated in the file. A saved value is not placed on it, because the position would not match the page. Use an upright copy.' };
-    if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) {
-      return { ok: false, reason: 'This page is cropped. A saved value is not placed on it, because the position would not match the page.' };
-    }
     var pdfPage = await state.doc.getPage(rec.srcIndex + 1);
-    if (typeof pdfPage.userUnit !== 'number') return { ok: false, reason: 'This reader could not read the page scale, so a saved value is not placed.' };
-    if (Math.abs(pdfPage.userUnit - 1) > 0.001) return { ok: false, reason: 'This page uses a scale other than 1. A saved value is not placed on it.' };
-    return { ok: true };
+    var frame = FormCoords.frameOf(lib, pdfPage, rec.rotation || 0);
+    if (!frame.ok) {
+      if (frame.reasons.indexOf('rotation') >= 0) return { ok: false, reason: 'This page’s rotation is not a quarter turn. A saved value is not placed on it.' };
+      if (frame.reasons.indexOf('scale') >= 0) return { ok: false, reason: 'This reader could not read a usable page scale, so a saved value is not placed.' };
+      return { ok: false, reason: 'This page’s crop could not be read, so a saved value is not placed.' };
+    }
+    return { ok: true, frame: frame };
   }
   function selectedRecoverFact() {
     var person = $('recoverPerson');
@@ -1058,25 +1078,24 @@
   }
   async function pagesSupported() {
     if (!state.pdfBytes || !state.doc || !state.pages.length) return { ok: false, reason: 'Open a page first.' };
+    if (!window.FormCoords) return { ok: false, reason: 'The page scale tools did not load, so a map is not saved or applied.' };
     var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
     if (src.getPageCount() !== state.pages.length) return { ok: false, reason: 'Pages were removed. A map needs the original pages in their original order.' };
+    var frames = [];
     for (var i = 0; i < state.pages.length; i++) {
       var rec = state.pages[i];
-      if (rec.srcIndex !== i || rec.rotation) return { ok: false, reason: 'Pages were rotated or reordered. Open the exact blank original.' };
+      if (rec.srcIndex !== i || rec.rotation) return { ok: false, reason: 'Pages were rotated or reordered in the editor. Open the exact blank original.' };
       var lib = src.getPages()[i];
-      var media = lib.getMediaBox();
-      var crop = lib.getCropBox();
-      var angle = ((lib.getRotation().angle || 0) % 360 + 360) % 360;
-      if (angle) return { ok: false, reason: 'This file has a rotated page. A map is not saved or applied on it.' };
-      if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) {
-        return { ok: false, reason: 'This file has a cropped page. A map is not saved or applied on it.' };
-      }
       var pdfPage = await state.doc.getPage(i + 1);
-      if (typeof pdfPage.userUnit !== 'number' || Math.abs(pdfPage.userUnit - 1) > 0.001) {
-        return { ok: false, reason: 'This file’s page scale is not usable, so a map is not saved or applied.' };
+      var frame = FormCoords.frameOf(lib, pdfPage, 0);
+      if (!frame.ok) {
+        if (frame.reasons.indexOf('rotation') >= 0) return { ok: false, reason: 'This page’s rotation is not a quarter turn. A map is not saved or applied on it.' };
+        if (frame.reasons.indexOf('scale') >= 0) return { ok: false, reason: 'This file’s page scale could not be read, so a map is not saved or applied.' };
+        return { ok: false, reason: 'This page’s crop could not be read, so a map is not saved or applied.' };
       }
+      frames.push(frame);
     }
-    return { ok: true, doc: src };
+    return { ok: true, doc: src, frames: frames };
   }
   function manualSlots() {
     var roles = {};
@@ -1141,9 +1160,18 @@
     var draft = {
       name: label || ('Blank map ' + ((loaded.vault.maps || []).length + 1)),
       fileSha256: await fileSha(),
-      pages: support.doc.getPages().map(function (page, index) {
-        var size = page.getSize();
-        return { width: size.width, height: size.height, slots: found.pages[index] || [] };
+      pages: support.frames.map(function (frame, index) {
+        return {
+          width: frame.media.width,
+          height: frame.media.height,
+          rotation: frame.rotation,
+          userUnit: frame.userUnit,
+          cropX: frame.crop.x,
+          cropY: frame.crop.y,
+          cropWidth: frame.crop.width,
+          cropHeight: frame.crop.height,
+          slots: found.pages[index] || []
+        };
       })
     };
     var saved = FormMaps.saveMap(loaded.ok ? loaded.vault : FormMaps.empty(), draft);
@@ -1169,9 +1197,9 @@
     var ready = 0;
     var skipped = 0;
     map.pages.forEach(function (page, index) {
-      var size = support.doc.getPages()[index] && support.doc.getPages()[index].getSize();
-      if (!size || Math.abs(size.width - page.width) > 0.5 || Math.abs(size.height - page.height) > 0.5) {
-        lines.push('Page ' + (index + 1) + ' size does not match.');
+      var frame = support.frames[index];
+      if (!window.FormMaps.matchesFrame(page, frame)) {
+        lines.push('Page ' + (index + 1) + ' does not match this map.');
         skipped += page.slots.length;
         return;
       }
@@ -1207,8 +1235,7 @@
     var placed = 0;
     var skipped = 0;
     map.pages.forEach(function (page, index) {
-      var size = support.doc.getPages()[index].getSize();
-      if (Math.abs(size.width - page.width) > 0.5 || Math.abs(size.height - page.height) > 0.5) { skipped += page.slots.length; return; }
+      if (!window.FormMaps.matchesFrame(page, support.frames[index])) { skipped += page.slots.length; return; }
       page.slots.forEach(function (slot) {
         var have = (profile.facts || []).filter(function (item) { return item.key === slot.key && item.status === 'confirmed' && item.value; })[0];
         if (!have) { skipped += 1; return; }

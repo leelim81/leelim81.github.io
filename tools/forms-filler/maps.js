@@ -42,6 +42,50 @@
     };
   }
 
+  function geometryOf(page) {
+    var keys = ['rotation', 'userUnit', 'cropX', 'cropY', 'cropWidth', 'cropHeight'];
+    var present = keys.some(function (key) { return page[key] != null && page[key] !== ''; });
+    if (!present) return { historical: true };
+    var rotation = num(page.rotation);
+    var userUnit = num(page.userUnit);
+    var cropX = num(page.cropX);
+    var cropY = num(page.cropY);
+    var cropWidth = num(page.cropWidth);
+    var cropHeight = num(page.cropHeight);
+    if (rotation !== 0 && rotation !== 90 && rotation !== 180 && rotation !== 270) return null;
+    if (userUnit == null || userUnit <= 0 || userUnit > 75000) return null;
+    if (cropX == null || cropY == null || cropWidth == null || cropHeight == null) return null;
+    if (!(cropWidth > 0) || !(cropHeight > 0)) return null;
+    return {
+      historical: false,
+      rotation: rotation,
+      userUnit: userUnit,
+      cropX: cropX,
+      cropY: cropY,
+      cropWidth: cropWidth,
+      cropHeight: cropHeight
+    };
+  }
+
+  function matchesFrame(stored, frame) {
+    if (!stored || !frame || !frame.media || !frame.crop || frame.ok === false) return false;
+    if (Math.abs(stored.width - frame.media.width) > 0.5 || Math.abs(stored.height - frame.media.height) > 0.5) return false;
+    if (stored.rotation == null) {
+      return frame.rotation === 0
+        && Math.abs(Number(frame.userUnit) - 1) <= 0.001
+        && Math.abs(frame.crop.x - frame.media.x) <= 0.5
+        && Math.abs(frame.crop.y - frame.media.y) <= 0.5
+        && Math.abs(frame.crop.width - frame.media.width) <= 0.5
+        && Math.abs(frame.crop.height - frame.media.height) <= 0.5;
+    }
+    return stored.rotation === frame.rotation
+      && Math.abs(stored.userUnit - frame.userUnit) <= 0.001
+      && Math.abs(stored.cropX - frame.crop.x) <= 0.5
+      && Math.abs(stored.cropY - frame.crop.y) <= 0.5
+      && Math.abs(stored.cropWidth - frame.crop.width) <= 0.5
+      && Math.abs(stored.cropHeight - frame.crop.height) <= 0.5;
+  }
+
   function mapOf(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     if (!/^[a-f0-9]{64}$/.test(String(raw.fileSha256 || ''))) return null;
@@ -53,6 +97,8 @@
       if (!page || typeof page !== 'object' || Array.isArray(page)) return null;
       var width = num(page.width), height = num(page.height);
       if (!width || !height || width < 20 || height < 20) return null;
+      var geometry = geometryOf(page);
+      if (!geometry) return null;
       var slots = [];
       var list = Array.isArray(page.slots) ? page.slots : [];
       if (list.length > LIMITS.slots) return null;
@@ -62,7 +108,16 @@
         roles[slot.role] = true;
         slots.push(slot);
       }
-      pages.push({ width: width, height: height, slots: slots });
+      var stored = { width: width, height: height, slots: slots };
+      if (!geometry.historical) {
+        stored.rotation = geometry.rotation;
+        stored.userUnit = geometry.userUnit;
+        stored.cropX = geometry.cropX;
+        stored.cropY = geometry.cropY;
+        stored.cropWidth = geometry.cropWidth;
+        stored.cropHeight = geometry.cropHeight;
+      }
+      pages.push(stored);
     }
     if (Object.keys(roles).length > 1) return null;
     return {
@@ -153,6 +208,7 @@
     migrate: migrate,
     saveMap: saveMap,
     deleteMap: deleteMap,
+    matchesFrame: matchesFrame,
     load: load,
     persist: persist,
     clearAll: clearAll

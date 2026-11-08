@@ -1,6 +1,6 @@
 {
   "browser": "Chrome headless",
-  "scriptedSteps": 36,
+  "scriptedSteps": 38,
   "checks": [
     {
       "name": "saved values stay collapsed",
@@ -65,7 +65,7 @@
     {
       "name": "editing the placed text updates only Ada and keeps Bea",
       "ok": true,
-      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T02:39:45.556Z\"},\"bea\":\"bea.recover@example.com\"}"
+      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T08:44:48.208Z\"},\"bea\":\"bea.recover@example.com\"}"
     },
     {
       "name": "the placed line is still there after reload",
@@ -75,7 +75,7 @@
     {
       "name": "export draws Ada on the page and not Bea",
       "ok": true,
-      "detail": "{\"pages\":1,\"w\":595,\"h\":824.3818580833943,\"hit\":{\"str\":\"ada.recover@example.com!\",\"x\":258.2368421052632,\"y\":700.6438573441462},\"bea\":false}"
+      "detail": "{\"pages\":1,\"w\":595,\"h\":824.3818580833943,\"hit\":{\"str\":\"ada.recover@example.com!\",\"x\":258.2368421052632,\"y\":700.6438573441463},\"bea\":false}"
     },
     {
       "name": "the placement bar fits a narrow viewport",
@@ -83,12 +83,17 @@
       "detail": "{\"x\":0,\"y\":320.484375,\"width\":390,\"height\":185.671875}"
     },
     {
-      "name": "a rotated page refuses placement",
+      "name": "a rotated scan still offers no line positions",
       "ok": true,
-      "detail": "This page is rotated in the file. A saved value is not placed on it, because the position would not match the page. Use an upright copy."
+      "detail": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself."
     },
     {
-      "name": "the refused page gained no line",
+      "name": "a rotated page can take a value placed by hand",
+      "ok": true,
+      "detail": "Click the page where Ada Recover’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "name": "the rotated page gained the placed line",
       "ok": true,
       "detail": ""
     },
@@ -113,9 +118,19 @@
       "detail": "ada.recover@example.com!"
     },
     {
-      "name": "a cropped page refuses placement",
+      "name": "a cropped scan still offers no line positions",
       "ok": true,
-      "detail": "This page is cropped. A saved value is not placed on it, because the position would not match the page."
+      "detail": "This scan is cropped. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself."
+    },
+    {
+      "name": "a cropped page can take a value placed by hand",
+      "ok": true,
+      "detail": "Click the page where Ada Recover’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "name": "the cropped page gained the placed line",
+      "ok": true,
+      "detail": ""
     },
     {
       "name": "no saved person is explained and placement stays off",

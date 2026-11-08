@@ -850,6 +850,9 @@
     return primary;
   }
 
+  /* Scan suggestions stay closed for rotation, an offset crop, and a
+     non-unit or unreadable UserUnit. Manual placement uses pdf-editor/coords.js
+     and does not relax this gate. */
   async function scanFrame(bytes) {
     var doc = await PDFLib.PDFDocument.load(copy(bytes));
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;

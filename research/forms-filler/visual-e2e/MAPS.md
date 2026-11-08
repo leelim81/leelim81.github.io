@@ -1,6 +1,6 @@
 # Exact blank maps
 
-A map stores places and semantic keys for one role on one exact file. It does not store values, people, profile ids, source text, signatures, or the file name. The file is identified by SHA-256. A different file, a reordered page, a rotated page, a cropped page, or a page scale other than 1 is refused. Applying it is explicit. It is not scan autofill.
+A map stores places and semantic keys for one role on one exact file. It does not store values, people, profile ids, source text, signatures, or the file name. The file is identified by SHA-256. A different file is refused. An editor rotation or a reordered page is refused. A quarter-turn, an offset crop, or a documented UserUnit is stored with the page and must match exactly. An older map without those fields still applies only to an upright unit page whose crop equals its media box. Applying it is explicit. It is not scan autofill. The coordinate notes are in [COORDS.md](COORDS.md).
 
 Setup in the browser test placed three lines by hand, then saved the map. Reuse on the same blank was Preview plus Apply for a second person, without placing those lines again. That is a scripted action count, not a measured human time.
 

@@ -70,7 +70,7 @@
     {
       "name": "reordered pages are not applied",
       "ok": true,
-      "detail": "Pages were rotated or reordered. Open the exact blank original."
+      "detail": "Pages were rotated or reordered in the editor. Open the exact blank original."
     },
     {
       "name": "a different blank has no map",

@@ -2,13 +2,13 @@
 
 This is a feature-by-feature reading of the current branch. It is not a claim that every form on the web can be filled, and it is not a speed claim. Scan autofill stays off. Nothing here was merged.
 
-The rerun above sits on commit `98424a3a5590e7acdf7d51693868ba4eecf1d137`. This note is the commit on top of that.
+The table below sits on commit `98424a3a5590e7acdf7d51693868ba4eecf1d137`. The coordinate pass is later. Its parent is `084b4fa`. Chrome headless, pdf.js 3.11.174: 45 coordinate checks and the ledger corners passed, then `recover-e2.mjs` (0 failed, 38 steps) and `template-e3.mjs` (0 failed, 36 steps). Chrome 156.0.8078.47 still does not deliver a folder picker after Load unpacked is clicked.
 
 Proposed order, not performed: pull request 12, then 13, then 14.
 
 ## What is supported
 
-Native PDF widgets and text-layer pages are read without treating them as scans. An empty page is not sent through OCR. An upright scan can be reviewed. A rotated, cropped, or non-unit page does not get scan positions; the editor can still open it. A missed line can be placed from a confirmed saved value. A blank map can reuse those places for another person on the exact same file. The extension, version 0.1.2, fills only checked fields for the role you choose, and it tells you the site can read those values before submit.
+Native PDF widgets and text-layer pages are read without treating them as scans. An empty page is not sent through OCR. An upright scan can be reviewed. A rotated, cropped, or non-unit page does not get scan positions. A missed line can still be placed by hand on a quarter-turn, an offset crop, and a documented UserUnit. The place is a fraction of the rendered CropBox. A 45° page and a non-positive UserUnit stay refused. A blank map can reuse those places for another person on the exact same file, and it checks the stored rotation, crop, and scale. The extension, version 0.1.2, fills only checked fields for the role you choose, and it tells you the site can read those values before submit. Scan autofill stays off. The coordinate record is `visual-e2e/COORDS.md`.
 
 ## What was rerun on this commit
 

@@ -151,7 +151,7 @@ A saved map is places and keys for one role on one exact file. It does not keep 
 
 ## Missed-line placement
 
-A confirmed saved value can be placed in Edit and Sign when the reader misses a line. It is not an automatic fill. Rotated and cropped pages refuse that placement. Notes and the browser checks are in [RECOVER.md](RECOVER.md). The detector was not retuned.
+A confirmed saved value can be placed in Edit and Sign when the reader misses a line. It is not an automatic fill. A later pass places that value on a quarter-turn, an offset crop, and a documented UserUnit. The scan still offers no positions on those pages. Notes are in [RECOVER.md](RECOVER.md) and [COORDS.md](COORDS.md). The detector was not retuned.
 
 ## Extension 0.1.1
 

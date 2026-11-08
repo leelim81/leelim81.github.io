@@ -280,7 +280,7 @@ writeFileSync(join(root, 'results/template-e3.json'), JSON.stringify(report, nul
 function publish(name, src) {
   copyFileSync(src, join(art, name));
 }
-['template-saved.png', 'template-applied.png', 'template-mobile.png', 'recover-placed.png', 'recover-collapsed.png', 'recover-rotated-refused.png'].forEach((name) => {
+['template-saved.png', 'template-applied.png', 'template-mobile.png', 'recover-placed.png', 'recover-collapsed.png', 'recover-rotated-placed.png'].forEach((name) => {
   publish(name, join(shot, name));
 });
 publish('forms-filler-profiles-0.1.1.zip', join(root, '../../../tools/forms-filler/extension/forms-filler-profiles-0.1.1.zip'));
