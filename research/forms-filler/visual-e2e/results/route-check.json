@@ -1,0 +1,74 @@
+{
+  "rows": [
+    {
+      "id": "cc0-form",
+      "ms": 176,
+      "expect": "acro",
+      "route": "acro",
+      "kind": "acro",
+      "n": 5,
+      "opaque": 0,
+      "sample": [
+        "Applicant name",
+        "Applicant notes",
+        "Applicant subscribe",
+        "Applicant contact"
+      ],
+      "ok": true
+    },
+    {
+      "id": "cc0-blank",
+      "ms": 125,
+      "expect": "empty",
+      "route": "empty",
+      "kind": "flat",
+      "n": 0,
+      "opaque": 0,
+      "sample": [],
+      "ok": true
+    },
+    {
+      "id": "cc0-scanned",
+      "ms": 9067,
+      "expect": "raster",
+      "route": "raster",
+      "kind": "flat",
+      "n": 0,
+      "opaque": 0,
+      "sample": [],
+      "ok": true
+    },
+    {
+      "id": "irs-4506t",
+      "ms": 1903,
+      "expect": "acro",
+      "route": "acro",
+      "kind": "acro",
+      "n": 28,
+      "opaque": 16,
+      "sample": [
+        "Name shown on tax return",
+        "First social security number on tax",
+        "If a joint return, enter spouse’s",
+        "Second social security number or individual taxpayer"
+      ],
+      "ok": true
+    },
+    {
+      "id": "gsa-sf91",
+      "ms": 2691,
+      "expect": "acro",
+      "route": "acro",
+      "kind": "acro",
+      "n": 178,
+      "opaque": 135,
+      "sample": [
+        "Form1 0 #subform 0 COOWNED 0",
+        "CO-OWNED",
+        "CO-OWNED",
+        "RENTAL"
+      ],
+      "ok": true
+    }
+  ]
+}

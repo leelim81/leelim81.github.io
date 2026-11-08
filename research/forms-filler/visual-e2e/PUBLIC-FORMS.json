@@ -1,0 +1,25 @@
+{
+  "note": "Official blank forms used for local routing checks. The PDF bytes are not in git. US government works are not a worldwide license. VA forms are a publication hold and are omitted. A fetch checks the hash and does not store response headers.",
+  "items": [
+    {
+      "id": "irs-4506t",
+      "url": "https://www.irs.gov/pub/irs-pdf/f4506t.pdf",
+      "landing": "https://www.irs.gov/forms-pubs/about-form-4506-t",
+      "rights": "https://www.irs.gov/about-irs/use-of-content-from-irsgov",
+      "bytes": 680124,
+      "sha256": "4de7303eee766f31deb9afbb66aa538e8e04909d31307c494b328e69fbbe634e",
+      "pages": 2,
+      "use": "Local test only unless you satisfy the agency reuse conditions. Not an endorsement."
+    },
+    {
+      "id": "gsa-sf91",
+      "url": "https://www.gsa.gov/system/files/SF91-20.pdf",
+      "landing": "https://www.gsa.gov/reference/forms/motor-vehicle-accident-crash-report",
+      "rights": "https://www.gsa.gov/website-information/website-policies",
+      "bytes": 965857,
+      "sha256": "18a11675590189964522114c294b8ea0974f86989fb7f49a31788ba2807d44ac",
+      "pages": 5,
+      "use": "Local test only unless you satisfy the agency reuse conditions. Not an endorsement."
+    }
+  ]
+}

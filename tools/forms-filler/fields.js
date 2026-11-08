@@ -188,7 +188,24 @@
           pending = null;
         }
       }
-      pages.push({ page: p - 1, width: view.width, height: view.height, texts: texts, lines: lines, squares: squares, glyphs: texts.length });
+      var images = 0;
+      for (var imgStep = 0; imgStep < op.fnArray.length; imgStep++) {
+        var imgFn = op.fnArray[imgStep];
+        if (imgFn === OPS.paintImageXObject || imgFn === OPS.paintInlineImageXObject || imgFn === OPS.paintImageMaskXObject) images++;
+      }
+      var chars = 0;
+      texts.forEach(function (text) { chars += String(text.str || '').replace(/\s/g, '').length; });
+      pages.push({
+        page: p - 1,
+        width: view.width,
+        height: view.height,
+        texts: texts,
+        lines: lines,
+        squares: squares,
+        glyphs: texts.length,
+        images: images,
+        chars: chars
+      });
     }
     return pages;
   }
@@ -205,12 +222,19 @@
   async function readFlat(bytes, progress) {
     var pages = await geometryFromPdf(bytes, progress);
     var glyphs = pages.reduce(function (sum, page) { return sum + (page.glyphs || 0); }, 0);
+    var chars = pages.reduce(function (sum, page) { return sum + (page.chars || 0); }, 0);
+    var images = pages.reduce(function (sum, page) { return sum + (page.images || 0); }, 0);
     var fields = layoutPages(pages);
-    if (fields.length >= 4 && glyphs >= 12) return fields;
+    if (chars >= 40 || glyphs >= 12) return { fields: fields, route: 'text' };
+    if (!images) return { fields: [], route: 'empty' };
     say(progress, 'Reading the scan…');
     var raster = await readRasterPdf(bytes, progress);
-    if (raster.fields.length > fields.length) return { fields: raster.fields, bytes: raster.sheet && raster.sheet.bytes, deskewDeg: raster.sheet && raster.sheet.deskewDeg };
-    return fields;
+    return {
+      fields: raster.fields,
+      bytes: raster.sheet && raster.sheet.bytes,
+      deskewDeg: raster.sheet && raster.sheet.deskewDeg,
+      route: 'raster'
+    };
   }
 
   function canvasFromBitmap(bmp, maxW) {
@@ -402,6 +426,7 @@
     }
     return mergeCellRows(found).filter(function (line) { return line.w >= minW; });
   }
+
 
   function mergeCellRows(lines) {
     var sorted = lines.slice().sort(function (a, b) {
@@ -844,11 +869,12 @@
     function clipLabel(str) {
       var cut = String(str || '').replace(/\s+/g, ' ').trim().split('.')[0];
       var parts = cut.split(/\s+/).filter(Boolean);
+      if (/^\d+[a-z]?$/i.test(parts[0] || '')) parts = parts.slice(1);
       if (parts.length > 8) parts = parts.slice(0, 6);
       var s = parts.join(' ').replace(/[:,\s]+$/, '');
       if (s.length < 3 || s.length > 72) return '';
-      if (!/^[A-Z]/.test(s)) return '';
-      if (/^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
+      if (!/^[A-Za-z]/.test(s)) return '';
+      if (parts.length < 6 && /^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
       return s;
     }
     fields.forEach(function (field) {
@@ -859,7 +885,7 @@
       texts.forEach(function (text) {
         var clipped = clipLabel(text.str);
         if (!clipped) return;
-        var fieldish = /name|address|city|state|zip|tin|ssn|ein|account|exempt|business|requester|street|postal|phone|email/i.test(clipped);
+        var fieldish = /name|address|city|state|zip|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
         if (field.type === 'text' && !fieldish) return;
         var above = text.y - (field.rect.y + (field.rect.height || 10));
         var gap = field.rect.x - (text.x + text.w);
@@ -881,12 +907,20 @@
     var fields = readAcro(doc);
     if (fields.length) {
       try { await labelAcro(bytes, fields); } catch (err) {}
-      return { kind: 'acro', fields: fields };
+      return { kind: 'acro', route: 'acro', fields: fields };
     }
     say(progress, 'Finding the blank lines…');
     var flat = await readFlat(bytes, progress);
-    if (flat && flat.fields) return { kind: 'flat', fields: flat.fields, bytes: flat.bytes || null, deskewDeg: flat.deskewDeg || 0 };
-    return { kind: 'flat', fields: flat || [] };
+    if (flat && flat.fields) {
+      return {
+        kind: 'flat',
+        route: flat.route || 'text',
+        fields: flat.fields,
+        bytes: flat.bytes || null,
+        deskewDeg: flat.deskewDeg || 0
+      };
+    }
+    return { kind: 'flat', route: flat && flat.route || 'empty', fields: [] };
   }
 
   async function readImage(bytes, mime, progress) {
