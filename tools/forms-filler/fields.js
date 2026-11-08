@@ -616,6 +616,7 @@
   }
 
   async function wordsOn(canvas, minConfidence) {
+    if (canvas && canvas._ffWordOverride && minConfidence == null) return canvas._ffWordOverride;
     if (!global.FormExtract || !FormExtract.wordBoxes) return [];
     var opts = minConfidence == null ? undefined : { minConfidence: minConfidence };
     var words = await FormExtract.wordBoxes(canvas, 11, opts);
@@ -1496,6 +1497,130 @@
     };
   }
 
+  /* Research only. Not used by read or readImage.
+     Frozen crop: up to 8 ink-mask lines of at least 80px, longest first.
+     Each crop is 28px above that line and 8px below, at most 420px wide,
+     copied 1:1 from the working sheet. PSM 7. Confidence stays 35.
+     Stop at 8s or 250000 crop pixels. */
+  async function lineLocalOcr(canvas) {
+    var h = canvas.height;
+    var geo = await rasterGeometry(canvas);
+    var lines = geo.lines.filter(function (line) { return line.w >= 80; });
+    lines.sort(function (a, b) { return b.w - a.w; });
+    if (lines.length > 8) lines = lines.slice(0, 8);
+    var words = [];
+    var started = Date.now();
+    var pixels = 0;
+    var crops = 0;
+    for (var i = 0; i < lines.length; i++) {
+      if (Date.now() - started > 8000) break;
+      var line = lines[i];
+      var yLine = h - line.y;
+      var y0 = Math.max(0, Math.round(yLine - 28));
+      var y1 = Math.min(h, Math.round(yLine + 8));
+      var x0 = Math.max(0, Math.round(line.x - 4));
+      var x1 = Math.min(canvas.width, Math.round(Math.min(line.x + line.w, line.x + 420) + 4));
+      var cw = Math.max(1, x1 - x0);
+      var ch = Math.max(1, y1 - y0);
+      if (cw * ch > 480 * 48) cw = Math.min(cw, 480);
+      pixels += cw * ch;
+      if (pixels > 250000) break;
+      var crop = document.createElement('canvas');
+      crop.width = cw;
+      crop.height = ch;
+      crop.getContext('2d').drawImage(canvas, x0, y0, cw, ch, 0, 0, cw, ch);
+      var found = global.FormExtract ? await FormExtract.wordBoxes(crop, 7) : [];
+      crops++;
+      found.forEach(function (word) {
+        var box = word.bbox || {};
+        var yb = y0 + (box.y1 || box.y0 || 0);
+        words.push({
+          x: x0 + (box.x0 || 0),
+          y: h - yb,
+          w: Math.max(4, (box.x1 || 0) - (box.x0 || 0)),
+          h: Math.max(6, (box.y1 || 0) - (box.y0 || 0)),
+          str: word.text || ''
+        });
+      });
+    }
+    return { words: words, crops: crops, pixels: pixels, ms: Date.now() - started, lines: lines.length };
+  }
+
+  async function openSheet(bytes, mime) {
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
+    if (bmp.close) bmp.close();
+    var base = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    return {
+      canvas: canvas,
+      frame: {
+        angle: base.angle || 0,
+        inW: base.inW, inH: base.inH, turnW: base.turnW, turnH: base.turnH,
+        crop: canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height },
+        outW: canvas.width, outH: canvas.height, sourceW: sourceW, sourceH: sourceH
+      }
+    };
+  }
+
+  async function candidateReport(bytes, mime) {
+    var t0 = Date.now();
+    var opened = await openSheet(bytes, mime);
+    var local = await lineLocalOcr(opened.canvas);
+    opened.canvas._ffWordOverride = local.words;
+    var fields = [];
+    try {
+      fields = await fieldsOnSheet(opened.canvas);
+    } finally {
+      opened.canvas._ffWordOverride = null;
+    }
+    return {
+      ms: Date.now() - t0,
+      ocrMs: local.ms,
+      crops: local.crops,
+      pixels: local.pixels,
+      lines: local.lines,
+      words: local.words.map(function (word) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind({ label: word.str }) : 'other',
+          x: Math.round(word.x),
+          y: Math.round(opened.canvas.height - (word.y + word.h)),
+          w: Math.round(word.w),
+          h: Math.round(word.h)
+        };
+      }),
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          labelKind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      }),
+      frame: opened.frame,
+      heap: typeof performance !== 'undefined' && performance.memory ? performance.memory.usedJSHeapSize : null
+    };
+  }
+
   async function stageReport(bytes, mime, bands) {
     var t0 = Date.now();
     var data = copy(bytes);
@@ -1610,5 +1735,5 @@
     };
   }
 
-  global.FormFields = { read: read, readImage: readImage, fill: fill, stageReport: stageReport };
+  global.FormFields = { read: read, readImage: readImage, fill: fill, stageReport: stageReport, candidateReport: candidateReport };
 })(window);
