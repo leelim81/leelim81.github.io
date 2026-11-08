@@ -331,6 +331,45 @@
     return null;
   }
 
+  var REF_SEQ_LIMIT = 9007199254740991;
+
+  function refSuffix(text) {
+    var match = /^[A-Za-z]+([1-9][0-9]*)$/.exec(text);
+    if (!match || match[1].length > 16) return 0;
+    var n = Number(match[1]);
+    if (!Number.isSafeInteger(n) || n < 1 || n > REF_SEQ_LIMIT || String(n) !== match[1]) return 0;
+    return n;
+  }
+
+  function mintRefId(seen) {
+    if (!Number.isSafeInteger(refSeq) || refSeq < 0 || refSeq >= REF_SEQ_LIMIT) refSeq = 0;
+    var spins = 0;
+    var fresh = '';
+    do {
+      spins += 1;
+      if (spins > 100000 || refSeq >= REF_SEQ_LIMIT) refSeq = 0;
+      var next = refSeq + 1;
+      if (!Number.isSafeInteger(next) || next <= refSeq) refSeq = 0;
+      else refSeq = next;
+      fresh = 'r' + refSeq;
+    } while (seen[fresh] && spins < 100001);
+    if (seen[fresh]) fresh = 'r' + refSeq + 'x' + spins;
+    return fresh;
+  }
+
+  function uniqueRefId(id, seen) {
+    var text = String(id == null ? '' : id);
+    var n = refSuffix(text);
+    if (n && !seen[text]) {
+      if (n > refSeq) refSeq = n;
+      seen[text] = true;
+      return text;
+    }
+    var fresh = mintRefId(seen);
+    seen[fresh] = true;
+    return fresh;
+  }
+
   function sameFile(a, b) {
     if (!a || !b || a.byteLength !== b.byteLength) return false;
     var step = Math.max(1, Math.floor(a.byteLength / 24));
@@ -360,7 +399,7 @@
       var preview = document.createElement('span');
       preview.className = 'ref-preview';
       if (ref.status === 'reading') preview.textContent = 'Reading…';
-      else if (ref.status === 'error') preview.textContent = 'Couldn’t read this file.';
+      else if (ref.status === 'error') preview.textContent = ref.preview || 'Couldn’t read this file.';
       else if (!ref.preview) preview.textContent = 'No fields found in this file.';
       else preview.textContent = ref.preview;
       main.appendChild(name);
@@ -389,32 +428,51 @@
 
   async function extractOne(ref) {
     var id = ref.id;
+    var epoch = state.readEpoch || 0;
+    var read = window.FormExtract && FormExtract.openRead ? FormExtract.openRead() : null;
+    ref.read = read;
     var text = '';
     var failed = false;
+    var budget = false;
+    var unread = '';
     try {
       var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
       var spatial = window.FormExtract && FormExtract.spatial
-        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
+        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'), read)
         : { text: '', channel: 'text-layer' };
       text = spatial.text || '';
+      unread = spatial.unread || '';
       ref.channel = spatial.channel || 'text-layer';
       ref.words = spatial.words || [];
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
+      budget = !!(err && (err.message === 'budget' || err.message === 'cancelled'));
+      if (budget && read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(read);
     }
+    if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
-    if (!live) return;
+    if (!live || live !== ref) return;
     if (failed) {
       live.status = 'error';
-      live.preview = '';
+      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : '';
       live.text = '';
+      live.words = [];
     } else {
       live.text = text || '';
       rememberRef(live);
+      if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
     renderRefs();
     scheduleSave();
+  }
+
+  function currentRefIds() {
+    var seen = {};
+    state.refs.forEach(function (ref) {
+      if (ref && ref.id) seen[String(ref.id)] = true;
+    });
+    return seen;
   }
 
   function addRef(bytes, name, mime) {
@@ -425,7 +483,7 @@
       return false;
     }
     var ref = {
-      id: 'r' + (++refSeq),
+      id: mintRefId(currentRefIds()),
       name: label,
       bytes: bytes,
       mime: mime || '',
@@ -442,11 +500,16 @@
     return true;
   }
 
+  function stopRead(ref) {
+    if (ref && ref.read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(ref.read);
+  }
+
   function removeRef(id) {
     var ref = refById(id);
     if (!ref) return;
     fillToken++;
     state.refs = state.refs.filter(function (item) { return item.id !== id; });
+    stopRead(ref);
     state.proposals = [];
     state.seeded = {};
     state.notes = '';
@@ -1396,7 +1459,11 @@
     state.kind = '';
     state.imageFrame = null;
     state.imageNote = '';
+    var pendingRefs = state.refs.slice();
     state.refs = [];
+    state.readEpoch = (state.readEpoch || 0) + 1;
+    if (window.FormExtract && FormExtract.cancelAll) FormExtract.cancelAll();
+    else pendingRefs.forEach(stopRead);
     state.proposals = [];
     $('formInput').value = '';
     $('refInput').value = '';
@@ -1515,7 +1582,7 @@
     imageFrame: function () { return state.imageFrame || null; },
     refs: function () {
       return state.refs.map(function (ref) {
-        return { name: ref.name, status: ref.status, preview: ref.preview };
+        return { id: ref.id, name: ref.name, status: ref.status, preview: ref.preview };
       });
     },
     applyMap: function (map) {
@@ -1561,7 +1628,7 @@
       if (userTouched) return;
       state.refs = (draft.refs || []).map(function (ref) {
         var item = {
-          id: ref.id || ('d' + (++refSeq)),
+          id: ref.id || '',
           name: ref.name || 'reference',
           bytes: ref.bytes,
           mime: ref.mime || '',
@@ -1573,6 +1640,14 @@
         if (item.text) rememberRef(item);
         return item;
       });
+      var seenIds = {};
+      var changedId = false;
+      state.refs.forEach(function (ref) {
+        var nextId = uniqueRefId(ref.id, seenIds);
+        if (nextId !== ref.id) changedId = true;
+        ref.id = nextId;
+      });
+      if (changedId) scheduleSave();
       state.refs.forEach(function (ref) {
         if (ref.status === 'reading' && ref.bytes) ref.pending = extractOne(ref);
       });
