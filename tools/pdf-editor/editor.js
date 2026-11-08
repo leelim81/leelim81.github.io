@@ -1251,13 +1251,34 @@
     box.appendChild(ul);
   }
 
+  function dialogItems(root) {
+    if (!root) return [];
+    return Array.prototype.filter.call(root.querySelectorAll('button, a[href], input, select, textarea'), function (el) {
+      if (el.disabled || el.hidden) return false;
+      if (el.closest('[hidden]')) return false;
+      return true;
+    });
+  }
+  function focusDownload() {
+    var modal = $('downloadModal');
+    var items = dialogItems(modal);
+    var show = $('exportShow');
+    var preferred = show && !$('exportWarn').hidden && items.indexOf(show) >= 0 ? show : items[0];
+    if (preferred) preferred.focus();
+  }
+  function closeDownload() {
+    var modal = $('downloadModal');
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    if ($('downloadBtn')) $('downloadBtn').focus();
+  }
+
   async function openDownload() {
     if (!state.pdfBytes) return;
     var warn = [];
     try { warn = await textOffPage(); } catch (err) { warn = []; }
     paintExportWarn(warn);
     $('downloadModal').hidden = false;
-    if (warn.length && $('exportShow')) $('exportShow').focus();
     var stem = (state.fileName || 'document').replace(/\.pdf$/i, '');
     PdfSizes.mount($('sizeOptions'), {
       getBytes: flatten,
@@ -1266,6 +1287,7 @@
       },
       usageKey: 'pdf-editor'
     });
+    focusDownload();
   }
 
   function loadSignatures() {
@@ -2329,9 +2351,9 @@
       showEmpty();
     });
     $('downloadBtn').addEventListener('click', openDownload);
-    $('dlClose').addEventListener('click', function () { $('downloadModal').hidden = true; });
+    $('dlClose').addEventListener('click', closeDownload);
     $('downloadModal').addEventListener('click', function (e) {
-      if (e.target === $('downloadModal')) $('downloadModal').hidden = true;
+      if (e.target === $('downloadModal')) closeDownload();
     });
 
     var canvas = $('signCanvas');
@@ -2421,10 +2443,30 @@
 
     document.addEventListener('keydown', function (e) {
       var typing = e.target.closest && (e.target.isContentEditable || e.target.closest('input, textarea'));
+      var downloadOpen = $('downloadModal') && !$('downloadModal').hidden;
+      if (e.key === 'Tab' && downloadOpen) {
+        var items = dialogItems($('downloadModal'));
+        if (items.length) {
+          var first = items[0];
+          var last = items[items.length - 1];
+          var active = document.activeElement;
+          var inside = $('downloadModal').contains(active);
+          if (e.shiftKey && (!inside || active === first)) {
+            e.preventDefault();
+            last.focus();
+            return;
+          }
+          if (!e.shiftKey && (!inside || active === last)) {
+            e.preventDefault();
+            first.focus();
+            return;
+          }
+        }
+      }
       if (e.key === 'Escape') {
-        var downloadOpen = $('downloadModal') && !$('downloadModal').hidden;
         $('sigModal').hidden = true;
-        $('downloadModal').hidden = true;
+        if (downloadOpen) closeDownload();
+        else if ($('downloadModal')) $('downloadModal').hidden = true;
         if (!downloadOpen) select(null);
         var inAssist = e.target.closest && e.target.closest('#recoverBar, #mapBox');
         if (inAssist || state.recoverArmed) {
