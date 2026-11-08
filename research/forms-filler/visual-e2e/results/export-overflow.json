@@ -1,0 +1,121 @@
+{
+  "passed": 23,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "the editor shows the long word past the page",
+      "ok": true,
+      "detail": "{\"text\":\"SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious\",\"past\":250.859375,\"top\":\"38.4969%\",\"left\":\"58%\"}"
+    },
+    {
+      "name": "download warns and stays available",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text"
+    },
+    {
+      "name": "the export still contains the whole word",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the stored box did not move when the warning was built",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "saving a map does not move the name",
+      "ok": true,
+      "detail": "20%|35.2898%"
+    },
+    {
+      "name": "the name baseline is still on the rule",
+      "ok": true,
+      "detail": "{\"y\":500.6046923227499,\"h\":14}"
+    },
+    {
+      "name": "the rendered page cuts the word at the edge",
+      "ok": true,
+      "detail": "40"
+    },
+    {
+      "name": "show this text selects the overflowing word",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "a larger size keeps the whole word",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "nudge moves the box and does not drop the word",
+      "ok": true,
+      "detail": "58% -> 8%"
+    },
+    {
+      "name": "a smaller size back on the page clears the warning",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a second person reuses the box with a longer value",
+      "ok": true,
+      "detail": "[\"20%|35.2898%\",\"8%|38.4969%\",\"20%|35.2898%\",\"58%|38.4969%\"]"
+    },
+    {
+      "name": "newlines stay in the address",
+      "ok": true,
+      "detail": "14 Harbour Lane beside the long\nwestLine 0\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5 warehouse and the south gate"
+    },
+    {
+      "name": "lines that leave the bottom of the page are warned",
+      "ok": true,
+      "detail": "2 pieces of text run past the page. A PDF viewer will cut off what does not fit. The type is not shortened.Show this text"
+    },
+    {
+      "name": "undo removes the last placement change",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload keeps the placed name",
+      "ok": true,
+      "detail": "Ada Lane | SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious | Bea Shore | SupercalifragilisticexpialidociousSupercalifragilisticexpialidocio"
+    },
+    {
+      "name": "quarter turn 0 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":0,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 90 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":90,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 180 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":180,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 270 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":270,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text\"}"
+    },
+    {
+      "name": "an offset crop box still warns",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text"
+    },
+    {
+      "name": "UserUnit 2 warns when the word leaves the page",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.Show this text"
+    },
+    {
+      "name": "at 390px the warning is on screen",
+      "ok": true,
+      "detail": "{\"left\":31,\"right\":359,\"top\":229.75,\"width\":328,\"inner\":390}"
+    }
+  ]
+}
