@@ -20,6 +20,10 @@ The black Email/Name sheet still returns exactly those two labels. Page JavaScri
 
 ## Root cause
 
-The food-order labels are not lost in whole-page segmentation of a picture that is readable in strips. The same working pixels, cut into the eight longest existing lines, are still invisible to this OCR. Local crops cannot put back the detail discarded when the 3442×5601 file was reduced to 983×1600, and this pass did not decode that larger file. The earlier green-ink read could see a name and an address, and those boxes missed the 8px gate. That result stands. This segmentation pass does not replace it.
+The food-order labels are not lost in whole-page segmentation of a picture that is readable in strips. The same working pixels, cut into the eight longest existing lines, are still invisible to this OCR. Local crops of that sheet cannot put back detail discarded when the 3442×5601 file was reduced to 983×1600. The earlier green-ink read could see a name and an address, and those boxes missed the 8px gate. That result stands. This segmentation pass does not replace it.
+
+## Native resolution was not tested
+
+The publisher file is `files/wellcome-food-order.jpg`, 1,888,605 bytes, 3442×5601, SOF marker `0xC2` (progressive). Chrome 156.0.8078.47 has no `ImageDecoder`. `createImageBitmap(blob, sx, sy, sw, sh)` returns only the crop’s dimensions, and on a small progressive JPEG it took 15 ms against 17 ms for a full decode; a small baseline JPEG took 8 ms against 9 ms. The crop call does not skip the decode. A progressive scan cannot yield a region until the whole scan is done. Reading a native crop would therefore decode the full 3442×5601 image. That decode was not run. Native-resolution OCR is untested, not disproven. No second decoder was added.
 
 Census crops are not saved.
