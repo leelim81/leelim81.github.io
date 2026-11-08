@@ -34,6 +34,10 @@
     var pick = $('profilePick');
     var previous = pick.value;
     var prefer = selectPersonId;
+    if (prefer && !data.profiles.some(function (p) { return p.id === prefer; })) {
+      say('That person is not saved yet.');
+      return;
+    }
     pick.textContent = '';
     data.profiles.forEach(function (profile) {
       var opt = document.createElement('option');
@@ -42,7 +46,7 @@
       pick.appendChild(opt);
     });
     var chosen = '';
-    if (prefer && data.profiles.some(function (p) { return p.id === prefer; })) chosen = prefer;
+    if (prefer) chosen = prefer;
     else if (previous && data.profiles.some(function (p) { return p.id === previous; })) chosen = previous;
     else if (data.profiles[0]) chosen = data.profiles[0].id;
     if (chosen) pick.value = chosen;
@@ -119,12 +123,16 @@
           var profileId = selectedId();
           var pendingId = item.id;
           if (!profileId) { say('Choose a person first.'); return; }
+          if (selectPersonId && profileId === selectPersonId) { say('That person is not saved yet. Nothing was written.'); return; }
           var stored = await FormProfiles.persist(null, function (current) {
             var assigned = FormProfiles.assignPending(current, pendingId, profileId);
             if (!assigned.ok) return { ok: false, reason: assigned.reason || 'cancelled' };
             return { ok: true, vault: assigned.vault };
           });
-          if (!stored.ok) { say('That value was not filed.'); return; }
+          if (!stored.ok) {
+            say(stored.reason === 'needs-mapping' || stored.reason === 'missing' ? 'That person is not saved yet. Nothing was written.' : 'That value was not filed.');
+            return;
+          }
           await paint();
           say('Filed under the selected person.');
         });
@@ -163,6 +171,7 @@
       var personId = Math.random().toString(36).slice(2, 12);
       var now = new Date().toISOString();
       selectPersonId = personId;
+      paintSerial += 1;
       var pick = $('profilePick');
       if (pick) {
         var shown = document.createElement('option');
@@ -199,6 +208,7 @@
     $('factAdd').addEventListener('click', async function () {
       var profileId = selectedId();
       if (!profileId) { say('Choose a person first.'); return; }
+      if (selectPersonId && profileId === selectPersonId) { say('That person is not saved yet. Nothing was written.'); return; }
       var key = $('factKey').value;
       var label = $('factLabel').value;
       var value = $('factValue').value;
@@ -209,7 +219,10 @@
         if (!result.ok) return { ok: false, reason: result.reason || 'cancelled' };
         return { ok: true, vault: result.vault };
       });
-      if (!stored.ok) { say('That value was not saved.'); return; }
+      if (!stored.ok) {
+        say(stored.reason === 'needs-mapping' || stored.reason === 'missing' ? 'That person is not saved yet. Nothing was written.' : 'That value was not saved.');
+        return;
+      }
       $('factValue').value = '';
       await paint();
       say('Saved on this browser.');
