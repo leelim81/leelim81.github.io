@@ -573,6 +573,17 @@
     return form || source;
   }
 
+  async function sourceIdentity() {
+    var source = state.sourceBytes;
+    if (!source || source.length < 4) return '';
+    if (source[0] === 0x25 && source[1] === 0x50 && source[2] === 0x44 && source[3] === 0x46) return '';
+    var digest = await crypto.subtle.digest('SHA-256', source);
+    var bytes = new Uint8Array(digest);
+    var hex = '';
+    for (var i = 0; i < bytes.length; i++) hex += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+    return hex;
+  }
+
   async function openRecovery() {
     var bytes = pdfBytesForEditor();
     if (!bytes) {
@@ -594,7 +605,7 @@
     }
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true } }
+      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true, sourceSha256: await sourceIdentity() } }
     ]);
     location.href = '../pdf-editor/?desk=forms';
   }
@@ -794,7 +805,7 @@
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields) } }
+      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity() } }
     ]);
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;

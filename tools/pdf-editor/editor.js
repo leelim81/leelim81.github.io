@@ -33,7 +33,8 @@
     drawing: false,
     epoch: 0,
     recoverArmed: false,
-    undo: []
+    undo: [],
+    sourceSha256: ''
   };
   var closed = false;
 
@@ -134,6 +135,7 @@
         current: state.current,
         epoch: state.epoch,
         source: desk,
+        sourceSha256: state.sourceSha256 || '',
         pages: state.pages.map(function (p) {
           return {
             id: p.id,
@@ -525,6 +527,7 @@
     state.recoverArmed = false;
     state.undo = [];
     state.epoch = session && session.epoch ? session.epoch : Date.now();
+    state.sourceSha256 = session && session.sourceSha256 ? session.sourceSha256 : '';
     closed = false;
     showWorkspace();
     if (session && session.recover) {
@@ -1073,6 +1076,7 @@
     };
   }
   async function fileSha() {
+    if (state.sourceSha256) return state.sourceSha256;
     var digest = await crypto.subtle.digest('SHA-256', state.pdfBytes);
     return Array.from(new Uint8Array(digest)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
   }
