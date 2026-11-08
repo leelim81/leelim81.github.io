@@ -5,6 +5,7 @@
   var state = {
     gpu: null,
     formBytes: null,
+    sourceBytes: null,
     formName: '',
     fields: [],
     kind: '',
@@ -111,6 +112,7 @@
     var ready = !!(state.formBytes && !state.running && ((state.fields.length && (flat || state.refs.length)) || state.placementBlocked));
     $('fillBtn').disabled = !ready;
     $('fillBtn').textContent = state.placementBlocked || (flat && !state.refs.length) ? 'Open in the editor' : 'Fill from the papers';
+    if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
   }
 
   function showGpu(status) {
@@ -240,6 +242,7 @@
       throw err;
     }
     if (token !== formToken) return false;
+    state.sourceBytes = bytes;
     state.formBytes = read.bytes || bytes;
     state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
     state.proposals = [];
@@ -500,6 +503,25 @@
     });
   }
 
+  async function openRecovery() {
+    var bytes = state.sourceBytes || state.formBytes;
+    if (!bytes) {
+      toast('Choose a form first.');
+      return;
+    }
+    status('Opening the editor so you can place a saved value…', true);
+    var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+    var pages = [];
+    for (var i = 0; i < probe.getPageCount(); i++) {
+      pages.push({ id: Math.random().toString(36).slice(2, 10), srcIndex: i, rotation: 0, annotations: [] });
+    }
+    await DeskDB.putAll(EDITOR_DB, [
+      { key: 'pdf', value: bytes },
+      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true } }
+    ]);
+    location.href = '../pdf-editor/?desk=forms';
+  }
+
   async function fillFromPapers() {
     if (state.running) return;
     if (!state.formBytes || (!state.fields.length && !state.placementBlocked)) return;
@@ -737,6 +759,7 @@
     state.formBytes = null;
     state.formName = '';
     state.fields = [];
+    state.sourceBytes = null;
     state.placementBlocked = '';
     state.kind = '';
     state.refs = [];
@@ -778,6 +801,7 @@
       status('', false);
     }
   });
+  if ($('placeMissing')) $('placeMissing').addEventListener('click', function () { openRecovery(); });
   $('fillBtn').addEventListener('click', function () {
     $('failBox').hidden = true;
     fillFromPapers().catch(function (err) {

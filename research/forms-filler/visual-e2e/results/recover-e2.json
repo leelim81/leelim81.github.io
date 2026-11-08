@@ -1,0 +1,133 @@
+{
+  "browser": "Chrome headless",
+  "scriptedSteps": 36,
+  "checks": [
+    {
+      "name": "saved values stay collapsed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "download is the 0.1.1 zip byte for byte",
+      "ok": true,
+      "detail": "09cee1247b6f86d3c96b3f383e7ae9f8d4da73bd64f467a9425f88af29468964"
+    },
+    {
+      "name": "profile panel stayed closed after seeding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a missed margin form can open placement",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "both people are offered",
+      "ok": true,
+      "detail": "Ada Recover,Bea Recover"
+    },
+    {
+      "name": "unconfirmed phone and the other person are not in Ada’s list",
+      "ok": true,
+      "detail": "email: ada.recover@example.com | name: Ada Recover"
+    },
+    {
+      "name": "address is absent because Ada has no confirmed address",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the same key shows Bea’s own email",
+      "ok": true,
+      "detail": "email: bea.recover@example.com"
+    },
+    {
+      "name": "cancel adds nothing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the placed line is Ada’s confirmed email and names her",
+      "ok": true,
+      "detail": "ada.recover@example.com / Ada Recover · email · placed by you"
+    },
+    {
+      "name": "a button nudge moves the line without dragging",
+      "ok": true,
+      "detail": "43.2331% -> 45.2331%"
+    },
+    {
+      "name": "undo restores the line",
+      "ok": true,
+      "detail": "43.2331%"
+    },
+    {
+      "name": "editing the placed text updates only Ada and keeps Bea",
+      "ok": true,
+      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T02:04:33.524Z\"},\"bea\":\"bea.recover@example.com\"}"
+    },
+    {
+      "name": "the placed line is still there after reload",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "export draws Ada on the page and not Bea",
+      "ok": true,
+      "detail": "{\"pages\":1,\"w\":595,\"h\":824.3818580833943,\"hit\":{\"str\":\"ada.recover@example.com!\",\"x\":258.2368421052632,\"y\":700.6424579513986},\"bea\":false}"
+    },
+    {
+      "name": "the placement bar fits a narrow viewport",
+      "ok": true,
+      "detail": "{\"x\":0,\"y\":275.484375,\"width\":390,\"height\":296.9375}"
+    },
+    {
+      "name": "a rotated page refuses placement",
+      "ok": true,
+      "detail": "This page is rotated in the file. A saved value is not placed on it, because the position would not match the page. Use an upright copy."
+    },
+    {
+      "name": "the refused page gained no line",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "native widgets can take a manual line",
+      "ok": true,
+      "detail": "Click the page where Ada Recover’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "name": "the export still has the original widgets",
+      "ok": true,
+      "detail": "5"
+    },
+    {
+      "name": "a missed spot on the table page can take Ada’s saved email",
+      "ok": true,
+      "detail": "ada.recover@example.com!"
+    },
+    {
+      "name": "a missed spot on the short rule page can take Ada’s saved email",
+      "ok": true,
+      "detail": "ada.recover@example.com!"
+    },
+    {
+      "name": "a cropped page refuses placement",
+      "ok": true,
+      "detail": "This page is cropped. A saved value is not placed on it, because the position would not match the page."
+    },
+    {
+      "name": "no saved person is explained and placement stays off",
+      "ok": true,
+      "detail": "No one is saved yet. Confirm a value in Forms Filler, then come back. Nothing unconfirmed is offered here."
+    }
+  ],
+  "limits": [
+    "The narrow screenshot is a viewport, not a phone.",
+    "Steps counted here are scripted browser actions, not observed human time.",
+    "Current Chrome stable and phones were not used.",
+    "The extension source was not changed. The 0.1.1 gesture result remains profiles-gesture-e2e-0.1.1.json."
+  ],
+  "comparison": "Placing the saved email did not type its characters. Typing it into the existing Text tool would be one click plus one key for each character. These are scripted action counts, not a measured human-time difference, and not a claim that a person is faster."
+}

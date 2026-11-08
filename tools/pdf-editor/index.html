@@ -28,6 +28,15 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
   </header>
   <p class="privacy">Your files never leave this device. Opening, editing, and exporting all happen in this browser.</p>
 
+  <div id="recoverBar" class="recover" hidden>
+    <p id="recoverNote">Place a confirmed saved value on a line the reader missed. This is your placement, not an automatic fill.</p>
+    <label>Person <select id="recoverPerson"></select></label>
+    <label>Saved value <select id="recoverFact"></select></label>
+    <button id="recoverPlace" type="button" class="tool tool-strong">Place on the page</button>
+    <button id="recoverCancel" type="button" class="tool">Cancel</button>
+    <button id="recoverUndo" type="button" class="tool">Undo</button>
+    <p id="recoverStatus" role="status"></p>
+  </div>
   <div class="toolbar" id="toolbar" hidden>
     <button id="addText" type="button" class="tool tool-strong">Text</button>
     <button id="addSignature" type="button" class="tool tool-strong">Sign</button>
@@ -52,6 +61,10 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
       <label>Colour
         <input id="fontColor" type="color" value="#1a1612" aria-label="Colour">
       </label>
+      <button id="nudgeLeft" type="button" class="tool" aria-label="Nudge left">Left</button>
+      <button id="nudgeRight" type="button" class="tool" aria-label="Nudge right">Right</button>
+      <button id="nudgeUp" type="button" class="tool" aria-label="Nudge up">Up</button>
+      <button id="nudgeDown" type="button" class="tool" aria-label="Nudge down">Down</button>
       <button id="deleteAnn" type="button" class="tool">Delete</button>
     </div>
   </div>
@@ -136,8 +149,8 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="../forms-filler/vendor/pdf/pdf.min.js"></script>
+<script src="../forms-filler/vendor/pdf/pdf-lib.min.js"></script>
 <script src="../shared/pdf-compress.js"></script>
 <script src="../shared/size-chooser.js"></script>
 <script src="../shared/usage.js"></script>

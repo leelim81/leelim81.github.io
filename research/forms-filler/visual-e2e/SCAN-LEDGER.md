@@ -141,6 +141,10 @@ The caption rule and the page-frame gate were hashed in `PLACE-FREEZE.json` befo
 
 A rotated or cropped scan, or a page whose scale is not 1, no longer produces line suggestions. The installed pdf.js page object does expose `userUnit`. When that value is missing, the scan is also refused rather than given a guessed scale. Native widgets are not refused. `app.js` was adjusted after the look so the explanation is not replaced by “Form ready.” The detector was not edited again and the holdout was not re-run.
 
+## Missed-line placement
+
+A confirmed saved value can be placed in Edit and Sign when the reader misses a line. It is not an automatic fill. Rotated and cropped pages refuse that placement. Notes and the browser checks are in [RECOVER.md](RECOVER.md). The detector was not retuned.
+
 ## Extension 0.1.1
 
 The 32 headed checks stay in `results/profiles-gesture-e2e.json` and belong to zip 0.1.0. Zip 0.1.1 was checked on its own: 37 checks, 0 failed, Chromium 131.0.6778.33, not current Chrome stable, no phone. The file is `results/profiles-gesture-e2e-0.1.1.json`. SHA-256 `09cee1247b6f86d3c96b3f383e7ae9f8d4da73bd64f467a9425f88af29468964`. The zip matches the extension source. Fill tells the person the website receives the checked values immediately and that the page is not submitted. Screenshots for this run use the `v011-` prefix.

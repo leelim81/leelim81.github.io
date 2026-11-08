@@ -29,6 +29,28 @@
 
 body { overflow: hidden; }
 .app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+.recover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.recover p { margin: 0; flex: 1 1 16em; }
+.recover button, .recover select, #nudgeLeft, #nudgeRight, #nudgeUp, #nudgeDown { min-height: 44px; }
+.ann-note {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  pointer-events: none;
+  white-space: nowrap;
+  background: rgba(243, 238, 228, 0.92);
+}
 .toolbar, .status {
   display: flex;
   gap: 6px;

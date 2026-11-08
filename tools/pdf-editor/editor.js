@@ -1,7 +1,6 @@
 /* Edit and Sign PDF. The original file lives in IndexedDB; marks live beside it. */
 (function () {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('../forms-filler/vendor/pdf/pdf.worker.min.js', location.href).href;
 
   function currentDesk() {
     try {
@@ -32,11 +31,17 @@
     activeStroke: null,
     activePointer: null,
     drawing: false,
-    epoch: 0
+    epoch: 0,
+    recoverArmed: false,
+    undo: []
   };
   var closed = false;
 
   function $(id) { return document.getElementById(id); }
+  function recoverSay(text) {
+    var el = $('recoverStatus');
+    if (el) el.textContent = text || '';
+  }
   function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
   function toast(msg) { if (window.ToolsUI) ToolsUI.toast(msg); }
@@ -155,6 +160,7 @@
     $('toolbar').hidden = false;
     $('status').hidden = false;
     $('downloadBtn').hidden = false;
+    refreshRecover();
     $('startOver').hidden = false;
     $('fileName').textContent = state.fileName || '';
   }
@@ -164,6 +170,7 @@
     $('status').hidden = true;
     $('downloadBtn').hidden = true;
     $('startOver').hidden = true;
+    if ($('recoverBar')) $('recoverBar').hidden = true;
     $('pages').innerHTML = '';
     var name = $('fileName');
     if (name) name.textContent = '';
@@ -220,7 +227,13 @@
     el.dataset.type = ann.type;
     place(el, ann);
 
-    if (ann.type === 'text' || ann.type === 'date') {
+      if (ann.type === 'text' || ann.type === 'date') {
+      if (ann.manual) {
+        var note = document.createElement('p');
+        note.className = 'ann-note';
+        note.textContent = (ann.personName || 'Saved person') + ' · ' + (ann.factKey || 'value') + ' · placed by you';
+        el.appendChild(note);
+      }
       var grip = document.createElement('button');
       grip.type = 'button';
       grip.className = 'grip';
@@ -366,6 +379,7 @@
   }
 
   function removeAnn(id) {
+    pushUndo();
     state.pages.forEach(function (p) {
       p.annotations = p.annotations.filter(function (a) { return a.id !== id; });
     });
@@ -375,13 +389,14 @@
     saveNow();
   }
 
-  function addAnn(partial) {
-    var rec = currentPage();
+  function addAnn(partial, rec) {
+    rec = rec || currentPage();
     if (!rec) return null;
     var ann = Object.assign({
       id: uid(), type: 'text', x: 0.15, y: 0.15, w: 0.4, h: 0.08,
       text: '', fontSize: 18, color: '#1a1612'
     }, partial);
+    if (!partial || !partial.skipUndo) pushUndo();
     rec.annotations.push(ann);
     var el = drawOne(rec, ann);
     select(ann.id);
@@ -444,9 +459,17 @@
       rec.el = wrap;
       rec.canvas = canvas;
       rec.layer = layer;
-      layer.addEventListener('pointerdown', function (e) {
-        if (e.target === layer) select(null);
-      });
+      (function (pageRec, pageLayer) {
+        pageLayer.addEventListener('pointerdown', function (e) {
+          if (e.target !== pageLayer) return;
+          if (state.recoverArmed) {
+            var rect = pageLayer.getBoundingClientRect();
+            placeRecovered(pageRec, (e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+            return;
+          }
+          select(null);
+        });
+      })(rec, layer);
       rec.annotations.forEach(function (ann) { drawOne(rec, ann); });
       await renderCanvas(rec);
     }
@@ -495,6 +518,8 @@
       state.zoom = 1;
     }
     state.selectedId = null;
+    state.recoverArmed = false;
+    state.undo = [];
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     closed = false;
     showWorkspace();
@@ -559,6 +584,7 @@
     if (!state.pages.length) return;
     var next = clamp(state.current + delta, 0, state.pages.length - 1);
     state.current = next;
+    disarmRecover('Placement was cancelled because the page changed.');
     state.pages[next].el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     updatePageLabel();
   }
@@ -667,6 +693,23 @@
   }
 
   async function flatten() {
+    var samePages = state.pages.length > 0 && state.pages.every(function (rec, index) {
+      return rec.srcIndex === index && !rec.rotation;
+    });
+    if (samePages) {
+      var kept = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+      if (kept.getPageCount() === state.pages.length) {
+        var keptFont = await kept.embedFont(PDFLib.StandardFonts.Helvetica);
+        for (var k = 0; k < state.pages.length; k++) {
+          var keptPage = kept.getPages()[k];
+          var keptSize = keptPage.getSize();
+          for (var ak = 0; ak < state.pages[k].annotations.length; ak++) {
+            await drawAnn(kept, keptPage, keptFont, state.pages[k].annotations[ak], keptSize.width, keptSize.height);
+          }
+        }
+        return kept.save();
+      }
+    }
     var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
     var out = await PDFLib.PDFDocument.create();
     var font = await out.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -923,6 +966,155 @@
     closeSig();
   }
 
+  function snapshotPages() {
+    return state.pages.map(function (page) {
+      return { id: page.id, annotations: page.annotations.map(function (ann) { return Object.assign({}, ann); }) };
+    });
+  }
+  function pushUndo() {
+    state.undo.push(snapshotPages());
+    if (state.undo.length > 30) state.undo.shift();
+    if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
+  }
+  function redrawAnnotations() {
+    state.pages.forEach(function (rec) {
+      if (!rec.layer) return;
+      rec.layer.innerHTML = '';
+      rec.annotations.forEach(function (ann) { drawOne(rec, ann); });
+    });
+  }
+  function undoRecover() {
+    var snap = state.undo.pop();
+    if (!snap) return;
+    snap.forEach(function (page) {
+      var rec = state.pages.filter(function (item) { return item.id === page.id; })[0];
+      if (rec) rec.annotations = page.annotations;
+    });
+    state.recoverArmed = false;
+    redrawAnnotations();
+    select(null);
+    if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
+    recoverSay('Undid the last placement change.');
+    saveNow();
+  }
+  function disarmRecover(message) {
+    var was = state.recoverArmed;
+    state.recoverArmed = false;
+    if (was && message) recoverSay(message);
+  }
+  async function frameAllowsPlace() {
+    var rec = currentPage();
+    if (!rec || !state.pdfBytes || !state.doc) return { ok: false, reason: 'Open a page first.' };
+    if (rec.rotation) return { ok: false, reason: 'This page was rotated in the editor. A saved value is not placed on a rotated page. Rotate it back, or type on a copy you straighten first.' };
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
+    var lib = src.getPages()[rec.srcIndex];
+    if (!lib) return { ok: false, reason: 'That page could not be read.' };
+    var media = lib.getMediaBox();
+    var crop = lib.getCropBox();
+    var angle = ((lib.getRotation().angle || 0) % 360 + 360) % 360;
+    if (angle) return { ok: false, reason: 'This page is rotated in the file. A saved value is not placed on it, because the position would not match the page. Use an upright copy.' };
+    if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) {
+      return { ok: false, reason: 'This page is cropped. A saved value is not placed on it, because the position would not match the page.' };
+    }
+    var pdfPage = await state.doc.getPage(rec.srcIndex + 1);
+    if (typeof pdfPage.userUnit !== 'number') return { ok: false, reason: 'This reader could not read the page scale, so a saved value is not placed.' };
+    if (Math.abs(pdfPage.userUnit - 1) > 0.001) return { ok: false, reason: 'This page uses a scale other than 1. A saved value is not placed on it.' };
+    return { ok: true };
+  }
+  function selectedRecoverFact() {
+    var person = $('recoverPerson');
+    var fact = $('recoverFact');
+    if (!person || !fact || !fact.value) return null;
+    var option = fact.options[fact.selectedIndex];
+    if (!option) return null;
+    return {
+      profileId: person.value,
+      personName: person.options[person.selectedIndex] ? person.options[person.selectedIndex].textContent : '',
+      key: option.dataset.key || '',
+      label: option.dataset.label || option.dataset.key || '',
+      value: option.dataset.value || ''
+    };
+  }
+  async function refreshRecover() {
+    var bar = $('recoverBar');
+    if (!bar) return;
+    bar.hidden = !state.pdfBytes;
+    var person = $('recoverPerson');
+    var fact = $('recoverFact');
+    var previous = person.value;
+    person.textContent = '';
+    fact.textContent = '';
+    if (!window.FormProfiles) {
+      recoverSay('Saved values are not available in this browser.');
+      $('recoverPlace').disabled = true;
+      return;
+    }
+    var loaded = await FormProfiles.load();
+    var profiles = loaded.ok ? loaded.vault.profiles : [];
+    if (!profiles.length) {
+      recoverSay('No one is saved yet. Confirm a value in Forms Filler, then come back. Nothing unconfirmed is offered here.');
+      $('recoverPlace').disabled = true;
+      return;
+    }
+    profiles.forEach(function (profile) {
+      var opt = document.createElement('option');
+      opt.value = profile.id;
+      opt.textContent = profile.name;
+      person.appendChild(opt);
+    });
+    if (previous && profiles.some(function (profile) { return profile.id === previous; })) person.value = previous;
+    var chosen = profiles.filter(function (profile) { return profile.id === person.value; })[0] || profiles[0];
+    var facts = (chosen.facts || []).filter(function (item) { return item.status === 'confirmed' && item.value; });
+    facts.forEach(function (item) {
+      var opt = document.createElement('option');
+      opt.value = item.id;
+      opt.dataset.key = item.key;
+      opt.dataset.label = item.label || item.key;
+      opt.dataset.value = item.value;
+      opt.textContent = (item.label || item.key) + ': ' + item.value;
+      fact.appendChild(opt);
+    });
+    $('recoverPlace').disabled = !facts.length;
+    if (!facts.length) recoverSay(chosen.name + ' has no confirmed value to place. Unconfirmed reads stay unconfirmed.');
+    else if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+  }
+  function placeRecovered(rec, x, y) {
+    var fact = selectedRecoverFact();
+    if (!state.recoverArmed || !fact || !fact.value) {
+      disarmRecover('That placement was cancelled.');
+      return;
+    }
+    state.current = state.pages.indexOf(rec);
+    var el = addAnn({
+      type: 'text',
+      text: fact.value,
+      x: clamp(x, 0, 0.82),
+      y: clamp(y, 0, 0.9),
+      w: 0.42,
+      h: 0.05,
+      fontSize: 14,
+      color: '#1a1612',
+      manual: true,
+      factKey: fact.key,
+      profileId: fact.profileId,
+      personName: fact.personName,
+      seedText: fact.value
+    }, rec);
+    state.recoverArmed = false;
+    recoverSay('Placed ' + fact.personName + '’s ' + fact.label + '. You placed it. It is not an automatic fill.');
+    if (el) fitTextHeight(el, findAnn(el.dataset.id));
+  }
+  function nudgeSelected(dx, dy) {
+    var ann = findAnn(state.selectedId);
+    if (!ann) return;
+    pushUndo();
+    ann.x = clamp(ann.x + dx, 0, 1 - ann.w);
+    ann.y = clamp(ann.y + dy, 0, 1 - ann.h);
+    var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
+    if (el) place(el, ann);
+    saveNow();
+  }
+
   function wire() {
     function pick() { $('fileInput').click(); }
     function closeDrawer() {
@@ -1012,6 +1204,37 @@
     $('zoomIn').addEventListener('click', function () { setZoom(state.zoom * 1.15); });
     $('fitWidth').addEventListener('click', function () { fitWidth(true); });
     $('deleteAnn').addEventListener('click', function () { if (state.selectedId) removeAnn(state.selectedId); });
+    [['nudgeLeft', -0.02, 0], ['nudgeRight', 0.02, 0], ['nudgeUp', 0, -0.02], ['nudgeDown', 0, 0.02]].forEach(function (spec) {
+      $(spec[0]).addEventListener('click', function () { nudgeSelected(spec[1], spec[2]); });
+    });
+    $('recoverPerson').addEventListener('change', function () {
+      disarmRecover('The person changed, so the placement was cancelled.');
+      refreshRecover();
+    });
+    $('recoverFact').addEventListener('change', function () {
+      disarmRecover('The value changed, so the placement was cancelled.');
+    });
+    $('recoverPlace').addEventListener('click', async function () {
+      var fact = selectedRecoverFact();
+      if (!fact) {
+        recoverSay('Choose a confirmed value first.');
+        return;
+      }
+      var frame = await frameAllowsPlace();
+      if (!frame.ok) {
+        state.recoverArmed = false;
+        recoverSay(frame.reason);
+        return;
+      }
+      state.recoverArmed = true;
+      recoverSay('Click the page where ' + fact.personName + '’s ' + fact.label + ' should go. Cancel if this is the wrong person.');
+    });
+    $('recoverCancel').addEventListener('click', function () {
+      state.recoverArmed = false;
+      recoverSay('Placement cancelled. Nothing was added.');
+    });
+    $('recoverUndo').disabled = true;
+    $('recoverUndo').addEventListener('click', undoRecover);
     $('fontSize').addEventListener('input', function () {
       var ann = findAnn(state.selectedId);
       if (!ann) return;
@@ -1144,6 +1367,18 @@
       if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && !typing) {
         e.preventDefault();
         removeAnn(state.selectedId);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !typing) {
+        e.preventDefault();
+        undoRecover();
+      }
+      if (!typing && state.selectedId && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) >= 0) {
+        e.preventDefault();
+        var step = e.shiftKey ? 0.05 : 0.02;
+        if (e.key === 'ArrowLeft') nudgeSelected(-step, 0);
+        if (e.key === 'ArrowRight') nudgeSelected(step, 0);
+        if (e.key === 'ArrowUp') nudgeSelected(0, -step);
+        if (e.key === 'ArrowDown') nudgeSelected(0, step);
       }
       if (typing || !state.pdfBytes) return;
       if (e.key === '+' || e.key === '=') setZoom(state.zoom * 1.1);
