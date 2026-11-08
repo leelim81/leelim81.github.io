@@ -12,7 +12,9 @@
    pdf-lib then rotates type, rules, and images so they stay upright in that
    view: 0 → 0°, 90 → 90°, 180 → 180°, 270 → −90°. The text baseline stays
    0.85×fontSize below the top of the box and 1 unit in from the left, which
-   is the upright export this desk already used.
+   is the upright export this desk already used. A new click is that baseline:
+   the stored top is moved up by the same 0.85×fontSize. Stored boxes, including
+   maps, keep their tops and do not move.
    UserUnit must be a finite number in (0, 75000], and the file’s value must
    match what this pdf.js build reports. A missing UserUnit is 1. Zero or a
    negative value is refused even if the reader substitutes 1. This pdf.js
@@ -76,6 +78,17 @@
     };
   }
 
+  /* The export baseline stays 0.85×fontSize below the stored box top.
+     A click names that baseline, so the stored top sits above the click. */
+  function topForBaseline(clickY, fontSize, viewHeight) {
+    var sink = (finite(fontSize) || 16) * 0.85;
+    var view = finite(viewHeight);
+    var click = finite(clickY);
+    if (click == null) return 0;
+    if (!view || view <= 0) return click;
+    return click - sink / view;
+  }
+
   function textOrigin(ann, crop, rotation, size) {
     var spot = axes(rotation);
     var top = fractionToPdf(ann.x, ann.y, crop, rotation);
@@ -136,6 +149,7 @@
     fractionToPdf: fractionToPdf,
     boxOf: boxOf,
     textOrigin: textOrigin,
+    topForBaseline: topForBaseline,
     frameOf: frameOf,
     fileUserUnit: fileUserUnit
   };

@@ -1351,11 +1351,21 @@
     state.current = state.pages.indexOf(rec);
     var width = 0.42;
     var height = 0.05;
+    var fontSize = 14;
+    var frame = await frameAllowsPlace();
+    if (!frame.ok) {
+      disarmRecover(frame.reason);
+      return;
+    }
+    var view = window.FormCoords.viewSize(frame.frame.crop, frame.frame.rotation);
+    var wanted = FormCoords.topForBaseline(y, fontSize, view.height);
+    var top = clamp(wanted, 0, 1 - height);
+    var onClick = Math.abs(top - wanted) < 1e-4;
     var el = addAnn({
       type: 'text',
       text: fact.value,
       x: clamp(x, 0, 1 - width),
-      y: clamp(y, 0, 1 - height),
+      y: top,
       w: width,
       h: height,
       fontSize: 14,
@@ -1373,7 +1383,9 @@
       recoverSay('The mark is on the page, but this browser could not store it. Back or reload will lose it.');
       return;
     }
-    recoverSay('Placed ' + fact.personName + '’s ' + fact.label + '. You placed it. It is not an automatic fill.');
+    recoverSay(onClick
+      ? 'Placed ' + fact.personName + '’s ' + fact.label + '. The baseline sits on the click. It is not an automatic fill.'
+      : 'Placed ' + fact.personName + '’s ' + fact.label + ' on the page. The baseline could not sit on that click without leaving the page. Nudge it or choose another size.');
     if (el) fitTextHeight(el, findAnn(el.dataset.id));
   }
   function nudgeSelected(dx, dy) {
@@ -1523,7 +1535,7 @@
         return;
       }
       state.recoverArmed = true;
-      recoverSay('Click the page where ' + fact.personName + '’s ' + fact.label + ' should go. Cancel if this is the wrong person.');
+      recoverSay('Click the page where ' + fact.personName + '’s ' + fact.label + ' should sit. The baseline goes on that click. Cancel if this is the wrong person.');
     });
     $('recoverCancel').addEventListener('click', function () {
       state.recoverArmed = false;

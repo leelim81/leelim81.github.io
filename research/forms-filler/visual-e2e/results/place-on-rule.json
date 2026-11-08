@@ -1,0 +1,94 @@
+{
+  "passed": 12,
+  "failed": 3,
+  "historicalMisses": {
+    "manual1px": true,
+    "click29px": true,
+    "click114px": true
+  },
+  "food": {
+    "name": null,
+    "address": null,
+    "rules": [
+      0.42638731596828994
+    ],
+    "sheet": null
+  },
+  "checks": [
+    {
+      "name": "clicking a rule says the baseline sits on the click",
+      "ok": true,
+      "detail": "Placed Ada Lane’s name. The baseline sits on the click. It is not an automatic fill."
+    },
+    {
+      "name": "zoom does not move the stored place",
+      "ok": true,
+      "detail": "35.2898% -> 35.2898%"
+    },
+    {
+      "name": "a long address is kept in full at the same size",
+      "ok": true,
+      "detail": "14 Harbour Lane beside the long west warehouse / 14"
+    },
+    {
+      "name": "the name baseline is on the rule",
+      "ok": true,
+      "detail": "{\"str\":\"Peggy Jay\",\"x\":276.3999929786625,\"y\":500.6046923227499,\"w\":65.36599999999999,\"h\":14}"
+    },
+    {
+      "name": "descenders do not shrink the type",
+      "ok": true,
+      "detail": "{\"str\":\"Peggy Jay\",\"x\":276.3999929786625,\"y\":500.6046923227499,\"w\":65.36599999999999,\"h\":14}"
+    },
+    {
+      "name": "the long address baseline is on its rule",
+      "ok": true,
+      "detail": "[{\"str\":\"14 Harbour Lane beside the long west\",\"x\":276.3963977301749,\"y\":340.6048649005349,\"w\":236.57199999999995,\"h\":14},{\"str\":\"warehouse\",\"x\":276.3963977301749,\"y\":322.4048649005349,\"w\":68.474,\"h\":14}]"
+    },
+    {
+      "name": "a click at the top edge says the baseline could not sit there",
+      "ok": true,
+      "detail": "Placed Ada Lane’s name on the page. The baseline could not sit on that click without leaving the page. Nudge it or choose another size."
+    },
+    {
+      "name": "a saved map uses its stored tops for the second person",
+      "ok": true,
+      "detail": "Bea Shore | 8 Pier Street | Bea Shore"
+    },
+    {
+      "name": "applied tops match the saved slots",
+      "ok": true,
+      "detail": "{\"storedY\":[0.3528981157541038,0.5549180998730621,0],\"appliedTops\":[\"35.2898%\",\"55.4918%\",\"0%\"]}"
+    },
+    {
+      "name": "a narrow viewport keeps the type size",
+      "ok": true,
+      "detail": "14 / 354"
+    },
+    {
+      "name": "a 2x pixel ratio still puts the baseline on the rule",
+      "ok": true,
+      "detail": "{\"str\":\"Ada Lane\",\"x\":276.39999225030795,\"y\":500.6051817048885,\"w\":59.93399999999999,\"h\":14}"
+    },
+    {
+      "name": "the food photo still reports no detected lines",
+      "ok": true,
+      "detail": "No lines were found. Use Place a missing line to put a value where you want it. Nothing was written."
+    },
+    {
+      "name": "two header rules are visible to click",
+      "ok": false,
+      "detail": "[0.42638731596828994]"
+    },
+    {
+      "name": "new name glyph is inside the frozen name target",
+      "ok": false,
+      "detail": "untested: header rules were not found on the rendered sheet"
+    },
+    {
+      "name": "new address glyph is inside the frozen address target",
+      "ok": false,
+      "detail": "untested: header rules were not found on the rendered sheet"
+    }
+  ]
+}

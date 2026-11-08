@@ -1,0 +1,31 @@
+{
+  "clicks": "visible rules on the rendered sheet, fractions 0.2316 and 0.2724",
+  "boundedFilePixels": {
+    "name": [456, 370, 548, 391],
+    "address": [456, 431, 617, 453],
+    "note": "These are pixels of the 983×1600 file that was opened. The frozen targets are publisher 3442×5601 pixels."
+  },
+  "publisherPixels": {
+    "name": [1595.91, 1293.88, 1917.93, 1369.09],
+    "address": [1595.91, 1510.43, 2160.36, 1585.63],
+    "scale": "3442/983 and 5601/1600 through the recorded sheet crop 16,40,913×1516",
+    "nameInsidePad8": true,
+    "addressInsidePad8": true,
+    "nameBottomMarginPx": 0.91,
+    "addressBottomMarginPx": 0.37
+  },
+  "sheetFrame": {
+    "version": 1,
+    "sourceW": 983,
+    "sourceH": 1600,
+    "inW": 983,
+    "inH": 1600,
+    "angle": 0,
+    "cropX": 16,
+    "cropY": 40,
+    "cropW": 913,
+    "cropH": 1516,
+    "outW": 913,
+    "outH": 1516
+  }
+}

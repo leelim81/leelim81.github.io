@@ -32,4 +32,4 @@ The name click, plus one nudge down, exported a glyph box of 1341, 1323, 1747, 1
 
 ## Next failure
 
-Those two hand-placed glyphs are still outside the frozen boxes, by 29 pixels and 114 pixels. That miss is the open gap. It is not another OCR pass.
+A later click, with the baseline on the rule, is recorded in `PLACE-ON-RULE.md`. The 29 pixel and 114 pixel misses above are this earlier placement and stay misses.
