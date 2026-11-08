@@ -1,0 +1,161 @@
+{
+  "passed": 29,
+  "failed": 2,
+  "checks": [
+    {
+      "name": "the editor shows the long word past the page",
+      "ok": true,
+      "detail": "{\"text\":\"SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious\",\"past\":250.859375,\"top\":\"38.4973%\",\"left\":\"58%\"}"
+    },
+    {
+      "name": "download warns and stays available",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "the warning gives a leftward distance in millimetres",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "the warning button takes keyboard focus",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "escape closes the download and leaves the text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "closing and opening the download warns again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the export still contains the whole word",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the stored box did not move when the warning was built",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "saving a map does not move the name",
+      "ok": true,
+      "detail": "20%|35.2902%"
+    },
+    {
+      "name": "the name baseline is still on the rule",
+      "ok": true,
+      "detail": "{\"y\":500.60181356667874,\"h\":14}"
+    },
+    {
+      "name": "the rendered page cuts the word at the edge",
+      "ok": true,
+      "detail": "40"
+    },
+    {
+      "name": "show this text selects the overflowing word",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "a larger size keeps the whole word",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "a size wider than the page does not invent a move",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "nudge moves the box and does not drop the word",
+      "ok": true,
+      "detail": "58% -> 8%"
+    },
+    {
+      "name": "a smaller size back on the page clears the warning",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a second person reuses the box with a longer value",
+      "ok": true,
+      "detail": "[\"20%|35.2902%\",\"58%|38.4973%\"]"
+    },
+    {
+      "name": "newlines stay in the address",
+      "ok": true,
+      "detail": "14 Harbour Lane beside the long\nwestLine 0\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5 warehouse and the south gate"
+    },
+    {
+      "name": "lines that leave the bottom of the page are warned",
+      "ok": false,
+      "detail": "\"14 Harbour Lane beside the long westLine 0 Li...\" is taller than the page, so moving it cannot bring it on. Edit the text or choose a smaller size. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "every overflowing piece has its own show button",
+      "ok": false,
+      "detail": "1 \"14 Harbour Lane beside the long westLine 0 Li...\" is taller than the page, so m"
+    },
+    {
+      "name": "undo removes the last placement change",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload keeps the placed name",
+      "ok": true,
+      "detail": "Ada Lane | SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "quarter turn 0 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":0,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 90 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":90,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. Move it left about 25 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 180 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":180,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text\"}"
+    },
+    {
+      "name": "quarter turn 270 warns when the word leaves the page",
+      "ok": true,
+      "detail": "{\"angle\":270,\"placed\":true,\"warned\":true,\"text\":\"\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. Move it left about 25 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text\"}"
+    },
+    {
+      "name": "an offset crop box still warns",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 65 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "UserUnit 2 warns when the word leaves the page",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 102 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.Show this text"
+    },
+    {
+      "name": "at 390px the warning is on screen",
+      "ok": true,
+      "detail": "{\"left\":31,\"right\":359,\"top\":221.75,\"width\":328,\"inner\":390}"
+    },
+    {
+      "name": "a later page is named and still gives a distance",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" on page 2 runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or sho"
+    },
+    {
+      "name": "show this text selects it and scrolls it into view",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

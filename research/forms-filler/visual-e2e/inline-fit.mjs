@@ -184,7 +184,11 @@ const spots = await ui.locator('.ann').evaluateAll((els) => els.map((el) => el.s
 check('a longer mapped value stays in the saved box', spots.indexOf(nameAt) >= 0 && (await ui.locator('.ann-body').allInnerTexts()).some((text) => /ZZ$/.test(text)), JSON.stringify(spots));
 await ui.click('#recoverUndo');
 await ui.waitForTimeout(500);
-check('undo restores the previous lines', /Ada Lane/.test((await ui.locator('.ann-body').allInnerTexts()).join('|')));
+const underBea = (await ui.locator('.ann-body').allInnerTexts()).join('|');
+await ui.locator('#recoverPerson').selectOption({ label: 'Ada Lane' });
+await ui.waitForTimeout(300);
+const underAda = (await ui.locator('.ann-body').allInnerTexts()).join('|');
+check('undo keeps the previous lines with Ada and off Bea', !/Ada Lane/.test(underBea) && /Ada Lane/.test(underAda), underBea + ' || ' + underAda);
 
 await sheet('rot90', (page) => page.setRotation(degrees(90)));
 await openDesk('/tmp/inline-rot90.pdf');
