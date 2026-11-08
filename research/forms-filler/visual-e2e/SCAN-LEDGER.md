@@ -141,6 +141,10 @@ The caption rule and the page-frame gate were hashed in `PLACE-FREEZE.json` befo
 
 A rotated or cropped scan, or a page whose scale is not 1, no longer produces line suggestions. The installed pdf.js page object does expose `userUnit`. When that value is missing, the scan is also refused rather than given a guessed scale. Native widgets are not refused. `app.js` was adjusted after the look so the explanation is not replaced by “Form ready.” The detector was not edited again and the holdout was not re-run.
 
+## Exact blank maps
+
+A saved map is places and keys for one role on one exact file. It does not keep the person or the values. Notes: [MAPS.md](MAPS.md). Switching pages cancels an armed placement. The detector was not retuned.
+
 ## Missed-line placement
 
 A confirmed saved value can be placed in Edit and Sign when the reader misses a line. It is not an automatic fill. Rotated and cropped pages refuse that placement. Notes and the browser checks are in [RECOVER.md](RECOVER.md). The detector was not retuned.

@@ -416,7 +416,9 @@
       var best = entries.filter(function (e) { return e.isIntersecting; })
         .sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; })[0];
       if (!best) return;
-      state.current = Number(best.target.dataset.index);
+      var index = Number(best.target.dataset.index);
+      if (index !== state.current) disarmRecover('Placement was cancelled because the page changed.');
+      state.current = index;
       updatePageLabel();
     }, { root: $('stage'), threshold: [0.45, 0.7] });
     document.querySelectorAll('.page').forEach(function (p) { pageObserver.observe(p); });
@@ -552,6 +554,7 @@
   async function rotatePage() {
     var rec = currentPage();
     if (!rec) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     rec.rotation = ((rec.rotation || 0) + 90) % 360;
     rec.annotations.forEach(rotCW);
     await renderAll();
@@ -563,6 +566,7 @@
       return;
     }
     if (!confirm('Remove this page from the document?')) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     state.pages.splice(state.current, 1);
     state.current = Math.min(state.current, state.pages.length - 1);
     await renderAll();
@@ -572,6 +576,7 @@
     var i = state.current;
     var j = i + dir;
     if (j < 0 || j >= state.pages.length) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     var item = state.pages.splice(i, 1)[0];
     state.pages.splice(j, 0, item);
     state.current = j;
@@ -1032,8 +1037,191 @@
       personName: person.options[person.selectedIndex] ? person.options[person.selectedIndex].textContent : '',
       key: option.dataset.key || '',
       label: option.dataset.label || option.dataset.key || '',
-      value: option.dataset.value || ''
+      value: option.dataset.value || '',
+      role: $('recoverRole') ? $('recoverRole').value : 'applicant'
     };
+  }
+  async function fileSha() {
+    var digest = await crypto.subtle.digest('SHA-256', state.pdfBytes);
+    return Array.from(new Uint8Array(digest)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  async function pagesSupported() {
+    if (!state.pdfBytes || !state.doc || !state.pages.length) return { ok: false, reason: 'Open a page first.' };
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
+    if (src.getPageCount() !== state.pages.length) return { ok: false, reason: 'Pages were removed. A map needs the original pages in their original order.' };
+    for (var i = 0; i < state.pages.length; i++) {
+      var rec = state.pages[i];
+      if (rec.srcIndex !== i || rec.rotation) return { ok: false, reason: 'Pages were rotated or reordered. Open the exact blank original.' };
+      var lib = src.getPages()[i];
+      var media = lib.getMediaBox();
+      var crop = lib.getCropBox();
+      var angle = ((lib.getRotation().angle || 0) % 360 + 360) % 360;
+      if (angle) return { ok: false, reason: 'This file has a rotated page. A map is not saved or applied on it.' };
+      if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) {
+        return { ok: false, reason: 'This file has a cropped page. A map is not saved or applied on it.' };
+      }
+      var pdfPage = await state.doc.getPage(i + 1);
+      if (typeof pdfPage.userUnit !== 'number' || Math.abs(pdfPage.userUnit - 1) > 0.001) {
+        return { ok: false, reason: 'This file’s page scale is not usable, so a map is not saved or applied.' };
+      }
+    }
+    return { ok: true, doc: src };
+  }
+  function manualSlots() {
+    var roles = {};
+    var people = {};
+    var pages = state.pages.map(function () { return []; });
+    state.pages.forEach(function (rec, index) {
+      rec.annotations.forEach(function (ann) {
+        if (!ann.manual || ann.type !== 'text' || !ann.factKey) return;
+        roles[ann.role || 'applicant'] = true;
+        if (ann.profileId) people[ann.profileId] = true;
+        pages[index].push({
+          key: ann.factKey,
+          role: ann.role || 'applicant',
+          x: ann.x, y: ann.y, w: ann.w, h: ann.h,
+          fontSize: ann.fontSize || 14
+        });
+      });
+    });
+    return { roles: Object.keys(roles), people: Object.keys(people), pages: pages, count: pages.reduce(function (n, list) { return n + list.length; }, 0) };
+  }
+  async function refreshMaps() {
+    var pick = $('mapPick');
+    if (!pick || !window.FormMaps || !state.pdfBytes) return;
+    var loaded = await FormMaps.load();
+    var sha = await fileSha();
+    state.mapSha = sha;
+    state.mapVault = loaded.vault;
+    var previous = pick.value;
+    pick.textContent = '';
+    var maps = (loaded.vault.maps || []).filter(function (map) { return map.fileSha256 === sha; });
+    if (!maps.length) {
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'No map for this exact file';
+      pick.appendChild(empty);
+      return;
+    }
+    maps.forEach(function (map) {
+      var opt = document.createElement('option');
+      opt.value = map.id;
+      opt.textContent = map.name + ' · ' + map.role;
+      pick.appendChild(opt);
+    });
+    if (previous && maps.some(function (map) { return map.id === previous; })) pick.value = previous;
+  }
+  function chosenMap() {
+    var id = $('mapPick') && $('mapPick').value;
+    var maps = (state.mapVault && state.mapVault.maps) || [];
+    return maps.filter(function (map) { return map.id === id; })[0] || null;
+  }
+  async function saveCurrentMap() {
+    if (!window.FormMaps) return;
+    var support = await pagesSupported();
+    if (!support.ok) { recoverSay(support.reason); return; }
+    var found = manualSlots();
+    if (!found.count) { recoverSay('Place at least one confirmed value before saving a map. The map stores the place, not the words.'); return; }
+    if (found.people.length !== 1) { recoverSay('A map remembers places for one person at a time. Places for more than one person were not saved.'); return; }
+    if (found.roles.length !== 1) { recoverSay('A map remembers one role. Applicant and patient places together were not saved.'); return; }
+    var loaded = await FormMaps.load();
+    if (!loaded.ok && loaded.reason !== 'version') { recoverSay('Maps could not be read (' + loaded.reason + '). Nothing was saved.'); return; }
+    var label = ($('mapName').value || '').trim();
+    var draft = {
+      name: label || ('Blank map ' + ((loaded.vault.maps || []).length + 1)),
+      fileSha256: await fileSha(),
+      pages: support.doc.getPages().map(function (page, index) {
+        var size = page.getSize();
+        return { width: size.width, height: size.height, slots: found.pages[index] || [] };
+      })
+    };
+    var saved = FormMaps.saveMap(loaded.ok ? loaded.vault : FormMaps.empty(), draft);
+    if (!saved.ok) { recoverSay('The map was not saved (' + saved.reason + ').'); return; }
+    var stored = await FormMaps.persist(saved.vault);
+    if (!stored.ok) { recoverSay('The map stayed unsaved (' + stored.reason + ').'); return; }
+    $('mapName').value = '';
+    await refreshMaps();
+    recoverSay('Saved ' + saved.map.name + ' for this exact file, role ' + saved.map.role + '. It does not keep the person or the values.');
+  }
+  async function previewMap() {
+    var map = chosenMap();
+    var box = $('mapPreviewText');
+    if (!map) { if (box) box.textContent = 'No map for this exact file.'; return; }
+    var support = await pagesSupported();
+    if (!support.ok) { if (box) box.textContent = support.reason; return; }
+    if (map.fileSha256 !== await fileSha()) { if (box) box.textContent = 'This is not the same file. Open the exact blank original.'; return; }
+    var person = $('recoverPerson');
+    var fact = selectedRecoverFact();
+    var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
+    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
+    var lines = [];
+    var ready = 0;
+    var skipped = 0;
+    map.pages.forEach(function (page, index) {
+      var size = support.doc.getPages()[index] && support.doc.getPages()[index].getSize();
+      if (!size || Math.abs(size.width - page.width) > 0.5 || Math.abs(size.height - page.height) > 0.5) {
+        lines.push('Page ' + (index + 1) + ' size does not match.');
+        skipped += page.slots.length;
+        return;
+      }
+      page.slots.forEach(function (slot) {
+        var have = profile && (profile.facts || []).filter(function (item) { return item.key === slot.key && item.status === 'confirmed' && item.value; })[0];
+        if (!have) { skipped += 1; lines.push('Page ' + (index + 1) + ' ' + slot.role + ' ' + slot.key + ' has no confirmed value.'); return; }
+        ready += 1;
+        lines.push('Page ' + (index + 1) + ' ' + slot.role + ' ' + slot.key + ' would be placed.');
+      });
+    });
+    var text = 'Preview only, nothing written. Role ' + map.role + '. ' + ready + ' place(s), ' + skipped + ' left blank. ' + lines.join(' ');
+    if (box) box.textContent = text;
+    recoverSay(text);
+  }
+  async function applyMap() {
+    var map = chosenMap();
+    if (!map) { recoverSay('Choose a map for this exact file.'); return; }
+    var support = await pagesSupported();
+    if (!support.ok) { recoverSay(support.reason); return; }
+    if (map.fileSha256 !== await fileSha()) { recoverSay('This is not the same file the map was saved from. Open the exact blank original. A changed copy is not used.'); return; }
+    if (state.pages.some(function (rec, index) { return rec.srcIndex !== index || rec.rotation; })) {
+      recoverSay('Pages were rotated or reordered. The map was not applied.');
+      return;
+    }
+    var person = $('recoverPerson');
+    var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
+    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
+    if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
+    pushUndo();
+    state.pages.forEach(function (rec) {
+      rec.annotations = rec.annotations.filter(function (ann) { return ann.mapId !== map.id; });
+    });
+    var placed = 0;
+    var skipped = 0;
+    map.pages.forEach(function (page, index) {
+      var size = support.doc.getPages()[index].getSize();
+      if (Math.abs(size.width - page.width) > 0.5 || Math.abs(size.height - page.height) > 0.5) { skipped += page.slots.length; return; }
+      page.slots.forEach(function (slot) {
+        var have = (profile.facts || []).filter(function (item) { return item.key === slot.key && item.status === 'confirmed' && item.value; })[0];
+        if (!have) { skipped += 1; return; }
+        addAnn({
+          type: 'text',
+          text: have.value,
+          x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+          fontSize: slot.fontSize,
+          color: '#1a1612',
+          manual: true,
+          mapId: map.id,
+          factKey: slot.key,
+          role: slot.role,
+          profileId: profile.id,
+          personName: profile.name,
+          seedText: have.value,
+          skipUndo: true
+        }, state.pages[index]);
+        placed += 1;
+      });
+    });
+    redrawAnnotations();
+    state.recoverArmed = false;
+    recoverSay('Applied ' + placed + ' place(s) for ' + profile.name + ' as ' + map.role + '. ' + skipped + ' left blank. This is not an automatic fill. Apply again replaces these places. Undo restores the previous lines.');
   }
   async function refreshRecover() {
     var bar = $('recoverBar');
@@ -1077,6 +1265,7 @@
     $('recoverPlace').disabled = !facts.length;
     if (!facts.length) recoverSay(chosen.name + ' has no confirmed value to place. Unconfirmed reads stay unconfirmed.');
     else if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+    refreshMaps();
   }
   function placeRecovered(rec, x, y) {
     var fact = selectedRecoverFact();
@@ -1085,16 +1274,19 @@
       return;
     }
     state.current = state.pages.indexOf(rec);
+    var width = 0.42;
+    var height = 0.05;
     var el = addAnn({
       type: 'text',
       text: fact.value,
-      x: clamp(x, 0, 0.82),
-      y: clamp(y, 0, 0.9),
-      w: 0.42,
-      h: 0.05,
+      x: clamp(x, 0, 1 - width),
+      y: clamp(y, 0, 1 - height),
+      w: width,
+      h: height,
       fontSize: 14,
       color: '#1a1612',
       manual: true,
+      role: fact.role || 'applicant',
       factKey: fact.key,
       profileId: fact.profileId,
       personName: fact.personName,
@@ -1213,6 +1405,30 @@
     });
     $('recoverFact').addEventListener('change', function () {
       disarmRecover('The value changed, so the placement was cancelled.');
+    });
+    $('recoverRole').addEventListener('change', function () {
+      disarmRecover('The role changed, so the placement was cancelled.');
+    });
+    $('mapSave').addEventListener('click', saveCurrentMap);
+    $('mapPreview').addEventListener('click', previewMap);
+    $('mapApply').addEventListener('click', applyMap);
+    $('mapDelete').addEventListener('click', async function () {
+      var map = chosenMap();
+      if (!map || !window.FormMaps) return;
+      var loaded = await FormMaps.load();
+      var next = FormMaps.deleteMap(loaded.vault, map.id);
+      var stored = await FormMaps.persist(next.vault);
+      if (!stored.ok) { recoverSay('The map was not deleted (' + stored.reason + ').'); return; }
+      await refreshMaps();
+      recoverSay('Deleted that blank map from this browser.');
+    });
+    $('mapClear').addEventListener('click', async function () {
+      if (!window.FormMaps) return;
+      if (!confirm('Clear every blank map stored in this browser? Saved people and values stay.')) return;
+      var cleared = await FormMaps.clearAll();
+      if (!cleared.ok) { recoverSay('Maps were not cleared (' + cleared.reason + ').'); return; }
+      await refreshMaps();
+      recoverSay('Cleared every blank map in this browser. People and values were kept.');
     });
     $('recoverPlace').addEventListener('click', async function () {
       var fact = selectedRecoverFact();

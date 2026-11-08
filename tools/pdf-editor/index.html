@@ -31,11 +31,28 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
   <div id="recoverBar" class="recover" hidden>
     <p id="recoverNote">Place a confirmed saved value on a line the reader missed. This is your placement, not an automatic fill.</p>
     <label>Person <select id="recoverPerson"></select></label>
+    <label>Role <select id="recoverRole">
+      <option value="applicant">Applicant</option>
+      <option value="patient">Patient</option>
+      <option value="spouse">Spouse</option>
+      <option value="other">Other</option>
+    </select></label>
     <label>Saved value <select id="recoverFact"></select></label>
     <button id="recoverPlace" type="button" class="tool tool-strong">Place on the page</button>
     <button id="recoverCancel" type="button" class="tool">Cancel</button>
     <button id="recoverUndo" type="button" class="tool">Undo</button>
     <p id="recoverStatus" role="status"></p>
+    <div id="mapBox" class="map-box">
+      <p>A blank map remembers places for one role on one exact file. It does not keep names, values, or the file name. It stays in this browser until you delete it or clear this site’s data. It is not an automatic fill. Use the blank original, not a filled copy.</p>
+      <label>Map label <input id="mapName" type="text" maxlength="40" placeholder="Blank map" autocomplete="off"></label>
+      <button id="mapSave" type="button" class="tool">Save map</button>
+      <label>Saved map <select id="mapPick"></select></label>
+      <button id="mapPreview" type="button" class="tool">Preview</button>
+      <button id="mapApply" type="button" class="tool">Apply</button>
+      <button id="mapDelete" type="button" class="tool">Delete map</button>
+      <button id="mapClear" type="button" class="tool">Clear maps</button>
+      <p id="mapPreviewText" role="status"></p>
+    </div>
   </div>
   <div class="toolbar" id="toolbar" hidden>
     <button id="addText" type="button" class="tool tool-strong">Text</button>
@@ -157,6 +174,7 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
 <script src="../shared/chrome.js"></script>
 <script src="../shared/idb.js"></script>
 <script src="../forms-filler/profiles.js"></script>
+<script src="../forms-filler/maps.js"></script>
 <script src="editor.js"></script>
 </body>
 </html>

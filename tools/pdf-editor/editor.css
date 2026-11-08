@@ -39,6 +39,9 @@ body { overflow: hidden; }
   background: var(--paper);
 }
 .recover p { margin: 0; flex: 1 1 16em; }
+.map-box { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.map-box p { flex: 1 1 100%; }
+.map-box button, .map-box select, .map-box input, .recover button, .recover select { min-height: 44px; }
 .recover button, .recover select, #nudgeLeft, #nudgeRight, #nudgeUp, #nudgeDown { min-height: 44px; }
 .ann-note {
   position: absolute;
