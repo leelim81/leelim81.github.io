@@ -1,0 +1,1658 @@
+{
+  "split": "audit",
+  "mode": "score",
+  "frozen": {
+    "name": false,
+    "nric": false,
+    "dob": false,
+    "phone": false,
+    "email": false,
+    "address": false,
+    "postal": false,
+    "mailbox": false
+  },
+  "rows": [
+    {
+      "id": "quill-native-00",
+      "ms": 422,
+      "kind": "acro",
+      "channel": "text-layer",
+      "text": "Applicant\nFull name: Lior Quill\nNRIC: S4455018J\nDate of birth: 11/02/1994\nPhone: +65 81004401\nEmail: lior.quill4@example.com\nAddress: 18 BIRCH COURT 441180",
+      "words": [],
+      "transform": {
+        "kind": "pdf-text-layer"
+      },
+      "fields": [
+        {
+          "id": "Primary applicant name",
+          "label": "Primary applicant name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 699.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 651.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 603.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 555.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant email",
+          "label": "Primary applicant email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 507.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 459.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Badge colour",
+          "label": "Badge colour",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 411.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "Primary applicant name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Lior Quill",
+              "role": "applicant",
+              "quote": "Full name: Lior Quill",
+              "line": 2
+            }
+          ],
+          "decision": "review",
+          "value": "Lior Quill",
+          "factId": "f0",
+          "quote": "Full name: Lior Quill",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f1",
+              "value": "S4455018J",
+              "role": "applicant",
+              "quote": "NRIC: S4455018J",
+              "line": 3
+            }
+          ],
+          "decision": "review",
+          "value": "S4455018J",
+          "factId": "f1",
+          "quote": "NRIC: S4455018J",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "11/02/1994",
+              "role": "applicant",
+              "quote": "Date of birth: 11/02/1994",
+              "line": 4
+            }
+          ],
+          "decision": "review",
+          "value": "11/02/1994",
+          "factId": "f2",
+          "quote": "Date of birth: 11/02/1994",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "81004401",
+              "role": "applicant",
+              "quote": "Phone: +65 81004401",
+              "line": 5
+            }
+          ],
+          "decision": "review",
+          "value": "81004401",
+          "factId": "f3",
+          "quote": "Phone: +65 81004401",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "lior.quill4@example.com",
+              "role": "applicant",
+              "quote": "Email: lior.quill4@example.com",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "lior.quill4@example.com",
+          "factId": "f4",
+          "quote": "Email: lior.quill4@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "kind": "address",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f5",
+              "value": "18 BIRCH COURT 441180",
+              "role": "applicant",
+              "quote": "Address: 18 BIRCH COURT 441180",
+              "line": 7
+            }
+          ],
+          "decision": "review",
+          "value": "18 BIRCH COURT 441180",
+          "factId": "f5",
+          "quote": "Address: 18 BIRCH COURT 441180",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Badge colour",
+          "kind": "other",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "unknown_field_type",
+          "hard": "destination"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "Primary applicant name",
+          "label": "Primary applicant name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "decision": "autofill",
+          "value": "+65 81004401",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "label": "Primary applicant email",
+          "decision": "autofill",
+          "value": "lior.quill4@example.com",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Badge colour",
+          "label": "Badge colour",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        }
+      ],
+      "placed": [
+        {
+          "text": "quill widget (synthetic)",
+          "x": 48,
+          "y": 790,
+          "w": 157.376
+        },
+        {
+          "text": "Primary applicant name",
+          "x": 48,
+          "y": 722,
+          "w": 105.03000000000002
+        },
+        {
+          "text": "Primary applicant NRIC",
+          "x": 48,
+          "y": 674,
+          "w": 104.46000000000001
+        },
+        {
+          "text": "Primary applicant birth date",
+          "x": 48,
+          "y": 626,
+          "w": 121.71000000000002
+        },
+        {
+          "text": "Primary applicant phone",
+          "x": 48,
+          "y": 578,
+          "w": 107.82000000000002
+        },
+        {
+          "text": "Primary applicant email",
+          "x": 48,
+          "y": 530,
+          "w": 103.91000000000001
+        },
+        {
+          "text": "Primary applicant premises",
+          "x": 48,
+          "y": 482,
+          "w": 120.58000000000001
+        },
+        {
+          "text": "Badge colour",
+          "x": 48,
+          "y": 434,
+          "w": 58.92000000000001
+        }
+      ]
+    },
+    {
+      "id": "quill-native-01",
+      "ms": 390,
+      "kind": "acro",
+      "channel": "text-layer",
+      "text": "Patient\nFull name: Ned Brook\nDate of birth: 04/04/1974\nApplicant\nFull name: Nils Quill\nNRIC: T4455021G\nDate of birth: 12/03/1995\nPhone: +65 81004402\nEmail: nils.quill5@example.com\nAddress: 19 BIRCH COURT 441181",
+      "words": [],
+      "transform": {
+        "kind": "pdf-text-layer"
+      },
+      "fields": [
+        {
+          "id": "Primary applicant name",
+          "label": "Primary applicant name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 699.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 651.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 603.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 555.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant email",
+          "label": "Primary applicant email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 507.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 459.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Badge colour",
+          "label": "Badge colour",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 411.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "Primary applicant name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "Nils Quill",
+              "role": "applicant",
+              "quote": "Full name: Nils Quill",
+              "line": 5
+            }
+          ],
+          "decision": "review",
+          "value": "Nils Quill",
+          "factId": "f2",
+          "quote": "Full name: Nils Quill",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "T4455021G",
+              "role": "applicant",
+              "quote": "NRIC: T4455021G",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "T4455021G",
+          "factId": "f3",
+          "quote": "NRIC: T4455021G",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "12/03/1995",
+              "role": "applicant",
+              "quote": "Date of birth: 12/03/1995",
+              "line": 7
+            }
+          ],
+          "decision": "review",
+          "value": "12/03/1995",
+          "factId": "f4",
+          "quote": "Date of birth: 12/03/1995",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f5",
+              "value": "81004402",
+              "role": "applicant",
+              "quote": "Phone: +65 81004402",
+              "line": 8
+            }
+          ],
+          "decision": "review",
+          "value": "81004402",
+          "factId": "f5",
+          "quote": "Phone: +65 81004402",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f6",
+              "value": "nils.quill5@example.com",
+              "role": "applicant",
+              "quote": "Email: nils.quill5@example.com",
+              "line": 9
+            }
+          ],
+          "decision": "review",
+          "value": "nils.quill5@example.com",
+          "factId": "f6",
+          "quote": "Email: nils.quill5@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "kind": "address",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f7",
+              "value": "19 BIRCH COURT 441181",
+              "role": "applicant",
+              "quote": "Address: 19 BIRCH COURT 441181",
+              "line": 10
+            }
+          ],
+          "decision": "review",
+          "value": "19 BIRCH COURT 441181",
+          "factId": "f7",
+          "quote": "Address: 19 BIRCH COURT 441181",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Badge colour",
+          "kind": "other",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "unknown_field_type",
+          "hard": "destination"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "Primary applicant name",
+          "label": "Primary applicant name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "decision": "autofill",
+          "value": "+65 81004402",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "label": "Primary applicant email",
+          "decision": "autofill",
+          "value": "nils.quill5@example.com",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Badge colour",
+          "label": "Badge colour",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        }
+      ],
+      "placed": [
+        {
+          "text": "quill widget (synthetic)",
+          "x": 48,
+          "y": 790,
+          "w": 157.376
+        },
+        {
+          "text": "Primary applicant name",
+          "x": 48,
+          "y": 722,
+          "w": 105.03000000000002
+        },
+        {
+          "text": "Primary applicant NRIC",
+          "x": 48,
+          "y": 674,
+          "w": 104.46000000000001
+        },
+        {
+          "text": "Primary applicant birth date",
+          "x": 48,
+          "y": 626,
+          "w": 121.71000000000002
+        },
+        {
+          "text": "Primary applicant phone",
+          "x": 48,
+          "y": 578,
+          "w": 107.82000000000002
+        },
+        {
+          "text": "Primary applicant email",
+          "x": 48,
+          "y": 530,
+          "w": 103.91000000000001
+        },
+        {
+          "text": "Primary applicant premises",
+          "x": 48,
+          "y": 482,
+          "w": 120.58000000000001
+        },
+        {
+          "text": "Badge colour",
+          "x": 48,
+          "y": 434,
+          "w": 58.92000000000001
+        }
+      ]
+    },
+    {
+      "id": "quill-native-02",
+      "ms": 382,
+      "kind": "acro",
+      "channel": "text-layer",
+      "text": "Applicant\nFull name: Oda Quill\nApplicant\nFull name: Ned Brook\nNRIC: S4455034B\nDate of birth: 13/04/1996\nPhone: +65 81004403\nEmail: oda.quill6@example.com\nAddress: 20 BIRCH COURT 441182",
+      "words": [],
+      "transform": {
+        "kind": "pdf-text-layer"
+      },
+      "fields": [
+        {
+          "id": "Primary applicant name",
+          "label": "Primary applicant name",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 699.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 651.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 603.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 555.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant email",
+          "label": "Primary applicant email",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 507.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 459.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        },
+        {
+          "id": "Badge colour",
+          "label": "Badge colour",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 47.5,
+            "y": 411.5,
+            "width": 361,
+            "height": 19
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "Primary applicant name",
+          "kind": "name",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f0",
+              "value": "Oda Quill",
+              "role": "applicant",
+              "quote": "Full name: Oda Quill",
+              "line": 2
+            },
+            {
+              "factId": "f1",
+              "value": "Ned Brook",
+              "role": "applicant",
+              "quote": "Full name: Ned Brook",
+              "line": 4
+            }
+          ],
+          "decision": "abstain",
+          "value": "",
+          "reason": "conflict",
+          "hard": "conflict"
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "S4455034B",
+              "role": "applicant",
+              "quote": "NRIC: S4455034B",
+              "line": 5
+            }
+          ],
+          "decision": "review",
+          "value": "S4455034B",
+          "factId": "f2",
+          "quote": "NRIC: S4455034B",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "kind": "dob",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f3",
+              "value": "13/04/1996",
+              "role": "applicant",
+              "quote": "Date of birth: 13/04/1996",
+              "line": 6
+            }
+          ],
+          "decision": "review",
+          "value": "13/04/1996",
+          "factId": "f3",
+          "quote": "Date of birth: 13/04/1996",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "kind": "phone",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f4",
+              "value": "81004403",
+              "role": "applicant",
+              "quote": "Phone: +65 81004403",
+              "line": 7
+            }
+          ],
+          "decision": "review",
+          "value": "81004403",
+          "factId": "f4",
+          "quote": "Phone: +65 81004403",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "kind": "email",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f5",
+              "value": "oda.quill6@example.com",
+              "role": "applicant",
+              "quote": "Email: oda.quill6@example.com",
+              "line": 8
+            }
+          ],
+          "decision": "review",
+          "value": "oda.quill6@example.com",
+          "factId": "f5",
+          "quote": "Email: oda.quill6@example.com",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "kind": "address",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [
+            {
+              "factId": "f6",
+              "value": "20 BIRCH COURT 441182",
+              "role": "applicant",
+              "quote": "Address: 20 BIRCH COURT 441182",
+              "line": 9
+            }
+          ],
+          "decision": "review",
+          "value": "20 BIRCH COURT 441182",
+          "factId": "f6",
+          "quote": "Address: 20 BIRCH COURT 441182",
+          "reason": "type_not_cleared",
+          "hard": null
+        },
+        {
+          "fieldId": "Badge colour",
+          "kind": "other",
+          "geometryTrusted": true,
+          "channel": "text-layer",
+          "candidates": [],
+          "decision": "abstain",
+          "value": "",
+          "reason": "unknown_field_type",
+          "hard": "destination"
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "Primary applicant name",
+          "label": "Primary applicant name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant NRIC",
+          "label": "Primary applicant NRIC",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant birth date",
+          "label": "Primary applicant birth date",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Primary applicant phone",
+          "label": "Primary applicant phone",
+          "decision": "autofill",
+          "value": "+65 81004403",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant email",
+          "label": "Primary applicant email",
+          "decision": "autofill",
+          "value": "oda.quill6@example.com",
+          "reason": "legacy_map"
+        },
+        {
+          "fieldId": "Primary applicant premises",
+          "label": "Primary applicant premises",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        },
+        {
+          "fieldId": "Badge colour",
+          "label": "Badge colour",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        }
+      ],
+      "placed": [
+        {
+          "text": "quill widget (synthetic)",
+          "x": 48,
+          "y": 790,
+          "w": 157.376
+        },
+        {
+          "text": "Primary applicant name",
+          "x": 48,
+          "y": 722,
+          "w": 105.03000000000002
+        },
+        {
+          "text": "Primary applicant NRIC",
+          "x": 48,
+          "y": 674,
+          "w": 104.46000000000001
+        },
+        {
+          "text": "Primary applicant birth date",
+          "x": 48,
+          "y": 626,
+          "w": 121.71000000000002
+        },
+        {
+          "text": "Primary applicant phone",
+          "x": 48,
+          "y": 578,
+          "w": 107.82000000000002
+        },
+        {
+          "text": "Primary applicant email",
+          "x": 48,
+          "y": 530,
+          "w": 103.91000000000001
+        },
+        {
+          "text": "Primary applicant premises",
+          "x": 48,
+          "y": 482,
+          "w": 120.58000000000001
+        },
+        {
+          "text": "Badge colour",
+          "x": 48,
+          "y": 434,
+          "w": 58.92000000000001
+        }
+      ]
+    },
+    {
+      "id": "quill-band-00",
+      "ms": 11940,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Spouse\nFull name: Ned Brook\nPhone: +65 81009999\nApplicant\nFull name: Oda Quill\nNRIC: S4455034B\nDate of birth: 13/04/1996\nPhone: +65 81004403\nEmail:\nAddress: 20 BIRCH COURT 441182",
+      "words": [
+        {
+          "text": "Spouse",
+          "confidence": 96.61090087890625,
+          "x": 23,
+          "y": 781.6433962264151,
+          "w": 41.5,
+          "h": 11,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.94137573242188,
+          "x": 23.5,
+          "y": 763.6433962264151,
+          "w": 18.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.80766296386719,
+          "x": 47,
+          "y": 763.6433962264151,
+          "w": 33,
+          "h": 7,
+          "page": 0
+        },
+        {
+          "text": "Ned",
+          "confidence": 96.35689544677734,
+          "x": 85.5,
+          "y": 764.1433962264151,
+          "w": 21.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Brook",
+          "confidence": 96.61759948730469,
+          "x": 112,
+          "y": 764.1433962264151,
+          "w": 32,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.95170593261719,
+          "x": 23.5,
+          "y": 742.6433962264151,
+          "w": 38,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.98007202148438,
+          "x": 66.5,
+          "y": 743.1433962264151,
+          "w": 20,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "81009999",
+          "confidence": 96.47543334960938,
+          "x": 91.5,
+          "y": 743.1433962264151,
+          "w": 55,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "Applicant",
+          "confidence": 96.47227478027344,
+          "x": 23,
+          "y": 719.6433962264151,
+          "w": 51,
+          "h": 12,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.91030883789062,
+          "x": 24,
+          "y": 701.6433962264151,
+          "w": 18.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.73018646240234,
+          "x": 47.5,
+          "y": 701.6433962264151,
+          "w": 33,
+          "h": 7,
+          "page": 0
+        },
+        {
+          "text": "Oda",
+          "confidence": 96.25334167480469,
+          "x": 86,
+          "y": 702.1433962264151,
+          "w": 23,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Quill",
+          "confidence": 94.51893615722656,
+          "x": 113,
+          "y": 700.1433962264151,
+          "w": 24,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 91.97293090820312,
+          "x": 24,
+          "y": 680.6433962264151,
+          "w": 32,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "S4455034B",
+          "confidence": 91.85935974121094,
+          "x": 61.5,
+          "y": 681.1433962264151,
+          "w": 64.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.9251937866211,
+          "x": 24,
+          "y": 660.1433962264151,
+          "w": 25.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.98865509033203,
+          "x": 53.5,
+          "y": 660.6433962264151,
+          "w": 10.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.47669982910156,
+          "x": 68,
+          "y": 660.6433962264151,
+          "w": 26.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "13/04/1996",
+          "confidence": 96.87342071533203,
+          "x": 99.5,
+          "y": 660.6433962264151,
+          "w": 62,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 96.44499969482422,
+          "x": 24.5,
+          "y": 639.6433962264151,
+          "w": 38,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.16840362548828,
+          "x": 67.5,
+          "y": 640.1433962264151,
+          "w": 20,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "81004403",
+          "confidence": 96.16840362548828,
+          "x": 92,
+          "y": 640.1433962264151,
+          "w": 55,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.29887390136719,
+          "x": 24.5,
+          "y": 618.6433962264151,
+          "w": 33,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.61184692382812,
+          "x": 24,
+          "y": 598.1433962264151,
+          "w": 48.5,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "20",
+          "confidence": 96.89046478271484,
+          "x": 77,
+          "y": 598.6433962264151,
+          "w": 13.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "BIRCH",
+          "confidence": 96.14071655273438,
+          "x": 95,
+          "y": 598.6433962264151,
+          "w": 37.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "COURT",
+          "confidence": 96.45479583740234,
+          "x": 137.5,
+          "y": 599.1433962264151,
+          "w": 43.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "441182",
+          "confidence": 96.77481842041016,
+          "x": 184.5,
+          "y": 599.6433962264151,
+          "w": 40.5,
+          "h": 9,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "primary_applicant_premises",
+          "label": "Primary applicant premises",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 474.73920130399347,
+            "y": 475.73920130399347,
+            "width": 105.38579869600653,
+            "height": 12
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "primary_applicant_premises",
+          "kind": "address",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f6",
+              "value": "20 BIRCH COURT 441182",
+              "role": "applicant",
+              "quote": "Address: 20 BIRCH COURT 441182",
+              "line": 10
+            }
+          ],
+          "decision": "review",
+          "value": "20 BIRCH COURT 441182",
+          "factId": "f6",
+          "quote": "Address: 20 BIRCH COURT 441182",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "primary_applicant_premises",
+          "label": "Primary applicant premises",
+          "decision": "abstain",
+          "value": "",
+          "reason": "legacy_blank"
+        }
+      ],
+      "placed": []
+    },
+    {
+      "id": "quill-card-00",
+      "ms": 10838,
+      "kind": "flat",
+      "channel": "ocr",
+      "text": "Applicant\nFull name: Lior Quill\nApplicant\nFull name: undefined\nNRIC: S4455018J\nDate of birth: 11/02/1994\nPhone: +65 81004401\nEmail: lior.quill4@example.com\nAddress: 18 BIRCH COURT 441180",
+      "words": [
+        {
+          "text": "Applicant",
+          "confidence": 96.31501007080078,
+          "x": 26,
+          "y": 788.0447308567096,
+          "w": 51.5,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.74022674560547,
+          "x": 26.5,
+          "y": 770.0447308567096,
+          "w": 19,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 96.42340850830078,
+          "x": 50.5,
+          "y": 769.5447308567096,
+          "w": 33,
+          "h": 7.5,
+          "page": 0
+        },
+        {
+          "text": "Lior",
+          "confidence": 96.97240447998047,
+          "x": 89,
+          "y": 769.5447308567096,
+          "w": 20,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Quill",
+          "confidence": 95.26408386230469,
+          "x": 113,
+          "y": 767.0447308567096,
+          "w": 24.5,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Applicant",
+          "confidence": 96.38680267333984,
+          "x": 25.5,
+          "y": 746.5447308567096,
+          "w": 52,
+          "h": 11.5,
+          "page": 0
+        },
+        {
+          "text": "Full",
+          "confidence": 96.04849243164062,
+          "x": 26.5,
+          "y": 728.5447308567096,
+          "w": 18.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "name:",
+          "confidence": 95.88018035888672,
+          "x": 50,
+          "y": 728.0447308567096,
+          "w": 33.5,
+          "h": 7.5,
+          "page": 0
+        },
+        {
+          "text": "undefined",
+          "confidence": 96.56122589111328,
+          "x": 89,
+          "y": 728.0447308567096,
+          "w": 53.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "NRIC:",
+          "confidence": 90.20201873779297,
+          "x": 26,
+          "y": 707.5447308567096,
+          "w": 32.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "S4455018J",
+          "confidence": 33.850677490234375,
+          "x": 64,
+          "y": 707.0447308567096,
+          "w": 62.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Date",
+          "confidence": 96.65058135986328,
+          "x": 26,
+          "y": 687.0447308567096,
+          "w": 25.5,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "of",
+          "confidence": 96.82675170898438,
+          "x": 56,
+          "y": 686.5447308567096,
+          "w": 10.5,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "birth:",
+          "confidence": 96.60713195800781,
+          "x": 70,
+          "y": 686.5447308567096,
+          "w": 26.5,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "11/02/1994",
+          "confidence": 96.04512786865234,
+          "x": 102,
+          "y": 686.0447308567096,
+          "w": 61.5,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "Phone:",
+          "confidence": 95.86297607421875,
+          "x": 26,
+          "y": 666.0447308567096,
+          "w": 38,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "+65",
+          "confidence": 96.87601470947266,
+          "x": 69.5,
+          "y": 666.0447308567096,
+          "w": 20,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "81004401",
+          "confidence": 96.110107421875,
+          "x": 94,
+          "y": 665.5447308567096,
+          "w": 55.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "Email:",
+          "confidence": 93.14533233642578,
+          "x": 26,
+          "y": 645.0447308567096,
+          "w": 33,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "lior.quill4@example.com",
+          "confidence": 71.83827209472656,
+          "x": 64.5,
+          "y": 642.0447308567096,
+          "w": 135.5,
+          "h": 12.5,
+          "page": 0
+        },
+        {
+          "text": "Address:",
+          "confidence": 96.30211639404297,
+          "x": 25,
+          "y": 624.5447308567096,
+          "w": 49,
+          "h": 9.5,
+          "page": 0
+        },
+        {
+          "text": "18",
+          "confidence": 96.92621612548828,
+          "x": 79,
+          "y": 624.5447308567096,
+          "w": 13,
+          "h": 8.5,
+          "page": 0
+        },
+        {
+          "text": "BIRCH",
+          "confidence": 96.18655395507812,
+          "x": 96.5,
+          "y": 624.0447308567096,
+          "w": 37.5,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "COURT",
+          "confidence": 96.4634017944336,
+          "x": 139,
+          "y": 624.0447308567096,
+          "w": 44,
+          "h": 9,
+          "page": 0
+        },
+        {
+          "text": "441180",
+          "confidence": 96.69551086425781,
+          "x": 186.5,
+          "y": 623.5447308567096,
+          "w": 41,
+          "h": 9,
+          "page": 0
+        }
+      ],
+      "transform": {
+        "kind": "render-ocr",
+        "scale": 2,
+        "pages": 1,
+        "rotationDeg": 0,
+        "deskew": "none"
+      },
+      "fields": [
+        {
+          "id": "nric",
+          "label": "NRIC",
+          "type": "text",
+          "untrusted": false,
+          "rect": {
+            "x": 394.29218407596784,
+            "y": 609.4733382030679,
+            "width": 185.83281592403216,
+            "height": 12
+          },
+          "page": 0
+        }
+      ],
+      "candidate": [
+        {
+          "fieldId": "nric",
+          "kind": "nric",
+          "geometryTrusted": true,
+          "channel": "ocr",
+          "candidates": [
+            {
+              "factId": "f2",
+              "value": "S4455018J",
+              "role": "applicant",
+              "quote": "NRIC: S4455018J",
+              "line": 5
+            }
+          ],
+          "decision": "review",
+          "value": "S4455018J",
+          "factId": "f2",
+          "quote": "NRIC: S4455018J",
+          "reason": "type_not_cleared",
+          "hard": null
+        }
+      ],
+      "baseline": [
+        {
+          "fieldId": "nric",
+          "label": "NRIC",
+          "decision": "autofill",
+          "value": "S4455018J",
+          "reason": "legacy_map"
+        }
+      ],
+      "placed": []
+    }
+  ]
+}

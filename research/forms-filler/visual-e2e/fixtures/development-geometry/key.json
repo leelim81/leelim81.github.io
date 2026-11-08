@@ -1,0 +1,231 @@
+[
+  {
+    "id": "repeated-roles",
+    "split": "development-geometry",
+    "note": "Two people, long rules.",
+    "image_px": [
+      1329,
+      1866
+    ],
+    "page_px": [
+      1309,
+      1852
+    ],
+    "fields": [
+      {
+        "kind": "name",
+        "label_drawn": "Applicant name",
+        "role": "applicant",
+        "box_px": [
+          50.35,
+          196.9,
+          811.12,
+          24.49
+        ]
+      },
+      {
+        "kind": "name",
+        "label_drawn": "Patient name",
+        "role": "patient",
+        "box_px": [
+          51.6,
+          316.89,
+          811.12,
+          24.49
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Applicant phone",
+        "role": "applicant",
+        "box_px": [
+          52.86,
+          436.89,
+          811.12,
+          24.49
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Patient phone",
+        "role": "patient",
+        "box_px": [
+          54.12,
+          556.88,
+          811.12,
+          24.49
+        ]
+      }
+    ]
+  },
+  {
+    "id": "two-column",
+    "split": "development-geometry",
+    "note": "Two columns. Each rule is under 45 percent of the page.",
+    "image_px": [
+      1327,
+      1864
+    ],
+    "page_px": [
+      1309,
+      1852
+    ],
+    "fields": [
+      {
+        "kind": "name",
+        "label_drawn": "Applicant name",
+        "role": "applicant",
+        "box_px": [
+          55.11,
+          212.66,
+          471.12,
+          20.11
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Applicant phone",
+        "role": "applicant",
+        "box_px": [
+          53.89,
+          352.66,
+          471.12,
+          20.11
+        ]
+      },
+      {
+        "kind": "name",
+        "label_drawn": "Patient name",
+        "role": "patient",
+        "box_px": [
+          689.09,
+          218.2,
+          471.12,
+          20.11
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Patient phone",
+        "role": "patient",
+        "box_px": [
+          687.87,
+          358.19,
+          471.12,
+          20.11
+        ]
+      }
+    ]
+  },
+  {
+    "id": "narrow-rules",
+    "split": "development-geometry",
+    "note": "Rules narrower than the long-rule cutoff.",
+    "image_px": [
+      1323,
+      1862
+    ],
+    "page_px": [
+      1309,
+      1852
+    ],
+    "fields": [
+      {
+        "kind": "name",
+        "label_drawn": "Applicant name",
+        "role": "applicant",
+        "box_px": [
+          50.03,
+          218.7,
+          366.1,
+          18.55
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Applicant phone",
+        "role": "applicant",
+        "box_px": [
+          50.87,
+          338.69,
+          366.1,
+          18.55
+        ]
+      },
+      {
+        "kind": "email",
+        "label_drawn": "Applicant inbox",
+        "role": "applicant",
+        "box_px": [
+          51.71,
+          458.69,
+          366.1,
+          18.55
+        ]
+      }
+    ]
+  },
+  {
+    "id": "nearby-box",
+    "split": "development-geometry",
+    "note": "A box beside a long rule.",
+    "image_px": [
+      1323,
+      1862
+    ],
+    "page_px": [
+      1309,
+      1852
+    ],
+    "fields": [
+      {
+        "kind": "name",
+        "label_drawn": "Visitor name",
+        "role": "applicant",
+        "box_px": [
+          431.67,
+          217.38,
+          520.29,
+          47.63
+        ]
+      },
+      {
+        "kind": "phone",
+        "label_drawn": "Visitor handset",
+        "role": "applicant",
+        "box_px": [
+          58.91,
+          352.78,
+          811.09,
+          21.66
+        ]
+      }
+    ]
+  },
+  {
+    "id": "close-labels",
+    "split": "development-geometry",
+    "note": "Two labels sit on one long rule. The rule should stay empty.",
+    "image_px": [
+      1319,
+      1860
+    ],
+    "page_px": [
+      1309,
+      1852
+    ],
+    "fields": [
+      {
+        "kind": "name",
+        "label_drawn": "Applicant name",
+        "role": "applicant",
+        "box_px": [
+          49.82,
+          320.94,
+          811.07,
+          20.25
+        ]
+      }
+    ]
+  }
+]

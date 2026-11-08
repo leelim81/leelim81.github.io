@@ -1,6 +1,6 @@
 # Forms Filler scorecard
 
-Two benchmarks are in this folder. They are not the same measurement.
+Two benchmarks are in this folder. They are not the same measurement. The qualification and the stopping point are in [FRONTIER.md](FRONTIER.md). Scan autofill is not ready. The audit family was looked at once and is now a regression set.
 
 | | Parser fixture benchmark | End-to-end visual benchmark |
 | --- | --- | --- |

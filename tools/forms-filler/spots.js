@@ -674,7 +674,10 @@
         h: h,
         text: check ? 'X' : value,
         fontSize: fontSize,
-        color: '#1a1612'
+        color: '#1a1612',
+        factKey: check ? '' : (field.factKey || ''),
+        profileId: check ? '' : (field.profileId || ''),
+        seedText: check ? '' : value
       });
     });
     return byPage;

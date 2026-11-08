@@ -61,6 +61,91 @@ The reference text was mostly right. Three labels never became fields: handset, 
 
 OCR autofill stays off. Eighteen name fills on the earlier calibration were already below the minimum of 59, and this round did not create a new calibration or a new held-out. The old holder-sheet numbers were not used to choose these changes.
 
-## Next experiment that is still reasonable
+## Rejected: bridge six-pixel gaps in horizontal rules
 
-A line finder that keeps a short underline after a measured deskew, checked on `development-stack` and on the existing `spots.test.mjs` pages, without touching the holder-sheet split. Cost is a geometry change with a real chance of extra fields. It is the main unused local step. Another OCR model would be a new download and is out of scope.
+| | |
+| --- | --- |
+| Error class | Rotated underlines. Before this try, `development-stack` found 7, 6, 1, and 3 fields. |
+| Hypothesis | Allowing a six-pixel gap inside a horizontal ink run would reconnect a rotated underline after deskew. |
+| Change | `rasterGeometry` treated up to six white pixels as part of the same run, and lowered the dark-pixel fraction from 0.6 to 0.45. |
+| Dev result | Underlines rose to 7, 7, 4, and 3 fields. Probe coverage on that set went from 13/22 to 17/22, still 0 wrong. The original four boxed sheets fell from 16/22 to 12/22 correct, also 0 wrong. Time stayed about 12 s. |
+| Why rejected | The boxed development set got worse. The change was reverted. The holder-sheet split was not scored. |
+
+## Kept: a separate long-rule detector on the already deskewed page
+
+| | |
+| --- | --- |
+| Error class | Rotated underlines. The shared ink mask still missed them. The six-pixel gap bridge was not put back. |
+| Hypothesis | Rules longer than 45% of the page width can be found with their own contrast test, including an eight-pixel bridge only inside that test. A label sitting just above the rule can add a field whose kind is not already present. Boxed edges on the intake sheets are shorter, so they stay on the old mask. |
+| Change | `underlineRules` in `fields.js`. `rasterGeometry` is unchanged. |
+| Dev result | Underline sheets: fields 7, 6, 4, 7 (was 7, 6, 1, 3). Correct probe fills 19/22, was 13/22. Wrong 0. Wrong-person 0. All 19 painted values sat inside the detected rule. Boxed intake sheets stayed 16/22 correct, 0 wrong, same 7, 6, 7, 7 fields. Native `development-desk_widget-00` is still an AcroForm with 7 widgets. `spots.test.mjs` still finds 6 fields. About 12 s per form. |
+| Why kept | The gain is on the underline set only. Identity gates and the boxed path did not move. Autofill stays off. The holder-sheet split was not scored. |
+
+## Kept, with a correction: geometry dedup, not kind dedup
+
+The 19/22 underline figure dropped a second field when that kind was already present. That hides a second person or a second phone. The rule now skips a line only when an existing field already occupies it, or when the same label text already sits on that line. Two different labels of the same kind both stay. Two known labels on one line, or two stacked labels of the same kind, add nothing.
+
+| Set | Correct | Wrong | Wrong person |
+| --- | ---: | ---: | ---: |
+| Underline development, kind dedup (previous commit) | 19/22 | 0 | 0 |
+| Underline development, geometry dedup | 18/22 | 0 | 0 |
+| Boxed intake development | 16/22 | 0 | 0 |
+
+New development sheets, not used to move the 45% cutoff:
+
+| Sheet | Candidates | Wrong association | What was left out |
+| --- | ---: | ---: | --- |
+| Repeated roles, long rules | 3 | 0 | Applicant name was not detected. Patient name and both phones stayed. The miss is geometry, not a role swap. |
+| Two columns, each rule under 45% of the width | 3 | 0 | Applicant name. No column swap. |
+| Narrow rules | 0 | 0 | All three. The long-rule path abstains. |
+| Box next to a long rule | 2 | 0 | Nothing. |
+| Two labels on one rule | 0 | 0 | The rule stayed empty. |
+
+`node research/forms-filler/visual-e2e/geometry-check.mjs` reads those PDFs. `python3 generate.py geometry` rewrites the PNGs from seed 20261141. Autofill stays off. The holder-sheet split was not scored.
+
+## Ran once: PP-OCRv6 tiny, not installed
+
+`@paddleocr/paddleocr-js` 0.4.2, Apache-2.0. Models `PP-OCRv6_tiny_det` and `PP-OCRv6_tiny_rec`, 1,792,000 and 4,526,080 bytes, sha256 in `results/paddle-tiny-dev.json`. The app does not download them.
+
+The worker was asked for WASM and `numThreads: 1`. It fetched `ort-wasm-simd-threaded.jsep.wasm`, 25,014,754 bytes. ONNX Runtime Web 1.24.3 does not publish a non-threaded `ort-wasm-simd.wasm`. The 12,361,745-byte non-JSEP file was not used. SharedArrayBuffer was available because this trial server sent `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`. That is a requirement of this threaded build, not a claim that every WASM file needs isolation. Cold localhost responses were 54,140,625 bytes, including the 11,341,486-byte worker. Startup was 1,070 ms. Full-page predict times were 1,544, 909, and 968 ms. A crop of the same reference was 397 ms. Tesseract on those same images was 1,060, 503, 572, and 251 ms.
+
+Chrome RSS peaked at 1,799,744 KB. That sum includes the browser and its other processes. `usedJSHeapSize` went from 186,498,489 to 193,182,737 after `dispose()` and does not include WASM linear memory. The heap not returning to the start is not proof the model stayed allocated. A phone was not tested. Paddle stays out of the app.
+
+On `development-stack-00` the printed email is `suki.sample1@example.com`. Paddle read `sample1`. Tesseract read `samplel`. The disagreement stays a review flag. It is not a vote and it does not enable OCR autofill. Paddle's polygons are text lines, not blank fields.
+
+## Rejected: dictionary flags at worker creation
+
+Tesseract.js 5.1.1 passes the fourth `createWorker` argument to `Init`. `setParameters` prints a warning and does not apply `load_system_dawg` or the other `*_INIT_MEMBER` flags. This run set those flags in the init config, one worker at a time.
+
+| Image | Dictionaries on | Dictionaries off |
+| --- | --- | --- |
+| `development-stack-00` reference | `suki.samplel@example.com` | `suki.samplel@example.com` |
+| Email line crop of that page | `suki.samplel@example.com` | `suki.samplel@example.com` |
+| Drawn line `sample1@example.com` | `samplel@example.com` | `samplel@example.com` |
+| Drawn `S2000346D`, `+65 80000020`, `21/09/1990`, `O'Neil, Jr.` | unchanged | unchanged |
+
+About 720 ms for the three reads. The production worker is unchanged. Raw text is `results/dict-init.json`. Rerun: `node research/forms-filler/visual-e2e/dict-trial.mjs`.
+
+## Kept: a headed person keeps their own values
+
+`FormFacts.fromText` used to return the first full name in the file. A patient block before the applicant became the saved name. It now uses the heading. One applicant name is kept. Two applicant names set `conflict` and no name. A spouse, witness, guardian, parent, sibling, or doctor heading does not become the applicant. `FormEvidence.extract` records `start` and `end` offsets. The quote slice is the value. Unknown keys such as `Favorite color` are not facts. Repeated applicant phones conflict. The fill path already abstained on two applicant names. Profiles still put the other person in `pending` and do not create a profile when two applicant names disagree.
+
+The missing applicant name on the repeated-role and two-column sheets is `not_detected` in `results/development-geometry.json`. That label is a dev oracle, not a production score. The role checks did not swap the people who were detected.
+
+## Where this stops
+
+| Option | Evidence | Cost | Decision |
+| --- | --- | --- | --- |
+| Move the 45% line cutoff | Would be fitted to these 22 answers. The earlier global gap bridge hurt boxed forms. | Low, and the boxed path moves with it. | Stop. |
+| Dictionary init flags | On and off matched, including the `1`/`l` email. | One browser run. Done. | Stop. |
+| Turn Paddle on by default | Correct digit on one email. 54,140,625 bytes, slower than Tesseract, about 1.8 GB Chrome RSS. | Large runtime. | Keep dev-only. |
+| A larger model | Not measured. | Download and memory above this batch. | Out of scope. |
+| New disjoint family, then one held-out look | Needed before any fresh test. The holder sheets were already seen. Same-template copies are not new samples. | A frozen family and a protocol, then one look. | Next scope choice, not this batch. |
+
+Development frontier after this batch: underline sheets 18/22 correct, boxed sheets 16/22 correct, 0 wrong, 0 wrong-person. OCR autofill stays off. Synthetic pages and a desktop browser do not establish broad reliability. A phone was not tested.
+
+## What can be qualified while scan autofill is off
+
+Native AcroForm reading and filling is the existing path. This batch did not change it. `spots.test.mjs` still finds 6 fields. OCR suggestions stay review-only. The profile store keeps confirmed corrections, sends another person to pending, and does not treat a signature as a fact. The extension package is still `forms-filler-profiles-0.1.0.zip` because those sources did not change.
+
+Pull request 13 depends on pull request 12. Neither is a release merge. The one audit family and the stopping point are in [../FRONTIER.md](../FRONTIER.md). That family has been looked at. It is a regression set. The holder-sheet split stays unscored.

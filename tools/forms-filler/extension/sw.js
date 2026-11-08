@@ -1,0 +1,1 @@
+/* No background collection. The popup asks for a scan only after a click. */

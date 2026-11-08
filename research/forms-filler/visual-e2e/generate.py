@@ -282,8 +282,130 @@ def main():
     print({name: len(rows) for name, rows in records.items()})
 
 
+def write_feature():
+    """One boxed raster pair for the profile end-to-end. Not a scorecard split."""
+    labels = ['Full name', 'Phone', 'Email']
+    p = person('development', 40)
+    p['name'] = 'Cora Example'
+    p['email'] = 'cora.sample9@example.com'
+    p['phone'] = '+65 80000009'
+    p['id'] = 'feature-cora'
+    dest = ROOT / 'fixtures' / 'feature-e2e'
+    dest.mkdir(parents=True, exist_ok=True)
+    form, _ = draw_page(['feature form', 'Synthetic raster. Not a real form.'], labels, -0.8, 0.35, 7, 20261121)
+    ref, _ = draw_page(reference_lines('single', p), [], -0.4, 0.35, 7, 20261122)
+    ambiguous, _ = draw_page([
+        'Applicant',
+        'Full name: Cora Example',
+        'Email: cora.other@example.com',
+        'Applicant',
+        'Full name: Bea Example',
+        'Email: bea@example.com'
+    ], [], 0.2, 0.35, 7, 20261123)
+    form.save(dest / 'cora.form.png')
+    ref.save(dest / 'cora.reference.png')
+    ambiguous.save(dest / 'cora.ambiguous.png')
+    print('feature pngs', dest)
+
+
+def _raster(im, boxes, angle, blur, sigma, seed):
+    import numpy as np
+    turned = im.rotate(angle, expand=True, fillcolor='white', resample=Image.Resampling.BICUBIC)
+    turned = turned.filter(ImageFilter.GaussianBlur(radius=blur))
+    nw, nh = turned.size
+    arr = np.asarray(turned).astype(np.int16)
+    noise = np.random.default_rng(seed).integers(-sigma, sigma + 1, size=(nh, nw), dtype=np.int16)
+    arr += noise[:, :, None]
+    np.clip(arr, 0, 255, out=arr)
+    turned = Image.fromarray(arr.astype(np.uint8), 'RGB')
+    mapped = []
+    w, h = im.size
+    for x0, y0, bw, bh in boxes:
+        corners = [rotate_point(x, y, w, h, angle, nw, nh) for x, y in ((x0, y0), (x0 + bw, y0), (x0, y0 + bh), (x0 + bw, y0 + bh))]
+        xs = [p[0] for p in corners]
+        ys = [p[1] for p in corners]
+        mapped.append((min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys)))
+    return turned, mapped
+
+
+def write_geometry():
+    """Development counterexamples for the long-rule path. Not a scorecard split."""
+    w, h = int(PAGE_W * SCALE), int(PAGE_H * SCALE)
+    dest = ROOT / 'fixtures' / 'development-geometry'
+    dest.mkdir(parents=True, exist_ok=True)
+    records = []
+
+    def sheet(stem, note, slots, angle, seed):
+        im = Image.new('RGB', (w, h), 'white')
+        draw = ImageDraw.Draw(im)
+        draw.text((48, 48), note, fill='black', font=FONT_SM)
+        boxes = []
+        gold = []
+        for slot in slots:
+            label, x, y, line_w, kind = slot[:5]
+            draw.text((x, y), label, fill='black', font=FONT_SM)
+            if slot[5] == 'label':
+                continue
+            if slot[5] == 'box':
+                bw, bh = line_w, 44
+                draw.rectangle([x, y + 34, x + bw, y + 34 + bh], outline='black', width=6)
+                boxes.append((x, y + 34, bw, bh))
+            else:
+                line_y = y + 40
+                draw.line([(x, line_y), (x + line_w, line_y)], fill='black', width=6)
+                boxes.append((x, line_y - 8, line_w, 16))
+            gold.append({'kind': kind, 'label_drawn': label, 'role': slot[6]})
+        turned, mapped = _raster(im, boxes, angle, 0.35, 7, seed)
+        for field, box in zip(gold, mapped):
+            field['box_px'] = [round(v, 2) for v in box]
+        turned.save(dest / f'{stem}.form.png')
+        records.append({
+            'id': stem,
+            'split': 'development-geometry',
+            'note': note,
+            'image_px': list(turned.size),
+            'page_px': [w, h],
+            'fields': gold,
+        })
+
+    long = int(w * 0.62)
+    short = int(w * 0.28)
+    half = int(w * 0.36)
+    sheet('repeated-roles', 'Two people, long rules.', [
+        ('Applicant name', 48, 160, long, 'name', 'line', 'applicant'),
+        ('Patient name', 48, 280, long, 'name', 'line', 'patient'),
+        ('Applicant phone', 48, 400, long, 'phone', 'line', 'applicant'),
+        ('Patient phone', 48, 520, long, 'phone', 'line', 'patient'),
+    ], 0.6, 20261141)
+    sheet('two-column', 'Two columns. Each rule is under 45 percent of the page.', [
+        ('Applicant name', 40, 180, half, 'name', 'line', 'applicant'),
+        ('Applicant phone', 40, 320, half, 'phone', 'line', 'applicant'),
+        ('Patient name', w // 2 + 20, 180, half, 'name', 'line', 'patient'),
+        ('Patient phone', w // 2 + 20, 320, half, 'phone', 'line', 'patient'),
+    ], -0.5, 20261142)
+    sheet('narrow-rules', 'Rules narrower than the long-rule cutoff.', [
+        ('Applicant name', 48, 180, short, 'name', 'line', 'applicant'),
+        ('Applicant phone', 48, 300, short, 'phone', 'line', 'applicant'),
+        ('Applicant inbox', 48, 420, short, 'email', 'line', 'applicant'),
+    ], 0.4, 20261143)
+    sheet('nearby-box', 'A box beside a long rule.', [
+        ('Visitor name', 420, 180, 520, 'name', 'box', 'applicant'),
+        ('Visitor handset', 48, 320, long, 'phone', 'line', 'applicant'),
+    ], -0.4, 20261144)
+    sheet('close-labels', 'Two labels sit on one long rule. The rule should stay empty.', [
+        ('Patient name', 48, 250, 0, 'name', 'label', 'patient'),
+        ('Applicant name', 48, 286, long, 'name', 'line', 'applicant'),
+    ], 0.3, 20261145)
+    (dest / 'key.json').write_text(json.dumps(records, indent=2) + '\n')
+    print('geometry', len(records), dest)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'stack':
         write_stack()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'feature':
+        write_feature()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'geometry':
+        write_geometry()
     else:
         main()

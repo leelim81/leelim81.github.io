@@ -354,6 +354,55 @@
     return { lines: lines, squares: [], width: w, height: h };
   }
 
+  /* Separate from rasterGeometry. Looks only for rules longer than 45% of the
+     page, and may bridge eight white pixels inside those long rules. Boxed
+     edges on the development sheets are shorter than that, so this does not
+     change the ink mask the boxed path uses. */
+  function underlineRules(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var w = canvas.width;
+    var h = canvas.height;
+    var data = ctx.getImageData(0, 0, w, h).data;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    function rulePixel(x, y) {
+      if (x < 0 || x >= w || y < 3 || y >= h - 3) return false;
+      var c = lum(x, y);
+      var above = lum(x, y - 3);
+      var below = lum(x, y + 3);
+      return c < 150 && above - c > 30 && below - c > 30;
+    }
+    var minW = w * 0.45;
+    var found = [];
+    for (var y = 3; y < h - 3; y++) {
+      var start = -1;
+      var last = -1;
+      var dark = 0;
+      for (var x = 0; x <= w; x++) {
+        var on = x < w && rulePixel(x, y);
+        if (!on && start >= 0 && x < w) {
+          for (var g = 1; g <= 8 && x + g < w; g++) {
+            if (rulePixel(x + g, y)) { on = true; break; }
+          }
+        }
+        if (on) {
+          if (start < 0) start = x;
+          last = x;
+          dark++;
+        } else if (start >= 0) {
+          var width = last - start + 1;
+          if (width >= minW && dark / width > 0.25) found.push({ x: start, y: h - y, w: width });
+          start = -1;
+          last = -1;
+          dark = 0;
+        }
+      }
+    }
+    return mergeCellRows(found).filter(function (line) { return line.w >= minW; });
+  }
+
   function mergeCellRows(lines) {
     var sorted = lines.slice().sort(function (a, b) {
       if (Math.abs(a.y - b.y) > 3) return b.y - a.y;
@@ -656,7 +705,71 @@
       lines: geo.lines,
       squares: geo.squares
     }, scale);
-    return FormSpots.layout(page);
+    var primary = FormSpots.layout(page);
+    var rules = underlineRules(source);
+    if (!rules.length || !global.FormEvidence) return primary;
+    rules.forEach(function (line) {
+      var x = line.x * scale;
+      var y = line.y * scale;
+      var width = Math.max(40, line.w * scale);
+      var occupied = primary.some(function (field) {
+        var rect = field.rect || {};
+        var overlap = Math.min((rect.x || 0) + (rect.width || 0), x + width) - Math.max(rect.x || 0, x);
+        return Math.abs((rect.y || 0) - y) < 18 && overlap > Math.min(rect.width || 0, width) * 0.45;
+      });
+      if (occupied) return;
+      var candidates = [];
+      texts.forEach(function (text) {
+        var dy = text.y - line.y;
+        if (dy < 8 || dy > 80) return;
+        if (text.x > line.x + line.w || text.x + text.w < line.x) return;
+        candidates.push({ text: text, dy: dy });
+      });
+      var known = [];
+      candidates.forEach(function (item) {
+        var itemKind = FormEvidence.fieldKind({ label: item.text.str });
+        if (!itemKind || itemKind === 'other') return;
+        item.kind = itemKind;
+        known.push(item);
+      });
+      if (!known.length) return;
+      var best = known[0].text;
+      var kind = known[0].kind;
+      if (known.length > 1) {
+        var sameKind = known.every(function (item) { return item.kind === kind; });
+        var ys = known.map(function (item) { return item.text.y; });
+        var spread = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+        if (!sameKind || spread > 18) return;
+        known.sort(function (a, b) { return a.text.x - b.text.x; });
+        best = { str: known.map(function (item) { return item.text.str; }).join(' ') };
+        kind = FormEvidence.fieldKind({ label: best.str });
+      }
+      if (!kind || kind === 'other') return;
+      var labelKey = String(best.str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      var repeated = primary.some(function (field) {
+        var rect = field.rect || {};
+        var have = String(field.label || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (have !== labelKey) return false;
+        var overlap = Math.min((rect.x || 0) + (rect.width || 0), x + width) - Math.max(rect.x || 0, x);
+        return Math.abs((rect.y || 0) - y) < 32 && overlap > 20;
+      });
+      if (repeated) return;
+      primary.push({
+        id: 'rule-' + Math.round(line.x) + '-' + Math.round(line.y),
+        label: best.str,
+        type: 'text',
+        options: [],
+        group: '',
+        untrusted: false,
+        source: 'flat',
+        page: 0,
+        pageWidth: 595,
+        pageHeight: source.height * scale,
+        rect: { x: x, y: y, width: width, height: 16 },
+        lineH: 12
+      });
+    });
+    return primary;
   }
 
   async function readRasterPdf(bytes, progress) {

@@ -6,6 +6,10 @@ The 12/4/6 JSONL split is a seed smoke suite for the pipeline. It is not a gold 
 
 [ARCHITECTURE.md](ARCHITECTURE.md) is a research proposal for a native-PDF and spatial-OCR pipeline, with an evidence graph and oracle diagnostics. It is not a measured app comparison and it is not what the page runs. The source list is [architecture/sources.json](architecture/sources.json).
 
+[PROFILES.md](PROFILES.md) is the on-browser profile store and the unpacked extension. Confirmed values export as JSON. The extension does not read the site database.
+
+[local-ocr-2026-11-07/MEMO.md](local-ocr-2026-11-07/MEMO.md) is a 7 November 2026 source memo: an optional PP-OCRv6 tiny browser challenger (model archives 6,318,080 bytes, runtime much larger, mobile memory unknown), three proposed experiments, and 35 public sources. It is not a measured result and it does not change the live OCR.
+
 [SCORECARD.md](SCORECARD.md) separates two measurements. visual-gold-1 feeds the selector the generator's text and is not an OCR result (112 of 183 answerable fields on 32 forms, upper bound 2.6%, not a 2% gate). visual-e2e-1 OCRs image-only pages in Chrome. That calibration did not clear the budget, so OCR values stay review-only. Human edit time was not measured.
 
 This directory is the research project. Apache-2.0 applies to the original code in this directory. CC0-1.0 applies to the original synthetic JSONL, PDFs, PNGs, and annotations in `data/` and `fixtures/`. Neither license changes the rest of the website, pdf.js, pdf-lib, Tesseract, WebLLM, or Qwen weights.

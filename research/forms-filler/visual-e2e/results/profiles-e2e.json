@@ -1,0 +1,168 @@
+{
+  "chrome": "Google Chrome",
+  "checks": [
+    {
+      "name": "reload keeps extracted profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "other person is not stored on the applicant",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "edit survives reload",
+      "ok": true,
+      "detail": "ada.fixed@example.com"
+    },
+    {
+      "name": "re-extract keeps the correction",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pdf field edit updates the saved value",
+      "ok": true,
+      "detail": "pdf-field ada.typed@example.com"
+    },
+    {
+      "name": "profiles stay separate",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "custom label is stored",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "two names stay unfiled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "deleted value stays deleted",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "old schema migrates",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "quota failure is reported",
+      "ok": true,
+      "detail": "quota"
+    },
+    {
+      "name": "blocked storage is reported",
+      "ok": true,
+      "detail": "blocked"
+    },
+    {
+      "name": "clear removes profiles and pending",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "hostile import is rejected",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "unpacked extension loaded",
+      "ok": true,
+      "detail": "chrome-extension://cbodljjcpjlilhfhooifnfbddepdpgng/sw.js"
+    },
+    {
+      "name": "permissions are storage, activeTab, scripting",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "extension import stores the bundle",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "extension rejects unconfirmed import",
+      "ok": true,
+      "detail": "A value was rejected."
+    },
+    {
+      "name": "extension does not script a page without the toolbar grant",
+      "ok": true,
+      "detail": "Error: Cannot access contents of the page. Extension manifest must request permission to access the respective host."
+    },
+    {
+      "name": "shipped scan sees label and autocomplete",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "shipped scan marks password and otp secret",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "shipped scan marks hidden, readonly, disabled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "shipped scan counts a frame and a shadow tree",
+      "ok": true,
+      "detail": "{\"shadow\":1,\"frames\":1}"
+    },
+    {
+      "name": "ambiguous note is not filled",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "nonempty email is protected",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "static name email phone filled from the chosen profile",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Example\",\"email\":\"ada@example.com\",\"phone\":\"80000000\",\"city\":\"North\",\"note\":\"\",\"password\":\"\",\"otp\":\"\",\"hidden\":\"\",\"readonly\":\"keep-me\",\"disabled\":\"\",\"filled\":\"already@example.com\",\"shadow\":\"\",\"submitted\":\"no\"}"
+    },
+    {
+      "name": "secret hidden readonly disabled nonempty shadow and note stay put",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Example\",\"email\":\"ada@example.com\",\"phone\":\"80000000\",\"city\":\"North\",\"note\":\"\",\"password\":\"\",\"otp\":\"\",\"hidden\":\"\",\"readonly\":\"keep-me\",\"disabled\":\"\",\"filled\":\"already@example.com\",\"shadow\":\"\",\"submitted\":\"no\"}"
+    },
+    {
+      "name": "no autosubmit",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no profile value in a network request",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "select receives an approved option",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "controlled input receives value and input/change events",
+      "ok": true,
+      "detail": "{\"value\":\"ada@example.com\",\"mirror\":\"ada@example.com\",\"input\":1,\"change\":1}"
+    },
+    {
+      "name": "other profile was not written into the page",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "limits": [
+    "Headless Chromium loaded the unpacked extension but did not grant activeTab without a toolbar click, so scan.js and apply.js were executed from the extension folder in the page. Error: Cannot access contents of the page. Extension manifest must request permission to access the respective host."
+  ]
+}

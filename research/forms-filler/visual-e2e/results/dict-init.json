@@ -1,0 +1,25 @@
+{
+  "note": "Init config, not setParameters. One worker at a time. Development images only.",
+  "off": {
+    "load_system_dawg": "0",
+    "load_freq_dawg": "0",
+    "load_unambig_dawg": "0",
+    "load_punc_dawg": "0",
+    "load_number_dawg": "0",
+    "load_bigram_dawg": "0"
+  },
+  "result": {
+    "on": {
+      "ms": 720,
+      "pageText": "Applicant\n\nFull name: Suki Sample\n\nNRIC: S2000346D\n\nDate of birth: 21/09/1990\n\nPhone: +65 80000020\n\nEmail: suki.samplel@example.com\nAddress: 32 QUAY LANE 304320",
+      "cropText": "Date of birth: 21/09/1990\n\nPhone: +65 80000020\n\nEmail: suki.samplel@example.com\nAddress: 32 QUAY LANE 304320",
+      "drawnText": "Email: samplel@example.com\nNRIC: S2000346D\n\nPhone: +65 80000020\n\nBorn: 21/09/1990\n\nName: O'Neil, Jr."
+    },
+    "off": {
+      "ms": 716,
+      "pageText": "Applicant\n\nFull name: Suki Sample\n\nNRIC: S2000346D\n\nDate of birth: 21/09/1990\n\nPhone: +65 80000020\n\nEmail: suki.samplel@example.com\nAddress: 32 QUAY LANE 304320",
+      "cropText": "Date of birth: 21/09/1990\n\nPhone: +65 80000020\n\nEmail: suki.samplel@example.com\nAddress: 32 QUAY LANE 304320",
+      "drawnText": "Email: samplel@example.com\nNRIC: S2000346D\n\nPhone: +65 80000020\n\nBorn: 21/09/1990\n\nName: O'Neil, Jr."
+    }
+  }
+}
