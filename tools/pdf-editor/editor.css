@@ -260,6 +260,8 @@ body { overflow: hidden; }
   line-height: 1.35;
 }
 .export-warn p { margin: 0; }
+.export-warn ul { margin: 8px 0 0; padding: 0; list-style: none; }
+.export-warn li + li { margin-top: 10px; }
 .export-warn button { margin-top: 8px; min-height: 44px; }
 .field { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
 .field input, .font-choices button {
