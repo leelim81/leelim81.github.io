@@ -272,6 +272,7 @@
         }
         fitTextHeight(el, ann);
         scheduleSave();
+        scheduleFitNote();
       }
       body.addEventListener('input', readBody);
       body.addEventListener('keyup', readBody);
@@ -490,6 +491,7 @@
         try { el.releasePointerCapture(e.pointerId); } catch (err) {}
       }
       saveNow();
+      scheduleFitNote();
     }
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -523,6 +525,7 @@
       window.removeEventListener('pointerup', up);
       if (ann.type === 'text' || ann.type === 'date') fitTextHeight(el, ann);
       saveNow();
+      scheduleFitNote();
     }
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -537,6 +540,7 @@
     if (el) el.remove();
     if (state.selectedId === id) select(null);
     saveNow();
+    scheduleFitNote();
   }
 
   function addAnn(partial, rec) {
@@ -688,6 +692,7 @@
     }
     if (!session || session.fit) await fitWidth(false);
     await renderAll();
+    scheduleFitNote();
     if (state.pages[state.current] && state.pages[state.current].el) {
       state.pages[state.current].el.scrollIntoView();
     }
@@ -1038,6 +1043,100 @@
     return found;
   }
 
+  function fitSentence(item) {
+    var sample = String(item.text || '').replace(/\s+/g, ' ').trim();
+    if (sample.length > 48) sample = sample.slice(0, 45) + '...';
+    var where = item.pages > 1 ? ' on page ' + item.page : '';
+    if (!item.advice.fit) {
+      if (item.advice.wide && !item.advice.tall) return '"' + sample + '"' + where + ' is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.';
+      if (item.advice.tall && !item.advice.wide) return '"' + sample + '"' + where + ' is taller than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.';
+      return '"' + sample + '"' + where + ' cannot be brought on the page by moving it. Edit the text or choose a smaller size.';
+    }
+    return '"' + sample + '"' + where + ' runs past the page. Move it ' + item.advice.move + '.';
+  }
+
+  async function textFitList() {
+    syncLiveText();
+    if (!state.pdfBytes) return [];
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    var font = await src.embedFont(PDFLib.StandardFonts.Helvetica);
+    var found = [];
+    for (var i = 0; i < state.pages.length; i++) {
+      var rec = state.pages[i];
+      var lib = src.getPages()[rec.srcIndex];
+      if (!lib) continue;
+      var crop = lib.getCropBox();
+      var angle = FormCoords.normRotation(((lib.getRotation().angle || 0) + (rec.rotation || 0)));
+      var unit = window.FormCoords && FormCoords.fileUserUnit ? FormCoords.fileUserUnit(lib) : 1;
+      if (!(unit > 0)) unit = 1;
+      for (var a = 0; a < rec.annotations.length; a++) {
+        var ann = rec.annotations[a];
+        var advice = overflowAdvice(ann, crop, angle, font, unit);
+        if (!advice) continue;
+        found.push({ id: ann.id, text: ann.text || '', page: i + 1, pages: state.pages.length, advice: advice });
+      }
+    }
+    return found;
+  }
+
+  var fitTimer = null;
+  var fitGen = 0;
+  function scheduleFitNote() {
+    if (fitTimer) clearTimeout(fitTimer);
+    fitTimer = setTimeout(function () {
+      fitTimer = null;
+      var gen = ++fitGen;
+      refreshFitNote(gen);
+    }, 400);
+  }
+  async function refreshFitNote(gen) {
+    var list = [];
+    try { list = await textFitList(); } catch (err) { list = []; }
+    if (gen !== fitGen) return;
+    document.querySelectorAll('.ann-offpage').forEach(function (el) {
+      el.classList.remove('ann-offpage');
+      el.removeAttribute('aria-invalid');
+    });
+    var box = $('fitNote');
+    if (!box) return;
+    box.replaceChildren();
+    if (!list.length) { box.hidden = true; return; }
+    box.hidden = false;
+    if (list.length > 1) {
+      var lead = document.createElement('p');
+      lead.textContent = list.length + ' pieces of text run past the page.';
+      box.appendChild(lead);
+    }
+    var ul = document.createElement('ul');
+    list.forEach(function (item, index) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.textContent = fitSentence(item);
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn';
+      if (index === 0) button.id = 'fitShow';
+      button.textContent = 'Show this text';
+      var name = 'Show this text';
+      if (item.pages > 1) name += ', page ' + item.page;
+      button.setAttribute('aria-label', name);
+      button.addEventListener('click', function () {
+        select(item.id);
+        var el = document.querySelector('.ann[data-id="' + CSS.escape(item.id) + '"]');
+        if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+      li.appendChild(p);
+      li.appendChild(button);
+      ul.appendChild(li);
+      var mark = document.querySelector('.ann[data-id="' + CSS.escape(item.id) + '"]');
+      if (mark) {
+        mark.classList.add('ann-offpage');
+        mark.setAttribute('aria-invalid', 'true');
+      }
+    });
+    box.appendChild(ul);
+  }
+
   function warnSentence(item) {
     var sample = String(item.text || '').replace(/\s+/g, ' ').trim();
     if (sample.length > 48) sample = sample.slice(0, 45) + '...';
@@ -1361,6 +1460,7 @@
     if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
     recoverSay('Undid the last placement change.');
     saveNow();
+    scheduleFitNote();
   }
   function disarmRecover(message) {
     var was = state.recoverArmed;
@@ -1602,6 +1702,7 @@
     redrawAnnotations();
     state.recoverArmed = false;
     recoverSay('Applied ' + placed + ' place(s) for ' + profile.name + ' as ' + map.role + '. ' + skipped + ' left blank. This is not an automatic fill. Apply again replaces these places. Undo restores the previous lines.');
+    scheduleFitNote();
   }
   function setPanel(barId, toggleId, open) {
     var bar = $(barId);
@@ -1704,6 +1805,7 @@
       ? 'Placed ' + fact.personName + '’s ' + fact.label + '. The baseline sits on the click. It is not an automatic fill.'
       : 'Placed ' + fact.personName + '’s ' + fact.label + ' on the page. The baseline could not sit on that click without leaving the page. Nudge it or choose another size.');
     if (el) fitTextHeight(el, findAnn(el.dataset.id));
+    scheduleFitNote();
   }
   function nudgeSelected(dx, dy) {
     var ann = findAnn(state.selectedId);
@@ -1714,6 +1816,7 @@
     var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
     if (el) place(el, ann);
     saveNow();
+    scheduleFitNote();
   }
 
   function wire() {
@@ -1878,6 +1981,7 @@
       ann.fontSize = clamp(Number($('fontSize').value) || 18, 8, 96);
       var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
       if (el) { place(el, ann); fitTextHeight(el, ann); }
+      scheduleFitNote();
       scheduleSave();
     });
     $('fontColor').addEventListener('input', function () {
