@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Boundary synthetic form</title></head>
+<body>
+<form id="job">
+  <label for="plain">Email</label>
+  <input id="plain" name="email" autocomplete="email">
+  <label for="live">Email</label>
+  <input id="live" name="email" autocomplete="email">
+  <p id="autosave"></p>
+  <div id="react-host"></div>
+  <label for="later">Email</label>
+  <input id="later" name="email" autocomplete="email">
+  <label for="gone">Email</label>
+  <input id="gone" name="email" autocomplete="email">
+  <label id="shift-label" for="shift">Email</label>
+  <input id="shift" name="email" autocomplete="email">
+
+  <fieldset>
+    <legend>Applicant</legend>
+    <label for="app1">Email</label><input id="app1" autocomplete="email">
+    <label for="app2">Email</label><input id="app2" autocomplete="email">
+  </fieldset>
+  <fieldset>
+    <legend>Patient</legend>
+    <label for="pat">Email</label><input id="pat" autocomplete="email">
+  </fieldset>
+  <fieldset>
+    <legend>Spouse</legend>
+    <label for="spouse">Email</label><input id="spouse" autocomplete="email">
+  </fieldset>
+  <fieldset>
+    <legend>Emergency contact</legend>
+    <label for="contact">Phone</label><input id="contact" autocomplete="tel">
+  </fieldset>
+  <fieldset>
+    <legend>Applicant</legend>
+    <label for="conflict">Email</label>
+    <input id="conflict" autocomplete="section-spouse email">
+  </fieldset>
+  <label for="opaque">Email</label>
+  <input id="opaque" autocomplete="section-spouse email">
+
+  <label for="ccname">Name on card</label><input id="ccname" autocomplete="cc-name">
+  <label for="ccnum">Card number</label><input id="ccnum" autocomplete="cc-number">
+  <label for="ccexp">Expiry</label><input id="ccexp" autocomplete="cc-exp">
+  <label for="cccsc">Security code</label><input id="cccsc" autocomplete="cc-csc">
+  <label for="file">Upload</label><input id="file" type="file">
+  <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+  <label for="otp">Code</label><input id="otp" autocomplete="one-time-code">
+  <input id="hid" type="hidden" name="email">
+  <label for="ro">Email</label><input id="ro" readonly value="keep-me">
+  <label for="dis">Email</label><input id="dis" disabled>
+  <button type="submit">Send</button>
+</form>
+<p id="submitted">no</p>
+<iframe id="same" title="same origin" src="frame-inner.html"></iframe>
+<iframe id="cross" title="other origin" src="https://example.com/"></iframe>
+<div id="open-host"></div>
+<div id="closed-host"></div>
+<script>
+document.getElementById('live').addEventListener('input', function (event) {
+  document.getElementById('autosave').textContent = event.target.value;
+});
+document.getElementById('job').addEventListener('submit', function (event) {
+  event.preventDefault();
+  document.getElementById('submitted').textContent = 'yes';
+});
+var openRoot = document.getElementById('open-host').attachShadow({ mode: 'open' });
+openRoot.innerHTML = '<label>Email <input id="shadow-email" autocomplete="email"></label>';
+var closedRoot = document.getElementById('closed-host').attachShadow({ mode: 'closed' });
+closedRoot.innerHTML = '<label>Email <input id="closed-email" autocomplete="email"></label>';
+window.__closedEmail = closedRoot.querySelector('input');
+window.__openEmail = openRoot.querySelector('input');
+var state = { email: '' };
+function mountReact() {
+  var host = document.getElementById('react-host');
+  var input = document.createElement('input');
+  input.id = 'react-mail';
+  input.setAttribute('autocomplete', 'email');
+  input.setAttribute('aria-label', 'Email');
+  input.value = state.email;
+  host.replaceChildren(input);
+  input.addEventListener('input', function () {
+    state.email = input.value;
+    mountReact();
+  });
+}
+mountReact();
+</script>
+</body>
+</html>
