@@ -1,0 +1,142 @@
+{
+  "checks": [
+    {
+      "name": "a 0.3 degree turn maps back to the source pixel within 2px",
+      "ok": true,
+      "detail": "{\"back\":{\"x\":40.84896580629065,\"y\":31.30931939087838},\"errX\":0.65103419370935,\"errY\":0.1906806091216211}"
+    },
+    {
+      "name": "P5 is scored through the 0.3 degree turn instead of left blank",
+      "ok": true,
+      "detail": "{\"id\":\"census-held\",\"denominator\":3,\"suggestions\":2,\"angle\":0.3,\"geometry\":0,\"label\":0}"
+    },
+    {
+      "name": "a person change cancels the armed photo placement",
+      "ok": true,
+      "detail": "The person changed, so the placement was cancelled."
+    },
+    {
+      "name": "the JPEG sheet accepts the confirmed name",
+      "ok": true,
+      "detail": "Ada Frame"
+    },
+    {
+      "name": "reload keeps the placed name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a PNG sheet accepts the same manual placement",
+      "ok": true,
+      "detail": "Ada Frame"
+    },
+    {
+      "name": "an EXIF-rotated JPEG still opens for manual placement",
+      "ok": true,
+      "detail": "Ada Frame"
+    },
+    {
+      "name": "EXIF orientation 6 is applied before placement",
+      "ok": true,
+      "detail": "3.5826800652391224"
+    },
+    {
+      "name": "opening another document drops the previous photo line",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a native PDF keeps its original text and widget",
+      "ok": true,
+      "detail": "{\"text\":\"KEEP-ORIGINAL\",\"widgets\":1}"
+    },
+    {
+      "name": "editor screenshot, export baseline, and the printed Name rule agree",
+      "ok": true,
+      "detail": "{\"sourceBox\":[1404,1311,1776,1371],\"contained\":false,\"onRule\":true,\"ruleStroke\":[1365,1383],\"editorAnchor\":{\"top\":0.2188644202706288,\"bottom\":0.234713009640046},\"exportBottom\":0.2319553754771458,\"agree\":true,\"shotAgree\":{\"name\":[701,714],\"ada\":[697,714]},\"overlap\":true,\"pad\":8,\"gold\":[820,1295,3040,1362],\"strictOverflowPx\":1}"
+    }
+  ],
+  "natural": [
+    {
+      "id": "wellcome-food-order",
+      "denominator": 8,
+      "suggestions": 0,
+      "angle": 0,
+      "geometry": 0,
+      "label": 0
+    },
+    {
+      "id": "census-held",
+      "denominator": 3,
+      "suggestions": 2,
+      "angle": 0.3,
+      "geometry": 0,
+      "label": 0
+    },
+    {
+      "id": "census-held",
+      "denominator": 2,
+      "suggestions": 0,
+      "angle": 0,
+      "geometry": 0,
+      "label": 0
+    }
+  ],
+  "limits": [],
+  "foodFrame": {
+    "angle": 0,
+    "inW": 983,
+    "inH": 1600,
+    "turnW": 983,
+    "turnH": 1600,
+    "crop": {
+      "x": 16,
+      "y": 40,
+      "w": 913,
+      "h": 1516
+    },
+    "outW": 913,
+    "outH": 1516
+  },
+  "exifAspect": 3.5826800652391224,
+  "foodAnchor": {
+    "sourceBox": [
+      1404,
+      1311,
+      1776,
+      1371
+    ],
+    "contained": false,
+    "onRule": true,
+    "ruleStroke": [
+      1365,
+      1383
+    ],
+    "editorAnchor": {
+      "top": 0.2188644202706288,
+      "bottom": 0.234713009640046
+    },
+    "exportBottom": 0.2319553754771458,
+    "agree": true,
+    "shotAgree": {
+      "name": [
+        701,
+        714
+      ],
+      "ada": [
+        697,
+        714
+      ]
+    },
+    "overlap": true,
+    "pad": 8,
+    "gold": [
+      820,
+      1295,
+      3040,
+      1362
+    ],
+    "strictOverflowPx": 1
+  },
+  "failed": 0
+}
