@@ -141,6 +141,10 @@ The caption rule and the page-frame gate were hashed in `PLACE-FREEZE.json` befo
 
 A rotated or cropped scan, or a page whose scale is not 1, no longer produces line suggestions. The installed pdf.js page object does expose `userUnit`. When that value is missing, the scan is also refused rather than given a guessed scale. Native widgets are not refused. `app.js` was adjusted after the look so the explanation is not replaced by “Form ready.” The detector was not edited again and the holdout was not re-run.
 
+## Optional nano detector
+
+A browser run of the pinned Nutrient nano checkpoint is in [e4/README.md](e4/README.md). It is not on the product page. The preregistered gate failed, so it was not adopted. Thresholds were not refit.
+
 ## Exact blank maps
 
 A saved map is places and keys for one role on one exact file. It does not keep the person or the values. Notes: [MAPS.md](MAPS.md). Switching pages cancels an armed placement. The detector was not retuned.

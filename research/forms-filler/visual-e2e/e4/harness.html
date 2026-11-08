@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>E4 detector harness</title>
+</head>
+<body>
+<p>Optional research harness. The product page does not load this file.</p>
+<script src="../../../../tools/forms-filler/vendor/pdf/pdf.min.js"></script>
+<script src="../../../../tools/forms-filler/vendor/pdf/pdf-lib.min.js"></script>
+<script src="../../../../tools/forms-filler/vendor/tesseract/tesseract.min.js"></script>
+<script src="../../../../tools/forms-filler/extract.js"></script>
+<script src="../../../../tools/forms-filler/spots.js"></script>
+<script src="../../../../tools/forms-filler/fields.js"></script>
+<script src="vendor/ort.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('../../../../tools/forms-filler/vendor/pdf/pdf.worker.min.js', location.href).href;
+ort.env.wasm.wasmPaths = new URL('vendor/', location.href).href;
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.simd = true;
+var sessionPromise = null;
+function session() {
+  if (!sessionPromise) {
+    sessionPromise = ort.InferenceSession.create(new URL('vendor/form-field-v1-nano-fp32.onnx', location.href).href, {
+      executionProviders: ['wasm']
+    });
+  }
+  return sessionPromise;
+}
+function iou(a, b) {
+  var ix = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1));
+  var iy = Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+  var inter = ix * iy;
+  var area = Math.max(0, a.x2 - a.x1) * Math.max(0, a.y2 - a.y1) + Math.max(0, b.x2 - b.x1) * Math.max(0, b.y2 - b.y1) - inter;
+  return area > 0 ? inter / area : 0;
+}
+function nms(rows, thr) {
+  rows.sort(function (a, b) { return b.score - a.score; });
+  var kept = [];
+  rows.forEach(function (row) {
+    if (!kept.some(function (other) { return other.cls === row.cls && iou(other, row) > thr; })) kept.push(row);
+  });
+  return kept;
+}
+async function detectCanvas(canvas, gate) {
+  var S = 640;
+  var r = Math.min(S / canvas.width, S / canvas.height);
+  var rw = Math.max(1, Math.round(canvas.width * r));
+  var rh = Math.max(1, Math.round(canvas.height * r));
+  var input = document.createElement('canvas');
+  input.width = S;
+  input.height = S;
+  var ctx = input.getContext('2d');
+  ctx.fillStyle = 'rgb(114,114,114)';
+  ctx.fillRect(0, 0, S, S);
+  ctx.drawImage(canvas, 0, 0, rw, rh);
+  var pixels = ctx.getImageData(0, 0, S, S).data;
+  var data = new Float32Array(3 * S * S);
+  for (var i = 0; i < S * S; i++) {
+    data[i] = pixels[i * 4];
+    data[S * S + i] = pixels[i * 4 + 1];
+    data[2 * S * S + i] = pixels[i * 4 + 2];
+  }
+  var sess = await session();
+  var started = performance.now();
+  var out = await sess.run({ [sess.inputNames[0]]: new ort.Tensor('float32', data, [1, 3, S, S]) });
+  var ms = performance.now() - started;
+  var tensor = out[sess.outputNames[0]];
+  var rows = tensor.data;
+  var width = tensor.dims[tensor.dims.length - 1];
+  var count = tensor.dims[tensor.dims.length - 2];
+  var scored = [];
+  var minScore = gate.score;
+  for (var n = 0; n < count; n++) {
+    var o = n * width;
+    var obj = rows[o + 4];
+    var best = 0;
+    var cls = 0;
+    for (var c = 0; c < 3; c++) {
+      var p = obj * rows[o + 5 + c];
+      if (p > best) { best = p; cls = c; }
+    }
+    if (best < minScore) continue;
+    var cx = rows[o] / r;
+    var cy = rows[o + 1] / r;
+    var w = rows[o + 2] / r;
+    var h = rows[o + 3] / r;
+    scored.push({ x1: cx - w / 2, y1: cy - h / 2, x2: cx + w / 2, y2: cy + h / 2, score: best, cls: cls });
+  }
+  return { boxes: nms(scored, gate.nms), ms: ms, input: sess.inputNames[0], output: sess.outputNames[0], dims: tensor.dims };
+}
+window.E4 = {
+  smoke: async function () {
+    var canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 240;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 320, 240);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(40, 80, 180, 2);
+    var t0 = performance.now();
+    var found = await detectCanvas(canvas, { score: 0.3, nms: 0.6 });
+    return { startupMs: performance.now() - t0, runMs: found.ms, boxes: found.boxes.length, input: found.input, output: found.output, dims: found.dims };
+  },
+  detectPdf: async function (bytes, gate) {
+    var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(bytes).slice(0) }).promise;
+    var page = await pdf.getPage(1);
+    var view = page.getViewport({ scale: 2 });
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(view.width);
+    canvas.height = Math.ceil(view.height);
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
+    var found = await detectCanvas(canvas, gate);
+    var scale = view.scale;
+    return {
+      ms: found.ms,
+      boxes: found.boxes.map(function (box) {
+        var x = box.x1 / scale;
+        var yTop = box.y1 / scale;
+        var w = (box.x2 - box.x1) / scale;
+        var h = (box.y2 - box.y1) / scale;
+        return { x: x, y: view.height / scale - (yTop + h), w: w, h: h, score: box.score, cls: box.cls };
+      })
+    };
+  },
+  baseline: async function (bytes) {
+    var read = await FormFields.read(new Uint8Array(bytes).slice(0));
+    return {
+      route: read.route || '',
+      block: read.placementBlock || '',
+      boxes: (read.fields || []).filter(function (field) { return field.rect; }).map(function (field) {
+        return { x: field.rect.x, y: field.rect.y, w: field.rect.width, h: field.rect.height || 12, label: field.label || '' };
+      })
+    };
+  }
+};
+</script>
+</body>
+</html>
