@@ -153,12 +153,19 @@ const quota = await boot();
 await quota.page.goto('http://127.0.0.1:8765/tools/forms-filler/?quota=' + Date.now(), { waitUntil: 'domcontentloaded' });
 await quota.page.waitForFunction(() => window.DeskDB);
 await quota.page.evaluate(() => {
-  const orig = DeskDB.set.bind(DeskDB);
+  const origSet = DeskDB.set.bind(DeskDB);
+  const origChange = DeskDB.change.bind(DeskDB);
   DeskDB.set = function (name, key, value) {
     if (name === 'tools-forms-filler' && key === 'draft') {
       return Promise.reject(new DOMException('quota', 'QuotaExceededError'));
     }
-    return orig(name, key, value);
+    return origSet(name, key, value);
+  };
+  DeskDB.change = function (name, keys, mutate) {
+    if (name === 'tools-forms-filler' && keys && keys.indexOf('draft') !== -1) {
+      return Promise.reject(new DOMException('quota', 'QuotaExceededError'));
+    }
+    return origChange(name, keys, mutate);
   };
 });
 await quota.choose('#formDrop', PDF);

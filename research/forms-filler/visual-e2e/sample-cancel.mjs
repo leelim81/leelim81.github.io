@@ -83,8 +83,11 @@ const realFont = await real.embedFont(StandardFonts.Helvetica);
 real.addPage([612, 792]).drawText('Real form for Ada Lane', { x: 72, y: 720, size: 16, font: realFont });
 writeFileSync('/tmp/real-form.pdf', await real.save());
 
+let freshContext = null;
 async function freshPage() {
-  const page = await (await browser.newContext()).newPage();
+  if (freshContext) await freshContext.close();
+  freshContext = await browser.newContext();
+  const page = await freshContext.newPage();
   page.setDefaultTimeout(20000);
   await page.goto('http://127.0.0.1:8822/tools/forms-filler/?intent=' + Date.now() + Math.random(), { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => ['tools-forms-filler', 'tools-forms-profiles', 'tools-forms-maps', 'tools-forms-editor'].forEach((name) => indexedDB.deleteDatabase(name)));
@@ -266,6 +269,143 @@ await readRef.reload({ waitUntil: 'domcontentloaded' });
 await readRef.waitForFunction(() => FormDesk.refs().length === 1);
 const readRefStore = await storedDesk(readRef);
 check('reload keeps that reference after the late sample read', readRefStore.refs.length === 1 && readRefStore.refs[0] === 'sample-cancel-ref.pdf' && !String(readRefStore.form).includes('visitor'), JSON.stringify(readRefStore));
+
+async function holdFirstDraftWrite(page) {
+  await page.evaluate(() => {
+    window.__moved = false;
+    window.__staleWrites = 0;
+    window.__expectGone = false;
+    window.__expectRef = false;
+    const origPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (value, key) {
+      if (key === 'draft') {
+        const note = value && value.formName ? value.formName + '/' + (value.refs || []).map((item) => item.name).join('+') : String(value);
+        const notes = JSON.parse(sessionStorage.getItem('ff-puts') || '[]');
+        notes.push(note);
+        sessionStorage.setItem('ff-puts', JSON.stringify(notes));
+        if (window.__moved && value && value.formName === 'visitor-form.pdf') {
+          const names = (value.refs || []).map((item) => item.name);
+          const missingRef = window.__expectRef && names.indexOf('sample-cancel-ref.pdf') < 0;
+          if (window.__expectGone || missingRef) window.__staleWrites += 1;
+        }
+      }
+      return origPut.call(this, value, key);
+    };
+    const origChange = DeskDB.change.bind(DeskDB);
+    const origSet = DeskDB.set.bind(DeskDB);
+    let armed = true;
+    function arm(name, run) {
+      if (armed && name === 'tools-forms-filler') {
+        armed = false;
+        return new Promise((resolve, reject) => {
+          window.__releaseDb = () => run().then(resolve, reject);
+        });
+      }
+      return run();
+    }
+    DeskDB.change = function (name, keys, mutate) {
+      return arm(name, () => origChange(name, keys, mutate));
+    };
+    DeskDB.set = function (name, key, value) {
+      return arm(name, () => origSet(name, key, value));
+    };
+  });
+}
+
+const dbClear = await freshPage();
+await holdFirstDraftWrite(dbClear);
+await dbClear.evaluate(() => { window.__expectGone = true; });
+await dbClear.click('#sampleBtn');
+await dbClear.waitForFunction(() => typeof window.__releaseDb === 'function');
+await dbClear.click('#clearBtn');
+await dbClear.waitForFunction(() => /Clearing the stored form/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await dbClear.evaluate(() => { window.__moved = true; return window.__releaseDb(); });
+await dbClear.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+const dbClearWrites = await dbClear.evaluate(() => window.__staleWrites);
+check('a delayed database write does not store the sample after Start over', dbClearWrites === 0, String(dbClearWrites));
+await dbClear.reload({ waitUntil: 'domcontentloaded' });
+await dbClear.waitForTimeout(300);
+const dbClearStore = await storedDesk(dbClear);
+check('reload after that delayed write is still an empty desk', !dbClearStore.form && !sampleNames(dbClearStore.refs), JSON.stringify(dbClearStore));
+
+const dbForm = await freshPage();
+await holdFirstDraftWrite(dbForm);
+await dbForm.evaluate(() => { window.__expectGone = true; });
+await dbForm.click('#sampleBtn');
+await dbForm.waitForFunction(() => typeof window.__releaseDb === 'function');
+await dbForm.locator('#formInput').setInputFiles('/tmp/real-form.pdf');
+await dbForm.waitForFunction(() => /Reading real-form\.pdf/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await dbForm.evaluate(() => { window.__moved = true; return window.__releaseDb(); });
+await dbForm.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+for (let i = 0; i < 25; i++) {
+  const ready = await dbForm.evaluate(async () => {
+    const draft = await DeskDB.get('tools-forms-filler', 'draft');
+    return !!(draft && draft.formName === 'real-form.pdf');
+  });
+  if (ready) break;
+  await dbForm.waitForTimeout(200);
+}
+const dbFormWrites = await dbForm.evaluate(() => window.__staleWrites);
+check('a delayed database write does not store the sample over a new form', dbFormWrites === 0, String(dbFormWrites));
+await dbForm.reload({ waitUntil: 'domcontentloaded' });
+await dbForm.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+const dbFormStore = await storedDesk(dbForm);
+check('reload keeps the new form after the delayed sample write', /real-form\.pdf/.test(dbFormStore.form) && !sampleNames(dbFormStore.refs), JSON.stringify(dbFormStore));
+
+const dbRef = await freshPage();
+await holdFirstDraftWrite(dbRef);
+await dbRef.evaluate(() => { window.__expectRef = true; });
+await dbRef.click('#sampleBtn');
+await dbRef.waitForFunction(() => typeof window.__releaseDb === 'function');
+await dbRef.locator('#refInput').setInputFiles('/tmp/sample-cancel-ref.pdf');
+await dbRef.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'sample-cancel-ref.pdf' && item.status !== 'reading'));
+await dbRef.evaluate(() => { window.__moved = true; return window.__releaseDb(); });
+await dbRef.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'sample-cancel-ref.pdf'), null, { timeout: 20000 });
+for (let i = 0; i < 25; i++) {
+  const ready = await dbRef.evaluate(async () => {
+    const draft = await DeskDB.get('tools-forms-filler', 'draft');
+    return !!(draft && (draft.refs || []).some((item) => item.name === 'sample-cancel-ref.pdf'));
+  });
+  if (ready) break;
+  await dbRef.waitForTimeout(200);
+}
+const dbRefWrites = await dbRef.evaluate(() => window.__staleWrites);
+const dbRefLive = await dbRef.evaluate(() => FormDesk.refs().map((item) => item.name));
+check('a delayed database write does not drop a reference added while it was opening', dbRefWrites === 0 && dbRefLive.indexOf('sample-cancel-ref.pdf') >= 0 && !sampleNames(dbRefLive), dbRefWrites + ' ' + dbRefLive.join('|'));
+await dbRef.reload({ waitUntil: 'domcontentloaded' });
+await dbRef.waitForTimeout(1500);
+const dbRefStore = await storedDesk(dbRef);
+const dbRefUi = await dbRef.evaluate(() => window.FormDesk ? FormDesk.refs().map((item) => item.name) : ['no-desk']);
+const dbRefNotes = await dbRef.evaluate(() => sessionStorage.getItem('ff-puts'));
+check('reload keeps that reference after the delayed sample write', dbRefUi.indexOf('sample-cancel-ref.pdf') >= 0 && dbRefStore.refs.indexOf('sample-cancel-ref.pdf') >= 0 && !sampleNames(dbRefStore.refs), JSON.stringify({ store: dbRefStore, ui: dbRefUi, puts: dbRefNotes }));
+
+const dbSecond = await freshPage();
+await holdFirstDraftWrite(dbSecond);
+await dbSecond.click('#sampleBtn');
+await dbSecond.waitForFunction(() => typeof window.__releaseDb === 'function');
+await dbSecond.evaluate(() => { window.__moved = true; });
+await dbSecond.click('#sampleBtn');
+await dbSecond.evaluate(() => window.__releaseDb());
+await dbSecond.waitForFunction(() => {
+  const refs = FormDesk.refs();
+  return refs.length === 2 && refs.every((item) => item.status && item.status !== 'reading');
+});
+for (let i = 0; i < 25; i++) {
+  const ready = await dbSecond.evaluate(async () => {
+    const draft = await DeskDB.get('tools-forms-filler', 'draft');
+    const names = draft && draft.refs ? draft.refs.map((item) => item.name) : [];
+    return names.indexOf('visitor-reference.pdf') >= 0 && names.indexOf('id-card.png') >= 0;
+  });
+  if (ready) break;
+  await dbSecond.waitForTimeout(200);
+}
+const dbSecondWrites = await dbSecond.evaluate(() => window.__staleWrites);
+const dbSecondLive = await dbSecond.evaluate(() => FormDesk.refs().map((item) => item.name));
+check('a second sample finishes after the first sample’s delayed database write', dbSecondWrites === 0 && dbSecondLive.filter((name) => name === 'visitor-reference.pdf').length === 1 && dbSecondLive.filter((name) => name === 'id-card.png').length === 1, dbSecondLive.join('|'));
+await dbSecond.reload({ waitUntil: 'domcontentloaded' });
+await dbSecond.waitForFunction(() => FormDesk.refs().length === 2 && FormDesk.refs().every((item) => item.status !== 'reading'));
+const dbSecondStore = await storedDesk(dbSecond);
+check('reload keeps the later sample after the delayed first write', dbSecondStore.refs.filter((name) => name === 'visitor-reference.pdf').length === 1 && dbSecondStore.refs.filter((name) => name === 'id-card.png').length === 1 && dbSecondStore.refs.length === 2, JSON.stringify(dbSecondStore));
 
 writeFileSync('/tmp/main-now/research/forms-filler/visual-e2e/results/sample-cancel.json', JSON.stringify({ passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks }, null, 2));
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);

@@ -1333,11 +1333,17 @@
   function persistDraft(intent) {
     var epoch = draftEpoch;
     return enqueueDraft(function () {
-      if (epoch !== draftEpoch) return { ok: true, skipped: true };
-      if (intent != null && intent !== deskGen) return { ok: true, skipped: true };
-      var snap = draftSnapshot();
-      if (!snap) return DeskDB.clear(DB).then(function () { return { ok: true }; });
-      return DeskDB.set(DB, 'draft', snap).then(function () { return { ok: true }; });
+      if (!DeskDB.change) return { ok: false, reason: 'unavailable' };
+      return DeskDB.change(DB, ['draft'], function (found, put) {
+        if (epoch !== draftEpoch || (intent != null && intent !== deskGen)) return { ok: false, reason: 'stale' };
+        var snap = draftSnapshot();
+        put('draft', snap || null);
+        return { ok: true };
+      }).then(function (result) {
+        if (result && result.reason === 'stale') return { ok: true, skipped: true };
+        if (!result || result.ok === false) return { ok: false, reason: (result && result.reason) || 'cancelled' };
+        return { ok: true };
+      });
     }).catch(function (err) {
       return { ok: false, reason: draftReason(err) };
     });
