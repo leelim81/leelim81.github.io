@@ -166,6 +166,15 @@ check('a different person does not receive the earlier marks', leaked.length ===
 check('the return says the other person was left off', /other person/.test(status), status);
 await page.goBack();
 await page.waitForURL(/forms-filler/);
+if (await page.locator('#profileBox').isHidden()) await page.click('#profileToggle');
+await page.locator('#profilePick').selectOption({ label: 'Ada Lane' });
+await page.click('#placeMissing');
+await page.waitForURL(/pdf-editor/);
+await page.waitForSelector('.ann-body');
+const restored = (await marks()).map((mark) => mark.text);
+check('the first person gets the note back', restored.indexOf('Manual note') >= 0 && restored.indexOf('Ada Lane') >= 0, restored.join('|'));
+await page.goBack();
+await page.waitForURL(/forms-filler/);
 const replace = page.waitForEvent('filechooser');
 await page.click('#formDrop');
 await (await replace).setFiles('/tmp/resume-b.pdf');

@@ -1,5 +1,5 @@
 {
-  "passed": 12,
+  "passed": 13,
   "failed": 0,
   "checks": [
     {
@@ -46,6 +46,11 @@
       "name": "the return says the other person was left off",
       "ok": true,
       "detail": "Returned to this file. The other person’s marks were left off. Bea Shore has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed."
+    },
+    {
+      "name": "the first person gets the note back",
+      "ok": true,
+      "detail": "Manual note|Ada Lane|Ada Lane"
     },
     {
       "name": "a different file does not bring the marks back",

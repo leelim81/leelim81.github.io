@@ -623,8 +623,14 @@
     });
   }
 
-  function editorClearedAt() {
-    try { return Number(localStorage.getItem('ff-editor-cleared') || 0); } catch (err) { return 0; }
+  function clearGeneration() {
+    try { return Number(localStorage.getItem('ff-editor-clear-generation') || 0); } catch (err) { return 0; }
+  }
+
+  function recordRetired(record) {
+    var mark = clearGeneration();
+    var gen = Number(record && (record.generation || record.epoch) || 0);
+    return !!(mark && gen && gen <= mark);
   }
 
   function readHandoff() {
@@ -632,15 +638,15 @@
       var raw = sessionStorage.getItem('ff-editor-handoff');
       if (!raw) return null;
       var parsed = JSON.parse(raw);
-      if (!parsed || !parsed.pages || !parsed.pages.length) return null;
-      if ((parsed.editedAt || 0) <= editorClearedAt()) return null;
+      if (!parsed || !Array.isArray(parsed.pages) || !parsed.pages.length) return null;
+      if (recordRetired(parsed)) return null;
       return parsed;
     } catch (err) { return null; }
   }
 
   function sameEditorFile(stored, pdfSha, sourceSha, sheet) {
-    if (!stored || !stored.pages || !stored.pages.length) return false;
-    if ((stored.editedAt || 0) <= editorClearedAt()) return false;
+    if (!stored || !Array.isArray(stored.pages) || !stored.pages.length) return false;
+    if (recordRetired(stored)) return false;
     if (sourceSha) {
       if (stored.sourceSha256 !== sourceSha || !stored.sheet || !sheet || !window.FormMaps) return false;
       return FormMaps.matchesSheet(stored.sheet, sheet);
@@ -659,36 +665,97 @@
     return '';
   }
 
-  function resumePages(stored, pageCount, personId) {
-    if (!stored || !stored.pages || stored.pages.length !== pageCount) return null;
-    for (var i = 0; i < pageCount; i++) {
-      if (!stored.pages[i] || stored.pages[i].srcIndex !== i) return null;
+  var MARK_TYPES = { text: 1, date: 1, whiteout: 1, highlight: 1, rect: 1, ellipse: 1, image: 1, signature: 1 };
+
+  function unit(n) {
+    return typeof n === 'number' && isFinite(n) && n >= -0.02 && n <= 1.02;
+  }
+
+  function cleanMark(ann) {
+    if (!ann || typeof ann !== 'object' || Array.isArray(ann)) return null;
+    if (ann.type && !MARK_TYPES[ann.type]) return null;
+    if (ann.text != null && typeof ann.text !== 'string') return null;
+    if (ann.text && ann.text.length > 4000) return null;
+    if (ann.profileId != null && typeof ann.profileId !== 'string') return null;
+    if (ann.originProfileId != null && typeof ann.originProfileId !== 'string') return null;
+    var copy = {
+      id: typeof ann.id === 'string' ? ann.id.slice(0, 40) : '',
+      type: ann.type || 'text',
+      x: Number(ann.x), y: Number(ann.y), w: Number(ann.w), h: Number(ann.h),
+      text: typeof ann.text === 'string' ? ann.text : '',
+      fontSize: Number(ann.fontSize) > 0 ? Number(ann.fontSize) : 14,
+      color: typeof ann.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ann.color) ? ann.color : '#1a1612'
+    };
+    if (!unit(copy.x) || !unit(copy.y) || !unit(copy.w) || !unit(copy.h)) return null;
+    if (ann.profileId) copy.profileId = ann.profileId.slice(0, 80);
+    if (ann.originProfileId) copy.originProfileId = ann.originProfileId.slice(0, 80);
+    if (typeof ann.factKey === 'string') copy.factKey = ann.factKey.slice(0, 40);
+    if (ann.manual === true) copy.manual = true;
+    if (typeof ann.mapId === 'string') copy.mapId = ann.mapId.slice(0, 40);
+    if (typeof ann.role === 'string') copy.role = ann.role.slice(0, 40);
+    if (typeof ann.personName === 'string') copy.personName = ann.personName.slice(0, 80);
+    if (typeof ann.seedText === 'string') copy.seedText = ann.seedText.slice(0, 4000);
+    return copy;
+  }
+
+  function cleanMarkList(list) {
+    if (!Array.isArray(list)) return null;
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var mark = cleanMark(list[i]);
+      if (!mark) return null;
+      out.push(mark);
     }
-    var storedPerson = stored.resumeProfileId || '';
-    var changed = !!(personId && storedPerson && personId !== storedPerson);
-    var keepPerson = changed ? personId : (personId || storedPerson);
+    return out;
+  }
+
+  function markOwner(ann) {
+    if (ann.profileId) return ann.profileId;
+    if (ann.originProfileId) return ann.originProfileId;
+    return '';
+  }
+
+  function resumePages(stored, pageCount, personId) {
+    if (!stored || !Array.isArray(stored.pages) || stored.pages.length !== pageCount) return { invalid: true };
+    var pool = [];
+    for (var i = 0; i < pageCount; i++) {
+      var page = stored.pages[i];
+      if (!page || page.srcIndex !== i || !Array.isArray(page.annotations)) return { invalid: true };
+      var marks = cleanMarkList(page.annotations);
+      if (!marks) return { invalid: true };
+      pool.push({ id: typeof page.id === 'string' ? page.id : '', rotation: page.rotation === 90 || page.rotation === 180 || page.rotation === 270 ? page.rotation : 0, marks: marks });
+    }
+    if (stored.withheld != null) {
+      if (!Array.isArray(stored.withheld)) return { invalid: true };
+      for (var w = 0; w < stored.withheld.length; w++) {
+        var held = stored.withheld[w];
+        if (!held || typeof held.srcIndex !== 'number' || held.srcIndex < 0 || held.srcIndex >= pageCount) return { invalid: true };
+        var heldMarks = cleanMarkList(held.annotations);
+        if (!heldMarks) return { invalid: true };
+        pool[held.srcIndex].marks = pool[held.srcIndex].marks.concat(heldMarks);
+      }
+    }
     var dropped = 0;
     var kept = 0;
-    var pages = stored.pages.map(function (page) {
-      var annotations = (page.annotations || []).filter(function (ann) {
-        if (!ann) return false;
-        if (!ann.profileId) {
-          if (changed) { dropped += 1; return false; }
-          kept += 1;
-          return true;
+    var pages = [];
+    var withheld = [];
+    pool.forEach(function (page, index) {
+      var mine = [];
+      var theirs = [];
+      page.marks.forEach(function (ann) {
+        var owner = markOwner(ann);
+        if (!owner || !personId || owner !== personId) {
+          dropped += 1;
+          if (owner) theirs.push(ann);
+          return;
         }
-        if (keepPerson && ann.profileId === keepPerson) { kept += 1; return true; }
-        dropped += 1;
-        return false;
+        kept += 1;
+        mine.push(ann);
       });
-      return {
-        id: page.id || Math.random().toString(36).slice(2, 10),
-        srcIndex: page.srcIndex,
-        rotation: page.rotation || 0,
-        annotations: annotations
-      };
+      pages.push({ id: page.id || Math.random().toString(36).slice(2, 10), srcIndex: index, rotation: page.rotation, annotations: mine });
+      if (theirs.length) withheld.push({ srcIndex: index, annotations: theirs });
     });
-    return { pages: pages, dropped: dropped, kept: kept, changed: changed };
+    return { pages: pages, withheld: withheld, dropped: dropped, kept: kept, invalid: false };
   }
 
   async function openRecovery() {
@@ -699,6 +766,8 @@
       return;
     }
     openingEditor = true;
+    var opened = false;
+    try {
     if ($('placeMissing')) $('placeMissing').disabled = true;
     status('Opening the editor so you can place a saved value…', true);
     var probe;
@@ -754,27 +823,32 @@
     });
     var resumed = best ? resumePages(best, pages.length, personId) : null;
     var note = '';
-    if (best && !resumed) note = 'The page list changed, so earlier marks were not brought back.';
+    var withheld = [];
+    if (resumed && resumed.invalid) note = 'Saved marks could not be read, so they were not brought back.';
     else if (!best && (stored || handoff || storedPdf)) note = 'This file or crop changed, so earlier marks were not brought back.';
-    else if (resumed && resumed.changed && resumed.dropped) note = 'Returned to this file. The other person’s marks were left off.';
+    else if (resumed && resumed.dropped) note = 'Returned to this file. The other person’s marks were left off.';
     else if (resumed && resumed.kept) note = 'Returned to the same page and the same marks.';
-    if (resumed) pages = resumed.pages;
-    var resumePerson = personId || '';
-    if (best && (!resumed || !resumed.changed) && !resumePerson) resumePerson = best.resumeProfileId || '';
+    if (resumed && !resumed.invalid) {
+      pages = resumed.pages;
+      withheld = resumed.withheld;
+    }
+    var generation = Date.now();
     var session = {
       fileName: state.formName || 'form.pdf',
       zoom: 1,
       fit: true,
       current: 0,
       pages: pages,
-      epoch: Date.now(),
+      withheld: withheld,
+      epoch: generation,
+      generation: generation,
       source: 'forms',
       recover: true,
       sourceSha256: sourceSha,
       pdfSha256: pdfSha,
       sheet: sheet,
-      resumeProfileId: resumePerson,
-      editedAt: Date.now(),
+      resumeProfileId: personId || '',
+      editedAt: generation,
       resumeNote: note
     };
     try {
@@ -783,13 +857,21 @@
         { key: 'session', value: session }
       ]);
     } catch (err) {
-      openingEditor = false;
-      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
       status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
       toast('The editor was not opened.');
       return;
     }
+    opened = true;
     location.href = '../pdf-editor/?desk=forms';
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+    } finally {
+      if (!opened) {
+        openingEditor = false;
+        if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
+      }
+    }
   }
 
   async function fillFromPapers() {
@@ -1079,7 +1161,7 @@
   }
   function discardEditor() {
     var clearedAt = Date.now();
-    try { localStorage.setItem('ff-editor-cleared', String(clearedAt)); } catch (err) {}
+    try { localStorage.setItem('ff-editor-clear-generation', String(clearedAt)); } catch (err) {}
     try { sessionStorage.removeItem('ff-editor-handoff'); } catch (err) {}
     return DeskDB.clear(EDITOR_DB).then(function () { return { ok: true }; }).catch(function (err) {
       return { ok: false, reason: draftReason(err) };
