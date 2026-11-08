@@ -290,7 +290,8 @@
     } else if (state.fields.some(function (field) { return field.transport === 'viewport-review'; })) {
       status(state.fields.length + ' scan estimates. Nothing is written until you check a value.' + tail, false);
     } else if (!state.fields.length) {
-      status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.' + tail, false);
+      var tilt = read.deskewDeg ? ' The lines are tilted, and the page was not replaced with a turned picture.' : '';
+      status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.' + tail + tilt, false);
     }
     refreshLabels();
     scheduleSave();

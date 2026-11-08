@@ -232,7 +232,7 @@
     return {
       fields: raster.fields,
       bytes: raster.sheet && raster.sheet.bytes,
-      deskewDeg: raster.sheet && raster.sheet.deskewDeg,
+      deskewDeg: raster.deskewDeg || (raster.sheet && raster.sheet.deskewDeg) || 0,
       route: raster.placementBlock ? 'raster-blocked' : (raster.reviewTransport && raster.reviewTransport.looked ? 'raster-review' : 'raster'),
       placementBlock: raster.placementBlock || '',
       reviewTransport: raster.reviewTransport || null
@@ -1086,6 +1086,52 @@
     };
   }
 
+  /* A field found on a turned copy is stated in that copy's page space, y up.
+     The editor opens the original PDF, so the rect has to come back through
+     the same rotation, including the grown canvas. A rect that does not land
+     on the original page is dropped. The original file is not replaced. */
+  function unturnField(field, srcW, srcH, turnW, turnH, angle) {
+    if (!global.FormFrame || !field.rect) return null;
+    var rect = field.rect;
+    var pageW = field.pageWidth || 595;
+    var pageH = field.pageHeight || (turnH * (pageW / turnW));
+    var frame = { angle: angle, inW: srcW, inH: srcH, turnW: turnW, turnH: turnH };
+    function corner(x, yUp) {
+      var tx = x / pageW * turnW;
+      var ty = turnH - (yUp / pageH * turnH);
+      return FormFrame.turnToInput(tx, ty, frame);
+    }
+    var pts = [
+      corner(rect.x, rect.y),
+      corner(rect.x + rect.width, rect.y),
+      corner(rect.x, rect.y + rect.height),
+      corner(rect.x + rect.width, rect.y + rect.height)
+    ];
+    var minX = Math.min.apply(null, pts.map(function (p) { return p.x; }));
+    var maxX = Math.max.apply(null, pts.map(function (p) { return p.x; }));
+    var minY = Math.min.apply(null, pts.map(function (p) { return p.y; }));
+    var maxY = Math.max.apply(null, pts.map(function (p) { return p.y; }));
+    var pad = 8;
+    if (maxX < -pad || minX > srcW + pad || maxY < -pad || minY > srcH + pad) return null;
+    var origW = 595;
+    var origH = srcH * (origW / srcW);
+    var cx = (minX + maxX) / 2;
+    var cy = (minY + maxY) / 2;
+    var w = rect.width / pageW * turnW / srcW * origW;
+    var h = rect.height / pageH * turnH / srcH * origH;
+    var yUp = (srcH - cy) / srcH * origH;
+    return {
+      rect: {
+        x: cx / srcW * origW - w / 2,
+        y: yUp - h / 2,
+        width: w,
+        height: h
+      },
+      pageWidth: origW,
+      pageHeight: origH
+    };
+  }
+
   async function readRasterPdf(bytes, progress) {
     var frame = await scanFrame(bytes);
     if (frame.blocked) {
@@ -1117,7 +1163,7 @@
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
-    var sheet = null;
+    var angles = [];
     for (var p = 1; p <= limit; p++) {
       say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
       var page = await pdf.getPage(p);
@@ -1126,34 +1172,48 @@
       canvas.width = Math.ceil(view.width);
       canvas.height = Math.ceil(view.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
-      var angle = await bestLineAngle(canvas);
+      var angle = await bestLineAngle(canvas) || 0;
       var turned = angle ? rotateCanvas(canvas, angle) : canvas;
+      angles.push({ page: p - 1, angle: angle, srcW: canvas.width, srcH: canvas.height, turnW: turned.width, turnH: turned.height });
       var found = await fieldsOnSheet(turned, progress);
       var pageW = 595;
-      var pageH = turned.height * (pageW / turned.width);
+      var pageH = canvas.height * (pageW / canvas.width);
       found.forEach(function (field) {
+        if (angle) {
+          var mapped = unturnField(field, canvas.width, canvas.height, turned.width, turned.height, angle);
+          if (!mapped) return;
+          field.rect = mapped.rect;
+          field.pageWidth = mapped.pageWidth;
+          field.pageHeight = mapped.pageHeight;
+          field.transport = 'viewport-review';
+          field.detectAngle = angle;
+        } else {
+          field.pageWidth = pageW;
+          field.pageHeight = pageH;
+        }
         field.page = p - 1;
-        field.pageWidth = pageW;
-        field.pageHeight = pageH;
         if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
         fields.push(field);
       });
-      if (p === 1) {
-        var blob = await new Promise(function (resolve) { turned.toBlob(resolve, 'image/jpeg', 0.92); });
-        var jpeg = new Uint8Array(await blob.arrayBuffer());
-        var doc = await PDFLib.PDFDocument.create();
-        var image = await doc.embedJpg(jpeg);
-        var sheetPage = doc.addPage([pageW, pageH]);
-        sheetPage.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
-        sheet = {
-          bytes: new Uint8Array(await doc.save()),
-          deskewDeg: angle,
-          pageWidth: pageW,
-          pageHeight: pageH
-        };
-      }
     }
-    return { fields: fields, sheet: sheet, frame: { blocked: false, reasons: [], userUnitRead: true } };
+    var tilted = angles.filter(function (item) { return item.angle; });
+    if (tilted.length && !fields.length) {
+      return {
+        fields: [],
+        sheet: null,
+        deskewDeg: angles[0] ? angles[0].angle : 0,
+        placementBlock: '',
+        frame: { blocked: false, reasons: [], userUnitRead: true },
+        reviewTransport: null
+      };
+    }
+    return {
+      fields: fields,
+      sheet: null,
+      deskewDeg: angles[0] ? angles[0].angle : 0,
+      frame: { blocked: false, reasons: [], userUnitRead: true },
+      reviewTransport: tilted.length ? { looked: true, angles: angles, count: fields.length, abstain: [] } : null
+    };
   }
 
   function opaqueLabel(label) {
