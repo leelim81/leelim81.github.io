@@ -77,6 +77,196 @@ await ui.click('#sampleBtn');
 await ui.waitForFunction(() => FormDesk.refs().length === 2 && FormDesk.refs().every((item) => item.status && item.status !== 'reading') && FormExtract.trace().spatialInflight === 0);
 const twice = await ui.evaluate(() => FormDesk.refs().map((item) => item.name));
 check('clicking Try the sample twice leaves one pair of sample files', twice.filter((name) => name === 'visitor-reference.pdf').length === 1 && twice.filter((name) => name === 'id-card.png').length === 1 && twice.length === 2, twice.join('|'));
+
+const real = await PDFDocument.create();
+const realFont = await real.embedFont(StandardFonts.Helvetica);
+real.addPage([612, 792]).drawText('Real form for Ada Lane', { x: 72, y: 720, size: 16, font: realFont });
+writeFileSync('/tmp/real-form.pdf', await real.save());
+
+async function freshPage() {
+  const page = await (await browser.newContext()).newPage();
+  page.setDefaultTimeout(20000);
+  await page.goto('http://127.0.0.1:8822/tools/forms-filler/?intent=' + Date.now() + Math.random(), { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => ['tools-forms-filler', 'tools-forms-profiles', 'tools-forms-maps', 'tools-forms-editor'].forEach((name) => indexedDB.deleteDatabase(name)));
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.FormDesk && window.FormFields && window.DeskDB);
+  return page;
+}
+async function holdSampleFetch(page) {
+  await page.evaluate(() => {
+    const orig = window.fetch.bind(window);
+    window.__earlyResolvers = [];
+    window.__holdEarly = true;
+    window.__sampleFetches = 0;
+    window.fetch = function (url, opts) {
+      const sample = String(url).indexOf('samples/') !== -1;
+      if (!sample) return orig(url, opts);
+      window.__sampleFetches += 1;
+      if (!window.__holdEarly) return orig(url, opts);
+      return new Promise((resolve, reject) => {
+        window.__earlyResolvers.push(() => orig(url, opts).then(resolve, reject));
+      });
+    };
+  });
+}
+async function releaseSampleFetch(page) {
+  await page.evaluate(() => {
+    window.__holdEarly = false;
+    window.__earlyResolvers.splice(0).forEach((run) => run());
+  });
+}
+async function holdSampleRead(page) {
+  await page.evaluate(() => {
+    const orig = FormFields.read.bind(FormFields);
+    let armed = true;
+    FormFields.read = function (bytes, progress) {
+      if (!armed) return orig(bytes, progress);
+      armed = false;
+      return new Promise((resolve, reject) => {
+        window.__releaseRead = () => orig(bytes, progress).then(resolve, reject);
+      });
+    };
+  });
+}
+async function storedDesk(page) {
+  return page.evaluate(async () => {
+    const draft = await DeskDB.get('tools-forms-filler', 'draft');
+    return {
+      form: draft && draft.formName || '',
+      refs: ((draft && draft.refs) || []).map((item) => item.name)
+    };
+  });
+}
+function sampleNames(names) {
+  return names.some((name) => /visitor-reference|id-card/.test(name));
+}
+
+const clearPage = await freshPage();
+await holdSampleFetch(clearPage);
+await clearPage.click('#sampleBtn');
+await clearPage.waitForFunction(() => window.__earlyResolvers && window.__earlyResolvers.length >= 1);
+await clearPage.click('#clearBtn');
+await clearPage.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await releaseSampleFetch(clearPage);
+await clearPage.waitForFunction(() => window.__sampleFetches >= 3);
+await clearPage.waitForTimeout(1200);
+const cleared = await clearPage.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name)
+}));
+check('Start over during the sample fetch keeps the cleared desk', !/visitor-form/.test(cleared.label) && !sampleNames(cleared.refs), JSON.stringify(cleared));
+await clearPage.reload({ waitUntil: 'domcontentloaded' });
+await clearPage.waitForTimeout(400);
+const clearedStore = await storedDesk(clearPage);
+check('the cancelled sample is not stored after Start over', !clearedStore.form && !sampleNames(clearedStore.refs), JSON.stringify(clearedStore));
+
+const formPage = await freshPage();
+await holdSampleFetch(formPage);
+await formPage.click('#sampleBtn');
+await formPage.waitForFunction(() => window.__earlyResolvers && window.__earlyResolvers.length >= 1);
+await formPage.locator('#formInput').setInputFiles('/tmp/real-form.pdf');
+await formPage.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+await releaseSampleFetch(formPage);
+await formPage.waitForFunction(() => window.__sampleFetches >= 3);
+await formPage.waitForTimeout(1200);
+const keptForm = await formPage.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name)
+}));
+check('a real form chosen while the sample is fetching stays on the desk', /real-form\.pdf/.test(keptForm.label) && !sampleNames(keptForm.refs), JSON.stringify(keptForm));
+await formPage.reload({ waitUntil: 'domcontentloaded' });
+await formPage.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+const keptFormStore = await storedDesk(formPage);
+check('reload keeps the real form and not the sample papers', /real-form\.pdf/.test(keptFormStore.form) && !sampleNames(keptFormStore.refs), JSON.stringify(keptFormStore));
+
+const refPage = await freshPage();
+await holdSampleFetch(refPage);
+await refPage.click('#sampleBtn');
+await refPage.waitForFunction(() => window.__earlyResolvers && window.__earlyResolvers.length >= 1);
+await refPage.locator('#refInput').setInputFiles('/tmp/sample-cancel-ref.pdf');
+await refPage.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'sample-cancel-ref.pdf' && item.status !== 'reading'));
+await releaseSampleFetch(refPage);
+await refPage.waitForFunction(() => window.__sampleFetches >= 3);
+await refPage.waitForTimeout(1200);
+const keptRef = await refPage.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name + ':' + item.status)
+}));
+check('a real reference chosen while the sample is fetching is not replaced', keptRef.refs.length === 1 && /sample-cancel-ref\.pdf:(ready|empty)/.test(keptRef.refs[0]) && !/visitor-form/.test(keptRef.label), JSON.stringify(keptRef));
+await refPage.reload({ waitUntil: 'domcontentloaded' });
+await refPage.waitForFunction(() => FormDesk.refs().length === 1 && FormDesk.refs()[0].status !== 'reading');
+const keptRefStore = await storedDesk(refPage);
+check('reload keeps that reference and does not bring the sample back', keptRefStore.refs.length === 1 && keptRefStore.refs[0] === 'sample-cancel-ref.pdf' && !keptRefStore.form.includes('visitor'), JSON.stringify(keptRefStore));
+
+const second = await freshPage();
+await holdSampleFetch(second);
+await second.click('#sampleBtn');
+await second.waitForFunction(() => window.__earlyResolvers && window.__earlyResolvers.length >= 1);
+await second.evaluate(() => { window.__holdEarly = false; });
+await second.click('#sampleBtn');
+await second.waitForFunction(() => {
+  const refs = FormDesk.refs();
+  return refs.length === 2 && refs.every((item) => item.status && item.status !== 'reading');
+});
+await releaseSampleFetch(second);
+await second.waitForTimeout(1200);
+const secondRefs = await second.evaluate(() => FormDesk.refs().map((item) => item.name + ':' + item.status));
+check('an older sample fetch cannot replace the later sample', secondRefs.length === 2 && secondRefs.every((item) => !/:reading$/.test(item)) && secondRefs.filter((item) => item.startsWith('visitor-reference.pdf')).length === 1 && secondRefs.filter((item) => item.startsWith('id-card.png')).length === 1, secondRefs.join('|'));
+
+const readClear = await freshPage();
+await holdSampleRead(readClear);
+await readClear.click('#sampleBtn');
+await readClear.waitForFunction(() => typeof window.__releaseRead === 'function');
+await readClear.click('#clearBtn');
+await readClear.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await readClear.evaluate(() => window.__releaseRead());
+await readClear.waitForTimeout(1200);
+const readCleared = await readClear.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name)
+}));
+check('Start over during the sample form read keeps the cleared desk', !/visitor-form/.test(readCleared.label) && !sampleNames(readCleared.refs), JSON.stringify(readCleared));
+await readClear.reload({ waitUntil: 'domcontentloaded' });
+await readClear.waitForTimeout(300);
+const readClearedStore = await storedDesk(readClear);
+check('the sample form read does not store itself after Start over', !readClearedStore.form && !sampleNames(readClearedStore.refs), JSON.stringify(readClearedStore));
+
+const readForm = await freshPage();
+await holdSampleRead(readForm);
+await readForm.click('#sampleBtn');
+await readForm.waitForFunction(() => typeof window.__releaseRead === 'function');
+await readForm.locator('#formInput').setInputFiles('/tmp/real-form.pdf');
+await readForm.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+await readForm.evaluate(() => window.__releaseRead());
+await readForm.waitForTimeout(1200);
+const readKept = await readForm.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name)
+}));
+check('a real form opened while the sample form is reading stays put', /real-form\.pdf/.test(readKept.label) && !sampleNames(readKept.refs), JSON.stringify(readKept));
+await readForm.reload({ waitUntil: 'domcontentloaded' });
+await readForm.waitForFunction(() => /real-form\.pdf/.test(document.getElementById('formLabel').textContent || ''));
+const readKeptStore = await storedDesk(readForm);
+check('reload stores the real form instead of the sample', /real-form\.pdf/.test(readKeptStore.form) && !sampleNames(readKeptStore.refs), JSON.stringify(readKeptStore));
+
+const readRef = await freshPage();
+await holdSampleRead(readRef);
+await readRef.click('#sampleBtn');
+await readRef.waitForFunction(() => typeof window.__releaseRead === 'function');
+await readRef.locator('#refInput').setInputFiles('/tmp/sample-cancel-ref.pdf');
+await readRef.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'sample-cancel-ref.pdf' && item.status !== 'reading'));
+await readRef.evaluate(() => window.__releaseRead());
+await readRef.waitForTimeout(1200);
+const readRefKept = await readRef.evaluate(() => ({
+  label: document.getElementById('formLabel').textContent,
+  refs: FormDesk.refs().map((item) => item.name + ':' + item.status)
+}));
+check('a reference added while the sample form is reading is not cleared', readRefKept.refs.length === 1 && /sample-cancel-ref\.pdf:(ready|empty)/.test(readRefKept.refs[0]) && !/visitor-form/.test(readRefKept.label), JSON.stringify(readRefKept));
+await readRef.reload({ waitUntil: 'domcontentloaded' });
+await readRef.waitForFunction(() => FormDesk.refs().length === 1);
+const readRefStore = await storedDesk(readRef);
+check('reload keeps that reference after the late sample read', readRefStore.refs.length === 1 && readRefStore.refs[0] === 'sample-cancel-ref.pdf' && !String(readRefStore.form).includes('visitor'), JSON.stringify(readRefStore));
+
 writeFileSync('/tmp/main-now/research/forms-filler/visual-e2e/results/sample-cancel.json', JSON.stringify({ passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks }, null, 2));
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
 await browser.close();
