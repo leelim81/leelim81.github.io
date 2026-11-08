@@ -1735,13 +1735,19 @@
     var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
     if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
     pushUndo();
-    state.pages.forEach(function (rec) {
-      rec.annotations = rec.annotations.filter(function (ann) {
-        if (ann.mapId === map.id) return false;
-        if (ann.profileId && ann.profileId !== profile.id) return false;
-        return true;
+    var parked = state.withheld ? state.withheld.slice() : [];
+    state.pages.forEach(function (rec, index) {
+      var keep = [];
+      var foreign = [];
+      (rec.annotations || []).forEach(function (ann) {
+        if (ann.mapId === map.id) return;
+        if (ann.profileId && ann.profileId !== profile.id) { foreign.push(ann); return; }
+        keep.push(ann);
       });
+      rec.annotations = keep;
+      if (foreign.length) parked.push({ srcIndex: rec.srcIndex == null ? index : rec.srcIndex, annotations: foreign });
     });
+    state.withheld = parked;
     var placed = 0;
     var skipped = 0;
     map.pages.forEach(function (page, index) {
@@ -2029,7 +2035,6 @@
     });
     $('recoverPerson').addEventListener('change', function () {
       disarmRecover('The person changed, so the placement was cancelled.');
-      refreshRecover();
     });
     $('recoverFact').addEventListener('change', function () {
       disarmRecover('The value changed, so the placement was cancelled.');
@@ -2096,10 +2101,12 @@
         if (theirs.length) withheld.push({ srcIndex: src, annotations: theirs });
       });
       state.withheld = withheld;
-      if (!dropped) return;
-      redrawAnnotations();
-      recoverSay('The other person’s marks were left off.');
-      saveNow();
+      if (dropped) {
+        redrawAnnotations();
+        recoverSay('The other person’s marks were left off.');
+        saveNow();
+      }
+      refreshRecover();
     });
     $('recoverPlace').addEventListener('click', async function () {
       var fact = selectedRecoverFact();
