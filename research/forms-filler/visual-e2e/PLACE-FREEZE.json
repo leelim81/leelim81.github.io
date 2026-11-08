@@ -1,0 +1,69 @@
+{
+  "stage": "place-holdout",
+  "seed": 20261190,
+  "looked": true,
+  "note": "Code and fixtures hashed before the one look. Do not retune the detector after that look. Three placement forms are a small sample, not a reliability claim. OCR autofill stays off.",
+  "afterLook": "app.js was changed so the page keeps the rotated/cropped explanation instead of replacing it with Form ready. fields.js was not edited. The holdout was not run again. The codeHashes entry for app.js is the file that existed at the look.",
+  "people": [
+    "Eden Moss",
+    "Lars Moss"
+  ],
+  "street": "MYRTLE ROW",
+  "files": {
+    "fixtures/place-holdout/moss-crop.form.pdf": {
+      "bytes": 1076252,
+      "sha256": "de18b128da74b84def291fbd68b45a03189b97506bef86bf65c2085711026c63"
+    },
+    "fixtures/place-holdout/moss-mixed.form.pdf": {
+      "bytes": 1072985,
+      "sha256": "967d83694ff27492f05f01291cccaf3ce07a3068dc9e665eb4a936324cb2eea3"
+    },
+    "fixtures/place-holdout/moss-mixed.reference.pdf": {
+      "bytes": 1277263,
+      "sha256": "b6e49c685f543b270fea13a2f218bceeb0268ab8123943f44a250af6d7769ad0"
+    },
+    "fixtures/place-holdout/moss-over.form.pdf": {
+      "bytes": 1076238,
+      "sha256": "9fe82e552c8e1c9d4dad68de65b3b8f3f941b5497496ed8693caa296372a181b"
+    },
+    "fixtures/place-holdout/moss-over.reference.pdf": {
+      "bytes": 1277059,
+      "sha256": "fef63b05f4e2479c99e1964c29979de922d7fbdd7aa55392fdeac66a5d5844a6"
+    },
+    "fixtures/place-holdout/moss-scale.form.pdf": {
+      "bytes": 1076248,
+      "sha256": "8e3ea1da626910b5219ab8bba67bc38c220a56dffb2dddc8072bc77ebf7ac413"
+    },
+    "fixtures/place-holdout/moss-turned.form.pdf": {
+      "bytes": 1076244,
+      "sha256": "8f4f681f36e0cab9c6f65464f86f489c009991a7e11bbc4f206b720b1b7ef0f8"
+    },
+    "fixtures/place-holdout/moss-under.form.pdf": {
+      "bytes": 1081859,
+      "sha256": "2e556c3dbcafaa812328e0b969b1cd219e49d370f55e2ebac9d1d2bf455854c6"
+    },
+    "fixtures/place-holdout/moss-under.reference.pdf": {
+      "bytes": 1277332,
+      "sha256": "c5cd75358a3b3320ac74dbd574e0c7443f33bb7f3ec9a0f0c01b51fade4e5b69"
+    },
+    "fixtures/place-holdout/moss-widgets-turned.form.pdf": {
+      "bytes": 3200,
+      "sha256": "1dff5837eeffcbb9b950327be6c3270f0754c0bd2bc018d77ed921cf14f2c2f9"
+    },
+    "fixtures/place-holdout/moss-widgets.form.pdf": {
+      "bytes": 3194,
+      "sha256": "b3340308a3f595ea271e3db35ff4ec643c683be5b159f0b8a17d62bc830cb784"
+    },
+    "gold/place-holdout.jsonl": {
+      "bytes": 5125,
+      "sha256": "752264f65de72b3f23b20b17d6dce939acb40cb243d57c0f6b0e3fd5eaaaf30a"
+    }
+  },
+  "codeHashes": {
+    "tools/forms-filler/fields.js": "830eccc2a4dafb45361d6cf117d8d4f6cab053c806d2e314c91406a0ab793f21",
+    "tools/forms-filler/app.js": "15f9069e5996a8d40ab36a7bd839441c4277313b0fd2072fff705807e18d28b0",
+    "tools/forms-filler/evidence.js": "8cde7e1a6e605f299bcbed43f28b155b63de4c29f0cf6de4966baacf292444f4",
+    "tools/forms-filler/select.js": "5ef7579ab591b133f37a33783108ea7e45414e2f96261e87a9982868d611721e",
+    "tools/forms-filler/thresholds.js": "613044bf6e5331fe907aaddb3f0bfbb034f8a24e976e6ae160c2ff6e5c0eb270"
+  }
+}

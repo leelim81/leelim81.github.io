@@ -20,13 +20,15 @@ Chrome, shipped gates. Baseline file: `results/scan-dev-baseline.json`. After th
 
 The deskew search was locking onto −6° whenever no long rule existed, because a zero score at the first angle beat the initial −1. It now stays upright unless a rotated long rule scores higher than the upright page. Thin strokes of at least 80px with paper immediately above and below are extra candidates. That length is the measured underline on the narrow Grove page (about 170px), not a fraction of the page. Intake box edges do not pass that test. A label may also sit just to the left of a stroke.
 
-| | Baseline | After |
+The numbers in this table are the first published ones. Recall used 32 because two wrong-kind overlaps were left out of both the true and the missed counts. The gold file has 34 eligible fields. The comparable figures are in [DENOMINATORS.md](DENOMINATORS.md) and in the later table: baseline 6/34, stroke result 27/34.
+
+| | Baseline, as first published | After strokes, as first published |
 | --- | ---: | ---: |
 | True field candidates | 6 | 27 |
 | False candidates | 4 | 2 |
 | Missed gold fields | 26 | 7 |
 | Precision | 0.60 | 0.93 |
-| Recall | 0.19 | 0.79 |
+| Recall | 0.19 on the published 32 | 0.79 on 34 |
 | Exact label text | 6 | 25 |
 | Correct automatic fills | 6 | 6 |
 | Wrong fills | 0 | 0 |
@@ -122,3 +124,23 @@ On the already-viewed above-label page, the five rules now sit on their own gold
 Export of a drawn string comes back within 1 point on an unrotated page whose crop is the page. A 90 degree page and a CropBox that starts at (20, 20) were recorded in `results/placement-e1.json`. The installed pdf.js viewport did not expose `userUnit`. Raster export rebuilds a page from the rendered view, so a crop offset is not preserved as MediaBox coordinates. These fixtures do not use that case. Timings in the score files are script wall clocks, not observed human use. No phone was tested.
 
 `node research/forms-filler/visual-e2e/placement-e1.mjs` reruns the round trip and the viewed above-label check. `node research/forms-filler/visual-e2e/scan-score.mjs scan-dev e1` reruns development only.
+
+## Placement holdout, one look
+
+The caption rule and the page-frame gate were hashed in `PLACE-FREEZE.json` before this look. The people are Eden Moss and Lars Moss. The street is MYRTLE ROW. None of those were in the Grove, Fenn, or Bent sets. Three forms, five answerable fields each. That is a small sample, not a reliability rate. OCR autofill stayed off. A matching value counted only on its own gold rectangle. Export text came back on the same point it was drawn. Raw file: `results/place-holdout-once.json`.
+
+| Form | Result |
+| --- | --- |
+| Labels above the line | 5 placed, 0 wrong place, 0 missed |
+| Labels under the line | 5 placed, 0 wrong place, 0 missed |
+| Mixed above and under | 5 placed, 0 wrong place, 0 missed |
+| Same sheet rotated 90 degrees | No positions. The page says to place values by hand |
+| Same sheet with an offset crop | No positions |
+| Same sheet with page scale 2 | No positions |
+| Native widgets, including a rotated page | The widgets are still returned |
+
+A rotated or cropped scan, or a page whose scale is not 1, no longer produces line suggestions. The installed pdf.js page object does expose `userUnit`. When that value is missing, the scan is also refused rather than given a guessed scale. Native widgets are not refused. `app.js` was adjusted after the look so the explanation is not replaced by “Form ready.” The detector was not edited again and the holdout was not re-run.
+
+## Extension 0.1.1
+
+The 32 headed checks stay in `results/profiles-gesture-e2e.json` and belong to zip 0.1.0. Zip 0.1.1 was checked on its own: 37 checks, 0 failed, Chromium 131.0.6778.33, not current Chrome stable, no phone. The file is `results/profiles-gesture-e2e-0.1.1.json`. SHA-256 `09cee1247b6f86d3c96b3f383e7ae9f8d4da73bd64f467a9425f88af29468964`. The zip matches the extension source. Fill tells the person the website receives the checked values immediately and that the page is not submitted. Screenshots for this run use the `v011-` prefix.

@@ -1,6 +1,6 @@
 # Forms Filler profiles (unpacked extension)
 
-Version 0.1.0. This is not in the Chrome Web Store. It does not sync, and it does not upload a profile.
+Version 0.1.1. This is not in the Chrome Web Store. It does not sync, and it does not upload a profile.
 
 The extension cannot read the website’s IndexedDB. In Forms Filler, use **Export confirmed values** and then import that JSON here. The file contains only confirmed values.
 

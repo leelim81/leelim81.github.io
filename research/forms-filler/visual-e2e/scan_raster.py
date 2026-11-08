@@ -135,6 +135,31 @@ def form_page(item):
             draw.text((40, y), label, fill='black', font=small)
             draw.line([(w - 420, y + 18), (w - 80, y + 18)], fill='black', width=4)
             boxes.append((w - 420, y + 10, 340, 16))
+    elif layout == 'caption-over':
+        for i, label in enumerate(labels):
+            y = 200 + i * 118
+            draw.text((72, y), label, fill='black', font=small)
+            ly = y + 46
+            draw.line([(72, ly), (72 + 240, ly)], fill='black', width=3)
+            boxes.append((72, ly - 6, 240, 12))
+    elif layout == 'caption-under':
+        for i, label in enumerate(labels):
+            y = 190 + i * 118
+            draw.line([(72, y), (72 + 240, y)], fill='black', width=3)
+            boxes.append((72, y - 6, 240, 12))
+            draw.text((72, y + 16), label, fill='black', font=small)
+    elif layout == 'caption-mixed':
+        for i, label in enumerate(labels):
+            y = 180 + i * 120
+            if i % 2 == 0:
+                draw.text((80, y), label, fill='black', font=small)
+                ly = y + 44
+                draw.line([(80, ly), (80 + 220, ly)], fill='black', width=3)
+                boxes.append((80, ly - 6, 220, 12))
+            else:
+                draw.line([(80, y), (80 + 220, y)], fill='black', width=3)
+                boxes.append((80, y - 6, 220, 12))
+                draw.text((80, y + 14), label, fill='black', font=small)
     elif layout == 'row':
         for i, label in enumerate(labels):
             x = 30 + i * 210

@@ -1,0 +1,120 @@
+{
+  "split": "place-holdout",
+  "nPlacementForms": 3,
+  "note": "Three placement forms. Not a population rate. Already-viewed Grove and audit pages were not re-scored here. OCR autofill stayed off.",
+  "rows": [
+    {
+      "id": "moss-over",
+      "expect": "place",
+      "route": "raster",
+      "block": "",
+      "channel": "ocr",
+      "exportDelta": {
+        "n": 5,
+        "dx": 0,
+        "dy": 0
+      },
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 5,
+      "ok": true,
+      "answerable": 5
+    },
+    {
+      "id": "moss-under",
+      "expect": "place",
+      "route": "raster",
+      "block": "",
+      "channel": "ocr",
+      "exportDelta": {
+        "n": 5,
+        "dx": 0,
+        "dy": 0
+      },
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 5,
+      "ok": true,
+      "answerable": 5
+    },
+    {
+      "id": "moss-mixed",
+      "expect": "place",
+      "route": "raster",
+      "block": "",
+      "channel": "ocr",
+      "exportDelta": {
+        "n": 5,
+        "dx": 0,
+        "dy": 0
+      },
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 5,
+      "ok": true,
+      "answerable": 5
+    },
+    {
+      "id": "moss-turned",
+      "expect": "blocked",
+      "route": "raster-blocked",
+      "block": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "channel": "ocr",
+      "exportDelta": null,
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 0,
+      "ok": true
+    },
+    {
+      "id": "moss-crop",
+      "expect": "blocked",
+      "route": "raster-blocked",
+      "block": "This scan is cropped. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "channel": "ocr",
+      "exportDelta": null,
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 0,
+      "ok": true
+    },
+    {
+      "id": "moss-scale",
+      "expect": "blocked",
+      "route": "raster-blocked",
+      "block": "This scan is on a page scale other than 1. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "channel": "ocr",
+      "exportDelta": null,
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 0,
+      "ok": true
+    },
+    {
+      "id": "moss-widgets",
+      "expect": "widgets",
+      "route": "acro",
+      "block": "",
+      "channel": "ocr",
+      "exportDelta": null,
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 0,
+      "ok": true,
+      "detected": 5
+    },
+    {
+      "id": "moss-widgets-turned",
+      "expect": "widgets",
+      "route": "acro",
+      "block": "",
+      "channel": "ocr",
+      "exportDelta": null,
+      "misses": [],
+      "wrongPlace": [],
+      "placed": 0,
+      "ok": true,
+      "detected": 5
+    }
+  ]
+}

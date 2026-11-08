@@ -14,7 +14,8 @@
     modelNote: '',
     handedOff: false,
     seeded: {},
-    notes: ''
+    notes: '',
+    placementBlocked: ''
   };
 
   function $(id) { return document.getElementById(id); }
@@ -107,9 +108,9 @@
       ? state.formName + ' · ' + state.fields.length + ' ' + (flat ? 'entry spots' : 'fields')
       : 'A fillable PDF, a flat form, or a photo of one.';
     renderRefs();
-    var ready = !!(state.formBytes && state.fields.length && !state.running && (flat || state.refs.length));
+    var ready = !!(state.formBytes && !state.running && ((state.fields.length && (flat || state.refs.length)) || state.placementBlocked));
     $('fillBtn').disabled = !ready;
-    $('fillBtn').textContent = flat && !state.refs.length ? 'Open in the editor' : 'Fill from the papers';
+    $('fillBtn').textContent = state.placementBlocked || (flat && !state.refs.length) ? 'Open in the editor' : 'Fill from the papers';
   }
 
   function showGpu(status) {
@@ -244,7 +245,11 @@
     state.proposals = [];
     state.fields = read.fields;
     state.kind = read.kind;
-    if (!state.fields.length) toast('No fields or blank lines were found in that PDF.');
+    state.placementBlocked = read.placementBlock || '';
+    if (state.placementBlocked) {
+      status(state.placementBlocked, false);
+      toast(state.placementBlocked);
+    } else if (!state.fields.length) toast('No fields or blank lines were found in that PDF.');
     refreshLabels();
     scheduleSave();
     return true;
@@ -497,7 +502,12 @@
 
   async function fillFromPapers() {
     if (state.running) return;
-    if (!state.formBytes || !state.fields.length) return;
+    if (!state.formBytes || (!state.fields.length && !state.placementBlocked)) return;
+    if (state.placementBlocked && !state.fields.length) {
+      state.handedOff = true;
+      await openEditor(true);
+      return;
+    }
     var token = ++fillToken;
     var seenForm = formToken;
     state.handedOff = false;
@@ -700,7 +710,7 @@
           if (!applied) return;
         } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
-      if (kind === 'form') status('Form ready.', false);
+      if (kind === 'form' && !state.placementBlocked) status('Form ready.', false);
       else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
       if (input) input.value = '';
@@ -727,6 +737,7 @@
     state.formBytes = null;
     state.formName = '';
     state.fields = [];
+    state.placementBlocked = '';
     state.kind = '';
     state.refs = [];
     state.proposals = [];

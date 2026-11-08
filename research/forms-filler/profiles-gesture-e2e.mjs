@@ -72,7 +72,7 @@ const browser = await chromium.connectOverCDP('http://127.0.0.1:9223');
 const cdpPages = () => browser.contexts().flatMap((c) => c.pages());
 let popup = cdpPages().find((p) => p.url().includes('popup.html'));
 check('shortcut opens the extension popup', !!popup, popup && popup.url());
-shot(join(root, 'visual-e2e/results/screenshots/gesture-popup-open.png'));
+shot(join(root, 'visual-e2e/results/screenshots/v011-popup-open.png'));
 
 const bundle = {
   kind: 'forms-filler-profiles',
@@ -97,12 +97,16 @@ if (popup) {
   await popup.setInputFiles('#file', bundlePath);
   await popup.locator('#status', { hasText: 'Imported' }).waitFor();
   check('popup import stores the profile', (await popup.locator('#profile option').allTextContents()).includes('Ada Example'));
+  const warned = await popup.locator('body').innerText();
+  check('popup says Fill copies checked values into the website now', /can read them at once/i.test(warned) && /does not press submit/i.test(warned), warned.slice(0, 220));
   await popup.selectOption('#profile', 'ada');
   await popup.click('#look');
   await popup.locator('#preview', { hasText: 'Full name' }).waitFor();
   const preview = await popup.locator('#preview').innerText();
   check('preview names the empty fields and protects the filled email', preview.includes('Full name') && preview.includes('already has a value'), preview.slice(0, 240));
-  shot(join(root, 'visual-e2e/results/screenshots/gesture-preview.png'));
+  shot(join(root, 'visual-e2e/results/screenshots/v011-preview.png'));
+  const beforeFill = await popup.locator('#status').innerText();
+  check('preview says the site receives the checked values', /copies those values into this website/i.test(beforeFill), beforeFill);
   await popup.click('#fill');
   await page.waitForFunction(() => document.getElementById('n').value === 'Ada Example');
   let dom = await page.evaluate(() => ({
@@ -127,7 +131,9 @@ if (popup) {
   await page.waitForFunction(() => document.getElementById('filled').value === 'ada@example.com');
   dom = await page.evaluate(() => ({ filled: document.getElementById('filled').value, submitted: document.getElementById('submitted').textContent }));
   check('explicit nonempty override replaces only that field', dom.filled === 'ada@example.com' && dom.submitted === 'no', JSON.stringify(dom));
-  shot(join(root, 'visual-e2e/results/screenshots/gesture-filled.png'));
+  const afterFill = await popup.locator('#status').innerText();
+  check('after Fill the popup says the site can read the values and the page was not submitted', /can read them now/i.test(afterFill) && /not submitted/i.test(afterFill), afterFill);
+  shot(join(root, 'visual-e2e/results/screenshots/v011-filled.png'));
 }
 
 const controlled = await context.newPage();
@@ -152,6 +158,7 @@ if (popup) {
 }
 
 const shotDir = join(root, 'visual-e2e/results/screenshots');
+report.extension = '0.1.1';
 const filler = await context.newPage();
 await filler.goto('http://127.0.0.1:8765/tools/forms-filler/');
 await filler.waitForFunction(() => window.FormProfiles && document.getElementById('profileToggle'));
@@ -162,14 +169,14 @@ const closedOnLoad = await filler.evaluate(() => ({
   zip: document.getElementById('extensionZip').getAttribute('href')
 }));
 check('saved values start collapsed and the extension download is visible', closedOnLoad.hidden && closedOnLoad.expanded === 'false' && closedOnLoad.help.includes('extension') && closedOnLoad.zip === 'extension/forms-filler-profiles-0.1.1.zip', JSON.stringify(closedOnLoad));
-await filler.screenshot({ path: join(shotDir, 'saved-collapsed.png'), fullPage: true });
+await filler.screenshot({ path: join(shotDir, 'v011-saved-collapsed.png'), fullPage: true });
 await filler.setViewportSize({ width: 390, height: 844 });
-await filler.screenshot({ path: join(shotDir, 'saved-collapsed-mobile.png'), fullPage: true });
+await filler.screenshot({ path: join(shotDir, 'v011-saved-collapsed-mobile.png'), fullPage: true });
 await filler.setViewportSize({ width: 1100, height: 720 });
 await filler.click('#profileToggle');
 await filler.waitForFunction(() => document.activeElement === document.getElementById('profileBox') && document.getElementById('profileToggle').getAttribute('aria-expanded') === 'true');
 check('Saved values button opens the panel and moves focus into it', true);
-await filler.screenshot({ path: join(shotDir, 'saved-open.png'), fullPage: true });
+await filler.screenshot({ path: join(shotDir, 'v011-saved-open.png'), fullPage: true });
 await filler.keyboard.press('Escape');
 await filler.waitForFunction(() => document.getElementById('profileBox').hidden && document.activeElement === document.getElementById('profileToggle'));
 check('Escape closes Saved values and returns focus to the button', true);
@@ -199,6 +206,20 @@ const zipInfo = spawnSync('python3', ['-c', [
 const zipJson = JSON.parse(zipInfo.stdout || '{}');
 const shippedSha = spawnSync('sha256sum', [shippedZip], { encoding: 'utf8' }).stdout.split(' ')[0];
 check('the linked zip is extension 0.1.1 with no host permission', zipResponse.ok && !zipJson.missing.length && zipJson.version === '0.1.1' && JSON.stringify(zipJson.permissions) === JSON.stringify(['storage', 'activeTab', 'scripting']) && !zipJson.host && zipJson.sha256 === shippedSha, JSON.stringify(zipJson));
+const pageHelp = await filler.locator('#extensionHelp').innerText();
+check('the page says Fill writes values into the website immediately', /writes the checked values into that website immediately/i.test(pageHelp) && /version 0\.1\.1/i.test(pageHelp), pageHelp.slice(0, 240));
+const parity = spawnSync('python3', ['-c', [
+  'import zipfile, pathlib',
+  'root=pathlib.Path("' + join(root, '../../tools/forms-filler/extension') + '")',
+  'z=zipfile.ZipFile("/tmp/ff-shipped-extension.zip")',
+  'bad=[]',
+  'for name in z.namelist():',
+  '    disk=(root/name).read_bytes()',
+  '    if disk!=z.read(name): bad.append(name)',
+  'readme=z.read("README.md").decode()',
+  'print(("mismatch:"+ ",".join(bad)) if bad or "0.1.1" not in readme or "can read or save them" not in readme else "match")'
+].join('\n')], { encoding: 'utf8' });
+check('shipped zip matches the extension source and the install note', (parity.stdout || '').trim() === 'match', (parity.stdout || parity.stderr || '').trim());
 await filler.reload({ waitUntil: 'domcontentloaded' });
 await filler.waitForFunction(() => document.getElementById('profileBox') && document.getElementById('profileBox').hidden && document.getElementById('profileToggle').getAttribute('aria-expanded') === 'false');
 check('reload keeps Saved values collapsed', true);
@@ -338,9 +359,9 @@ if (popup) {
   const afterDrop = await filler.evaluate(async () => (await FormProfiles.load()).vault.profiles.length);
   check('removing the extension copy leaves the site profile', beforeDrop === afterDrop && afterDrop > 0, beforeDrop + ' ' + afterDrop);
 }
-shot(join(root, 'visual-e2e/results/screenshots/gesture-ocr-profile.png'));
+shot(join(root, 'visual-e2e/results/screenshots/v011-ocr-profile.png'));
 
-const out = join(root, 'visual-e2e/results/profiles-gesture-e2e.json');
+const out = join(root, 'visual-e2e/results/profiles-gesture-e2e-0.1.1.json');
 writeFileSync(out, JSON.stringify(report, null, 2));
 const failed = report.checks.filter((item) => !item.ok);
 await browser.close();

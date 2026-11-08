@@ -139,6 +139,42 @@ const report = await page.evaluate(async () => {
     if (!own || other) shifted.push(label);
   });
   check('viewed above-label audit regression: each caption overlaps only its own gold', shifted.length === 0, shifted.join(', ') || 'five rules');
+
+  async function framed(mutate) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 500;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 400, 500);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(40, 200, 220, 3);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
+    const jpeg = new Uint8Array(await blob.arrayBuffer());
+    const doc = await PDFLib.PDFDocument.create();
+    const image = await doc.embedJpg(jpeg);
+    const page = doc.addPage([400, 500]);
+    page.drawImage(image, { x: 0, y: 0, width: 400, height: 500 });
+    if (mutate) mutate(page);
+    const read = await FormFields.read(new Uint8Array(await doc.save()));
+    return { fields: read.fields.length, route: read.route, block: read.placementBlock || '' };
+  }
+  const rotatedPage = await framed((sheet) => sheet.setRotation(PDFLib.degrees(90)));
+  const croppedPage = await framed((sheet) => sheet.setCropBox(20, 20, 140, 140));
+  const scaledPage = await framed((sheet) => sheet.node.set(PDFLib.PDFName.of('UserUnit'), PDFLib.PDFNumber.of(2)));
+  const plainPageImage = await framed(null);
+  check('a rotated page offers no scan positions', rotatedPage.fields === 0 && /rotated/.test(rotatedPage.block), JSON.stringify(rotatedPage));
+  check('an offset crop offers no scan positions', croppedPage.fields === 0 && /cropped/.test(croppedPage.block), JSON.stringify(croppedPage));
+  check('a page scale other than 1 offers no scan positions', scaledPage.fields === 0 && /page scale/.test(scaledPage.block), JSON.stringify(scaledPage));
+  check('an ordinary page is not blocked by that gate', plainPageImage.block === '', JSON.stringify(plainPageImage));
+  const native = await PDFLib.PDFDocument.create();
+  const nativePage = native.addPage([400, 400]);
+  const nativeFont = await native.embedFont(PDFLib.StandardFonts.Helvetica);
+  nativePage.drawText('Applicant name', { x: 40, y: 80, size: 12, font: nativeFont });
+  native.getForm().createTextField('Applicant name').addToPage(nativePage, { x: 40, y: 40, width: 200, height: 18 });
+  nativePage.setRotation(PDFLib.degrees(90));
+  const nativeRead = await FormFields.read(new Uint8Array(await native.save()));
+  check('a rotated page with a real widget still returns that widget', nativeRead.route === 'acro' && nativeRead.fields.length === 1 && !nativeRead.placementBlock, JSON.stringify({ route: nativeRead.route, n: nativeRead.fields.length }));
   out.viewedAudit = { deskew: audit.deskewDeg, fields: audit.fields.map((field) => ({ label: field.label, rect: field.rect })) };
 
   const overlay = document.createElement('canvas');

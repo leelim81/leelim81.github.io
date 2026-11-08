@@ -233,7 +233,8 @@
       fields: raster.fields,
       bytes: raster.sheet && raster.sheet.bytes,
       deskewDeg: raster.sheet && raster.sheet.deskewDeg,
-      route: 'raster'
+      route: raster.placementBlock ? 'raster-blocked' : 'raster',
+      placementBlock: raster.placementBlock || ''
     };
   }
 
@@ -849,7 +850,41 @@
     return primary;
   }
 
+  async function scanFrame(bytes) {
+    var doc = await PDFLib.PDFDocument.load(copy(bytes));
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var reasons = [];
+    var limit = Math.min(doc.getPageCount(), pdf.numPages, 2);
+    for (var i = 0; i < limit; i++) {
+      var libPage = doc.getPages()[i];
+      var media = libPage.getMediaBox();
+      var crop = libPage.getCropBox();
+      var angle = ((libPage.getRotation().angle % 360) + 360) % 360;
+      if (angle) reasons.push('rotation');
+      if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) reasons.push('crop');
+      var jsPage = await pdf.getPage(i + 1);
+      if (typeof jsPage.userUnit !== 'number') reasons.push('scale-unread');
+      else if (Math.abs(jsPage.userUnit - 1) > 0.001) reasons.push('scale');
+    }
+    var unique = [];
+    reasons.forEach(function (reason) { if (unique.indexOf(reason) < 0) unique.push(reason); });
+    var bits = [];
+    if (unique.indexOf('rotation') >= 0) bits.push('rotated');
+    if (unique.indexOf('crop') >= 0) bits.push('cropped');
+    if (unique.indexOf('scale') >= 0) bits.push('on a page scale other than 1');
+    if (unique.indexOf('scale-unread') >= 0) bits.push('missing a readable page scale');
+    return {
+      blocked: unique.length > 0,
+      reasons: unique,
+      message: unique.length
+        ? 'This scan is ' + bits.join(' and ') + '. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.'
+        : ''
+    };
+  }
+
   async function readRasterPdf(bytes, progress) {
+    var frame = await scanFrame(bytes);
+    if (frame.blocked) return { fields: [], sheet: null, placementBlock: frame.message, frame: frame };
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
@@ -889,7 +924,7 @@
         };
       }
     }
-    return { fields: fields, sheet: sheet };
+    return { fields: fields, sheet: sheet, frame: { blocked: false, reasons: [], userUnitRead: true } };
   }
 
   function opaqueLabel(label) {
@@ -963,16 +998,17 @@
     }
     say(progress, 'Finding the blank lines…');
     var flat = await readFlat(bytes, progress);
-    if (flat && flat.fields) {
+    if (flat && (flat.fields || flat.placementBlock)) {
       return {
         kind: 'flat',
         route: flat.route || 'text',
-        fields: flat.fields,
+        fields: flat.fields || [],
         bytes: flat.bytes || null,
-        deskewDeg: flat.deskewDeg || 0
+        deskewDeg: flat.deskewDeg || 0,
+        placementBlock: flat.placementBlock || ''
       };
     }
-    return { kind: 'flat', route: flat && flat.route || 'empty', fields: [] };
+    return { kind: 'flat', route: flat && flat.route || 'empty', fields: [], placementBlock: '' };
   }
 
   async function readImage(bytes, mime, progress) {
