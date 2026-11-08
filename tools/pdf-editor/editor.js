@@ -925,9 +925,100 @@
     return out.save();
   }
 
-  function openDownload() {
+  function pointOnPage(x, y, crop) {
+    var slop = 0.75;
+    return x >= crop.x - slop && y >= crop.y - slop
+      && x <= crop.x + crop.width + slop && y <= crop.y + crop.height + slop;
+  }
+
+  /* Same lines and origin as the export. A viewer clips to the crop box, so a
+     run that leaves that box is cut off even though the editor still shows it. */
+  function textRunsOff(ann, crop, rotation, font) {
+    if (!ann || (ann.type !== 'text' && ann.type !== 'date') || !ann.text) return false;
+    if (!crop || !(crop.width > 0) || !(crop.height > 0) || rotation == null) return false;
+    var size = ann.fontSize || 16;
+    var origin = FormCoords.textOrigin(ann, crop, rotation, size);
+    var box = FormCoords.boxOf(ann, crop, rotation);
+    var lines = wrapText(ann.text, font, size, Math.max(8, box.width - 2));
+    var lineH = size * 1.3;
+    var ascent = size * 0.72;
+    var descent = size * 0.21;
+    var shift = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var x = origin.x + origin.down.x * shift;
+      var y = origin.y + origin.down.y * shift;
+      var width = lines[i] ? font.widthOfTextAtSize(lines[i], size) : 0;
+      var ex = x + origin.right.x * width;
+      var ey = y + origin.right.y * width;
+      var points = [
+        [x, y], [ex, ey],
+        [x + origin.down.x * descent, y + origin.down.y * descent],
+        [x - origin.down.x * ascent, y - origin.down.y * ascent],
+        [ex + origin.down.x * descent, ey + origin.down.y * descent],
+        [ex - origin.down.x * ascent, ey - origin.down.y * ascent]
+      ];
+      for (var p = 0; p < points.length; p++) {
+        if (!pointOnPage(points[p][0], points[p][1], crop)) return true;
+      }
+      shift += lineH;
+    }
+    return false;
+  }
+
+  async function textOffPage() {
+    syncLiveText();
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    var font = await src.embedFont(PDFLib.StandardFonts.Helvetica);
+    var found = [];
+    for (var i = 0; i < state.pages.length; i++) {
+      var rec = state.pages[i];
+      var lib = src.getPages()[rec.srcIndex];
+      if (!lib) continue;
+      var crop = lib.getCropBox();
+      var angle = FormCoords.normRotation(((lib.getRotation().angle || 0) + (rec.rotation || 0)));
+      for (var a = 0; a < rec.annotations.length; a++) {
+        var ann = rec.annotations[a];
+        if (!textRunsOff(ann, crop, angle, font)) continue;
+        found.push({ id: ann.id, text: ann.text || '' });
+      }
+    }
+    return found;
+  }
+
+  function paintExportWarn(list) {
+    var box = $('exportWarn');
+    if (!box) return;
+    box.replaceChildren();
+    if (!list.length) { box.hidden = true; return; }
+    box.hidden = false;
+    var sample = String(list[0].text || '').replace(/\s+/g, ' ').trim();
+    if (sample.length > 48) sample = sample.slice(0, 45) + '...';
+    var p = document.createElement('p');
+    p.textContent = list.length === 1
+      ? '"' + sample + '" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.'
+      : list.length + ' pieces of text run past the page. A PDF viewer will cut off what does not fit. The type is not shortened.';
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn';
+    button.id = 'exportShow';
+    button.textContent = 'Show this text';
+    button.addEventListener('click', function () {
+      $('downloadModal').hidden = true;
+      select(list[0].id);
+      var el = document.querySelector('.ann[data-id="' + CSS.escape(list[0].id) + '"]');
+      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    box.appendChild(p);
+    box.appendChild(button);
+  }
+
+  async function openDownload() {
     if (!state.pdfBytes) return;
+    var warn = [];
+    try { warn = await textOffPage(); } catch (err) { warn = []; }
+    paintExportWarn(warn);
     $('downloadModal').hidden = false;
+    if (warn.length && $('exportShow')) $('exportShow').focus();
     var stem = (state.fileName || 'document').replace(/\.pdf$/i, '');
     PdfSizes.mount($('sizeOptions'), {
       getBytes: flatten,
