@@ -64,19 +64,6 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
     <p id="modelDetail" class="note"></p>
   </div>
-  <section id="extensionHelp" class="review" aria-labelledby="extensionTitle">
-    <h2 id="extensionTitle">Install the browser extension</h2>
-    <p class="review-quote">Desktop Chrome or Chromium only. Not a phone install, not a one-click install, and not a Chrome Web Store listing. Version 0.1.2. The zip is the unpacked extension. Nothing in it is uploaded.</p>
-    <p><a id="extensionZip" class="btn" href="extension/forms-filler-profiles-0.1.2.zip" download>Download the extension (version 0.1.2)</a></p>
-    <ol class="install-steps">
-      <li>Download the zip and unzip it. Keep the folder intact.</li>
-      <li>Open the browser’s Extensions page. Turn on Developer mode. Choose Load unpacked, then select that unzipped folder.</li>
-      <li>Pin “Forms Filler profiles” so you can find the icon. On a new browser profile the shortcut Ctrl+Shift+Y (Command+Shift+Y on a Mac) opens it too.</li>
-      <li>Open Saved values on this page, confirm the values you want, and use Export confirmed values.</li>
-      <li>In the extension, import that file, choose the person, read Preview, then Fill. Fill writes the checked values into that website immediately. The site can read or save them even though Fill does not press submit.</li>
-    </ol>
-    <p class="review-quote">This site and the extension keep separate copies. Removing the imported copy in the extension does not delete values here. To refresh the extension, export again and import the new file. Password, payment, and one-time-code fields are skipped, as are hidden, disabled, and read-only fields. The extension may use the tab you open, run on that tab when you press Fill, and store the imported copy. It does not ask to read every website.</p>
-  </section>
   <p class="row">
     <button id="profileToggle" type="button" class="btn" aria-expanded="false" aria-controls="profileBox">Saved values</button>
   </p>
@@ -121,6 +108,19 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
       <button id="openBlank" type="button" class="btn">Open the blank form</button>
     </div>
   </div>
+  <section id="extensionHelp" class="review" aria-labelledby="extensionTitle">
+    <h2 id="extensionTitle">Install the browser extension</h2>
+    <p class="review-quote">Desktop Chrome or Chromium only. Not a phone install, not a one-click install, and not a Chrome Web Store listing. Version 0.1.2. The zip is the unpacked extension. Nothing in it is uploaded.</p>
+    <p><a id="extensionZip" class="btn" href="extension/forms-filler-profiles-0.1.2.zip" download>Download the extension (version 0.1.2)</a></p>
+    <ol class="install-steps">
+      <li>Download the zip and unzip it. Keep the folder intact.</li>
+      <li>Open the browser’s Extensions page. Turn on Developer mode. Choose Load unpacked, then select that unzipped folder.</li>
+      <li>Pin “Forms Filler profiles” so you can find the icon. On a new browser profile the shortcut Ctrl+Shift+Y (Command+Shift+Y on a Mac) opens it too.</li>
+      <li>Open Saved values on this page, confirm the values you want, and use Export confirmed values.</li>
+      <li>In the extension, import that file, choose the person, read Preview, then Fill. Fill writes the checked values into that website immediately. The site can read or save them even though Fill does not press submit.</li>
+    </ol>
+    <p class="review-quote">This site and the extension keep separate copies. Removing the imported copy in the extension does not delete values here. To refresh the extension, export again and import the new file. Password, payment, and one-time-code fields are skipped, as are hidden, disabled, and read-only fields. The extension may use the tab you open, run on that tab when you press Fill, and store the imported copy. It does not ask to read every website.</p>
+  </section>
 </main>
 <script src="vendor/pdf/pdf.min.js"></script>
 <script src="vendor/pdf/pdf-lib.min.js"></script>
