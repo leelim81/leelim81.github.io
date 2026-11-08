@@ -1494,15 +1494,71 @@
     closeSig();
   }
 
+  function copyAnn(ann) {
+    return Object.assign({}, ann);
+  }
   function snapshotPages() {
-    return state.pages.map(function (page) {
-      return { id: page.id, annotations: page.annotations.map(function (ann) { return Object.assign({}, ann); }) };
-    });
+    return {
+      personId: ($('recoverPerson') && $('recoverPerson').value) || state.selectedResumePerson || '',
+      pages: state.pages.map(function (page) {
+        return { id: page.id, annotations: (page.annotations || []).map(copyAnn) };
+      }),
+      withheld: (state.withheld || []).map(function (page) {
+        return { srcIndex: page.srcIndex, annotations: (page.annotations || []).map(copyAnn) };
+      })
+    };
   }
   function pushUndo() {
     state.undo.push(snapshotPages());
     if (state.undo.length > 30) state.undo.shift();
     if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
+  }
+  function markOwnerOf(ann) {
+    if (!ann) return '';
+    if (ann.profileId) return ann.profileId;
+    if (ann.originProfileId) return ann.originProfileId;
+    return '';
+  }
+  function partitionStamp() {
+    function side(pages) {
+      return (pages || []).map(function (page) {
+        var src = page.srcIndex == null ? '' : page.srcIndex;
+        var ids = (page.annotations || []).map(function (ann) { return (ann.id || '') + '/' + markOwnerOf(ann); });
+        return src + ':' + ids.join(',');
+      }).join('|');
+    }
+    return side(state.pages) + '||' + side(state.withheld);
+  }
+  function partitionFor(personId) {
+    var before = partitionStamp();
+    var pool = {};
+    function add(srcIndex, ann) {
+      if (!pool[srcIndex]) pool[srcIndex] = [];
+      pool[srcIndex].push(ann);
+    }
+    state.pages.forEach(function (rec, index) {
+      (rec.annotations || []).forEach(function (ann) { add(rec.srcIndex == null ? index : rec.srcIndex, ann); });
+    });
+    (state.withheld || []).forEach(function (page) {
+      (page.annotations || []).forEach(function (ann) { add(page.srcIndex, ann); });
+    });
+    var withheld = [];
+    var hidden = 0;
+    state.pages.forEach(function (rec, index) {
+      var src = rec.srcIndex == null ? index : rec.srcIndex;
+      var mine = [];
+      var theirs = [];
+      (pool[src] || []).forEach(function (ann) {
+        var owner = markOwnerOf(ann);
+        if (!owner) { hidden += 1; return; }
+        if (owner === personId) mine.push(ann);
+        else { theirs.push(ann); hidden += 1; }
+      });
+      rec.annotations = mine;
+      if (theirs.length) withheld.push({ srcIndex: src, annotations: theirs });
+    });
+    state.withheld = withheld;
+    return { changed: before !== partitionStamp(), hidden: hidden };
   }
   function redrawAnnotations() {
     state.pages.forEach(function (rec) {
@@ -1514,10 +1570,17 @@
   function undoRecover() {
     var snap = state.undo.pop();
     if (!snap) return;
-    snap.forEach(function (page) {
+    var pages = Array.isArray(snap) ? snap : (snap.pages || []);
+    var withheld = Array.isArray(snap) ? [] : (snap.withheld || []);
+    pages.forEach(function (page) {
       var rec = state.pages.filter(function (item) { return item.id === page.id; })[0];
-      if (rec) rec.annotations = page.annotations;
+      if (rec) rec.annotations = (page.annotations || []).map(copyAnn);
     });
+    state.withheld = withheld.map(function (page) {
+      return { srcIndex: page.srcIndex, annotations: (page.annotations || []).map(copyAnn) };
+    });
+    var personId = ($('recoverPerson') && $('recoverPerson').value) || state.selectedResumePerson || '';
+    if (personId) partitionFor(personId);
     state.recoverArmed = false;
     redrawAnnotations();
     select(null);
@@ -1735,13 +1798,19 @@
     var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
     if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
     pushUndo();
-    state.pages.forEach(function (rec) {
-      rec.annotations = rec.annotations.filter(function (ann) {
-        if (ann.mapId === map.id) return false;
-        if (ann.profileId && ann.profileId !== profile.id) return false;
-        return true;
+    var parked = state.withheld ? state.withheld.slice() : [];
+    state.pages.forEach(function (rec, index) {
+      var keep = [];
+      var foreign = [];
+      (rec.annotations || []).forEach(function (ann) {
+        if (ann.mapId === map.id) return;
+        if (ann.profileId && ann.profileId !== profile.id) { foreign.push(ann); return; }
+        keep.push(ann);
       });
+      rec.annotations = keep;
+      if (foreign.length) parked.push({ srcIndex: rec.srcIndex == null ? index : rec.srcIndex, annotations: foreign });
     });
+    state.withheld = parked;
     var placed = 0;
     var skipped = 0;
     map.pages.forEach(function (page, index) {
@@ -2029,7 +2098,6 @@
     });
     $('recoverPerson').addEventListener('change', function () {
       disarmRecover('The person changed, so the placement was cancelled.');
-      refreshRecover();
     });
     $('recoverFact').addEventListener('change', function () {
       disarmRecover('The value changed, so the placement was cancelled.');
@@ -2058,48 +2126,19 @@
       await refreshMaps();
       recoverSay('Cleared every blank map in this browser. People and values were kept.');
     });
-    function markOwner(ann) {
-      if (!ann) return '';
-      if (ann.profileId) return ann.profileId;
-      if (ann.originProfileId) return ann.originProfileId;
-      return '';
-    }
     if ($('recoverPerson')) $('recoverPerson').addEventListener('change', function () {
       var id = $('recoverPerson').value;
       var from = state.selectedResumePerson || '';
       if (!id || from === id) return;
       state.selectedResumePerson = id;
-      var pool = {};
-      function add(srcIndex, ann) {
-        if (!pool[srcIndex]) pool[srcIndex] = [];
-        pool[srcIndex].push(ann);
+      var split = partitionFor(id);
+      if (split.changed) {
+        redrawAnnotations();
+        if (split.hidden) recoverSay('The other person’s marks were left off.');
+        saveNow();
+        scheduleFitNote();
       }
-      state.pages.forEach(function (rec, index) {
-        (rec.annotations || []).forEach(function (ann) { add(rec.srcIndex == null ? index : rec.srcIndex, ann); });
-      });
-      (state.withheld || []).forEach(function (page) {
-        (page.annotations || []).forEach(function (ann) { add(page.srcIndex, ann); });
-      });
-      var withheld = [];
-      var dropped = 0;
-      state.pages.forEach(function (rec, index) {
-        var src = rec.srcIndex == null ? index : rec.srcIndex;
-        var mine = [];
-        var theirs = [];
-        (pool[src] || []).forEach(function (ann) {
-          var owner = markOwner(ann);
-          if (!owner) { dropped += 1; return; }
-          if (owner === id) mine.push(ann);
-          else { theirs.push(ann); dropped += 1; }
-        });
-        rec.annotations = mine;
-        if (theirs.length) withheld.push({ srcIndex: src, annotations: theirs });
-      });
-      state.withheld = withheld;
-      if (!dropped) return;
-      redrawAnnotations();
-      recoverSay('The other person’s marks were left off.');
-      saveNow();
+      refreshRecover();
     });
     $('recoverPlace').addEventListener('click', async function () {
       var fact = selectedRecoverFact();

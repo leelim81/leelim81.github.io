@@ -1,0 +1,31 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "Ada has two overflowing pieces, a leftward distance, and a bottom direction",
+      "ok": true,
+      "detail": "2 pieces of text run past the page.\n\n\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm.\n\nShow this text\n\n\"14 Harbour Lane beside the long westLine 0 Li...\" is taller than the page, so moving it "
+    },
+    {
+      "name": "each Show button selects a different Ada piece",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSuperc || 14 Harbour Lane beside the long\nwestLine"
+    },
+    {
+      "name": "the download warning repeats both directions and the export keeps both pieces",
+      "ok": true,
+      "detail": "2 pieces of text run past the page.\n\n\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm. A PDF viewer will cut off what does not fit. The type is not moved or shortened.\n\nShow"
+    },
+    {
+      "name": "Bea is withheld from Ada two-piece warning, page, and saved active marks",
+      "ok": true,
+      "detail": "{\"rendered\":[\"Ada Lane\",\"SupercalifragilisticexpialidociousSuperc\",\"14 Harbour Lane beside the long\\nwestLine\"],\"fit\":\"2 pieces of text run past the page.\\\"SupercalifragilisticexpialidociousSupercalifr...\\\" runs past the page. Move it left about 51 mm.Show this text\\\"14 Harbour Lane beside the long westLine 0 Li...\\\" is taller than the page, so moving it cannot bring it on. Edit the text or choose"
+    },
+    {
+      "name": "switching to Bea returns only Bea and not Ada overflowing pieces",
+      "ok": true,
+      "detail": "Bea Hidden"
+    }
+  ]
+}

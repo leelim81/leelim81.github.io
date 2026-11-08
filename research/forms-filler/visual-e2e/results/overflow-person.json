@@ -1,0 +1,51 @@
+{
+  "passed": 9,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "while Bea is current the warning and page are Bea only",
+      "ok": true,
+      "detail": "{\"who\":\"Bea Shore\",\"rendered\":[\"Bea Shore\",\"BeaEdgeYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\"],\"images\":0,\"fit\":\"\\\"BeaEdgeYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY...\\\" is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.Show this text\",\"pages\":[[\"Bea Shore:Bea Shore\",\"Bea Shore:BeaEdgeYYYYYYYYYYYYYYYYY\"]],\"held\":[[\"Ada Lane:Ada Lane\",\"Ad"
+    },
+    {
+      "name": "while Ada is current the warning names Ada and withholds Bea",
+      "ok": true,
+      "detail": "{\"who\":\"Ada Lane\",\"rendered\":[\"Ada Lane\",\"AdaEdgeXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\",\"Ada private note\"],\"images\":2,\"fit\":\"\\\"AdaEdgeXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX...\\\" is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.Show this text\",\"pages\":[[\"Ada Lane:Ada Lane\",\"Ada Lane:AdaEdgeXXXXXXXXXXXXXXXXX\",\"text:Ada private no"
+    },
+    {
+      "name": "show this text selects Ada overflowing type",
+      "ok": true,
+      "detail": "AdaEdgeXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    },
+    {
+      "name": "a manual correction clears Ada warning and does not reveal Bea",
+      "ok": true,
+      "detail": "{\"who\":\"Ada Lane\",\"rendered\":[\"Ada Lane\",\"Ada Fixed\",\"Ada private note\"],\"images\":2,\"fit\":\"\",\"pages\":[[\"Ada Lane:Ada Lane\",\"Ada Lane:Ada Fixed\",\"text:Ada private note\",\"image:image\",\"signature:signature\"]],\"held\":[[\"Bea Shore:Bea Shore\",\"Bea Shore:BeaEdgeYYYYYYYYYYYYYYYYY\"]]}"
+    },
+    {
+      "name": "the export contains the corrected Ada text and not Bea",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload keeps Ada correction, note, and pictures and still withholds Bea",
+      "ok": true,
+      "detail": "{\"who\":\"Ada Lane\",\"rendered\":[\"Ada Lane\",\"Ada Fixed\",\"Ada private note\"],\"images\":2,\"fit\":\"\",\"pages\":[[\"Ada Lane:Ada Lane\",\"Ada Lane:Ada Fixed\",\"text:Ada private note\",\"image:image\",\"signature:signature\"]],\"held\":[[\"Bea Shore:Bea Shore\",\"Bea Shore:BeaEdgeYYYYYYYYYYYYYYYYY\"]]}"
+    },
+    {
+      "name": "switching back to Bea returns Bea and hides Ada",
+      "ok": true,
+      "detail": "{\"who\":\"Bea Shore\",\"rendered\":[\"Bea Shore\",\"BeaEdgeYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY\"],\"images\":0,\"fit\":\"\",\"pages\":[[\"Bea Shore:Bea Shore\",\"Bea Shore:BeaEdgeYYYYYYYYYYYYYYYYY\"]],\"held\":[[\"Ada Lane:Ada Lane\",\"Ada Lane:Ada Fixed\",\"text:Ada private note\",\"image:image\",\"signature:signature\"]]}"
+    },
+    {
+      "name": "switching back to Ada returns the correction, note, and pictures",
+      "ok": true,
+      "detail": "{\"who\":\"Ada Lane\",\"rendered\":[\"Ada Lane\",\"Ada Fixed\",\"Ada private note\"],\"images\":2,\"fit\":\"\",\"pages\":[[\"Ada Lane:Ada Lane\",\"Ada Lane:Ada Fixed\",\"text:Ada private note\",\"image:image\",\"signature:signature\"]],\"held\":[[\"Bea Shore:Bea Shore\",\"Bea Shore:BeaEdgeYYYYYYYYYYYYYYYYY\"]]}"
+    },
+    {
+      "name": "start over drops the stored marks and keeps the people",
+      "ok": true,
+      "detail": "{\"session\":null,\"people\":[\"Ada Lane\",\"Bea Shore\"]}"
+    }
+  ]
+}
