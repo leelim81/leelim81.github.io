@@ -204,6 +204,7 @@
   var formToken = 0;
   var takeToken = 0;
   var fillToken = 0;
+  var deskGen = 0;
   var refSeq = 0;
   var userTouched = false;
 
@@ -253,10 +254,16 @@
     });
   }
 
-  async function setForm(bytes, name, mime) {
+  function claimDesk() {
+    deskGen += 1;
+    return deskGen;
+  }
+
+  async function setForm(bytes, name, mime, intent) {
+    if (intent != null && intent !== deskGen) return false;
     var token = ++formToken;
     fillToken++;
-    retireForm();
+    if (intent == null) retireForm();
     var image = isImageName(name, mime);
     function alive() { return token === formToken; }
     function progress(msg) {
@@ -275,6 +282,8 @@
       throw err;
     }
     if (!alive() || !read) return false;
+    if (intent != null && intent !== deskGen) return false;
+    if (intent != null) retireForm();
     state.sourceBytes = bytes;
     state.sourceName = name || '';
     state.sourceMime = mime || '';
@@ -289,8 +298,9 @@
     state.imageNote = imageSentence(state.imageFrame);
     paintScanReview();
     refreshLabels();
-    var kept = await persistDraft();
-    if (!alive()) return false;
+    var kept = await persistDraft(intent);
+    if (!alive() || (intent != null && intent !== deskGen)) return false;
+    if (intent != null && kept && kept.skipped) return false;
     if (!kept.ok) {
       state.draftError = 'This form is open in this tab, but the browser could not store it. Back or reload will not bring it back.';
       status(state.draftError, false);
@@ -1320,13 +1330,20 @@
     };
   }
 
-  function persistDraft() {
+  function persistDraft(intent) {
     var epoch = draftEpoch;
     return enqueueDraft(function () {
-      if (epoch !== draftEpoch) return { ok: true, skipped: true };
-      var snap = draftSnapshot();
-      if (!snap) return DeskDB.clear(DB).then(function () { return { ok: true }; });
-      return DeskDB.set(DB, 'draft', snap).then(function () { return { ok: true }; });
+      if (!DeskDB.change) return { ok: false, reason: 'unavailable' };
+      return DeskDB.change(DB, ['draft'], function (found, put) {
+        if (epoch !== draftEpoch || (intent != null && intent !== deskGen)) return { ok: false, reason: 'stale' };
+        var snap = draftSnapshot();
+        put('draft', snap || null);
+        return { ok: true };
+      }).then(function (result) {
+        if (result && result.reason === 'stale') return { ok: true, skipped: true };
+        if (!result || result.ok === false) return { ok: false, reason: (result && result.reason) || 'cancelled' };
+        return { ok: true };
+      });
     }).catch(function (err) {
       return { ok: false, reason: draftReason(err) };
     });
@@ -1382,6 +1399,7 @@
 
   function takeFiles(files, kind, input) {
     var mine = ++takeToken;
+    if (files.length) claimDesk();
     return (async function () {
       userTouched = true;
       if (!files.length) {
@@ -1436,6 +1454,7 @@
   }
 
   function resetDesk() {
+    claimDesk();
     formToken++;
     takeToken++;
     fillToken++;
@@ -1484,20 +1503,36 @@
   $('refInput').addEventListener('change', function () {
     takeFiles(snapshotFiles($('refInput')), 'ref', $('refInput'));
   });
+  function releaseRefs(intent) {
+    if (intent != null && intent !== deskGen) return false;
+    var pending = state.refs.slice();
+    state.refs = [];
+    state.readEpoch = (state.readEpoch || 0) + 1;
+    state.proposals = [];
+    if (window.FormExtract && FormExtract.cancelAll) FormExtract.cancelAll();
+    else pending.forEach(stopRead);
+    refreshLabels();
+    return intent == null || intent === deskGen;
+  }
+
   $('sampleBtn').addEventListener('click', async function () {
+    var intent = claimDesk();
     userTouched = true;
     status('Opening the sample…', true);
     try {
       var form = new Uint8Array(await (await fetch('samples/visitor-form.pdf')).arrayBuffer());
       var ref = new Uint8Array(await (await fetch('samples/visitor-reference.pdf')).arrayBuffer());
       var card = new Uint8Array(await (await fetch('samples/id-card.png')).arrayBuffer());
-      state.refs = [];
-      var applied = await setForm(form, 'visitor-form.pdf');
-      if (!applied) return;
-      await addRef(ref, 'visitor-reference.pdf', 'application/pdf');
-      await addRef(card, 'id-card.png', 'image/png');
+      if (intent !== deskGen || !releaseRefs(intent)) return;
+      var applied = await setForm(form, 'visitor-form.pdf', '', intent);
+      if (!applied || intent !== deskGen) return;
+      addRef(ref, 'visitor-reference.pdf', 'application/pdf');
+      if (intent !== deskGen) return;
+      addRef(card, 'id-card.png', 'image/png');
+      if (intent !== deskGen) return;
       status('', false);
     } catch (err) {
+      if (intent !== deskGen) return;
       toast('The sample files could not be opened.');
       status('', false);
     }

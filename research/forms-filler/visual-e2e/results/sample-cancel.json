@@ -1,0 +1,131 @@
+{
+  "passed": 25,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "a reference stays on Reading while its PDF load is held",
+      "ok": true,
+      "detail": "{\"stall\":{\"destroyed\":0,\"wraps\":1},\"trace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":1,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"refs\":[{\"id\":\"r1\",\"name\":\"sample-cancel-ref.pdf\",\"status\":\"reading\",\"preview\":\"\"}]}"
+    },
+    {
+      "name": "Try the sample destroys the held load and finishes its own two files",
+      "ok": true,
+      "detail": "{\"ms\":1498,\"stall\":{\"destroyed\":1,\"wraps\":2},\"trace\":{\"destroyedLoad\":1,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":1},\"refs\":[{\"id\":\"r2\",\"name\":\"visitor-reference.pdf\",\"status\":\"ready\",\"preview\":\"Name Tan Wei Ming · DOB 14/03/1992 · NRIC S1234567D · Email wei.ming.tan@example.com\"},{\"id\":\"r3\",\"name\":\"id-card.png\",\"status\":\"ready\",\"preview"
+    },
+    {
+      "name": "reload keeps the sample papers and not the cancelled reference",
+      "ok": true,
+      "detail": "visitor-reference.pdf:ready|id-card.png:ready"
+    },
+    {
+      "name": "clicking Try the sample twice leaves one pair of sample files",
+      "ok": true,
+      "detail": "visitor-reference.pdf|id-card.png"
+    },
+    {
+      "name": "Start over during the sample fetch keeps the cleared desk",
+      "ok": true,
+      "detail": "{\"label\":\"A fillable PDF, a flat form, or a photo of one.\",\"refs\":[]}"
+    },
+    {
+      "name": "the cancelled sample is not stored after Start over",
+      "ok": true,
+      "detail": "{\"form\":\"\",\"refs\":[]}"
+    },
+    {
+      "name": "a real form chosen while the sample is fetching stays on the desk",
+      "ok": true,
+      "detail": "{\"label\":\"real-form.pdf · 0 entry spots\",\"refs\":[]}"
+    },
+    {
+      "name": "reload keeps the real form and not the sample papers",
+      "ok": true,
+      "detail": "{\"form\":\"real-form.pdf\",\"refs\":[]}"
+    },
+    {
+      "name": "a real reference chosen while the sample is fetching is not replaced",
+      "ok": true,
+      "detail": "{\"label\":\"A fillable PDF, a flat form, or a photo of one.\",\"refs\":[\"sample-cancel-ref.pdf:empty\"]}"
+    },
+    {
+      "name": "reload keeps that reference and does not bring the sample back",
+      "ok": true,
+      "detail": "{\"form\":\"\",\"refs\":[\"sample-cancel-ref.pdf\"]}"
+    },
+    {
+      "name": "an older sample fetch cannot replace the later sample",
+      "ok": true,
+      "detail": "visitor-reference.pdf:ready|id-card.png:ready"
+    },
+    {
+      "name": "Start over during the sample form read keeps the cleared desk",
+      "ok": true,
+      "detail": "{\"label\":\"A fillable PDF, a flat form, or a photo of one.\",\"refs\":[]}"
+    },
+    {
+      "name": "the sample form read does not store itself after Start over",
+      "ok": true,
+      "detail": "{\"form\":\"\",\"refs\":[]}"
+    },
+    {
+      "name": "a real form opened while the sample form is reading stays put",
+      "ok": true,
+      "detail": "{\"label\":\"real-form.pdf · 0 entry spots\",\"refs\":[]}"
+    },
+    {
+      "name": "reload stores the real form instead of the sample",
+      "ok": true,
+      "detail": "{\"form\":\"real-form.pdf\",\"refs\":[]}"
+    },
+    {
+      "name": "a reference added while the sample form is reading is not cleared",
+      "ok": true,
+      "detail": "{\"label\":\"A fillable PDF, a flat form, or a photo of one.\",\"refs\":[\"sample-cancel-ref.pdf:empty\"]}"
+    },
+    {
+      "name": "reload keeps that reference after the late sample read",
+      "ok": true,
+      "detail": "{\"form\":\"\",\"refs\":[\"sample-cancel-ref.pdf\"]}"
+    },
+    {
+      "name": "a delayed database write does not store the sample after Start over",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "reload after that delayed write is still an empty desk",
+      "ok": true,
+      "detail": "{\"form\":\"\",\"refs\":[]}"
+    },
+    {
+      "name": "a delayed database write does not store the sample over a new form",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "reload keeps the new form after the delayed sample write",
+      "ok": true,
+      "detail": "{\"form\":\"real-form.pdf\",\"refs\":[]}"
+    },
+    {
+      "name": "a delayed database write does not drop a reference added while it was opening",
+      "ok": true,
+      "detail": "0 sample-cancel-ref.pdf"
+    },
+    {
+      "name": "reload keeps that reference after the delayed sample write",
+      "ok": true,
+      "detail": "{\"store\":{\"form\":\"visitor-form.pdf\",\"refs\":[\"sample-cancel-ref.pdf\"]},\"ui\":[\"sample-cancel-ref.pdf\"],\"puts\":\"[\\\"visitor-form.pdf/sample-cancel-ref.pdf\\\"]\"}"
+    },
+    {
+      "name": "a second sample finishes after the first sample’s delayed database write",
+      "ok": true,
+      "detail": "visitor-reference.pdf|id-card.png"
+    },
+    {
+      "name": "reload keeps the later sample after the delayed first write",
+      "ok": true,
+      "detail": "{\"form\":\"visitor-form.pdf\",\"refs\":[\"visitor-reference.pdf\",\"id-card.png\"]}"
+    }
+  ]
+}
