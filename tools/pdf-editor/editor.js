@@ -931,11 +931,10 @@
       && x <= crop.x + crop.width + slop && y <= crop.y + crop.height + slop;
   }
 
-  /* Same lines and origin as the export. A viewer clips to the crop box, so a
-     run that leaves that box is cut off even though the editor still shows it. */
-  function textRunsOff(ann, crop, rotation, font) {
-    if (!ann || (ann.type !== 'text' && ann.type !== 'date') || !ann.text) return false;
-    if (!crop || !(crop.width > 0) || !(crop.height > 0) || rotation == null) return false;
+  /* Same lines and origin as the export. A viewer clips to the crop box. */
+  function glyphBounds(ann, crop, rotation, font) {
+    if (!ann || (ann.type !== 'text' && ann.type !== 'date') || !ann.text) return null;
+    if (!crop || !(crop.width > 0) || !(crop.height > 0) || rotation == null) return null;
     var size = ann.fontSize || 16;
     var origin = FormCoords.textOrigin(ann, crop, rotation, size);
     var box = FormCoords.boxOf(ann, crop, rotation);
@@ -943,6 +942,10 @@
     var lineH = size * 1.3;
     var ascent = size * 0.72;
     var descent = size * 0.21;
+    var minX = Infinity;
+    var minY = Infinity;
+    var maxX = -Infinity;
+    var maxY = -Infinity;
     var shift = 0;
     for (var i = 0; i < lines.length; i++) {
       var x = origin.x + origin.down.x * shift;
@@ -958,11 +961,58 @@
         [ex - origin.down.x * ascent, ey - origin.down.y * ascent]
       ];
       for (var p = 0; p < points.length; p++) {
-        if (!pointOnPage(points[p][0], points[p][1], crop)) return true;
+        if (points[p][0] < minX) minX = points[p][0];
+        if (points[p][1] < minY) minY = points[p][1];
+        if (points[p][0] > maxX) maxX = points[p][0];
+        if (points[p][1] > maxY) maxY = points[p][1];
       }
       shift += lineH;
     }
-    return false;
+    if (!isFinite(minX)) return null;
+    return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+  }
+
+  function viewShift(shiftX, shiftY, crop, rotation) {
+    if (rotation === 90) return { dfx: shiftY / crop.height, dfy: shiftX / crop.width };
+    if (rotation === 180) return { dfx: -shiftX / crop.width, dfy: shiftY / crop.height };
+    if (rotation === 270) return { dfx: -shiftY / crop.height, dfy: -shiftX / crop.width };
+    return { dfx: shiftX / crop.width, dfy: -shiftY / crop.height };
+  }
+
+  function millimetres(points, userUnit) {
+    var mm = Math.abs(points) * (userUnit || 1) * 25.4 / 72;
+    return Math.max(1, Math.ceil(mm - 1e-6));
+  }
+
+  /* A move is in millimetres on the page the person sees. No move is named
+     when the glyphs are larger than the page or the box cannot travel far enough. */
+  function overflowAdvice(ann, crop, rotation, font, userUnit) {
+    var bounds = glyphBounds(ann, crop, rotation, font);
+    if (!bounds) return null;
+    var offL = bounds.minX < crop.x - 0.75;
+    var offR = bounds.maxX > crop.x + crop.width + 0.75;
+    var offB = bounds.minY < crop.y - 0.75;
+    var offT = bounds.maxY > crop.y + crop.height + 0.75;
+    if (!offL && !offR && !offB && !offT) return null;
+    var tooWide = (offL && offR) || (bounds.maxX - bounds.minX) > crop.width;
+    var tooTall = (offT && offB) || (bounds.maxY - bounds.minY) > crop.height;
+    if (tooWide || tooTall) {
+      return { fit: false, wide: tooWide, tall: tooTall };
+    }
+    var shiftX = offR ? (crop.x + crop.width - bounds.maxX) : (offL ? (crop.x - bounds.minX) : 0);
+    var shiftY = offT ? (crop.y + crop.height - bounds.maxY) : (offB ? (crop.y - bounds.minY) : 0);
+    var view = viewShift(shiftX, shiftY, crop, rotation);
+    var nextX = ann.x + view.dfx;
+    var nextY = ann.y + view.dfy;
+    if (nextX < -1e-4 || nextY < -1e-4 || nextX > 1 - ann.w + 1e-4 || nextY > 1 - ann.h + 1e-4) {
+      return { fit: false, wide: offL || offR, tall: offT || offB };
+    }
+    var seen = FormCoords.viewSize(crop, rotation);
+    var moves = [];
+    if (Math.abs(view.dfx) > 1e-4) moves.push((view.dfx < 0 ? 'left' : 'right') + ' about ' + millimetres(view.dfx * seen.width, userUnit) + ' mm');
+    if (Math.abs(view.dfy) > 1e-4) moves.push((view.dfy < 0 ? 'up' : 'down') + ' about ' + millimetres(view.dfy * seen.height, userUnit) + ' mm');
+    if (!moves.length) return null;
+    return { fit: true, move: moves.join(' and ') };
   }
 
   async function textOffPage() {
@@ -976,13 +1026,29 @@
       if (!lib) continue;
       var crop = lib.getCropBox();
       var angle = FormCoords.normRotation(((lib.getRotation().angle || 0) + (rec.rotation || 0)));
+      var unit = window.FormCoords && FormCoords.fileUserUnit ? FormCoords.fileUserUnit(lib) : 1;
+      if (!(unit > 0)) unit = 1;
       for (var a = 0; a < rec.annotations.length; a++) {
         var ann = rec.annotations[a];
-        if (!textRunsOff(ann, crop, angle, font)) continue;
-        found.push({ id: ann.id, text: ann.text || '' });
+        var advice = overflowAdvice(ann, crop, angle, font, unit);
+        if (!advice) continue;
+        found.push({ id: ann.id, text: ann.text || '', page: i + 1, pages: state.pages.length, advice: advice });
       }
     }
     return found;
+  }
+
+  function warnSentence(item) {
+    var sample = String(item.text || '').replace(/\s+/g, ' ').trim();
+    if (sample.length > 48) sample = sample.slice(0, 45) + '...';
+    var where = item.pages > 1 ? ' on page ' + item.page : '';
+    var tail = ' The type is not moved or shortened.';
+    if (!item.advice.fit) {
+      if (item.advice.wide && !item.advice.tall) return '"' + sample + '"' + where + ' is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.' + tail;
+      if (item.advice.tall && !item.advice.wide) return '"' + sample + '"' + where + ' is taller than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.' + tail;
+      return '"' + sample + '"' + where + ' cannot be brought on the page by moving it. Edit the text or choose a smaller size.' + tail;
+    }
+    return '"' + sample + '"' + where + ' runs past the page. Move it ' + item.advice.move + '. A PDF viewer will cut off what does not fit.' + tail;
   }
 
   function paintExportWarn(list) {
@@ -991,25 +1057,35 @@
     box.replaceChildren();
     if (!list.length) { box.hidden = true; return; }
     box.hidden = false;
-    var sample = String(list[0].text || '').replace(/\s+/g, ' ').trim();
-    if (sample.length > 48) sample = sample.slice(0, 45) + '...';
-    var p = document.createElement('p');
-    p.textContent = list.length === 1
-      ? '"' + sample + '" runs past the page. A PDF viewer will cut off the part that does not fit. Move it, choose a smaller size, or edit it. The type is not shortened.'
-      : list.length + ' pieces of text run past the page. A PDF viewer will cut off what does not fit. The type is not shortened.';
-    var button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'btn';
-    button.id = 'exportShow';
-    button.textContent = 'Show this text';
-    button.addEventListener('click', function () {
-      $('downloadModal').hidden = true;
-      select(list[0].id);
-      var el = document.querySelector('.ann[data-id="' + CSS.escape(list[0].id) + '"]');
-      if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+    if (list.length > 1) {
+      var lead = document.createElement('p');
+      lead.textContent = list.length + ' pieces of text run past the page.';
+      box.appendChild(lead);
+    }
+    var ul = document.createElement('ul');
+    list.forEach(function (item, index) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.textContent = warnSentence(item);
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn';
+      if (index === 0) button.id = 'exportShow';
+      button.textContent = 'Show this text';
+      var name = 'Show this text';
+      if (item.pages > 1) name += ', page ' + item.page;
+      button.setAttribute('aria-label', name);
+      button.addEventListener('click', function () {
+        $('downloadModal').hidden = true;
+        select(item.id);
+        var el = document.querySelector('.ann[data-id="' + CSS.escape(item.id) + '"]');
+        if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+      li.appendChild(p);
+      li.appendChild(button);
+      ul.appendChild(li);
     });
-    box.appendChild(p);
-    box.appendChild(button);
+    box.appendChild(ul);
   }
 
   async function openDownload() {
@@ -1921,9 +1997,10 @@
     document.addEventListener('keydown', function (e) {
       var typing = e.target.closest && (e.target.isContentEditable || e.target.closest('input, textarea'));
       if (e.key === 'Escape') {
+        var downloadOpen = $('downloadModal') && !$('downloadModal').hidden;
         $('sigModal').hidden = true;
         $('downloadModal').hidden = true;
-        select(null);
+        if (!downloadOpen) select(null);
         var inAssist = e.target.closest && e.target.closest('#recoverBar, #mapBox');
         if (inAssist || state.recoverArmed) {
           if ($('recoverBar') && !$('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', false);
