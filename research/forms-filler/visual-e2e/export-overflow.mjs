@@ -155,6 +155,19 @@ const editor = await ui.locator('.ann').nth(1).evaluate((el) => {
 check('the editor shows the long word past the page', editor.past > 20 && editor.text === WORD, JSON.stringify(editor));
 const first = await download();
 check('download warns and stays available', first.warn.role === 'alert' && !first.warn.hidden && /runs past the page/.test(first.warn.text) && first.enabled, first.warn.text);
+check('the warning gives a leftward distance in millimetres', /Move it left about \d+ mm/.test(first.warn.text) && !/cannot bring it on/.test(first.warn.text), first.warn.text);
+await ui.click('#downloadBtn');
+await ui.waitForSelector('#exportShow');
+check('the warning button takes keyboard focus', await ui.evaluate(() => document.activeElement && document.activeElement.id) === 'exportShow');
+await ui.keyboard.press('Escape');
+check('escape closes the download and leaves the text', await ui.locator('#downloadModal').isHidden() && (await ui.locator('.ann').nth(1).locator('.ann-body').innerText()) === WORD);
+await ui.click('#downloadBtn');
+await ui.waitForSelector('#exportWarn:not([hidden])');
+await ui.click('#dlClose');
+await ui.click('#downloadBtn');
+await ui.waitForSelector('#exportWarn:not([hidden])');
+check('closing and opening the download warns again', /Move it left about \d+ mm/.test(await ui.locator('#exportWarn').innerText()));
+await ui.click('#dlClose');
 check('the export still contains the whole word', first.body.toLowerCase().includes(Buffer.from(WORD).toString('hex')), '');
 check('the stored box did not move when the warning was built', (await ui.locator('.ann').nth(1).evaluate((el) => el.style.left + el.style.top)) === editor.left + editor.top);
 const nameBox = await ui.locator('.ann').first().evaluate((el) => el.style.left + '|' + el.style.top);
@@ -191,6 +204,8 @@ await ui.locator('#fontSize').fill('22');
 await ui.locator('#fontSize').dispatchEvent('input');
 const afterFont = await ui.locator('.ann.selected .ann-body').innerText();
 check('a larger size keeps the whole word', afterFont === beforeFont && await ui.locator('.ann.selected').evaluate((el) => el.dataset.fontSize) === '22', afterFont);
+const huge = await download();
+check('a size wider than the page does not invent a move', huge.warn.hidden === false && /smaller size/.test(huge.warn.text) && !/Move it /.test(huge.warn.text), huge.warn.text);
 const left0 = await ui.locator('.ann.selected').evaluate((el) => el.style.left);
 for (let i = 0; i < 25; i++) await ui.click('#nudgeLeft');
 const left1 = await ui.locator('.ann.selected').evaluate((el) => el.style.left);
@@ -220,6 +235,8 @@ const multiline = await ui.locator('.ann').last().locator('.ann-body').innerText
 check('newlines stay in the address', /Line 5/.test(multiline), multiline.slice(0, 120));
 const bottom = await download();
 check('lines that leave the bottom of the page are warned', !bottom.warn.hidden && /run past the page/.test(bottom.warn.text), bottom.warn.text);
+const shown = await ui.locator('#exportWarn button').count();
+check('every overflowing piece has its own show button', shown >= 2 && bottom.warn.text.includes('pieces of text'), shown + ' ' + bottom.warn.text.slice(0, 80));
 await ui.click('#recoverUndo');
 await ui.waitForFunction(() => /Undid/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
 check('undo removes the last placement change', /Undid/.test(await ui.locator('#recoverStatus').innerText()));
@@ -335,6 +352,32 @@ const fit = await phone.locator('#exportWarn').evaluate((el) => {
 });
 check('at 390px the warning is on screen', fit.left >= 0 && fit.right <= fit.inner + 1 && fit.top >= 0 && fit.width > 40, JSON.stringify(fit));
 await narrow.close();
+
+const two = await PDFDocument.create();
+two.addPage([612, 792]);
+two.addPage([612, 792]);
+writeFileSync('/tmp/edge-two.pdf', await two.save());
+await openDesk('/tmp/edge-two.pdf');
+await arm(WORD);
+const second = ui.locator('#pages .layer').nth(1);
+await second.scrollIntoViewIfNeeded();
+const secondBefore = await ui.locator('#recoverStatus').innerText();
+const secondBox = await second.boundingBox();
+await second.click({ position: { x: secondBox.width * 0.96, y: secondBox.height * 0.4 } });
+await ui.waitForFunction((prev) => {
+  const text = (document.getElementById('recoverStatus') || {}).textContent || '';
+  return text !== prev && /Placed /.test(text);
+}, secondBefore);
+await ui.click('#downloadBtn');
+await ui.waitForSelector('#exportWarn:not([hidden])');
+const pageTwo = await ui.locator('#exportWarn').innerText();
+check('a later page is named and still gives a distance', /page 2/.test(pageTwo) && /Move it left about \d+ mm/.test(pageTwo), pageTwo.slice(0, 180));
+await ui.locator('#exportShow').click();
+const scrolled = await ui.locator('.ann.selected').evaluate((el) => {
+  const rect = el.getBoundingClientRect();
+  return el.classList.contains('selected') && rect.bottom > 0 && rect.top < window.innerHeight;
+});
+check('show this text selects it and scrolls it into view', scrolled);
 
 const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks };
 writeFileSync('/tmp/export-wt/research/forms-filler/visual-e2e/results/export-overflow.json', JSON.stringify(out, null, 2));
