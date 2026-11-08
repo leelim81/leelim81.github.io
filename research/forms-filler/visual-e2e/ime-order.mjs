@@ -130,7 +130,11 @@ const person = await page.evaluate(() => {
   return body.innerText;
 });
 await page.locator('#recoverPerson').selectOption({ label: 'Ada Lane' });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)));
+await page.waitForFunction(() => {
+  const sel = document.getElementById('recoverPerson');
+  const name = sel.selectedOptions[0] && sel.selectedOptions[0].textContent;
+  return name === 'Ada Lane' && Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText));
+});
 const afterPerson = await page.evaluate(() => {
   document.dispatchEvent(new CompositionEvent('compositionend', { data: '', bubbles: true }));
   const el = document.activeElement;
@@ -142,7 +146,11 @@ const afterPerson = await page.evaluate(() => {
 });
 check('a late composition end does not steal focus or reveal Bea', afterPerson.person === 'Ada Lane' && afterPerson.focus !== 'addText' && afterPerson.rendered.some((text) => /Ada Secret/.test(text)) && !afterPerson.rendered.some((text) => /Bea/.test(text)), JSON.stringify({ armed: person, afterPerson }));
 await page.locator('#recoverPerson').selectOption({ label: 'Bea Shore' });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Two/.test(node.innerText)));
+await page.waitForFunction(() => {
+  const sel = document.getElementById('recoverPerson');
+  const name = sel.selectedOptions[0] && sel.selectedOptions[0].textContent;
+  return name === 'Bea Shore' && Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Two/.test(node.innerText));
+});
 await page.locator('#downloadBtn').focus();
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('downloadModal').contains(document.activeElement));

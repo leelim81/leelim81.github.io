@@ -327,14 +327,31 @@
         scheduleSave();
         scheduleFitNote();
       }
-      body.addEventListener('compositionstart', function () { composing = true; });
-      body.addEventListener('compositionend', function () { composing = false; readBody(); });
+      function markIsCurrent() {
+        if (!body.isConnected) return false;
+        for (var i = 0; i < state.pages.length; i++) {
+          var list = state.pages[i].annotations || [];
+          for (var j = 0; j < list.length; j++) if (list[j] === ann) return true;
+        }
+        return false;
+      }
+      body.addEventListener('compositionstart', function () {
+        composing = true;
+        body.dataset.composing = '1';
+      });
+      body.addEventListener('compositionend', function () {
+        composing = false;
+        delete body.dataset.composing;
+        if (!markIsCurrent()) return;
+        readBody();
+      });
       body.addEventListener('input', function () { if (!composing) readBody(); });
       body.addEventListener('keyup', function () { if (!composing) readBody(); });
-      body.addEventListener('focus', function () { paintWrap(el, ann, true); });
+      body.addEventListener('focus', function () { paintWrap(el, ann); });
       body.addEventListener('blur', function () {
+        if (composing) return;
         readBody();
-        paintWrap(el, ann, false);
+        paintWrap(el, ann);
       });
       var mirror = document.createElement('div');
       mirror.className = 'ann-mirror';
@@ -449,15 +466,15 @@
     while (keep.length && keep[0] === n) { out += '\n'; keep.shift(); }
     return out;
   }
-  function applyPaint(el, ann, focused, font) {
+  function applyPaint(el, ann, font) {
     var mirror = el.querySelector('.ann-mirror');
     var body = el.querySelector('.ann-body');
     if (!mirror || !font) return;
     var size = ann.fontSize || 16;
     var maxW = Math.max(8, (el.clientWidth / (state.zoom || 1)) - 2);
-    var shown = wrapText(ann.text || '', font, size, maxW).join('\n');
-    mirror.textContent = shown;
-    if (!body || focused) {
+    mirror.textContent = wrapText(ann.text || '', font, size, maxW).join('\n');
+    if (!body || !body.isConnected) return;
+    if (body.dataset.composing === '1' || document.activeElement === body) {
       if (el.dataset.painted) delete el.dataset.painted;
       return;
     }
@@ -466,15 +483,15 @@
     delete el.dataset.painted;
     delete el.dataset.painting;
   }
-  function paintWrap(el, ann, focused) {
+  function paintWrap(el, ann) {
     if (!el.querySelector('.ann-mirror') || !ann) return Promise.resolve();
     if (wrapFontCached) {
-      applyPaint(el, ann, focused, wrapFontCached);
+      applyPaint(el, ann, wrapFontCached);
       return Promise.resolve();
     }
     var ready = wrapFont();
     if (!ready) return Promise.resolve();
-    return ready.then(function (font) { applyPaint(el, ann, focused, font); }).catch(function () {});
+    return ready.then(function (font) { applyPaint(el, ann, font); }).catch(function () {});
   }
   function fitTextHeight(el, ann) {
     var body = el.querySelector('.ann-body');
@@ -490,8 +507,7 @@
       node.style.height = '';
     }
     if (!mirror) { apply(body); return; }
-    var focused = document.activeElement === body;
-    paintWrap(el, ann, focused).then(function () { if (el.parentElement) apply(mirror); });
+    paintWrap(el, ann).then(function () { if (el.parentElement) apply(mirror); });
   }
 
   function startMove(e, el, ann) {
@@ -925,6 +941,7 @@
       var body = el.querySelector('.ann-body');
       var ann = findAnn(el.dataset.id);
       if (!body || !ann || (ann.type !== 'text' && ann.type !== 'date')) return;
+      if (!body.isConnected || body.dataset.composing === '1') return;
       ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
     });
   }
