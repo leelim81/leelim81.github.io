@@ -187,6 +187,10 @@ body { overflow: hidden; }
   pointer-events: none;
   cursor: text;
 }
+.ann.text .ann-body:focus, .ann.date .ann-body:focus {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .ann-body:not(:focus) { color: transparent; caret-color: transparent; }
 .ann-body:focus ~ .ann-mirror { visibility: hidden; }
 .ann.text .ann-body:empty::before { content: "Type here"; color: #9a9186; }

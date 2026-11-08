@@ -75,7 +75,7 @@ const host = await page.evaluate(() => {
     focus: document.activeElement.className
   };
 });
-check('editing-host undo does not consume annotation undo', host.inserted && host.afterInsert === 'Bea TwoQ' && host.afterUndo === 'Bea TwoQ' && host.count === 2 && host.undoDisabled === false && host.focus === 'ann-body', JSON.stringify(host));
+check('editing-host undo removes the inserted character and keeps the mark', host.inserted && host.afterInsert === 'Bea TwoQ' && host.afterUndo === 'Bea Two' && host.count === 2 && host.undoDisabled === false && host.focus === 'ann-body', JSON.stringify(host));
 const beforeKey = await page.locator('.ann-body').last().innerText();
 await page.keyboard.press('Control+z');
 const afterKey = await page.evaluate(() => ({
@@ -84,7 +84,8 @@ const afterKey = await page.evaluate(() => ({
   count: document.querySelectorAll('.ann').length,
   undoDisabled: document.getElementById('recoverUndo').disabled
 }));
-check('the browser Ctrl+Z chord does not consume annotation undo', afterKey.editing && afterKey.count === 2 && afterKey.undoDisabled === false && afterKey.text === beforeKey, JSON.stringify({ beforeKey, afterKey }));
+check('the browser Ctrl+Z chord removes one character and keeps the mark', beforeKey === 'Bea Two' && afterKey.editing && afterKey.count === 2 && afterKey.undoDisabled === false && afterKey.text === 'Bea Tw', JSON.stringify({ beforeKey, afterKey }));
+await page.keyboard.type('o');
 const split = await page.evaluate(() => {
   const marks = Array.from(document.querySelectorAll('.ann-body'));
   const second = marks[marks.length - 1];
@@ -129,7 +130,11 @@ const person = await page.evaluate(() => {
   return body.innerText;
 });
 await page.locator('#recoverPerson').selectOption({ label: 'Ada Lane' });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)));
+await page.waitForFunction(() => {
+  const sel = document.getElementById('recoverPerson');
+  const name = sel.selectedOptions[0] && sel.selectedOptions[0].textContent;
+  return name === 'Ada Lane' && Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText));
+});
 const afterPerson = await page.evaluate(() => {
   document.dispatchEvent(new CompositionEvent('compositionend', { data: '', bubbles: true }));
   const el = document.activeElement;
@@ -141,7 +146,11 @@ const afterPerson = await page.evaluate(() => {
 });
 check('a late composition end does not steal focus or reveal Bea', afterPerson.person === 'Ada Lane' && afterPerson.focus !== 'addText' && afterPerson.rendered.some((text) => /Ada Secret/.test(text)) && !afterPerson.rendered.some((text) => /Bea/.test(text)), JSON.stringify({ armed: person, afterPerson }));
 await page.locator('#recoverPerson').selectOption({ label: 'Bea Shore' });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Two/.test(node.innerText)));
+await page.waitForFunction(() => {
+  const sel = document.getElementById('recoverPerson');
+  const name = sel.selectedOptions[0] && sel.selectedOptions[0].textContent;
+  return name === 'Bea Shore' && Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Two/.test(node.innerText));
+});
 await page.locator('#downloadBtn').focus();
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('downloadModal').contains(document.activeElement));

@@ -100,13 +100,13 @@ const focused = await page.locator('.ann').nth(1).evaluate((el) => {
   const mirror = el.querySelector('.ann-mirror').textContent;
   return { body, mirror, same: body === mirror };
 });
-check('the focused text uses the Helvetica line breaks', focused.same, JSON.stringify(focused));
-await page.keyboard.press('End');
+check('focused editing keeps the typed words and leaves Helvetica breaks on the preview', focused.body === LONG && focused.mirror.indexOf('\n') >= 0 && focused.body !== focused.mirror, JSON.stringify(focused));
+await page.keyboard.press('Control+End');
 await page.keyboard.press('Shift+Enter');
 await page.keyboard.type('Unit 2');
 await page.waitForTimeout(200);
-const edited = await page.locator('.ann-body').nth(1).innerText();
-check('a typed newline is kept', /Unit 2/.test(edited) && /\n/.test(edited), JSON.stringify(edited));
+const edited = (await page.locator('.ann-body').nth(1).innerText()).replace(/\n$/, '');
+check('a typed newline is kept at the end', edited === LONG + '\nUnit 2', JSON.stringify(edited));
 
 await page.click('#downloadBtn');
 await page.waitForSelector('#sizeOptions button[data-level="100"]:not([disabled])');
@@ -132,7 +132,7 @@ const peggy = pdf.find((item) => /Peggy/.test(item.str));
 const wrapped = pdf.filter((item) => /Harbour|warehouse|Unit/.test(item.str)).map((item) => item.y);
 const word = pdf.find((item) => /Supercali/.test(item.str));
 check('the name baseline is still on the rule', peggy && Math.abs(peggy.y - 500.6) < 1.5 && peggy.h === 14, JSON.stringify(peggy));
-check('export wraps the address and keeps the newline', pdf.some((item) => /Unit/.test(item.str)) && wrapped.length >= 2, JSON.stringify(pdf.filter((item) => /Harbour|warehouse|Unit/.test(item.str))));
+check('export wraps the address and keeps the newline', pdf.some((item) => item.str === 'Unit 2') && wrapped.length >= 2 && !pdf.some((item) => /westUnit/.test(item.str)), JSON.stringify(pdf.filter((item) => /Harbour|warehouse|Unit/.test(item.str))));
 check('export keeps the long word', !!word, JSON.stringify(word));
 if (wrapped.length >= 2) {
   const gap = Math.abs(wrapped[0] - wrapped[1]);
