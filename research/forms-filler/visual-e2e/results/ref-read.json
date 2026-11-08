@@ -1,21 +1,26 @@
 {
-  "passed": 7,
+  "passed": 23,
   "failed": 0,
   "checks": [
     {
       "name": "two overlapping reads of the ambiguous scan both finish",
       "ok": true,
-      "detail": "{\"ms\":2296,\"names\":[{\"bea\":true,\"cora\":true,\"chars\":106},{\"bea\":true,\"cora\":true,\"chars\":106}]}"
+      "detail": "{\"ms\":2313,\"names\":[{\"bea\":true,\"cora\":true,\"chars\":106},{\"bea\":true,\"cora\":true,\"chars\":106}]}"
+    },
+    {
+      "name": "those two reads never open two PDF jobs at once",
+      "ok": true,
+      "detail": "{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":1}"
     },
     {
       "name": "the ambiguous scan leaves Reading without replacing the confirmed email",
       "ok": true,
-      "detail": "{\"refs\":[{\"name\":\"cora.ambiguous.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"12qpi2lh8z4h\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:08:17.636Z\"}}"
+      "detail": "{\"ms\":1522,\"refs\":[{\"id\":\"r1\",\"name\":\"cora.ambiguous.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"y51qaa0lyaxx\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:32:33.077Z\"}}"
     },
     {
       "name": "a read that exceeds its budget says so and keeps the confirmed email",
       "ok": true,
-      "detail": "{\"status\":\"error\",\"preview\":\"No fields found in this file. | This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\",\"email\":{\"id\":\"12qpi2lh8z4h\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"u"
+      "detail": "{\"status\":\"error\",\"preview\":\"No fields found in this file. | This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\",\"email\":{\"id\":\"y51qaa0lyaxx\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"u"
     },
     {
       "name": "removing a reference cancels its read and adds no person",
@@ -25,21 +30,96 @@
     {
       "name": "a text pdf finishes without staying on Reading",
       "ok": true,
-      "detail": "{\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
+      "detail": "{\"id\":\"r4\",\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
     },
     {
       "name": "a corrupt file is an error, not a successful empty read",
       "ok": true,
-      "detail": "{\"name\":\"ref-corrupt.pdf\",\"status\":\"error\",\"preview\":\"\"}"
+      "detail": "{\"id\":\"r5\",\"name\":\"ref-corrupt.pdf\",\"status\":\"error\",\"preview\":\"\"}"
     },
     {
       "name": "start over does not delete the confirmed person",
       "ok": true,
       "detail": "Cora Example"
+    },
+    {
+      "name": "a 3-page digital PDF keeps every page",
+      "ok": true,
+      "detail": "{\"text\":\"full name: Page One lives on page 1 of this digital letter today.\\nfull name: Page Two lives on page 2 of this digital letter today.\\nfull name: Page Three lives on page 3 of this digital letter today.\",\"unread\":\"\",\"channel\":\"text-"
+    },
+    {
+      "name": "a 13-page digital PDF says the unread page was not read",
+      "ok": true,
+      "detail": "Read 12 of 13 pages. The rest was not read."
+    },
+    {
+      "name": "the desk shows that the 13th page was not read",
+      "ok": true,
+      "detail": "{\"id\":\"r6\",\"name\":\"ref-thirteen.pdf\",\"status\":\"empty\",\"preview\":\"Read 12 of 13 pages. The rest was not read.\"}"
+    },
+    {
+      "name": "restored duplicate and malformed ids become unique well-formed ids",
+      "ok": true,
+      "detail": "[{\"id\":\"r1\",\"name\":\"ada-keep\",\"status\":\"ready\",\"preview\":\"Name Ada Keep\"},{\"id\":\"r2\",\"name\":\"bea-keep\",\"status\":\"ready\",\"preview\":\"Name Bea Keep\"},{\"id\":\"d1\",\"name\":\"blank-id\",\"status\":\"ready\",\"preview\":\"Name Blank Id\"},{\"id\":\"r3\",\"name\":\"malformed\",\"status\":\"ready\",\"preview\":\"Name Mal Form\"},{\"id\":"
+    },
+    {
+      "name": "a second reload keeps the normalized ids",
+      "ok": true,
+      "detail": "d1:blank-id|r1:ada-keep|r2:bea-keep|r3:malformed|r4:zero-id|r5:padded-id|r6:four-keep|r7:four-dup"
+    },
+    {
+      "name": "a new file after restore gets a fresh id and does not rewrite the kept rows",
+      "ok": true,
+      "detail": "{\"added\":{\"id\":\"r8\",\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"ada\":\"Name Ada Keep\",\"bea\":\"Name Bea Keep\",\"people\":[\"Cora Example\"]}"
+    },
+    {
+      "name": "a hung PDF load is destroyed and the queued read still finishes",
+      "ok": true,
+      "detail": "{\"loadMs\":829,\"loadStall\":{\"loads\":1,\"renders\":0,\"terminated\":0,\"recognizes\":0,\"usedLoad\":true},\"loadTrace\":{\"destroyedLoad\":1,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"hung\":{\"id\":\"r9\",\"name\":\"ref-text.pdf\",\"status\":\"error\",\"preview\":"
+    },
+    {
+      "name": "a hung page render is cancelled and the next reference finishes",
+      "ok": true,
+      "detail": "{\"renderMs\":2634,\"renderStall\":{\"renders\":1,\"terminated\":0},\"renderTrace\":{\"destroyedLoad\":0,\"cancelledRender\":1,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"renderRow\":{\"id\":\"r11\",\"name\":\"ref-render-stall.pdf\",\"status\":\"error\",\"preview\":\"This file took too "
+    },
+    {
+      "name": "a hung worker start is dropped and the next reference finishes first",
+      "ok": true,
+      "detail": "{\"initMs\":1331,\"initBeforeRelease\":{\"released\":true,\"terminated\":0,\"recognizes\":0},\"initStall\":{\"terminated\":1,\"worker\":true,\"recognizes\":0},\"initTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"initRow\":{\"id\":\"r13\","
+    },
+    {
+      "name": "a hung setParameters terminates the worker and the next reference finishes",
+      "ok": true,
+      "detail": "{\"paramsMs\":1341,\"paramsStall\":{\"terminated\":2,\"recognizes\":0},\"paramsTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":1},\"paramsRow\":{\"id\":\"r15\",\"name\":\"ref-params-stall.png\",\"status\":\"error\",\"preview\":\"This file took t"
+    },
+    {
+      "name": "a late OCR result cannot change the timed-out row, the next row, or the confirmed email",
+      "ok": true,
+      "detail": "{\"lateRow\":{\"id\":\"r17\",\"name\":\"ref-late-stall.png\",\"status\":\"error\",\"preview\":\"This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\"},\"lateNext\":{\"id\":\"r18\",\"name\":\"ref-after-late.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"people\":[\"Cora Example\"]}"
+    },
+    {
+      "name": "removing a queued reference does not let it open a PDF or stay in the list",
+      "ok": true,
+      "detail": "{\"realGets\":0,\"loads\":2,\"trace\":{\"destroyedLoad\":1,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"refs\":[\"ref-text.pdf\",\"ref-after-load.pdf\",\"ref-render-stall.pdf\",\"ref-after-render.pdf\",\"ref-init-stall.png\",\"ref-after-init.pdf\",\"ref-params"
+    },
+    {
+      "name": "start over releases the active PDF load and writes no person",
+      "ok": true,
+      "detail": "{\"clearedMid\":{\"refs\":[],\"email\":{\"id\":\"y51qaa0lyaxx\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:32:33.077Z\"},\"people\":[\"Cora Example\"]},\"clearStall\":{\"loads\":3,\"trace\":{\"destroyedLoad\":1,\"cancelledRender\""
+    },
+    {
+      "name": "a reference added after start over finishes on its own",
+      "ok": true,
+      "detail": "{\"ms\":130,\"retried\":{\"refs\":[{\"id\":\"r22\",\"name\":\"ref-after-clear.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"y51qaa0lyaxx\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:32:33.077Z\"},\"people\":[\"Cora Ex"
+    },
+    {
+      "name": "reload while a read is active finishes that file instead of leaving it on Reading",
+      "ok": true,
+      "detail": "{\"id\":\"r23\",\"name\":\"ref-reload.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
     }
   ],
   "paired": {
-    "ms": 2296,
+    "ms": 2313,
     "names": [
       {
         "bea": true,

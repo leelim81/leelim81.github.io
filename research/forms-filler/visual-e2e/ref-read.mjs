@@ -36,7 +36,9 @@ const paired = await ui.evaluate(async (b64) => {
     names: both.map((item) => ({ bea: /bea/i.test(item.text || ''), cora: /cora/i.test(item.text || ''), chars: (item.text || '').replace(/\s/g, '').length }))
   };
 }, amb.toString('base64'));
+const pairTrace = await ui.evaluate(() => FormExtract.trace());
 check('two overlapping reads of the ambiguous scan both finish', paired.ms < 20000 && paired.names.every((item) => item.bea && item.cora), JSON.stringify(paired));
+check('those two reads never open two PDF jobs at once', pairTrace.peakSpatial === 1 && pairTrace.spatialInflight === 0, JSON.stringify(pairTrace));
 
 await ui.evaluate(() => {
   ['tools-forms-filler', 'tools-forms-profiles', 'tools-forms-maps', 'tools-forms-editor'].forEach((name) => indexedDB.deleteDatabase(name));
@@ -51,6 +53,7 @@ await ui.locator('#factKey').selectOption('email');
 await ui.locator('#factValue').fill('cora.fixed@example.com');
 await ui.click('#factAdd');
 await ui.waitForFunction(() => /Saved/.test((document.getElementById('profileMsg') || {}).textContent || ''));
+const aloneAt = Date.now();
 await ui.locator('#refInput').setInputFiles(root + '/cora.ambiguous.pdf');
 await ui.waitForFunction(() => {
   const refs = window.FormDesk.refs();
@@ -62,7 +65,7 @@ const read = await ui.evaluate(async () => {
   const cora = vault.profiles.filter((profile) => profile.name === 'Cora Example')[0];
   return { refs, email: cora && cora.facts.filter((fact) => fact.key === 'email')[0] };
 });
-check('the ambiguous scan leaves Reading without replacing the confirmed email', read.refs[0].status !== 'reading' && read.email && read.email.value === 'cora.fixed@example.com' && read.email.status === 'confirmed', JSON.stringify(read));
+check('the ambiguous scan leaves Reading without replacing the confirmed email', read.refs[0].status !== 'reading' && read.email && read.email.value === 'cora.fixed@example.com' && read.email.status === 'confirmed', JSON.stringify(Object.assign({ ms: Date.now() - aloneAt }, read)));
 
 await ui.evaluate(() => { window.__ffOcrBudgetMs = 1; });
 await ui.locator('#refInput').setInputFiles('/tmp/cora-budget.pdf');
@@ -105,6 +108,318 @@ await ui.click('#clearBtn');
 await ui.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
 const cleared = await ui.evaluate(async () => (await FormProfiles.load()).vault.profiles.map((profile) => profile.name));
 check('start over does not delete the confirmed person', cleared.join(',') === 'Cora Example', cleared.join(','));
+
+async function multiPagePdf(pages, tokenAt) {
+  const doc = await PDFDocument.create();
+  const face = await doc.embedFont(StandardFonts.Helvetica);
+  for (let i = 0; i < pages; i++) {
+    const sheet = doc.addPage([420, 240]);
+    const token = tokenAt(i + 1);
+    sheet.drawText(token + ' lives on page ' + (i + 1) + ' of this digital letter today.', { x: 24, y: 140, size: 12, font: face });
+  }
+  return doc.save();
+}
+const threePdf = '/tmp/ref-three.pdf';
+const thirteenPdf = '/tmp/ref-thirteen.pdf';
+writeFileSync(threePdf, await multiPagePdf(3, (n) => 'full name: Page ' + ['One', 'Two', 'Three'][n - 1]));
+writeFileSync(thirteenPdf, await multiPagePdf(13, (n) => 'Marker' + n + ' token'));
+const threeBytes = readFileSync(threePdf).toString('base64');
+const thirteenBytes = readFileSync(thirteenPdf).toString('base64');
+const pageTexts = await ui.evaluate(async ({ three, thirteen }) => {
+  function decode(b64) {
+    const bin = atob(b64);
+    const data = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) data[i] = bin.charCodeAt(i);
+    return data;
+  }
+  const a = await FormExtract.spatial(decode(three), 'application/pdf');
+  const b = await FormExtract.spatial(decode(thirteen), 'application/pdf');
+  return {
+    three: { text: a.text || '', unread: a.unread || '', channel: a.channel },
+    thirteen: { text: b.text || '', unread: b.unread || '', channel: b.channel }
+  };
+}, { three: threeBytes, thirteen: thirteenBytes });
+check('a 3-page digital PDF keeps every page', pageTexts.three.channel === 'text-layer' && /Page One/.test(pageTexts.three.text) && /Page Two/.test(pageTexts.three.text) && /Page Three/.test(pageTexts.three.text) && !pageTexts.three.unread, JSON.stringify(pageTexts.three).slice(0, 240));
+check('a 13-page digital PDF says the unread page was not read', /Marker1/.test(pageTexts.thirteen.text) && /Marker12/.test(pageTexts.thirteen.text) && !/Marker13/.test(pageTexts.thirteen.text) && pageTexts.thirteen.unread === 'Read 12 of 13 pages. The rest was not read.', pageTexts.thirteen.unread);
+
+await ui.locator('#refInput').setInputFiles(thirteenPdf);
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-thirteen.pdf' && item.status && item.status !== 'reading'));
+const thirteenRow = await ui.evaluate(() => FormDesk.refs().filter((item) => item.name === 'ref-thirteen.pdf')[0]);
+check('the desk shows that the 13th page was not read', thirteenRow && thirteenRow.status !== 'error' && /12 of 13/.test(thirteenRow.preview || ''), JSON.stringify(thirteenRow));
+
+await ui.click('#clearBtn');
+await ui.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await ui.evaluate(async () => {
+  const byte = new Uint8Array([1]);
+  const row = (id, name, text) => ({ id, name, bytes: byte, mime: 'text/plain', text });
+  await DeskDB.set('tools-forms-filler', 'draft', {
+    refs: [
+      row('r1', 'ada-keep', 'full name: Ada Keep'),
+      row('r1', 'bea-keep', 'full name: Bea Keep'),
+      row('', 'blank-id', 'full name: Blank Id'),
+      row('nope', 'malformed', 'full name: Mal Form'),
+      row('r0', 'zero-id', 'full name: Zero Id'),
+      row('r08', 'padded-id', 'full name: Pad Id'),
+      row('r4', 'four-keep', 'full name: Four Keep'),
+      row('r4', 'four-dup', 'full name: Four Dup')
+    ]
+  });
+});
+await ui.reload({ waitUntil: 'domcontentloaded' });
+await ui.waitForFunction(() => FormDesk.refs().length === 8 && FormDesk.refs().every((item) => item.status && item.status !== 'reading'));
+const restored = await ui.evaluate(() => FormDesk.refs());
+const restoredIds = restored.map((item) => item.id);
+const idOk = /^[A-Za-z]+[1-9][0-9]*$/;
+const byName = Object.fromEntries(restored.map((item) => [item.name, item]));
+check('restored duplicate and malformed ids become unique well-formed ids', restoredIds.length === 8 && new Set(restoredIds).size === 8 && restoredIds.every((id) => idOk.test(id)) && byName['ada-keep'].id !== byName['bea-keep'].id && byName['four-keep'].id !== byName['four-dup'].id && /Ada Keep/.test(byName['ada-keep'].preview) && /Bea Keep/.test(byName['bea-keep'].preview) && /Mal Form/.test(byName.malformed.preview) && /Zero Id/.test(byName['zero-id'].preview) && /Pad Id/.test(byName['padded-id'].preview), JSON.stringify(restored));
+await ui.waitForFunction(async () => {
+  const draft = await DeskDB.get('tools-forms-filler', 'draft');
+  const ids = (draft && draft.refs || []).map((item) => item.id);
+  return ids.length === 8 && new Set(ids).size === 8 && ids.every((id) => /^[A-Za-z]+[1-9][0-9]*$/.test(id));
+});
+await ui.reload({ waitUntil: 'domcontentloaded' });
+await ui.waitForFunction(() => FormDesk.refs().length === 8);
+const stable = await ui.evaluate(() => FormDesk.refs().map((item) => item.id + ':' + item.name).sort());
+check('a second reload keeps the normalized ids', stable.join('|') === restored.map((item) => item.id + ':' + item.name).sort().join('|'), stable.join('|'));
+const beforeAdd = new Set(restoredIds);
+await ui.locator('#refInput').setInputFiles('/tmp/ref-text.pdf');
+await ui.waitForFunction(() => FormDesk.refs().every((item) => item.status && item.status !== 'reading') && FormDesk.refs().some((item) => item.name === 'ref-text.pdf'));
+const afterAdd = await ui.evaluate(async () => {
+  const refs = FormDesk.refs();
+  const vault = (await FormProfiles.load()).vault;
+  return { refs, people: vault.profiles.map((profile) => profile.name) };
+});
+const added = afterAdd.refs.filter((item) => item.name === 'ref-text.pdf')[0];
+const ada = afterAdd.refs.filter((item) => item.name === 'ada-keep')[0];
+const bea = afterAdd.refs.filter((item) => item.name === 'bea-keep')[0];
+check('a new file after restore gets a fresh id and does not rewrite the kept rows', added && added.status !== 'reading' && added.status !== 'error' && !beforeAdd.has(added.id) && ada.preview === byName['ada-keep'].preview && bea.preview === byName['bea-keep'].preview && afterAdd.people.join(',') === 'Cora Example', JSON.stringify({ added, ada: ada && ada.preview, bea: bea && bea.preview, people: afterAdd.people }));
+
+async function installReaderHooks() {
+  await ui.evaluate(() => {
+    window.__ffReadBudgetMs = 800;
+    window.__ffOcrBudgetMs = 0;
+    window.__ffHoldOcr = null;
+    window.__stallMode = '';
+    window.__stall = { loads: 0, renders: 0, terminated: 0, recognizes: 0, usedLoad: false };
+    window.__ffWrapDocument = function (task) {
+      if (window.__stallMode === 'load' && !window.__stall.usedLoad) {
+        window.__stall.usedLoad = true;
+        let rejectP;
+        const promise = new Promise((_, reject) => { rejectP = reject; });
+        return {
+          promise,
+          destroy() {
+            window.__stall.loads += 1;
+            try { task.destroy(); } catch (err) {}
+            try { rejectP(new Error('destroyed')); } catch (err) {}
+          }
+        };
+      }
+      return task;
+    };
+    window.__ffWrapRender = function (task) {
+      if (window.__stallMode !== 'render') return task;
+      let rejectP;
+      const hung = new Promise((_, reject) => { rejectP = reject; });
+      return {
+        promise: hung,
+        cancel() {
+          window.__stall.renders += 1;
+          try { task.cancel(); } catch (err) {}
+          try { rejectP(new Error('render-cancel')); } catch (err) {}
+        }
+      };
+    };
+    window.__ffCreateWorker = function (real) {
+      if (window.__stallMode === 'init') {
+        const created = {
+          terminated: false,
+          setParameters() { return Promise.resolve(); },
+          recognize() { window.__stall.recognizes += 1; return new Promise(() => {}); },
+          terminate() { this.terminated = true; window.__stall.terminated += 1; return Promise.resolve(); }
+        };
+        window.__stall.worker = created;
+        return new Promise((resolve) => { window.__releaseWorker = () => resolve(created); });
+      }
+      if (window.__stallMode === 'params' || window.__stallMode === 'late') {
+        const created = {
+          terminated: false,
+          setParameters() {
+            if (window.__stallMode === 'params') return new Promise(() => {});
+            return Promise.resolve();
+          },
+          recognize() {
+            window.__stall.recognizes += 1;
+            if (window.__stallMode === 'late') {
+              return new Promise((resolve) => {
+                window.__releaseLate = () => resolve({ data: { text: 'full name: Zoe Late', words: [] } });
+              });
+            }
+            return new Promise(() => {});
+          },
+          terminate() { this.terminated = true; window.__stall.terminated += 1; return Promise.resolve(); }
+        };
+        window.__stall.worker = created;
+        return Promise.resolve(created);
+      }
+      return real();
+    };
+  });
+}
+
+async function idleTrace() {
+  return ui.evaluate(() => FormExtract.trace());
+}
+async function waitRow(name) {
+  await ui.waitForFunction((fileName) => {
+    const row = FormDesk.refs().find((item) => item.name === fileName);
+    return row && row.status && row.status !== 'reading';
+  }, name);
+}
+async function peopleAndRows() {
+  return ui.evaluate(async () => {
+    const vault = (await FormProfiles.load()).vault;
+    return {
+      refs: FormDesk.refs().map((item) => ({ id: item.id, name: item.name, status: item.status, preview: item.preview })),
+      email: ((vault.profiles.find((profile) => profile.name === 'Cora Example') || {}).facts || []).find((fact) => fact.key === 'email'),
+      people: vault.profiles.map((profile) => profile.name)
+    };
+  });
+}
+
+await ui.click('#clearBtn');
+await ui.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || '') && FormDesk.refs().length === 0);
+await installReaderHooks();
+await ui.evaluate(() => FormExtract.resetTrace());
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-load.pdf');
+copyFileSync(root + '/cora.ambiguous.pdf', '/tmp/ref-render-stall.pdf');
+writeFileSync('/tmp/ref-tiny.png', Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+copyFileSync('/tmp/ref-tiny.png', '/tmp/ref-init-stall.png');
+copyFileSync('/tmp/ref-tiny.png', '/tmp/ref-params-stall.png');
+copyFileSync('/tmp/ref-tiny.png', '/tmp/ref-late-stall.png');
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-queued.pdf');
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-removed.pdf');
+
+await ui.evaluate(() => { window.__stallMode = 'load'; window.__stall.usedLoad = false; window.__ffReadBudgetMs = 700; FormExtract.resetTrace(); });
+const loadStarted = Date.now();
+await ui.locator('#refInput').setInputFiles('/tmp/ref-text.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-text.pdf' && item.status === 'reading'));
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-load.pdf');
+await waitRow('ref-text.pdf');
+await waitRow('ref-after-load.pdf');
+const loaded = await peopleAndRows();
+const loadTrace = await idleTrace();
+const loadStall = await ui.evaluate(() => window.__stall);
+const loadMs = Date.now() - loadStarted;
+const hung = loaded.refs.find((item) => item.name === 'ref-text.pdf');
+const next = loaded.refs.find((item) => item.name === 'ref-after-load.pdf');
+check('a hung PDF load is destroyed and the queued read still finishes', hung && hung.status === 'error' && /too long to read/.test(hung.preview) && next && next.status !== 'error' && next.status !== 'reading' && loadStall.loads >= 1 && loadTrace.peakSpatial === 1 && loadTrace.spatialInflight === 0 && loadMs < 8000 && loaded.email && loaded.email.value === 'cora.fixed@example.com', JSON.stringify({ loadMs, loadStall, loadTrace, hung, next }));
+
+await ui.evaluate(() => { window.__stallMode = 'render'; window.__stall.usedRender = false; window.__ffReadBudgetMs = 2500; FormExtract.resetTrace(); });
+const renderStarted = Date.now();
+await ui.locator('#refInput').setInputFiles('/tmp/ref-render-stall.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-render-stall.pdf' && item.status === 'reading'));
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-render.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-render.pdf');
+await waitRow('ref-render-stall.pdf');
+await waitRow('ref-after-render.pdf');
+const rendered = await peopleAndRows();
+const renderTrace = await idleTrace();
+const renderStall = await ui.evaluate(() => ({ renders: window.__stall.renders, terminated: window.__stall.terminated }));
+const renderMs = Date.now() - renderStarted;
+const renderRow = rendered.refs.find((item) => item.name === 'ref-render-stall.pdf');
+const afterRender = rendered.refs.find((item) => item.name === 'ref-after-render.pdf');
+check('a hung page render is cancelled and the next reference finishes', renderRow && renderRow.status === 'error' && /too long/.test(renderRow.preview) && afterRender && afterRender.status !== 'reading' && afterRender.status !== 'error' && renderStall.renders >= 1 && renderTrace.peakSpatial === 1 && renderTrace.spatialInflight === 0 && renderMs < 12000, JSON.stringify({ renderMs, renderStall, renderTrace, renderRow, afterRender }));
+
+await ui.evaluate(() => { window.__stallMode = 'init'; window.__ffReadBudgetMs = 1200; FormExtract.resetTrace(); });
+const initStarted = Date.now();
+await ui.locator('#refInput').setInputFiles('/tmp/ref-init-stall.png');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-init-stall.png' && item.status === 'reading'));
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-init.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-init.pdf');
+await waitRow('ref-after-init.pdf');
+const initBeforeRelease = await ui.evaluate(() => ({ released: !!window.__stall.worker, terminated: window.__stall.terminated, recognizes: window.__stall.recognizes }));
+await waitRow('ref-init-stall.png');
+const initMs = Date.now() - initStarted;
+await ui.evaluate(() => window.__releaseWorker && window.__releaseWorker());
+await ui.waitForTimeout(200);
+const initStall = await ui.evaluate(() => ({ terminated: window.__stall.terminated, worker: window.__stall.worker && window.__stall.worker.terminated, recognizes: window.__stall.recognizes }));
+const initTrace = await idleTrace();
+const inited = await peopleAndRows();
+const initRow = inited.refs.find((item) => item.name === 'ref-init-stall.png');
+const afterInit = inited.refs.find((item) => item.name === 'ref-after-init.pdf');
+check('a hung worker start is dropped and the next reference finishes first', initBeforeRelease.terminated === 0 && afterInit && afterInit.status !== 'reading' && afterInit.status !== 'error' && initRow && initRow.status === 'error' && initStall.terminated >= 1 && initStall.recognizes === 0 && initTrace.peakSpatial === 1 && initTrace.spatialInflight === 0 && initTrace.peakOcr <= 1 && initMs < 15000, JSON.stringify({ initMs, initBeforeRelease, initStall, initTrace, initRow, afterInit }));
+
+await ui.evaluate(() => { window.__stallMode = 'params'; window.__ffReadBudgetMs = 1200; FormExtract.resetTrace(); });
+const paramsStarted = Date.now();
+await ui.locator('#refInput').setInputFiles('/tmp/ref-params-stall.png');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-params-stall.png' && item.status === 'reading'));
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-params.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-params.pdf');
+await waitRow('ref-params-stall.png');
+await waitRow('ref-after-params.pdf');
+const paramsMs = Date.now() - paramsStarted;
+const paramsStall = await ui.evaluate(() => ({ terminated: window.__stall.terminated, recognizes: window.__stall.recognizes }));
+const paramsTrace = await idleTrace();
+const paramRows = await peopleAndRows();
+const paramsRow = paramRows.refs.find((item) => item.name === 'ref-params-stall.png');
+const afterParams = paramRows.refs.find((item) => item.name === 'ref-after-params.pdf');
+check('a hung setParameters terminates the worker and the next reference finishes', paramsRow && paramsRow.status === 'error' && paramsStall.terminated >= 1 && paramsStall.recognizes === 0 && afterParams && afterParams.status !== 'reading' && afterParams.status !== 'error' && paramsTrace.peakOcr <= 1 && paramsTrace.peakSpatial === 1 && paramsTrace.ocrInflight === 0 && paramsMs < 12000 && paramRows.email.value === 'cora.fixed@example.com', JSON.stringify({ paramsMs, paramsStall, paramsTrace, paramsRow, afterParams }));
+
+await ui.evaluate(() => { window.__stallMode = 'late'; window.__ffReadBudgetMs = 15000; window.__ffOcrBudgetMs = 500; FormExtract.resetTrace(); });
+await ui.locator('#refInput').setInputFiles('/tmp/ref-late-stall.png');
+await waitRow('ref-late-stall.png');
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-late.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-late.pdf');
+await waitRow('ref-after-late.pdf');
+const beforeLate = await peopleAndRows();
+await ui.evaluate(() => window.__releaseLate && window.__releaseLate());
+await ui.waitForTimeout(400);
+const afterLate = await peopleAndRows();
+const lateRow = afterLate.refs.find((item) => item.name === 'ref-late-stall.png');
+const lateNext = afterLate.refs.find((item) => item.name === 'ref-after-late.pdf');
+const lateBefore = beforeLate.refs.find((item) => item.name === 'ref-after-late.pdf');
+check('a late OCR result cannot change the timed-out row, the next row, or the confirmed email', lateRow && /too long/.test(lateRow.preview) && !/Zoe/.test(JSON.stringify(afterLate.refs)) && lateNext && lateNext.preview === lateBefore.preview && afterLate.people.join(',') === 'Cora Example' && afterLate.email.value === 'cora.fixed@example.com', JSON.stringify({ lateRow, lateNext, people: afterLate.people }));
+
+await ui.evaluate(() => { window.__stallMode = 'load'; window.__stall.usedLoad = false; window.__ffOcrBudgetMs = 0; window.__ffReadBudgetMs = 4000; window.__stall.realGets = 0; FormExtract.resetTrace(); });
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-block-load.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-block-load.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-block-load.pdf' && item.status === 'reading'));
+await ui.locator('#refInput').setInputFiles('/tmp/ref-removed.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-removed.pdf' && item.status === 'reading'));
+await ui.locator('.ref-row', { hasText: 'ref-removed.pdf' }).locator('.ref-x').click();
+await waitRow('ref-block-load.pdf');
+const removedTrace = await ui.evaluate(() => ({ realGets: window.__stall.realGets, loads: window.__stall.loads, trace: FormExtract.trace(), refs: FormDesk.refs().map((item) => item.name) }));
+check('removing a queued reference does not let it open a PDF or stay in the list', removedTrace.loads >= 1 && removedTrace.realGets === 0 && !removedTrace.refs.includes('ref-removed.pdf') && removedTrace.trace.spatialInflight === 0, JSON.stringify(removedTrace));
+
+await ui.evaluate(() => { window.__stallMode = 'load'; window.__stall.usedLoad = false; window.__ffReadBudgetMs = 5000; FormExtract.resetTrace(); });
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-startover-stall.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-startover-stall.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-startover-stall.pdf' && item.status === 'reading'));
+await ui.click('#clearBtn');
+await ui.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await ui.waitForTimeout(300);
+const clearedMid = await peopleAndRows();
+const clearStall = await ui.evaluate(() => ({ loads: window.__stall.loads, trace: FormExtract.trace() }));
+check('start over releases the active PDF load and writes no person', clearedMid.refs.length === 0 && clearStall.loads >= 1 && clearStall.trace.spatialInflight === 0 && clearedMid.people.join(',') === 'Cora Example' && clearedMid.email.value === 'cora.fixed@example.com', JSON.stringify({ clearedMid, clearStall }));
+await ui.evaluate(() => { window.__stallMode = ''; window.__ffReadBudgetMs = 0; window.__ffOcrBudgetMs = 0; });
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-clear.pdf');
+const retryAt = Date.now();
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-clear.pdf');
+await waitRow('ref-after-clear.pdf');
+const retried = await peopleAndRows();
+check('a reference added after start over finishes on its own', retried.refs.some((item) => item.name === 'ref-after-clear.pdf' && item.status !== 'reading' && item.status !== 'error') && Date.now() - retryAt < 8000, JSON.stringify({ ms: Date.now() - retryAt, retried }));
+
+await ui.evaluate(() => { window.__stallMode = 'load'; window.__stall.usedLoad = false; window.__ffReadBudgetMs = 8000; });
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-reload.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-reload.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-reload.pdf' && item.status === 'reading'));
+await ui.waitForTimeout(800);
+await ui.reload({ waitUntil: 'domcontentloaded' });
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-reload.pdf' && item.status && item.status !== 'reading'), null, { timeout: 15000 });
+const reloaded = await peopleAndRows();
+const reloadRow = reloaded.refs.find((item) => item.name === 'ref-reload.pdf');
+check('reload while a read is active finishes that file instead of leaving it on Reading', reloadRow && reloadRow.status !== 'reading' && reloadRow.status !== 'error' && reloaded.email && reloaded.email.value === 'cora.fixed@example.com', JSON.stringify(reloadRow));
 
 const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks, paired };
 writeFileSync('/tmp/inline-wt/research/forms-filler/visual-e2e/results/ref-read.json', JSON.stringify(out, null, 2));

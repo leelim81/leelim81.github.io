@@ -331,6 +331,24 @@
     return null;
   }
 
+  function uniqueRefId(id, seen) {
+    var text = String(id == null ? '' : id);
+    var match = /^[A-Za-z]+[1-9][0-9]*$/.exec(text);
+    if (match && !seen[text]) {
+      var n = parseInt(text.replace(/^[A-Za-z]+/, ''), 10);
+      if (n > refSeq) refSeq = n;
+      seen[text] = true;
+      return text;
+    }
+    var fresh;
+    do {
+      refSeq += 1;
+      fresh = 'r' + refSeq;
+    } while (seen[fresh]);
+    seen[fresh] = true;
+    return fresh;
+  }
+
   function sameFile(a, b) {
     if (!a || !b || a.byteLength !== b.byteLength) return false;
     var step = Math.max(1, Math.floor(a.byteLength / 24));
@@ -390,33 +408,30 @@
   async function extractOne(ref) {
     var id = ref.id;
     var epoch = state.readEpoch || 0;
+    var read = window.FormExtract && FormExtract.openRead ? FormExtract.openRead() : null;
+    ref.read = read;
     var text = '';
     var failed = false;
     var budget = false;
-    var timer = 0;
+    var unread = '';
     try {
       var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
-      var pending = window.FormExtract && FormExtract.spatial
-        ? FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
-        : Promise.resolve({ text: '', channel: 'text-layer' });
-      var spatial = await Promise.race([
-        pending,
-        new Promise(function (_, reject) { timer = setTimeout(function () { reject(new Error('budget')); }, 15000); })
-      ]);
+      var spatial = window.FormExtract && FormExtract.spatial
+        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'), read)
+        : { text: '', channel: 'text-layer' };
       text = spatial.text || '';
+      unread = spatial.unread || '';
       ref.channel = spatial.channel || 'text-layer';
       ref.words = spatial.words || [];
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
-      budget = !!(err && err.message === 'budget');
-      if (budget && window.FormExtract && FormExtract.cancelOcr) FormExtract.cancelOcr();
-    } finally {
-      clearTimeout(timer);
+      budget = !!(err && (err.message === 'budget' || err.message === 'cancelled'));
+      if (budget && read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(read);
     }
     if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
-    if (!live) return;
+    if (!live || live !== ref) return;
     if (failed) {
       live.status = 'error';
       live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : '';
@@ -425,6 +440,7 @@
     } else {
       live.text = text || '';
       rememberRef(live);
+      if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
     renderRefs();
     scheduleSave();
@@ -455,11 +471,16 @@
     return true;
   }
 
+  function stopRead(ref) {
+    if (ref && ref.read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(ref.read);
+  }
+
   function removeRef(id) {
     var ref = refById(id);
     if (!ref) return;
     fillToken++;
     state.refs = state.refs.filter(function (item) { return item.id !== id; });
+    stopRead(ref);
     state.proposals = [];
     state.seeded = {};
     state.notes = '';
@@ -1409,8 +1430,11 @@
     state.kind = '';
     state.imageFrame = null;
     state.imageNote = '';
+    var pendingRefs = state.refs.slice();
     state.refs = [];
     state.readEpoch = (state.readEpoch || 0) + 1;
+    if (window.FormExtract && FormExtract.cancelAll) FormExtract.cancelAll();
+    else pendingRefs.forEach(stopRead);
     state.proposals = [];
     $('formInput').value = '';
     $('refInput').value = '';
@@ -1529,7 +1553,7 @@
     imageFrame: function () { return state.imageFrame || null; },
     refs: function () {
       return state.refs.map(function (ref) {
-        return { name: ref.name, status: ref.status, preview: ref.preview };
+        return { id: ref.id, name: ref.name, status: ref.status, preview: ref.preview };
       });
     },
     applyMap: function (map) {
@@ -1587,10 +1611,14 @@
         if (item.text) rememberRef(item);
         return item;
       });
+      var seenIds = {};
+      var changedId = false;
       state.refs.forEach(function (ref) {
-        var n = parseInt(String(ref.id || '').replace(/^[^\d]*/, ''), 10);
-        if (n >= refSeq) refSeq = n;
+        var nextId = uniqueRefId(ref.id, seenIds);
+        if (nextId !== ref.id) changedId = true;
+        ref.id = nextId;
       });
+      if (changedId) scheduleSave();
       state.refs.forEach(function (ref) {
         if (ref.status === 'reading' && ref.bytes) ref.pending = extractOne(ref);
       });

@@ -3,16 +3,179 @@
    Short notes are kept whole. */
 (function (global) {
   var workerPromise = null;
+  var liveWorker = null;
+  var workerGen = 0;
   var embedderPromise = null;
   var ocrChain = Promise.resolve();
   var readChain = Promise.resolve();
-  var workerGen = 0;
+  var reads = [];
   var OCR_BUDGET_MS = 12000;
+  var trace = {
+    destroyedLoad: 0,
+    cancelledRender: 0,
+    terminatedWorker: 0,
+    spatialInflight: 0,
+    peakSpatial: 0,
+    ocrInflight: 0,
+    peakOcr: 0
+  };
 
-  function cancelOcr() {
+  function cancelledError() {
+    return new Error('cancelled');
+  }
+
+  function budgetError() {
+    return new Error('budget');
+  }
+
+  function enterSpatial() {
+    trace.spatialInflight += 1;
+    if (trace.spatialInflight > trace.peakSpatial) trace.peakSpatial = trace.spatialInflight;
+  }
+
+  function leaveSpatial() {
+    trace.spatialInflight = Math.max(0, trace.spatialInflight - 1);
+  }
+
+  function enterOcr() {
+    trace.ocrInflight += 1;
+    if (trace.ocrInflight > trace.peakOcr) trace.peakOcr = trace.ocrInflight;
+  }
+
+  function leaveOcr() {
+    trace.ocrInflight = Math.max(0, trace.ocrInflight - 1);
+  }
+
+  function openRead() {
+    var session = {
+      cancelled: false,
+      released: false,
+      worker: null,
+      workerPromise: null,
+      loadingTask: null,
+      pdf: null,
+      renderTask: null,
+      waiters: [],
+      pagesRead: 0,
+      pagesTotal: 0
+    };
+    reads.push(session);
+    return session;
+  }
+
+  function dropRead(session) {
+    var index = reads.indexOf(session);
+    if (index >= 0) reads.splice(index, 1);
+  }
+
+  function wake(session) {
+    var waiters = session.waiters.splice(0, session.waiters.length);
+    waiters.forEach(function (fn) {
+      try { fn(); } catch (err) {}
+    });
+  }
+
+  function terminateWorker(worker) {
+    if (!worker || worker.__ffGone) return;
+    worker.__ffGone = true;
+    try {
+      var done = worker.terminate && worker.terminate();
+      if (done && done.catch) done.catch(function () {});
+    } catch (err) {}
+    if (worker === liveWorker) {
+      liveWorker = null;
+      workerPromise = null;
+    }
+    trace.terminatedWorker += 1;
+  }
+
+  function invalidateWorker() {
+    var existing = liveWorker;
     workerGen += 1;
     workerPromise = null;
-    ocrChain = Promise.resolve();
+    liveWorker = null;
+    if (existing) terminateWorker(existing);
+  }
+
+  function closePdf(session) {
+    var renderTask = session.renderTask;
+    var loadingTask = session.loadingTask;
+    var pdf = session.pdf;
+    session.renderTask = null;
+    session.loadingTask = null;
+    session.pdf = null;
+    if (renderTask && renderTask.cancel) {
+      try { renderTask.cancel(); trace.cancelledRender += 1; } catch (err) {}
+    }
+    if (loadingTask && loadingTask.destroy) {
+      try { loadingTask.destroy(); trace.destroyedLoad += 1; } catch (err) {}
+    }
+    if (pdf && pdf.destroy) {
+      try {
+        var closed = pdf.destroy();
+        if (closed && closed.catch) closed.catch(function () {});
+      } catch (err) {}
+    }
+  }
+
+  function cancelRead(session) {
+    if (!session || session.released) return;
+    session.cancelled = true;
+    session.released = true;
+    var worker = session.worker;
+    var pending = session.workerPromise;
+    session.worker = null;
+    session.workerPromise = null;
+    if (worker && worker === liveWorker) invalidateWorker();
+    else if (worker) terminateWorker(worker);
+    else if (pending) invalidateWorker();
+    closePdf(session);
+    wake(session);
+    dropRead(session);
+  }
+
+  function finishRead(session) {
+    if (!session || session.released) return;
+    session.released = true;
+    session.worker = null;
+    session.workerPromise = null;
+    session.loadingTask = null;
+    session.pdf = null;
+    session.renderTask = null;
+    dropRead(session);
+  }
+
+  function cancelAll() {
+    reads.slice().forEach(cancelRead);
+  }
+
+  function bind(session, promise) {
+    if (session && (session.cancelled || session.released)) return Promise.reject(cancelledError());
+    if (!session) return Promise.resolve(promise);
+    return new Promise(function (resolve, reject) {
+      if (session.cancelled || session.released) {
+        reject(cancelledError());
+        return;
+      }
+      var settled = false;
+      function finish(fn, value) {
+        if (settled) return;
+        settled = true;
+        var index = session.waiters.indexOf(onCancel);
+        if (index >= 0) session.waiters.splice(index, 1);
+        fn(value);
+      }
+      function onCancel() {
+        finish(reject, session.reason === 'budget' ? budgetError() : cancelledError());
+      }
+      session.waiters.push(onCancel);
+      Promise.resolve(promise).then(function (value) {
+        if (session.cancelled || session.released) finish(reject, cancelledError());
+        else finish(resolve, value);
+      }, function (err) {
+        finish(reject, err);
+      });
+    });
   }
 
   function enqueueOcr(work) {
@@ -21,31 +184,42 @@
     return run;
   }
 
-  async function recognizeBounded(worker, source) {
-    var budget = global.__ffOcrBudgetMs > 0 ? global.__ffOcrBudgetMs : OCR_BUDGET_MS;
-    var gen = workerGen;
-    if (global.__ffHoldOcr) await global.__ffHoldOcr;
-    var timer;
-    var timeout = new Promise(function (_, reject) {
-      timer = setTimeout(function () { reject(new Error('budget')); }, budget);
-    });
-    try {
-      return await Promise.race([worker.recognize(source), timeout]);
-    } catch (err) {
-      if (gen === workerGen) {
-        workerPromise = null;
-        try { if (worker && worker.terminate) worker.terminate(); } catch (ignore) {}
-      }
-      throw err;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
   function enqueueRead(work) {
     var run = readChain.then(function () { return work(); }, function () { return work(); });
     readChain = run.then(function () {}, function () {});
     return run;
+  }
+
+  async function recognizeBounded(session, worker, source) {
+    if (session && (session.cancelled || session.released)) throw cancelledError();
+    if (global.__ffHoldOcr) await bind(session, global.__ffHoldOcr);
+    var budget = global.__ffOcrBudgetMs > 0 ? global.__ffOcrBudgetMs : OCR_BUDGET_MS;
+    var timer;
+    var timeout = new Promise(function (_, reject) {
+      timer = setTimeout(function () { reject(budgetError()); }, budget);
+    });
+    enterOcr();
+    try {
+      return await bind(session, Promise.race([worker.recognize(source), timeout]));
+    } catch (err) {
+      if (err && err.message === 'budget' && session) cancelRead(session);
+      throw err;
+    } finally {
+      clearTimeout(timer);
+      leaveOcr();
+    }
+  }
+
+  async function applyParams(session, worker, params) {
+    if (session && (session.cancelled || session.released)) throw cancelledError();
+    enterOcr();
+    try {
+      await bind(session, worker.setParameters(params));
+    } catch (err) {
+      if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
+    } finally {
+      leaveOcr();
+    }
   }
 
   function pdfjs() {
@@ -54,14 +228,43 @@
     return pdfjsLib;
   }
 
-  async function textLayer(bytes) {
-    var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
+  function openDocument(bytes) {
+    var task = pdfjs().getDocument({ data: bytes.slice(0) });
+    if (typeof global.__ffWrapDocument === 'function') {
+      var wrapped = global.__ffWrapDocument(task);
+      if (wrapped) return wrapped;
+    }
+    return task;
+  }
+
+  function startRender(page, params) {
+    var task = page.render(params);
+    if (typeof global.__ffWrapRender === 'function') {
+      var wrapped = global.__ffWrapRender(task);
+      if (wrapped) return wrapped;
+    }
+    return task;
+  }
+
+  async function textLayer(bytes, session) {
+    var owned = !session;
+    if (!session) session = openRead();
+    var task = null;
+    var pdf = null;
     try {
+    if (session.cancelled || session.released) throw cancelledError();
+    task = openDocument(bytes);
+    session.loadingTask = task;
+    pdf = await bind(session, task.promise);
+    session.pdf = pdf;
+    session.loadingTask = null;
     var parts = [];
-    var pages = Math.min(pdf.numPages, 12);
+    var total = pdf.numPages || 0;
+    var pages = Math.min(total, 12);
     for (var i = 1; i <= pages; i++) {
-      var page = await pdf.getPage(i);
-      var content = await page.getTextContent();
+      if (session.cancelled || session.released) throw cancelledError();
+      var page = await bind(session, pdf.getPage(i));
+      var content = await bind(session, page.getTextContent());
       var rows = [];
       content.items.forEach(function (item) {
         if (!item.str || !String(item.str).trim()) return;
@@ -80,9 +283,22 @@
       var line = rows.map(function (row) { return row.parts.join(' ').trim(); }).filter(Boolean).join('\n');
       if (line) parts.push(line);
     }
+    session.textCovered = pages;
+    session.pagesTotal = total;
     return parts.join('\n');
     } finally {
-      try { await pdf.destroy(); } catch (err) {}
+      if (!session.cancelled) {
+        try {
+          if (pdf && pdf.destroy) {
+            var closed = pdf.destroy();
+            if (closed && closed.catch) closed.catch(function () {});
+          }
+        } catch (err) {}
+        try { if (!pdf && task && task.destroy) task.destroy(); } catch (err) {}
+      }
+      if (session.pdf === pdf) session.pdf = null;
+      if (session.loadingTask === task) session.loadingTask = null;
+      if (owned && !session.released) finishRead(session);
     }
   }
 
@@ -90,22 +306,47 @@
     return new URL('vendor/tesseract/', global.location.href).href;
   }
 
-  function ocrWorker() {
-    if (workerPromise) return workerPromise;
-    if (!global.Tesseract) {
-      workerPromise = Promise.reject(new Error('OCR is not loaded'));
-      return workerPromise;
+  function ocrWorker(session) {
+    if (session && (session.cancelled || session.released)) return Promise.reject(cancelledError());
+    if (!workerPromise) {
+      if (!global.Tesseract) {
+        var missing = Promise.reject(new Error('OCR is not loaded'));
+        missing.catch(function () {});
+        return missing;
+      }
+      var base = vendorBase();
+      var gen = workerGen;
+      var options = {
+        workerPath: base + 'worker.min.js',
+        corePath: base + 'tesseract-core-simd-lstm.wasm.js',
+        langPath: base.replace(/\/$/, ''),
+        gzip: true,
+        cacheMethod: 'none'
+      };
+      function realWorker() { return Tesseract.createWorker('eng', 1, options); }
+      var created = typeof global.__ffCreateWorker === 'function' ? global.__ffCreateWorker(realWorker) : realWorker();
+      workerPromise = created.then(function (worker) {
+        if (gen !== workerGen) {
+          terminateWorker(worker);
+          throw cancelledError();
+        }
+        liveWorker = worker;
+        return worker;
+      });
+      workerPromise.catch(function () {
+        if (gen === workerGen) workerPromise = null;
+      });
     }
-    var base = vendorBase();
-    workerPromise = Tesseract.createWorker('eng', 1, {
-      workerPath: base + 'worker.min.js',
-      corePath: base + 'tesseract-core-simd-lstm.wasm.js',
-      langPath: base.replace(/\/$/, ''),
-      gzip: true,
-      cacheMethod: 'none'
+    var pending = workerPromise;
+    if (session) session.workerPromise = pending;
+    return bind(session, pending).then(function (worker) {
+      if (session && (session.cancelled || session.released)) {
+        terminateWorker(worker);
+        throw cancelledError();
+      }
+      if (session) session.worker = worker;
+      return worker;
     });
-    workerPromise.catch(function () { workerPromise = null; });
-    return workerPromise;
   }
 
   function stretchCanvas(canvas) {
@@ -178,41 +419,53 @@
   }
 
   async function imageText(bytes, mime) {
+    var session = openRead();
     return enqueueOcr(async function () {
-      var worker = await ocrWorker();
-      var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
-      var maxW = 1600;
-      var scale = bmp.width > maxW ? maxW / bmp.width : 1;
-      var canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(bmp.width * scale));
-      canvas.height = Math.max(1, Math.round(bmp.height * scale));
-      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
-      if (bmp.close) bmp.close();
-      var ready = prepareOcr(canvas);
-      var blob = await new Promise(function (resolve) { ready.toBlob(resolve, 'image/png'); });
-      try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (err) {}
-      var result = await recognizeBounded(worker, blob);
-      var text = result && result.data && result.data.text ? result.data.text : '';
-      if (text.trim()) return text;
-      worker = await ocrWorker();
-      try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (err) {}
-      result = await recognizeBounded(worker, blob);
-      return result && result.data && result.data.text ? result.data.text : '';
+      try {
+        if (session.cancelled || session.released) throw cancelledError();
+        var worker = await ocrWorker(session);
+        var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
+        var maxW = 1600;
+        var scale = bmp.width > maxW ? maxW / bmp.width : 1;
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bmp.width * scale));
+        canvas.height = Math.max(1, Math.round(bmp.height * scale));
+        canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+        if (bmp.close) bmp.close();
+        var ready = prepareOcr(canvas);
+        var blob = await new Promise(function (resolve) { ready.toBlob(resolve, 'image/png'); });
+        await applyParams(session, worker, { tessedit_pageseg_mode: '6' });
+        var result = await recognizeBounded(session, worker, blob);
+        var text = result && result.data && result.data.text ? result.data.text : '';
+        if (!text.trim()) {
+          worker = await ocrWorker(session);
+          await applyParams(session, worker, { tessedit_pageseg_mode: '3' });
+          result = await recognizeBounded(session, worker, blob);
+          text = result && result.data && result.data.text ? result.data.text : '';
+        }
+        return text;
+      } finally {
+        if (!session.released) finishRead(session);
+      }
     });
   }
 
   async function wordBoxes(source, psm, opts) {
+    var session = openRead();
     return enqueueOcr(async function () {
-    var worker = await ocrWorker();
-    if (psm) {
-      try { await worker.setParameters({ tessedit_pageseg_mode: String(psm) }); } catch (err) {}
-    }
-    var result = await recognizeBounded(worker, source);
-    var words = result && result.data && result.data.words ? result.data.words : [];
-    var minConfidence = opts && opts.minConfidence != null ? opts.minConfidence : 35;
-    return words.filter(function (word) {
-      return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= minConfidence);
-    });
+      try {
+        if (session.cancelled || session.released) throw cancelledError();
+        var worker = await ocrWorker(session);
+        if (psm) await applyParams(session, worker, { tessedit_pageseg_mode: String(psm) });
+        var result = await recognizeBounded(session, worker, source);
+        var words = result && result.data && result.data.words ? result.data.words : [];
+        var minConfidence = opts && opts.minConfidence != null ? opts.minConfidence : 35;
+        return words.filter(function (word) {
+          return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= minConfidence);
+        });
+      } finally {
+        if (!session.released) finishRead(session);
+      }
     });
   }
 
@@ -288,7 +541,7 @@
     });
   }
 
-  async function glyphText(worker, canvas, box) {
+  async function glyphText(session, worker, canvas, box) {
     if (!box) return '';
     var pad = 6;
     var width = Math.max(1, (box.x1 || 0) - (box.x0 || 0));
@@ -300,12 +553,12 @@
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, crop.width, crop.height);
     ctx.drawImage(canvas, box.x0 || 0, box.y0 || 0, width, height, pad, pad, width, height);
-    try { await worker.setParameters({ tessedit_pageseg_mode: '10' }); } catch (err) {}
-    var result = await recognizeBounded(worker, crop);
+    await applyParams(session, worker, { tessedit_pageseg_mode: '10' });
+    var result = await recognizeBounded(session, worker, crop);
     return result && result.data && result.data.text ? result.data.text.replace(/\s/g, '') : '';
   }
 
-  async function dropDisputedEmails(worker, canvas, words) {
+  async function dropDisputedEmails(session, worker, canvas, words) {
     for (var i = 0; i < (words || []).length; i++) {
       var word = words[i];
       if (!word || !word.symbols || !/@/.test(word.text || '')) continue;
@@ -314,21 +567,22 @@
       if (at <= 0) continue;
       var prev = word.symbols[at - 1];
       if (!prev || !prev.text || prev.text.length !== 1) continue;
-      var again = await glyphText(worker, canvas, prev.bbox);
+      var again = await glyphText(session, worker, canvas, prev.bbox);
       if (again && again !== prev.text) word.text = '';
     }
   }
 
-  async function recognizeCanvas(canvas, scale, pageWidth, pageHeight) {
+  async function recognizeCanvas(session, canvas, scale, pageWidth, pageHeight) {
     return enqueueOcr(async function () {
-    var worker = await ocrWorker();
+    if (session.cancelled || session.released) throw cancelledError();
+    var worker = await ocrWorker(session);
     var best = { text: '', items: [] };
     var bestWords = null;
     var modes = ['6', '11'];
     for (var m = 0; m < modes.length; m++) {
-      try { await worker.setParameters({ tessedit_pageseg_mode: modes[m] }); } catch (err) {}
-      worker = await ocrWorker();
-      var result = await recognizeBounded(worker, canvas);
+      await applyParams(session, worker, { tessedit_pageseg_mode: modes[m] });
+      worker = await ocrWorker(session);
+      var result = await recognizeBounded(session, worker, canvas);
       var packed = linesFromWords(result && result.data && result.data.words);
       var letters = (packed.text.match(/[A-Za-z]{3,}/g) || []).length;
       var bestLetters = (best.text.match(/[A-Za-z]{3,}/g) || []).length;
@@ -338,7 +592,7 @@
       }
     }
     if (bestWords) {
-      await dropDisputedEmails(worker, canvas, bestWords);
+      await dropDisputedEmails(session, worker, canvas, bestWords);
       best = linesFromWords(bestWords);
     }
     var packed = best;
@@ -358,28 +612,43 @@
     });
   }
 
-  async function spatialPdf(bytes) {
-    var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
+  async function spatialPdf(bytes, session) {
+    var task = null;
+    var pdf = null;
     try {
+    if (session.cancelled || session.released) throw cancelledError();
+    task = openDocument(bytes);
+    session.loadingTask = task;
+    pdf = await bind(session, task.promise);
+    session.pdf = pdf;
+    session.loadingTask = null;
     var parts = [];
     var words = [];
-    var pages = Math.min(pdf.numPages, 2);
+    var total = pdf.numPages || 0;
+    var pages = Math.min(total, 2);
     for (var i = 1; i <= pages; i++) {
-      var page = await pdf.getPage(i);
+      if (session.cancelled || session.released) throw cancelledError();
+      var page = await bind(session, pdf.getPage(i));
       var base = page.getViewport({ scale: 1 });
       var scale = 2;
       var viewport = page.getViewport({ scale: scale });
       var canvas = document.createElement('canvas');
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
-      var seen = await recognizeCanvas(canvas, scale, base.width, base.height);
+      var renderTask = startRender(page, { canvasContext: canvas.getContext('2d'), viewport: viewport });
+      session.renderTask = renderTask;
+      await bind(session, renderTask.promise);
+      session.renderTask = null;
+      var seen = await recognizeCanvas(session, canvas, scale, base.width, base.height);
       if (seen.text) parts.push(seen.text);
       seen.words.forEach(function (word) {
         word.page = i - 1;
         words.push(word);
       });
     }
+    session.ocrCovered = pages;
+    session.usedOcr = true;
+    session.pagesTotal = total;
     return {
       text: parts.join('\n'),
       channel: 'ocr',
@@ -393,15 +662,58 @@
       }
     };
     } finally {
-      try { await pdf.destroy(); } catch (err) {}
+      if (session && !session.cancelled) {
+        try { if (session.renderTask && session.renderTask.cancel) session.renderTask.cancel(); } catch (err) {}
+        session.renderTask = null;
+        try {
+          if (pdf && pdf.destroy) {
+            var closed = pdf.destroy();
+            if (closed && closed.catch) closed.catch(function () {});
+          }
+        } catch (err) {}
+        try { if (!pdf && task && task.destroy) task.destroy(); } catch (err) {}
+      }
+      if (session && session.pdf === pdf) session.pdf = null;
+      if (session && session.loadingTask === task) session.loadingTask = null;
     }
   }
 
-  async function spatial(bytes, mime) {
-    return enqueueRead(function () { return spatialNow(bytes, mime); });
+  function withUnread(session, value) {
+    var covered = session.usedOcr ? session.ocrCovered : session.textCovered;
+    if (value && session.pagesTotal > (covered || 0)) {
+      value.unread = 'Read ' + (covered || 0) + ' of ' + session.pagesTotal + ' pages. The rest was not read.';
+    }
+    return value;
   }
 
-  async function spatialNow(bytes, mime) {
+  async function spatial(bytes, mime, session) {
+    var read = session || openRead();
+    return enqueueRead(function () {
+      if (read.cancelled || read.released) return Promise.reject(cancelledError());
+      var budgetMs = global.__ffReadBudgetMs > 0 ? global.__ffReadBudgetMs : 15000;
+      var timer = setTimeout(function () {
+        read.reason = 'budget';
+        cancelRead(read);
+      }, budgetMs);
+      enterSpatial();
+      var job = Promise.resolve().then(function () { return spatialNow(bytes, mime, read); });
+      job.catch(function () {});
+      return bind(read, job).then(function (value) {
+        clearTimeout(timer);
+        leaveSpatial();
+        var unread = withUnread(read, value);
+        finishRead(read);
+        return unread;
+      }, function (err) {
+        clearTimeout(timer);
+        leaveSpatial();
+        if (!read.released) finishRead(read);
+        throw err;
+      });
+    });
+  }
+
+  async function spatialNow(bytes, mime, session) {
     var isPdf = !mime || mime === 'application/pdf';
     if (!isPdf) {
       var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
@@ -412,15 +724,18 @@
       canvas.height = Math.max(1, Math.round(bmp.height / scale));
       canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
       if (bmp.close) bmp.close();
+      if (session.cancelled || session.released) throw cancelledError();
       var pageWidth = canvas.width / 2;
       var pageHeight = canvas.height / 2;
-      return recognizeCanvas(canvas, canvas.width / pageWidth, pageWidth, pageHeight);
+      session.textCovered = 1;
+      session.pagesTotal = 1;
+      return recognizeCanvas(session, canvas, canvas.width / pageWidth, pageWidth, pageHeight);
     }
-    var text = await textLayer(bytes);
+    var text = await textLayer(bytes, session);
     if (text.replace(/\s+/g, '').length >= 40) {
       return { text: text, channel: 'text-layer', words: [], transform: { kind: 'pdf-text-layer' } };
     }
-    var seen = await spatialPdf(bytes);
+    var seen = await spatialPdf(bytes, session);
     if (text.trim()) seen.text = (text + '\n' + seen.text).trim();
     return seen;
   }
@@ -512,7 +827,30 @@
     imageText: imageText,
     wordBoxes: wordBoxes,
     spatial: spatial,
-    cancelOcr: cancelOcr,
+    openRead: openRead,
+    cancelRead: cancelRead,
+    cancelAll: cancelAll,
+    cancelOcr: cancelAll,
+    trace: function () {
+      return {
+        destroyedLoad: trace.destroyedLoad,
+        cancelledRender: trace.cancelledRender,
+        terminatedWorker: trace.terminatedWorker,
+        spatialInflight: trace.spatialInflight,
+        peakSpatial: trace.peakSpatial,
+        ocrInflight: trace.ocrInflight,
+        peakOcr: trace.peakOcr
+      };
+    },
+    resetTrace: function () {
+      trace.destroyedLoad = 0;
+      trace.cancelledRender = 0;
+      trace.terminatedWorker = 0;
+      trace.spatialInflight = 0;
+      trace.peakSpatial = 0;
+      trace.ocrInflight = 0;
+      trace.peakOcr = 0;
+    },
     chunks: chunks,
     retrieve: retrieve
   };
