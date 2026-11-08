@@ -161,24 +161,28 @@ await ui.evaluate(async () => {
       row('r0', 'zero-id', 'full name: Zero Id'),
       row('r08', 'padded-id', 'full name: Pad Id'),
       row('r4', 'four-keep', 'full name: Four Keep'),
-      row('r4', 'four-dup', 'full name: Four Dup')
+      row('r4', 'four-dup', 'full name: Four Dup'),
+      row('r' + '9'.repeat(30), 'huge-digits', 'full name: Huge Digits'),
+      row('r' + '9'.repeat(30), 'huge-dup', 'full name: Huge Dup'),
+      row('r9007199254740993', 'unsafe-int', 'full name: Unsafe Int'),
+      row('rInfinity', 'inf-id', 'full name: Inf Id')
     ]
   });
 });
 await ui.reload({ waitUntil: 'domcontentloaded' });
-await ui.waitForFunction(() => FormDesk.refs().length === 8 && FormDesk.refs().every((item) => item.status && item.status !== 'reading'));
+await ui.waitForFunction(() => FormDesk.refs().length === 12 && FormDesk.refs().every((item) => item.status && item.status !== 'reading'), null, { timeout: 8000 });
 const restored = await ui.evaluate(() => FormDesk.refs());
 const restoredIds = restored.map((item) => item.id);
 const idOk = /^[A-Za-z]+[1-9][0-9]*$/;
 const byName = Object.fromEntries(restored.map((item) => [item.name, item]));
-check('restored duplicate and malformed ids become unique well-formed ids', restoredIds.length === 8 && new Set(restoredIds).size === 8 && restoredIds.every((id) => idOk.test(id)) && byName['ada-keep'].id !== byName['bea-keep'].id && byName['four-keep'].id !== byName['four-dup'].id && /Ada Keep/.test(byName['ada-keep'].preview) && /Bea Keep/.test(byName['bea-keep'].preview) && /Mal Form/.test(byName.malformed.preview) && /Zero Id/.test(byName['zero-id'].preview) && /Pad Id/.test(byName['padded-id'].preview), JSON.stringify(restored));
+check('restored duplicate and malformed ids become unique well-formed ids', restoredIds.length === 12 && new Set(restoredIds).size === 12 && restoredIds.every((id) => idOk.test(id) && id.length < 16) && byName['ada-keep'].id !== byName['bea-keep'].id && byName['four-keep'].id !== byName['four-dup'].id && byName['huge-digits'].id !== byName['huge-dup'].id && /Ada Keep/.test(byName['ada-keep'].preview) && /Bea Keep/.test(byName['bea-keep'].preview) && /Huge Digits/.test(byName['huge-digits'].preview) && /Unsafe Int/.test(byName['unsafe-int'].preview) && /Inf Id/.test(byName['inf-id'].preview) && /Mal Form/.test(byName.malformed.preview) && /Zero Id/.test(byName['zero-id'].preview) && /Pad Id/.test(byName['padded-id'].preview), JSON.stringify(restored));
 await ui.waitForFunction(async () => {
   const draft = await DeskDB.get('tools-forms-filler', 'draft');
   const ids = (draft && draft.refs || []).map((item) => item.id);
-  return ids.length === 8 && new Set(ids).size === 8 && ids.every((id) => /^[A-Za-z]+[1-9][0-9]*$/.test(id));
+  return ids.length === 12 && new Set(ids).size === 12 && ids.every((id) => /^[A-Za-z]+[1-9][0-9]*$/.test(id) && id.length < 16);
 });
 await ui.reload({ waitUntil: 'domcontentloaded' });
-await ui.waitForFunction(() => FormDesk.refs().length === 8);
+await ui.waitForFunction(() => FormDesk.refs().length === 12);
 const stable = await ui.evaluate(() => FormDesk.refs().map((item) => item.id + ':' + item.name).sort());
 check('a second reload keeps the normalized ids', stable.join('|') === restored.map((item) => item.id + ':' + item.name).sort().join('|'), stable.join('|'));
 const beforeAdd = new Set(restoredIds);
@@ -421,7 +425,102 @@ const reloaded = await peopleAndRows();
 const reloadRow = reloaded.refs.find((item) => item.name === 'ref-reload.pdf');
 check('reload while a read is active finishes that file instead of leaving it on Reading', reloadRow && reloadRow.status !== 'reading' && reloadRow.status !== 'error' && reloaded.email && reloaded.email.value === 'cora.fixed@example.com', JSON.stringify(reloadRow));
 
-const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks, paired };
+const lease = await ui.evaluate(async () => {
+  window.__ffReadBudgetMs = 8000;
+  window.__ffOcrBudgetMs = 0;
+  window.__stall = { terminated: 0, params: 0, renders: 0 };
+  let releaseParams = null;
+  let releaseRender = null;
+  let renders = 0;
+  const worker = {
+    terminated: false,
+    setParameters() {
+      window.__stall.params += 1;
+      if (window.__stall.params < 3) return Promise.resolve();
+      return new Promise((resolve) => { releaseParams = resolve; });
+    },
+    recognize() { return Promise.resolve({ data: { text: 'Ada Example line', words: [{ text: 'Ada', confidence: 90, bbox: { x0: 1, y0: 1, x1: 8, y1: 8 } }] } }); },
+    terminate() { this.terminated = true; window.__stall.terminated += 1; return Promise.resolve(); }
+  };
+  window.__ffCreateWorker = function () { return Promise.resolve(worker); };
+  window.__ffWrapRender = function (task) {
+    renders += 1;
+    if (renders < 2) return task;
+    let rejectP;
+    const hung = new Promise((_, reject) => { rejectP = reject; });
+    releaseRender = () => { try { task.cancel(); } catch (err) {} rejectP(new Error('render-cancel')); };
+    return { promise: hung, cancel() { window.__stall.renders += 1; releaseRender(); } };
+  };
+  const doc = await PDFLib.PDFDocument.create();
+  doc.addPage([200, 200]);
+  doc.addPage([200, 200]);
+  const bytes = new Uint8Array(await doc.save());
+  const session = FormExtract.openRead();
+  let spatialState = 'pending';
+  const spatial = FormExtract.spatial(bytes, 'application/pdf', session).then(() => { spatialState = 'done'; }, (err) => { spatialState = err.message; });
+  const started = performance.now();
+  while (window.__stall.renders === 0 && performance.now() - started < 4000) await new Promise((r) => setTimeout(r, 20));
+  const canvas = document.createElement('canvas');
+  canvas.width = 8;
+  canvas.height = 8;
+  let boxesState = 'pending';
+  const boxes = FormExtract.wordBoxes(canvas, '6').then((words) => { boxesState = 'ok:' + words.length; }, (err) => { boxesState = err.message; });
+  const paramsAt = performance.now();
+  while (window.__stall.params < 3 && performance.now() - paramsAt < 3000) await new Promise((r) => setTimeout(r, 20));
+  const before = { terminated: window.__stall.terminated, params: window.__stall.params, boxesState, spatialState };
+  FormExtract.cancelRead(session);
+  await new Promise((r) => setTimeout(r, 50));
+  const afterCancelA = { terminated: window.__stall.terminated, boxesState, spatialState };
+  if (releaseParams) releaseParams();
+  await Promise.race([boxes, new Promise((r) => setTimeout(r, 1500))]);
+  const afterRelease = { terminated: window.__stall.terminated, boxesState, spatialState };
+  if (releaseRender) releaseRender();
+  await Promise.race([spatial, new Promise((r) => setTimeout(r, 1500))]);
+  window.__ffCreateWorker = null;
+  window.__ffWrapRender = null;
+  window.__ffReadBudgetMs = 0;
+  return { before, afterCancelA, afterRelease, finalSpatial: spatialState, finalBoxes: boxesState };
+});
+check('removing a spatial read between pages does not terminate the standalone OCR worker', lease.afterCancelA.terminated === 0 && lease.before.params >= 3 && lease.afterCancelA.boxesState === 'pending' && lease.finalBoxes.indexOf('ok:') === 0 && lease.finalSpatial !== 'pending', JSON.stringify(lease));
+
+await ui.goto('http://127.0.0.1:8788/tools/forms-filler/?ocrdeadline=' + Date.now(), { waitUntil: 'domcontentloaded' });
+await ui.waitForFunction(() => window.FormExtract && window.PDFLib);
+const hungInit = await ui.evaluate(async () => {
+  window.__ffReadBudgetMs = 400;
+  let resolveCreate = null;
+  const created = {
+    terminated: false,
+    setParameters() { return new Promise(() => {}); },
+    recognize() { return new Promise(() => {}); },
+    terminate() { this.terminated = true; return Promise.resolve(); }
+  };
+  window.__ffCreateWorker = function (real) {
+    if (!resolveCreate) return new Promise((resolve) => { resolveCreate = () => resolve(created); });
+    return real();
+  };
+  const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0));
+  let imageState = 'pending';
+  const image = FormExtract.imageText(png, 'image/png').then(() => { imageState = 'ok'; }, (err) => { imageState = err.message; });
+  const textDoc = await PDFLib.PDFDocument.create();
+  const page = textDoc.addPage([300, 120]);
+  const font = await textDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  page.drawText('Applicant full name is Ada Example and the phone is 80000000 today.', { x: 12, y: 60, size: 12, font });
+  const textBytes = new Uint8Array(await textDoc.save());
+  const started = performance.now();
+  let textState = 'pending';
+  const text = FormExtract.spatial(textBytes, 'application/pdf').then((value) => { textState = value.text || ''; }, (err) => { textState = err.message; });
+  await Promise.race([text, new Promise((r) => setTimeout(r, 4000))]);
+  const textMs = Math.round(performance.now() - started);
+  await Promise.race([image, new Promise((r) => setTimeout(r, 2000))]);
+  if (resolveCreate) resolveCreate();
+  await new Promise((r) => setTimeout(r, 30));
+  window.__ffCreateWorker = null;
+  window.__ffReadBudgetMs = 0;
+  return { imageState, textState, textMs, terminated: created.terminated };
+});
+check('a hung image read releases the OCR queue for the next PDF', /budget|cancelled/.test(hungInit.imageState) && /Ada Example/.test(hungInit.textState) && hungInit.textMs < 3500 && hungInit.terminated, JSON.stringify(hungInit));
+
+const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks, paired, lease, hungInit };
 writeFileSync('/tmp/inline-wt/research/forms-filler/visual-e2e/results/ref-read.json', JSON.stringify(out, null, 2));
 console.log('SUMMARY', out.passed, '/', checks.length, 'paired-ms', paired.ms);
 await browser.close();

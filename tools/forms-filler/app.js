@@ -331,20 +331,41 @@
     return null;
   }
 
+  var REF_SEQ_LIMIT = 9007199254740991;
+
+  function refSuffix(text) {
+    var match = /^[A-Za-z]+([1-9][0-9]*)$/.exec(text);
+    if (!match || match[1].length > 16) return 0;
+    var n = Number(match[1]);
+    if (!Number.isSafeInteger(n) || n < 1 || n > REF_SEQ_LIMIT || String(n) !== match[1]) return 0;
+    return n;
+  }
+
+  function mintRefId(seen) {
+    if (!Number.isSafeInteger(refSeq) || refSeq < 0 || refSeq >= REF_SEQ_LIMIT) refSeq = 0;
+    var spins = 0;
+    var fresh = '';
+    do {
+      spins += 1;
+      if (spins > 100000 || refSeq >= REF_SEQ_LIMIT) refSeq = 0;
+      var next = refSeq + 1;
+      if (!Number.isSafeInteger(next) || next <= refSeq) refSeq = 0;
+      else refSeq = next;
+      fresh = 'r' + refSeq;
+    } while (seen[fresh] && spins < 100001);
+    if (seen[fresh]) fresh = 'r' + refSeq + 'x' + spins;
+    return fresh;
+  }
+
   function uniqueRefId(id, seen) {
     var text = String(id == null ? '' : id);
-    var match = /^[A-Za-z]+[1-9][0-9]*$/.exec(text);
-    if (match && !seen[text]) {
-      var n = parseInt(text.replace(/^[A-Za-z]+/, ''), 10);
+    var n = refSuffix(text);
+    if (n && !seen[text]) {
       if (n > refSeq) refSeq = n;
       seen[text] = true;
       return text;
     }
-    var fresh;
-    do {
-      refSeq += 1;
-      fresh = 'r' + refSeq;
-    } while (seen[fresh]);
+    var fresh = mintRefId(seen);
     seen[fresh] = true;
     return fresh;
   }

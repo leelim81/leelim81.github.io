@@ -4,6 +4,7 @@
 (function (global) {
   var workerPromise = null;
   var liveWorker = null;
+  var workerLease = null;
   var workerGen = 0;
   var embedderPromise = null;
   var ocrChain = Promise.resolve();
@@ -118,17 +119,27 @@
     }
   }
 
+  function releaseLease(session) {
+    if (!session) return;
+    if (workerLease === session) workerLease = null;
+    session.worker = null;
+    session.workerPromise = null;
+  }
+
   function cancelRead(session) {
     if (!session || session.released) return;
     session.cancelled = true;
     session.released = true;
-    var worker = session.worker;
+    var holds = workerLease === session;
     var pending = session.workerPromise;
     session.worker = null;
     session.workerPromise = null;
-    if (worker && worker === liveWorker) invalidateWorker();
-    else if (worker) terminateWorker(worker);
-    else if (pending) invalidateWorker();
+    if (holds) {
+      workerLease = null;
+      invalidateWorker();
+    } else if (!workerLease && pending && pending === workerPromise) {
+      invalidateWorker();
+    }
     closePdf(session);
     wake(session);
     dropRead(session);
@@ -341,11 +352,35 @@
     if (session) session.workerPromise = pending;
     return bind(session, pending).then(function (worker) {
       if (session && (session.cancelled || session.released)) {
-        terminateWorker(worker);
+        if (!workerLease || workerLease === session) terminateWorker(worker);
         throw cancelledError();
       }
-      if (session) session.worker = worker;
+      if (session) {
+        session.worker = worker;
+        workerLease = session;
+      }
       return worker;
+    });
+  }
+
+  function armDeadline(session) {
+    var budgetMs = global.__ffReadBudgetMs > 0 ? global.__ffReadBudgetMs : 15000;
+    return setTimeout(function () {
+      session.reason = 'budget';
+      cancelRead(session);
+    }, budgetMs);
+  }
+
+  function withDeadline(session, work) {
+    var timer = armDeadline(session);
+    var job = Promise.resolve().then(work);
+    job.catch(function () {});
+    return bind(session, job).then(function (value) {
+      clearTimeout(timer);
+      return value;
+    }, function (err) {
+      clearTimeout(timer);
+      throw err;
     });
   }
 
@@ -420,8 +455,9 @@
 
   async function imageText(bytes, mime) {
     var session = openRead();
-    return enqueueOcr(async function () {
-      try {
+    return enqueueOcr(function () {
+      if (session.cancelled || session.released) return Promise.reject(cancelledError());
+      return withDeadline(session, async function () {
         if (session.cancelled || session.released) throw cancelledError();
         var worker = await ocrWorker(session);
         var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
@@ -444,16 +480,23 @@
           text = result && result.data && result.data.text ? result.data.text : '';
         }
         return text;
-      } finally {
+      }).then(function (text) {
+        releaseLease(session);
+        finishRead(session);
+        return text;
+      }, function (err) {
+        releaseLease(session);
         if (!session.released) finishRead(session);
-      }
+        throw err;
+      });
     });
   }
 
   async function wordBoxes(source, psm, opts) {
     var session = openRead();
-    return enqueueOcr(async function () {
-      try {
+    return enqueueOcr(function () {
+      if (session.cancelled || session.released) return Promise.reject(cancelledError());
+      return withDeadline(session, async function () {
         if (session.cancelled || session.released) throw cancelledError();
         var worker = await ocrWorker(session);
         if (psm) await applyParams(session, worker, { tessedit_pageseg_mode: String(psm) });
@@ -463,9 +506,15 @@
         return words.filter(function (word) {
           return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= minConfidence);
         });
-      } finally {
+      }).then(function (words) {
+        releaseLease(session);
+        finishRead(session);
+        return words;
+      }, function (err) {
+        releaseLease(session);
         if (!session.released) finishRead(session);
-      }
+        throw err;
+      });
     });
   }
 
@@ -574,6 +623,7 @@
 
   async function recognizeCanvas(session, canvas, scale, pageWidth, pageHeight) {
     return enqueueOcr(async function () {
+    try {
     if (session.cancelled || session.released) throw cancelledError();
     var worker = await ocrWorker(session);
     var best = { text: '', items: [] };
@@ -609,6 +659,9 @@
         deskew: 'none'
       }
     };
+    } finally {
+      releaseLease(session);
+    }
     });
   }
 
