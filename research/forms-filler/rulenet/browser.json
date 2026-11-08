@@ -1,0 +1,148 @@
+{
+  "harness": {
+    "before": [
+      "harness.html",
+      "rulenet_fast.mjs",
+      "postprocess.mjs"
+    ],
+    "caps": {
+      "tooBig": false,
+      "food": true,
+      "fetches": 0
+    },
+    "cancelled": {
+      "stopped": {
+        "ok": false,
+        "reason": "cancelled",
+        "fetches": 0
+      },
+      "again": {
+        "ok": true,
+        "fetches": 1,
+        "n": 26,
+        "inferMs": 1603.7000000029802,
+        "postMs": 489.1000000089407,
+        "totalMs": 2092.800000011921,
+        "heapBefore": 127288088,
+        "heapAfter": 120562351,
+        "accounted": 12582400
+      },
+      "warm": [
+        {
+          "ok": true,
+          "fetches": 1,
+          "n": 26,
+          "inferMs": 1547.5999999940395,
+          "postMs": 462.40000000596046,
+          "totalMs": 2010,
+          "heapBefore": 120566295,
+          "heapAfter": 159061383,
+          "accounted": 12582400
+        },
+        {
+          "ok": true,
+          "fetches": 1,
+          "n": 26,
+          "inferMs": 1536.5999999940395,
+          "postMs": 459.5,
+          "totalMs": 1996.0999999940395,
+          "heapBefore": 159062867,
+          "heapAfter": 136404540,
+          "accounted": 12582400
+        },
+        {
+          "ok": true,
+          "fetches": 1,
+          "n": 26,
+          "inferMs": 1542.2999999970198,
+          "postMs": 626.4000000059605,
+          "totalMs": 2168.7000000029802,
+          "heapBefore": 136405100,
+          "heapAfter": 123492668,
+          "accounted": 12582400
+        }
+      ],
+      "cleared": {
+        "cleared": true,
+        "fetches": 1
+      },
+      "refused": {
+        "ok": false,
+        "reason": "cap",
+        "fetches": 1
+      },
+      "fetches": 1
+    },
+    "after": [
+      "harness.html",
+      "rulenet_fast.mjs",
+      "postprocess.mjs",
+      "rulenet.meta.json",
+      "rulenet.f32.bin"
+    ]
+  },
+  "natural": [
+    {
+      "id": "wellcome-food-order",
+      "denominator": 8,
+      "geometry": 0,
+      "suggestions": 0,
+      "angle": 0
+    },
+    {
+      "id": "census-held",
+      "denominator": 3,
+      "geometry": 0,
+      "suggestions": 2,
+      "angle": 0
+    },
+    {
+      "id": "census-held",
+      "denominator": 2,
+      "geometry": 0,
+      "suggestions": 0,
+      "angle": 0
+    }
+  ],
+  "foodFieldsBefore": 0,
+  "foodNameAddress": {
+    "geometry": 0,
+    "suggestions": 0,
+    "angle": 0
+  },
+  "censusRules": {
+    "nUnder": 0,
+    "nStroke": 2,
+    "frame": {
+      "angle": 0,
+      "inW": 1200,
+      "inH": 823,
+      "turnW": 1200,
+      "turnH": 823,
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "w": 1200,
+        "h": 823
+      },
+      "outW": 1200,
+      "outH": 823,
+      "sourceW": 1200,
+      "sourceH": 823
+    },
+    "ocrAutofill": {
+      "name": false,
+      "nric": false,
+      "dob": false,
+      "phone": false,
+      "email": false,
+      "address": false,
+      "postal": false,
+      "mailbox": false
+    }
+  },
+  "native": {
+    "route": "acro",
+    "n": 5
+  }
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "name": "wellcome-food-order",
+    "w": 983,
+    "h": 1600,
+    "inferMs": 1605,
+    "n": 26,
+    "identical": true,
+    "maxDx": 0,
+    "score": {
+      "tp": 22,
+      "fp": 4,
+      "fn": 0,
+      "n": 26
+    }
+  },
+  {
+    "name": "nara-p4-front",
+    "w": 1200,
+    "h": 823,
+    "inferMs": 989,
+    "n": 15,
+    "identical": true,
+    "maxDx": 0,
+    "score": {
+      "tp": 8,
+      "fp": 7,
+      "fn": 5,
+      "n": 15
+    }
+  },
+  {
+    "name": "wellcome-surrey-letter",
+    "w": 1299,
+    "h": 1600,
+    "inferMs": 2068,
+    "n": 2,
+    "identical": true,
+    "maxDx": 0,
+    "score": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "n": 0
+    }
+  }
+]
