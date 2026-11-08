@@ -305,8 +305,9 @@
       if (body.contentEditable !== 'plaintext-only') body.contentEditable = 'true';
       body.spellcheck = false;
       body.textContent = ann.text || '';
+      var composing = false;
       function readBody() {
-        if (el.dataset.painting) return;
+        if (composing || el.dataset.painting) return;
         var shown = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
         ann.text = el.dataset.painted ? logicalFromPainted(ann.text, el.dataset.painted, shown) : shown;
         if (window.FormProfiles && ann.type === 'text' && ann.factKey && ann.profileId && ann.text !== ann.seedText) {
@@ -326,8 +327,10 @@
         scheduleSave();
         scheduleFitNote();
       }
-      body.addEventListener('input', readBody);
-      body.addEventListener('keyup', readBody);
+      body.addEventListener('compositionstart', function () { composing = true; });
+      body.addEventListener('compositionend', function () { composing = false; readBody(); });
+      body.addEventListener('input', function () { if (!composing) readBody(); });
+      body.addEventListener('keyup', function () { if (!composing) readBody(); });
       body.addEventListener('focus', function () { paintWrap(el, ann, true); });
       body.addEventListener('blur', function () {
         readBody();
@@ -446,36 +449,6 @@
     while (keep.length && keep[0] === n) { out += '\n'; keep.shift(); }
     return out;
   }
-  function flatCaret(root) {
-    var sel = window.getSelection();
-    if (!sel || !sel.rangeCount || !root.contains(sel.focusNode)) return null;
-    var range = sel.getRangeAt(0);
-    var pre = range.cloneRange();
-    pre.selectNodeContents(root);
-    pre.setEnd(range.endContainer, range.endOffset);
-    return pre.toString().replace(/\n/g, '').length;
-  }
-  function setFlatCaret(root, offset) {
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    var node;
-    var seen = 0;
-    while ((node = walker.nextNode())) {
-      var text = node.textContent;
-      for (var i = 0; i <= text.length; i++) {
-        if (i < text.length && text.charAt(i) === '\n') continue;
-        if (seen === offset) {
-          var range = document.createRange();
-          range.setStart(node, i);
-          range.collapse(true);
-          var sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-          return;
-        }
-        if (i < text.length) seen++;
-      }
-    }
-  }
   function applyPaint(el, ann, focused, font) {
     var mirror = el.querySelector('.ann-mirror');
     var body = el.querySelector('.ann-body');
@@ -484,25 +457,13 @@
     var maxW = Math.max(8, (el.clientWidth / (state.zoom || 1)) - 2);
     var shown = wrapText(ann.text || '', font, size, maxW).join('\n');
     mirror.textContent = shown;
-    if (!body) return;
-    var caret = focused && document.activeElement === body ? flatCaret(body) : null;
-    if (focused && document.activeElement === body) {
-      var live = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
-      var want = String(shown || '').replace(/\n$/, '');
-      if (live === want) {
-        el.dataset.painted = shown;
-        return;
-      }
+    if (!body || focused) {
+      if (el.dataset.painted) delete el.dataset.painted;
+      return;
     }
     el.dataset.painting = '1';
-    if (focused) {
-      body.textContent = shown;
-      el.dataset.painted = shown;
-      if (caret != null) setFlatCaret(body, caret);
-    } else {
-      body.textContent = ann.text || '';
-      delete el.dataset.painted;
-    }
+    body.textContent = ann.text || '';
+    delete el.dataset.painted;
     delete el.dataset.painting;
   }
   function paintWrap(el, ann, focused) {
