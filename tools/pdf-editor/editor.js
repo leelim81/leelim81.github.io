@@ -160,7 +160,10 @@
       return false;
     }
   }
-  window.addEventListener('pagehide', function () { if (state.pdfBytes) saveNow(); });
+  window.addEventListener('pagehide', function () {
+    cancelRecoverCommit();
+    if (state.pdfBytes) saveNow();
+  });
 
   function showWorkspace() {
     $('empty').hidden = true;
@@ -1717,7 +1720,24 @@
       if (focus) focus.focus();
     }
     if (!open && was) toggle.focus();
-    if (!open && barId === 'recoverBar') disarmRecover('Placement was cancelled.');
+    if (!open && barId === 'recoverBar') {
+      cancelRecoverCommit();
+      disarmRecover('Placement was cancelled.');
+    }
+  }
+  var recoverCommit = 0;
+  function setRecoverBusy(on) {
+    ['recoverAddPerson', 'recoverAddFact', 'recoverPerson', 'recoverFactKey', 'recoverPersonName', 'recoverFactValue'].forEach(function (id) {
+      var el = $(id);
+      if (el) el.disabled = !!on;
+    });
+  }
+  function cancelRecoverCommit() {
+    recoverCommit++;
+    setRecoverBusy(false);
+  }
+  function recoverOpen(token) {
+    return token === recoverCommit && $('recoverBar') && !$('recoverBar').hidden;
   }
   async function refreshRecover() {
     if ($('assistBar')) $('assistBar').hidden = !state.pdfBytes;
@@ -1995,27 +2015,91 @@
     if ($('recoverAddPerson')) $('recoverAddPerson').addEventListener('click', async function () {
       var name = ($('recoverPersonName').value || '').trim().slice(0, 80);
       if (!name) { recoverSay('Type a name for the person first.'); $('recoverPersonName').focus(); return; }
-      var loaded = await FormProfiles.load();
-      if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
-      if (loaded.vault.profiles.length >= 30) { recoverSay('Too many people are stored.'); return; }
-      loaded.vault.profiles.push({ id: uid(), name: name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
-      var saved = await FormProfiles.persist(loaded.vault);
-      if (!saved.ok) { recoverSay('That person was not saved.'); return; }
-      $('recoverPersonName').value = '';
-      refreshRecover();
+      var token = ++recoverCommit;
+      setRecoverBusy(true);
+      try {
+        var loaded = await FormProfiles.load();
+        if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
+        if (!recoverOpen(token) || ($('recoverPersonName').value || '').trim().slice(0, 80) !== name) {
+          recoverSay('That person was not added.');
+          return;
+        }
+        var again = await FormProfiles.load();
+        if (!again.ok || !recoverOpen(token) || ($('recoverPersonName').value || '').trim().slice(0, 80) !== name) {
+          recoverSay('That person was not added.');
+          return;
+        }
+        if (again.vault.profiles.some(function (profile) { return profile.name === name; })) {
+          recoverSay(name + ' is already saved. Nothing new was added.');
+          refreshRecover();
+          return;
+        }
+        if (again.vault.profiles.length >= 30) { recoverSay('Too many people are stored.'); return; }
+        again.vault.profiles.push({ id: uid(), name: name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
+        if (!recoverOpen(token)) return;
+        var saved = await FormProfiles.persist(again.vault);
+        if (token !== recoverCommit) return;
+        if (!saved.ok) { recoverSay('That person was not saved.'); return; }
+        $('recoverPersonName').value = '';
+        refreshRecover();
+      } catch (err) {
+        if (token === recoverCommit) recoverSay('That person was not saved.');
+      } finally {
+        if (token === recoverCommit) setRecoverBusy(false);
+      }
     });
     if ($('recoverAddFact')) $('recoverAddFact').addEventListener('click', async function () {
       var value = ($('recoverFactValue').value || '').trim().slice(0, 400);
       if (!value) { recoverSay('Type the value to confirm.'); $('recoverFactValue').focus(); return; }
-      var loaded = await FormProfiles.load();
-      if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
-      var person = $('recoverPerson');
-      var noted = FormProfiles.confirmFact(loaded.vault, person.value, $('recoverFactKey').value || 'name', value);
-      if (!noted.ok) { recoverSay('That value was not saved.'); return; }
-      var saved = await FormProfiles.persist(noted.vault);
-      if (!saved.ok) { recoverSay('That value was not saved.'); return; }
-      $('recoverFactValue').value = '';
-      refreshRecover();
+      var personId = $('recoverPerson') ? $('recoverPerson').value : '';
+      var key = ($('recoverFactKey') && $('recoverFactKey').value) || 'name';
+      if (!personId) { recoverSay('Choose a person first. Nothing was confirmed.'); return; }
+      var token = ++recoverCommit;
+      setRecoverBusy(true);
+      try {
+        var loaded = await FormProfiles.load();
+        if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
+        if (!recoverOpen(token) || $('recoverPerson').value !== personId || (($('recoverFactKey') && $('recoverFactKey').value) || 'name') !== key) {
+          recoverSay('That save was cancelled because the person or kind changed. Nothing was confirmed.');
+          return;
+        }
+        var again = await FormProfiles.load();
+        if (!again.ok || !recoverOpen(token) || $('recoverPerson').value !== personId || (($('recoverFactKey') && $('recoverFactKey').value) || 'name') !== key) {
+          recoverSay('That save was cancelled because the person or kind changed. Nothing was confirmed.');
+          return;
+        }
+        var profile = again.vault.profiles.filter(function (item) { return item.id === personId; })[0];
+        if (!profile) {
+          recoverSay('That person is no longer saved. Nothing was confirmed.');
+          refreshRecover();
+          return;
+        }
+        var existing = (profile.facts || []).filter(function (item) { return item.key === key && item.status === 'confirmed' && item.value; })[0];
+        if (existing && existing.value !== value) {
+          recoverSay('A confirmed ' + key + ' is already saved for this person. Nothing was replaced.');
+          return;
+        }
+        if (existing && existing.value === value) {
+          $('recoverFactValue').value = '';
+          recoverSay('That value is already confirmed.');
+          refreshRecover();
+          return;
+        }
+        var noted = FormProfiles.confirmFact(again.vault, personId, key, value);
+        if (!noted.ok || !recoverOpen(token) || $('recoverPerson').value !== personId) {
+          recoverSay('That value was not saved.');
+          return;
+        }
+        var saved = await FormProfiles.persist(noted.vault);
+        if (token !== recoverCommit) return;
+        if (!saved.ok) { recoverSay('That value was not saved.'); return; }
+        $('recoverFactValue').value = '';
+        refreshRecover();
+      } catch (err) {
+        if (token === recoverCommit) recoverSay('That value was not saved.');
+      } finally {
+        if (token === recoverCommit) setRecoverBusy(false);
+      }
     });
     $('assistToggle').addEventListener('click', function () {
       setPanel('recoverBar', 'assistToggle', $('recoverBar').hidden);

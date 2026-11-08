@@ -1,0 +1,56 @@
+{
+  "passed": 10,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "the save controls lock while the store is loading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "changing the kind during the load confirms nothing",
+      "ok": true,
+      "detail": "[{\"name\":\"Ada Lane\",\"facts\":[]}]"
+    },
+    {
+      "name": "the controls come back after the cancelled save",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "changing the person during the load confirms nothing",
+      "ok": true,
+      "detail": "[{\"name\":\"Ada Lane\",\"facts\":[]},{\"name\":\"Bea Shore\",\"facts\":[]}]"
+    },
+    {
+      "name": "closing the bar during the load confirms nothing",
+      "ok": true,
+      "detail": "[{\"name\":\"Ada Lane\",\"facts\":[]},{\"name\":\"Bea Shore\",\"facts\":[]}]"
+    },
+    {
+      "name": "leaving the page during the load confirms nothing",
+      "ok": true,
+      "detail": "[{\"name\":\"Ada Lane\",\"facts\":[]},{\"name\":\"Bea Shore\",\"facts\":[]}]"
+    },
+    {
+      "name": "a confirmed name is not replaced by a late save",
+      "ok": true,
+      "detail": "{\"name\":\"Bea Shore\",\"facts\":[\"name=Bea Original:confirmed\"]}"
+    },
+    {
+      "name": "a cancelled or renamed first person is not stored",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "the person controls are usable again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a failed load restores the controls and stores nothing",
+      "ok": true,
+      "detail": "[]"
+    }
+  ]
+}
