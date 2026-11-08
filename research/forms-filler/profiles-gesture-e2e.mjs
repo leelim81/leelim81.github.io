@@ -8,7 +8,12 @@ import pkg from '/tmp/e2e/node_modules/playwright-core/index.js';
 
 const { chromium } = pkg;
 const root = dirname(fileURLToPath(import.meta.url));
-const ext = join(root, '../../tools/forms-filler/extension');
+const shippedZip = join(root, '../../tools/forms-filler/extension/forms-filler-profiles-0.1.0.zip');
+const ext = '/tmp/ff-unpacked-ext';
+spawnSync('rm', ['-rf', ext]);
+spawnSync('mkdir', ['-p', ext]);
+const unzipped = spawnSync('unzip', ['-q', '-o', shippedZip, '-d', ext]);
+if (unzipped.status !== 0) throw new Error('Could not unpack the shipped extension zip');
 const bin = '/home/ubuntu/.cache/ms-playwright/chromium-1148/chrome-linux/chrome';
 const userDir = '/tmp/ff-gesture-e2e';
 const report = {
@@ -19,6 +24,7 @@ const report = {
     'Google Chrome stable ignores --load-extension. This run used Chromium.',
     'The unpinned extension is not in the puzzle menu on this Chromium build. The assigned Activate shortcut opens the same popup as the toolbar button and is what granted activeTab.',
     'Shadow DOM and cross-origin frames are not filled.',
+  'Chromium toggles the extension popup. A shortcut while it is already open closes it; the next press opens it. A DevTools connection that started before the popup does not list that popup. The reopen check attaches again after the shortcut. This Chromium is 131.0.6778.33, not current Chrome stable. Chrome stable ignores --load-extension; a person loads the unzipped folder from the Extensions page.',
     'Human confirmation time was not measured.'
   ]
 };
@@ -26,12 +32,20 @@ function check(name, ok, detail) {
   report.checks.push({ name, ok: !!ok, detail: detail || '' });
   console.log((ok ? 'ok ' : 'FAIL ') + name + (detail ? ' ' + detail : ''));
 }
+async function openSaved(page) {
+  if (await page.locator('#profileBox').isHidden()) await page.click('#profileToggle');
+  await page.locator('#profileBox').waitFor({ state: 'visible' });
+}
 function shot(name) {
   spawnSync('ffmpeg', ['-y', '-f', 'x11grab', '-video_size', '1100x720', '-i', ':1', '-frames:v', '1', name], { stdio: 'ignore' });
 }
 function pressShortcut() {
-  spawnSync('xdotool', ['search', '--name', 'Chromium', 'windowactivate']);
+  const listed = spawnSync('xdotool', ['search', '--class', 'chromium'], { encoding: 'utf8' }).stdout.trim();
+  const ids = listed.split('\n').filter(Boolean);
+  const target = ids[ids.length - 1] || '';
+  if (target) spawnSync('xdotool', ['windowactivate', '--sync', target]);
   spawnSync('xdotool', ['key', '--clearmodifiers', 'ctrl+shift+y']);
+  return { target: target, windows: ids.length };
 }
 
 spawnSync('pkill', ['-f', 'chrome-linux/chrome']);
@@ -137,9 +151,57 @@ if (popup) {
   check('controlled field got input and change events', seen.mirror === 'ada@example.com' && seen.input >= 1 && seen.change >= 1, JSON.stringify(seen));
 }
 
+const shotDir = join(root, 'visual-e2e/results/screenshots');
 const filler = await context.newPage();
 await filler.goto('http://127.0.0.1:8765/tools/forms-filler/');
-await filler.waitForFunction(() => window.FormProfiles);
+await filler.waitForFunction(() => window.FormProfiles && document.getElementById('profileToggle'));
+const closedOnLoad = await filler.evaluate(() => ({
+  hidden: document.getElementById('profileBox').hidden,
+  expanded: document.getElementById('profileToggle').getAttribute('aria-expanded'),
+  help: document.getElementById('extensionTitle').textContent,
+  zip: document.getElementById('extensionZip').getAttribute('href')
+}));
+check('saved values start collapsed and the extension download is visible', closedOnLoad.hidden && closedOnLoad.expanded === 'false' && closedOnLoad.help.includes('extension') && closedOnLoad.zip === 'extension/forms-filler-profiles-0.1.0.zip', JSON.stringify(closedOnLoad));
+await filler.screenshot({ path: join(shotDir, 'saved-collapsed.png'), fullPage: true });
+await filler.setViewportSize({ width: 390, height: 844 });
+await filler.screenshot({ path: join(shotDir, 'saved-collapsed-mobile.png'), fullPage: true });
+await filler.setViewportSize({ width: 1100, height: 720 });
+await filler.click('#profileToggle');
+await filler.waitForFunction(() => document.activeElement === document.getElementById('profileBox') && document.getElementById('profileToggle').getAttribute('aria-expanded') === 'true');
+check('Saved values button opens the panel and moves focus into it', true);
+await filler.screenshot({ path: join(shotDir, 'saved-open.png'), fullPage: true });
+await filler.keyboard.press('Escape');
+await filler.waitForFunction(() => document.getElementById('profileBox').hidden && document.activeElement === document.getElementById('profileToggle'));
+check('Escape closes Saved values and returns focus to the button', true);
+await filler.click('#profileToggle');
+await filler.locator('#profileEmpty, #profileFacts li').first().waitFor();
+check('an empty store says no one is saved yet', (await filler.locator('#profileFacts').innerText()).includes('No one is saved'));
+await filler.click('#profileExport');
+await filler.locator('#profileMsg', { hasText: 'Nothing confirmed' }).waitFor();
+check('export with nothing confirmed explains the next step', true);
+writeFileSync('/tmp/bad-profile.json', '{');
+await filler.setInputFiles('#profileImport', '/tmp/bad-profile.json');
+await filler.locator('#profileMsg', { hasText: 'rejected' }).waitFor();
+check('a broken import file is rejected', true);
+const zipHref = new URL(await filler.locator('#extensionZip').getAttribute('href'), filler.url()).href;
+check('the extension link stays on this site path', zipHref.endsWith('/tools/forms-filler/extension/forms-filler-profiles-0.1.0.zip'), zipHref);
+const zipResponse = await fetch(zipHref);
+const zipBytes = Buffer.from(await zipResponse.arrayBuffer());
+writeFileSync('/tmp/ff-shipped-extension.zip', zipBytes);
+const zipInfo = spawnSync('python3', ['-c', [
+  'import zipfile, json, hashlib',
+  'raw=open("/tmp/ff-shipped-extension.zip","rb").read()',
+  'z=zipfile.ZipFile(__import__("io").BytesIO(raw))',
+  'need={"manifest.json","popup.js","popup.html","scan.js","apply.js","match.js","sw.js","README.md"}',
+  'manifest=json.loads(z.read("manifest.json"))',
+  'print(json.dumps({"missing":sorted(need-set(z.namelist())),"version":manifest.get("version"),"permissions":manifest.get("permissions"),"host":manifest.get("host_permissions"),"sha256":hashlib.sha256(raw).hexdigest()}))'
+].join('\n')], { encoding: 'utf8' });
+const zipJson = JSON.parse(zipInfo.stdout || '{}');
+const shippedSha = spawnSync('sha256sum', [shippedZip], { encoding: 'utf8' }).stdout.split(' ')[0];
+check('the linked zip is extension 0.1.0 with no host permission', zipResponse.ok && !zipJson.missing.length && zipJson.version === '0.1.0' && JSON.stringify(zipJson.permissions) === JSON.stringify(['storage', 'activeTab', 'scripting']) && !zipJson.host && zipJson.sha256 === shippedSha, JSON.stringify(zipJson));
+await filler.reload({ waitUntil: 'domcontentloaded' });
+await filler.waitForFunction(() => document.getElementById('profileBox') && document.getElementById('profileBox').hidden && document.getElementById('profileToggle').getAttribute('aria-expanded') === 'false');
+check('reload keeps Saved values collapsed', true);
 await filler.evaluate(async () => { await FormProfiles.clearAll(); });
 await filler.setInputFiles('#formInput', join(root, 'visual-e2e/fixtures/feature-e2e/cora.form.pdf'));
 await filler.waitForFunction(() => window.FormDesk && FormDesk.fields().length > 0, null, { timeout: 40000 });
@@ -151,6 +213,7 @@ const reviewVisible = await filler.locator('#reviewBox').isVisible().catch(() =>
 check('raster upload stored a person from OCR', true, reviewVisible ? 'review list visible' : 'profile list visible');
 const profileNames = await filler.locator('#profilePick option').allTextContents();
 check('OCR ingest created Cora Example', profileNames.includes('Cora Example'), profileNames.join(','));
+check('finishing a read does not open Saved values', await filler.locator('#profileBox').isHidden());
 if (await filler.locator('#reviewBox').isVisible().catch(() => false)) {
   const emailBox = filler.locator('#reviewList li', { hasText: 'email' }).locator('input');
   if (await emailBox.count()) await emailBox.check();
@@ -171,6 +234,7 @@ let vault = await filler.evaluate(async () => (await FormProfiles.load()).vault)
 let cora = vault.profiles.find((p) => p.name === 'Cora Example');
 let email = cora && cora.facts.find((f) => f.key === 'email');
 if (!email || email.value === 'cora.sample9@example.com') {
+  await openSaved(filler);
   await filler.selectOption('#profilePick', cora.id);
   const row = filler.locator('#profileFacts li', { hasText: 'email' });
   await row.locator('input').fill('cora.fixed@example.com');
@@ -183,7 +247,8 @@ if (!email || email.value === 'cora.sample9@example.com') {
 check('Cora email is confirmed and differs from a later OCR read', !!email && email.status === 'confirmed' && email.value === 'cora.fixed@example.com', email && (email.origin + ' ' + email.value));
 const corrected = email && email.value;
 await filler.reload({ waitUntil: 'domcontentloaded' });
-await filler.waitForFunction(() => window.FormProfiles);
+await filler.waitForFunction(() => window.FormProfiles && document.getElementById('profileBox').hidden);
+check('reload after a correction still starts collapsed', true);
 vault = await filler.evaluate(async () => (await FormProfiles.load()).vault);
 check('corrected email survives reload', vault.profiles.some((p) => p.facts.some((f) => f.key === 'email' && f.value === corrected)));
 
@@ -192,6 +257,7 @@ await filler.waitForTimeout(300);
 vault = await filler.evaluate(async () => (await FormProfiles.load()).vault);
 check('removing the reference does not delete the profile', vault.profiles.some((p) => p.name === 'Cora Example' && p.facts.some((f) => f.value === corrected)));
 
+await openSaved(filler);
 await filler.selectOption('#factKey', 'custom');
 await filler.fill('#factLabel', 'Desk code');
 await filler.fill('#factValue', '42');
@@ -222,6 +288,7 @@ vault = await filler.evaluate(async () => (await FormProfiles.load()).vault);
 const still = vault.profiles.find((p) => p.name === 'Cora Example');
 check('ambiguous reference stays unfiled and Cora remains', still && still.facts.some((f) => f.value === corrected) && vault.pending.some((row) => row.reason === 'conflict' || row.value === 'Bea Example'), 'pending ' + vault.pending.map((row) => row.reason + ':' + row.value).join(','));
 
+await openSaved(filler);
 const downloadPromise = filler.waitForEvent('download');
 await filler.click('#profileExport');
 const download = await downloadPromise;
@@ -236,6 +303,12 @@ try {
 const exported = JSON.parse(readFileSync(exportPath, 'utf8'));
 check('export contains the confirmed correction and custom key', exported.profiles.some((p) => p.facts.some((f) => f.value === corrected) && p.facts.some((f) => f.label === 'Desk code' && f.value === '42')));
 check('export omits unconfirmed patient facts', !JSON.stringify(exported).includes('Bea Example'));
+await openSaved(filler);
+await filler.locator('#profileFacts li', { hasText: 'Desk code' }).locator('button', { hasText: 'Delete' }).click();
+await filler.locator('#profileMsg', { hasText: 'Deleted' }).waitFor();
+check('Delete removes that saved value', !(await filler.locator('#profileFacts').innerText()).includes('Desk code'));
+await filler.click('#profileClose');
+check('Close hides Saved values', await filler.locator('#profileBox').isHidden());
 
 const again = await context.newPage();
 await again.goto('http://127.0.0.1:8765/tools/forms-filler/extension/fixtures/static-form.html');
@@ -243,8 +316,16 @@ await again.bringToFront();
 await again.locator('#n').click();
 await new Promise((r) => setTimeout(r, 400));
 pressShortcut();
-await new Promise((r) => setTimeout(r, 1200));
-popup = cdpPages().find((p) => p.url().includes('popup.html'));
+await new Promise((r) => setTimeout(r, 700));
+let fresh = await chromium.connectOverCDP('http://127.0.0.1:9223');
+const popupPages = () => fresh.contexts().flatMap((item) => item.pages()).filter((item) => item.url().includes('popup.html'));
+popup = popupPages()[0];
+if (!popup) {
+  pressShortcut();
+  await new Promise((r) => setTimeout(r, 700));
+  const againBrowser = await chromium.connectOverCDP('http://127.0.0.1:9223');
+  popup = againBrowser.contexts().flatMap((item) => item.pages()).find((item) => item.url().includes('popup.html'));
+}
 check('shortcut opens the popup again for the export import', !!popup, popup && popup.url());
 if (popup) {
   await popup.setInputFiles('#file', exportPath);

@@ -40,6 +40,11 @@
     var profile = data.profiles.filter(function (p) { return p.id === pick.value; })[0];
     var list = $('profileFacts');
     list.textContent = '';
+    if (!data.profiles.length) {
+      var empty = document.createElement('li');
+      empty.textContent = 'No one is saved yet. Filling from a reference can add a person, or use New person.';
+      list.appendChild(empty);
+    }
     if (profile) {
       profile.facts.forEach(function (fact) {
         var li = document.createElement('li');
@@ -102,6 +107,17 @@
     }
   }
 
+  function setSavedOpen(open) {
+    var box = $('profileBox');
+    var toggle = $('profileToggle');
+    if (!box || !toggle) return;
+    var wasOpen = !box.hidden;
+    box.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && !wasOpen) box.focus();
+    if (!open && wasOpen) toggle.focus();
+  }
+
   function boot() {
     if (!$('profilePick') || !window.FormProfiles) return;
     var key = $('factKey');
@@ -136,10 +152,28 @@
       $('factValue').value = '';
       await save(result.vault, 'Saved on this browser.');
     });
+    if ($('profileToggle')) {
+      $('profileToggle').addEventListener('click', function () { setSavedOpen($('profileBox').hidden); });
+    }
+    if ($('profileClose')) {
+      $('profileClose').addEventListener('click', function () { setSavedOpen(false); });
+    }
+    document.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape' || !$('profileBox') || $('profileBox').hidden) return;
+      var active = document.activeElement;
+      if (active !== $('profileBox') && !$('profileBox').contains(active)) return;
+      event.preventDefault();
+      setSavedOpen(false);
+    });
     $('profileExport').addEventListener('click', async function () {
       var current = await vault();
       if (!current) return;
-      var blob = new Blob([JSON.stringify(FormProfiles.exportBundle(current), null, 2)], { type: 'application/json' });
+      var bundle = FormProfiles.exportBundle(current);
+      if (!bundle.profiles.length) {
+        say('Nothing confirmed yet. Confirm a value, then export. Unconfirmed reads stay on this site.');
+        return;
+      }
+      var blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
       var link = document.createElement('a');
       link.href = url;
@@ -169,5 +203,5 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
-  window.FormProfileUI = { paint: paint };
+  window.FormProfileUI = { paint: paint, setSavedOpen: setSavedOpen };
 })();

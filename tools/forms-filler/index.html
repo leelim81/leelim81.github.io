@@ -50,6 +50,7 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <button id="clearBtn" type="button" class="btn">Start over</button>
     <button id="skipModel" type="button" class="btn" hidden>Continue with what’s filled</button>
   </div>
+  <p class="review-quote" id="whatWorks">This page reads a form and your papers on this computer. You choose which values to keep. A desktop browser extension can fill another website from a file you export. It is not in the Chrome Web Store, and this page cannot install it for you.</p>
   <p id="readStatus" class="read-status" hidden role="status"></p>
   <div id="modelBox" class="model" hidden>
     <p id="modelTitle">Downloading private model</p>
@@ -57,8 +58,27 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <div class="meter" aria-hidden="true"><span id="modelBar"></span></div>
     <p id="modelDetail" class="note"></p>
   </div>
-  <section id="profileBox" class="review" aria-labelledby="profileTitle">
-    <h2 id="profileTitle">Saved values</h2>
+  <section id="extensionHelp" class="review" aria-labelledby="extensionTitle">
+    <h2 id="extensionTitle">Install the browser extension</h2>
+    <p class="review-quote">Desktop Chrome or Chromium only. Not a phone install, not a one-click install, and not a Chrome Web Store listing. Version 0.1.0. The zip is the unpacked extension. Nothing in it is uploaded.</p>
+    <p><a id="extensionZip" class="btn" href="extension/forms-filler-profiles-0.1.0.zip" download>Download the extension (version 0.1.0)</a></p>
+    <ol class="install-steps">
+      <li>Download the zip and unzip it. Keep the folder intact.</li>
+      <li>Open the browser’s Extensions page. Turn on Developer mode. Choose Load unpacked, then select that unzipped folder.</li>
+      <li>Pin “Forms Filler profiles” so you can find the icon. On a new browser profile the shortcut Ctrl+Shift+Y (Command+Shift+Y on a Mac) opens it too.</li>
+      <li>Open Saved values on this page, confirm the values you want, and use Export confirmed values.</li>
+      <li>In the extension, import that file, choose the person, read Preview, then Fill. Fill does not submit the website form.</li>
+    </ol>
+    <p class="review-quote">This site and the extension keep separate copies. Removing the imported copy in the extension does not delete values here. To refresh the extension, export again and import the new file. Password, payment, and one-time-code fields are skipped, as are hidden, disabled, and read-only fields. The extension may use the tab you open, run on that tab when you press Fill, and store the imported copy. It does not ask to read every website.</p>
+  </section>
+  <p class="row">
+    <button id="profileToggle" type="button" class="btn" aria-expanded="false" aria-controls="profileBox">Saved values</button>
+  </p>
+  <section id="profileBox" class="review" hidden tabindex="-1" aria-labelledby="profileTitle">
+    <div class="row">
+      <h2 id="profileTitle">Saved values</h2>
+      <button id="profileClose" type="button" class="btn">Close</button>
+    </div>
     <p class="review-quote">Stored in this browser only. Not an account and not synced. On a shared computer, clear them when you are done. Unconfirmed reads stay here until you confirm them. The extension uses confirmed values only, from an export file you download yourself.</p>
     <p id="profileMsg" role="status"></p>
     <div class="row">
