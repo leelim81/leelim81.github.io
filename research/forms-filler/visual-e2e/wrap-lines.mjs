@@ -95,6 +95,12 @@ check('a long word stays whole and is not hidden', preview.some((row) => row.tex
 check('type size stays 14', preview.every((row) => row.fontSize === '14'));
 
 await page.locator('.ann-body').nth(1).click();
+const focused = await page.locator('.ann').nth(1).evaluate((el) => {
+  const body = el.querySelector('.ann-body').innerText.replace(/\n$/, '');
+  const mirror = el.querySelector('.ann-mirror').textContent;
+  return { body, mirror, same: body === mirror };
+});
+check('the focused text uses the Helvetica line breaks', focused.same, JSON.stringify(focused));
 await page.keyboard.press('End');
 await page.keyboard.press('Shift+Enter');
 await page.keyboard.type('Unit 2');
