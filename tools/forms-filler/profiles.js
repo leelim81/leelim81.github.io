@@ -357,9 +357,20 @@
     }
   }
 
-  async function persist(vault) {
+  async function persist(vault, decide) {
     if (!root.DeskDB) return { ok: false, reason: 'unavailable' };
     try {
+      if (typeof decide === 'function') {
+        if (!root.DeskDB.update) return { ok: false, reason: 'unavailable' };
+        var outcome = await root.DeskDB.update(DB, 'vault', function (raw) {
+          var current = migrate(raw);
+          var decision = decide(current) || { ok: false, reason: 'cancelled' };
+          if (!decision.ok) return { ok: false, reason: decision.reason || 'cancelled', write: false };
+          if (decision.unchanged) return { ok: true, reason: 'unchanged', write: false, vault: current };
+          return { ok: true, write: true, value: migrate(decision.vault), vault: decision.vault };
+        });
+        return { ok: !!outcome.ok, reason: outcome.reason || '', vault: outcome.vault };
+      }
       await root.DeskDB.set(DB, 'vault', migrate(vault));
       return { ok: true };
     } catch (err) {

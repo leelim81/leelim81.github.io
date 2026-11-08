@@ -1,0 +1,61 @@
+{
+  "passed": 11,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "an empty store opens the placement bar with a way to add a person",
+      "ok": true,
+      "detail": "No one is saved yet. Add a person and a confirmed value, then place it. Text on the toolbar types on the page without saving a person."
+    },
+    {
+      "name": "escape collapses the placement bar and leaves Text available",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an empty name is not saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a person without a value cannot be placed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the confirmed value is placed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the export contains the placed name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload keeps the first placement",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the second person can be placed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "undo removes the second placement",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload does not bring the undone placement back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "native widgets are unchanged and scan autofill stays off",
+      "ok": true,
+      "detail": "{\"route\":\"acro\",\"n\":5,\"auto\":false}"
+    }
+  ]
+}

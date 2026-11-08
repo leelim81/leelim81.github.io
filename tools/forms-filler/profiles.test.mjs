@@ -92,4 +92,41 @@ assert.equal(removed.vault.profiles[0].facts.some((f) => f.label === 'Desk code'
 const gone = P.deleteProfile(removed.vault, ada.id);
 assert.equal(gone.vault.profiles.length, 0);
 
+const kept = {
+  schema: 1,
+  profiles: [
+    { id: 'ada', name: 'Ada Example', createdAt: '', updatedAt: '', facts: [{ id: 'n', key: 'name', label: 'name', value: 'Ada Example', status: 'confirmed', origin: 'user', quote: '', updatedAt: '' }] },
+    { id: 'bea', name: 'Bea Example', createdAt: '', updatedAt: '', facts: [{ id: 'e', key: 'email', label: 'email', value: 'bea@example.com', status: 'confirmed', origin: 'user', quote: '', updatedAt: '' }] }
+  ],
+  pending: []
+};
+let blindWrites = 0;
+globalThis.DeskDB = {
+  set: function () { blindWrites += 1; return Promise.resolve(); }
+};
+const missingUpdate = await P.persist(null, function () { return { ok: true, vault: P.empty() }; });
+assert.equal(missingUpdate.ok, false);
+assert.equal(missingUpdate.reason, 'unavailable');
+assert.equal(blindWrites, 0);
+
+let vault = JSON.parse(JSON.stringify(kept));
+globalThis.DeskDB = {
+  set: function () { throw new Error('unguarded set'); },
+  update: function (name, key, mutate) {
+    const decision = mutate(JSON.parse(JSON.stringify(vault)));
+    if (decision.write) vault = decision.value;
+    return Promise.resolve(decision);
+  }
+};
+const saved = await P.persist(null, function (current) {
+  return P.confirmFact(current, 'ada', 'phone', '80000000');
+});
+assert.equal(saved.ok, true);
+assert.equal(vault.profiles.filter((profile) => profile.id === 'bea')[0].facts[0].value, 'bea@example.com');
+assert.equal(vault.profiles.filter((profile) => profile.id === 'ada')[0].facts.some((fact) => fact.key === 'phone' && fact.value === '80000000'), true);
+const before = JSON.stringify(vault);
+const refused = await P.persist(null, function () { return { ok: false, reason: 'cancelled' }; });
+assert.equal(refused.ok, false);
+assert.equal(JSON.stringify(vault), before);
+
 console.log('profiles tests ok');
