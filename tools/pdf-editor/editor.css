@@ -126,6 +126,23 @@ body { overflow: hidden; }
 #fileName, #pageLabel, #zoomLabel { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
 #fileName { margin-left: auto; max-width: 28vw; overflow: hidden; text-overflow: ellipsis; }
 
+.fit-note {
+  flex: none;
+  max-height: 9.5rem;
+  overflow: auto;
+  margin: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid #8a3b12;
+  background: #fff4e8;
+  color: #1a1612;
+  font-size: 15px;
+  line-height: 1.35;
+}
+.fit-note p { margin: 0; }
+.fit-note ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.fit-note li + li { margin-top: 8px; }
+.fit-note button { margin-top: 6px; min-height: 44px; }
+.ann.ann-offpage { outline: 2px solid #8a3b12; outline-offset: 2px; }
 .stage { flex: 1; overflow: auto; position: relative; }
 .empty {
   max-width: 460px;

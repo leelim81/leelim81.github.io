@@ -1,0 +1,101 @@
+{
+  "passed": 19,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "a name on the rule does not raise the fit note",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the fit note appears while placing and names a leftward distance",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm.Show this text"
+    },
+    {
+      "name": "reload keeps the off-page word and the fit note",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 51 mm.Show this text"
+    },
+    {
+      "name": "the off-page text is marked invalid",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "show this text selects the overflowing word",
+      "ok": true,
+      "detail": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious"
+    },
+    {
+      "name": "showing the text does not move it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the export still contains the whole word",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the name baseline is still on the rule and the render cuts the edge",
+      "ok": true,
+      "detail": "{\"y\":500.6046923227499,\"h\":14,\"dark\":40}"
+    },
+    {
+      "name": "a size wider than the page does not invent a move",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.Show this text"
+    },
+    {
+      "name": "nudging it on and restoring the size clears the note",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "saving the map does not move the name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a longer mapped value stays in the saved box",
+      "ok": true,
+      "detail": "[\"20%|35.2898%\",\"8%|38.4969%\",\"20%|35.2898%\",\"8%|38.4969%\"]"
+    },
+    {
+      "name": "undo restores the previous lines",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a quarter turn still gives a leftward distance",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 25 mm.Show this text"
+    },
+    {
+      "name": "an offset crop still gives a distance",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 65 mm.Show this text"
+    },
+    {
+      "name": "UserUnit 2 scales the distance",
+      "ok": true,
+      "detail": "\"SupercalifragilisticexpialidociousSupercalifr...\" runs past the page. Move it left about 102 mm.Show this text"
+    },
+    {
+      "name": "both pages and both pieces are listed",
+      "ok": true,
+      "detail": "2 pieces of text run past the page.\"SupercalifragilisticexpialidociousSupercalifr...\" on page 1 runs past the page. Move it left about 51 mm.Show this text\"Supercalifragilisticexpi"
+    },
+    {
+      "name": "the first show button selects a marked piece",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a native form still reads and scan autofill stays off",
+      "ok": true,
+      "detail": "{\"route\":\"acro\",\"n\":5,\"auto\":false}"
+    }
+  ]
+}

@@ -272,6 +272,7 @@
         }
         fitTextHeight(el, ann);
         scheduleSave();
+        scheduleFitNote();
       }
       body.addEventListener('input', readBody);
       body.addEventListener('keyup', readBody);
@@ -490,6 +491,7 @@
         try { el.releasePointerCapture(e.pointerId); } catch (err) {}
       }
       saveNow();
+      scheduleFitNote();
     }
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -523,6 +525,7 @@
       window.removeEventListener('pointerup', up);
       if (ann.type === 'text' || ann.type === 'date') fitTextHeight(el, ann);
       saveNow();
+      scheduleFitNote();
     }
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -537,6 +540,7 @@
     if (el) el.remove();
     if (state.selectedId === id) select(null);
     saveNow();
+    scheduleFitNote();
   }
 
   function addAnn(partial, rec) {
@@ -688,6 +692,7 @@
     }
     if (!session || session.fit) await fitWidth(false);
     await renderAll();
+    scheduleFitNote();
     if (state.pages[state.current] && state.pages[state.current].el) {
       state.pages[state.current].el.scrollIntoView();
     }
@@ -983,6 +988,179 @@
       }
     }
     return found;
+  }
+
+  function glyphBounds(ann, crop, rotation, font) {
+    if (!ann || (ann.type !== 'text' && ann.type !== 'date') || !ann.text) return null;
+    if (!crop || !(crop.width > 0) || !(crop.height > 0) || rotation == null) return null;
+    var size = ann.fontSize || 16;
+    var origin = FormCoords.textOrigin(ann, crop, rotation, size);
+    var box = FormCoords.boxOf(ann, crop, rotation);
+    var lines = wrapText(ann.text, font, size, Math.max(8, box.width - 2));
+    var lineH = size * 1.3;
+    var ascent = size * 0.72;
+    var descent = size * 0.21;
+    var minX = Infinity;
+    var minY = Infinity;
+    var maxX = -Infinity;
+    var maxY = -Infinity;
+    var shift = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var x = origin.x + origin.down.x * shift;
+      var y = origin.y + origin.down.y * shift;
+      var width = lines[i] ? font.widthOfTextAtSize(lines[i], size) : 0;
+      var ex = x + origin.right.x * width;
+      var ey = y + origin.right.y * width;
+      var points = [
+        [x, y], [ex, ey],
+        [x + origin.down.x * descent, y + origin.down.y * descent],
+        [x - origin.down.x * ascent, y - origin.down.y * ascent],
+        [ex + origin.down.x * descent, ey + origin.down.y * descent],
+        [ex - origin.down.x * ascent, ey - origin.down.y * ascent]
+      ];
+      for (var p = 0; p < points.length; p++) {
+        if (points[p][0] < minX) minX = points[p][0];
+        if (points[p][1] < minY) minY = points[p][1];
+        if (points[p][0] > maxX) maxX = points[p][0];
+        if (points[p][1] > maxY) maxY = points[p][1];
+      }
+      shift += lineH;
+    }
+    if (!isFinite(minX)) return null;
+    return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+  }
+
+  function viewShift(shiftX, shiftY, crop, rotation) {
+    if (rotation === 90) return { dfx: shiftY / crop.height, dfy: shiftX / crop.width };
+    if (rotation === 180) return { dfx: -shiftX / crop.width, dfy: shiftY / crop.height };
+    if (rotation === 270) return { dfx: -shiftY / crop.height, dfy: -shiftX / crop.width };
+    return { dfx: shiftX / crop.width, dfy: -shiftY / crop.height };
+  }
+
+  function millimetres(points, userUnit) {
+    var mm = Math.abs(points) * (userUnit || 1) * 25.4 / 72;
+    return Math.max(1, Math.ceil(mm - 1e-6));
+  }
+
+  function overflowAdvice(ann, crop, rotation, font, userUnit) {
+    var bounds = glyphBounds(ann, crop, rotation, font);
+    if (!bounds) return null;
+    var offL = bounds.minX < crop.x - 0.75;
+    var offR = bounds.maxX > crop.x + crop.width + 0.75;
+    var offB = bounds.minY < crop.y - 0.75;
+    var offT = bounds.maxY > crop.y + crop.height + 0.75;
+    if (!offL && !offR && !offB && !offT) return null;
+    var tooWide = (offL && offR) || (bounds.maxX - bounds.minX) > crop.width;
+    var tooTall = (offT && offB) || (bounds.maxY - bounds.minY) > crop.height;
+    if (tooWide || tooTall) return { fit: false, wide: tooWide, tall: tooTall };
+    var shiftX = offR ? (crop.x + crop.width - bounds.maxX) : (offL ? (crop.x - bounds.minX) : 0);
+    var shiftY = offT ? (crop.y + crop.height - bounds.maxY) : (offB ? (crop.y - bounds.minY) : 0);
+    var view = viewShift(shiftX, shiftY, crop, rotation);
+    var nextX = ann.x + view.dfx;
+    var nextY = ann.y + view.dfy;
+    if (nextX < -1e-4 || nextY < -1e-4 || nextX > 1 - ann.w + 1e-4 || nextY > 1 - ann.h + 1e-4) {
+      return { fit: false, wide: offL || offR, tall: offT || offB };
+    }
+    var seen = FormCoords.viewSize(crop, rotation);
+    var moves = [];
+    if (Math.abs(view.dfx) > 1e-4) moves.push((view.dfx < 0 ? 'left' : 'right') + ' about ' + millimetres(view.dfx * seen.width, userUnit) + ' mm');
+    if (Math.abs(view.dfy) > 1e-4) moves.push((view.dfy < 0 ? 'up' : 'down') + ' about ' + millimetres(view.dfy * seen.height, userUnit) + ' mm');
+    if (!moves.length) return null;
+    return { fit: true, move: moves.join(' and ') };
+  }
+
+  function fitSentence(item) {
+    var sample = String(item.text || '').replace(/\s+/g, ' ').trim();
+    if (sample.length > 48) sample = sample.slice(0, 45) + '...';
+    var where = item.pages > 1 ? ' on page ' + item.page : '';
+    if (!item.advice.fit) {
+      if (item.advice.wide && !item.advice.tall) return '"' + sample + '"' + where + ' is wider than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.';
+      if (item.advice.tall && !item.advice.wide) return '"' + sample + '"' + where + ' is taller than the page, so moving it cannot bring it on. Edit the text or choose a smaller size.';
+      return '"' + sample + '"' + where + ' cannot be brought on the page by moving it. Edit the text or choose a smaller size.';
+    }
+    return '"' + sample + '"' + where + ' runs past the page. Move it ' + item.advice.move + '.';
+  }
+
+  async function textFitList() {
+    syncLiveText();
+    if (!state.pdfBytes) return [];
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    var font = await src.embedFont(PDFLib.StandardFonts.Helvetica);
+    var found = [];
+    for (var i = 0; i < state.pages.length; i++) {
+      var rec = state.pages[i];
+      var lib = src.getPages()[rec.srcIndex];
+      if (!lib) continue;
+      var crop = lib.getCropBox();
+      var angle = FormCoords.normRotation(((lib.getRotation().angle || 0) + (rec.rotation || 0)));
+      var unit = window.FormCoords && FormCoords.fileUserUnit ? FormCoords.fileUserUnit(lib) : 1;
+      if (!(unit > 0)) unit = 1;
+      for (var a = 0; a < rec.annotations.length; a++) {
+        var ann = rec.annotations[a];
+        var advice = overflowAdvice(ann, crop, angle, font, unit);
+        if (!advice) continue;
+        found.push({ id: ann.id, text: ann.text || '', page: i + 1, pages: state.pages.length, advice: advice });
+      }
+    }
+    return found;
+  }
+
+  var fitTimer = null;
+  var fitGen = 0;
+  function scheduleFitNote() {
+    if (fitTimer) clearTimeout(fitTimer);
+    fitTimer = setTimeout(function () {
+      fitTimer = null;
+      var gen = ++fitGen;
+      refreshFitNote(gen);
+    }, 400);
+  }
+  async function refreshFitNote(gen) {
+    var list = [];
+    try { list = await textFitList(); } catch (err) { list = []; }
+    if (gen !== fitGen) return;
+    document.querySelectorAll('.ann-offpage').forEach(function (el) {
+      el.classList.remove('ann-offpage');
+      el.removeAttribute('aria-invalid');
+    });
+    var box = $('fitNote');
+    if (!box) return;
+    box.replaceChildren();
+    if (!list.length) { box.hidden = true; return; }
+    box.hidden = false;
+    if (list.length > 1) {
+      var lead = document.createElement('p');
+      lead.textContent = list.length + ' pieces of text run past the page.';
+      box.appendChild(lead);
+    }
+    var ul = document.createElement('ul');
+    list.forEach(function (item, index) {
+      var li = document.createElement('li');
+      var p = document.createElement('p');
+      p.textContent = fitSentence(item);
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn';
+      if (index === 0) button.id = 'fitShow';
+      button.textContent = 'Show this text';
+      var name = 'Show this text';
+      if (item.pages > 1) name += ', page ' + item.page;
+      button.setAttribute('aria-label', name);
+      button.addEventListener('click', function () {
+        select(item.id);
+        var el = document.querySelector('.ann[data-id="' + CSS.escape(item.id) + '"]');
+        if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+      li.appendChild(p);
+      li.appendChild(button);
+      ul.appendChild(li);
+      var mark = document.querySelector('.ann[data-id="' + CSS.escape(item.id) + '"]');
+      if (mark) {
+        mark.classList.add('ann-offpage');
+        mark.setAttribute('aria-invalid', 'true');
+      }
+    });
+    box.appendChild(ul);
   }
 
   function paintExportWarn(list) {
@@ -1285,6 +1463,7 @@
     if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
     recoverSay('Undid the last placement change.');
     saveNow();
+    scheduleFitNote();
   }
   function disarmRecover(message) {
     var was = state.recoverArmed;
@@ -1526,6 +1705,7 @@
     redrawAnnotations();
     state.recoverArmed = false;
     recoverSay('Applied ' + placed + ' place(s) for ' + profile.name + ' as ' + map.role + '. ' + skipped + ' left blank. This is not an automatic fill. Apply again replaces these places. Undo restores the previous lines.');
+    scheduleFitNote();
   }
   function setPanel(barId, toggleId, open) {
     var bar = $(barId);
@@ -1628,6 +1808,7 @@
       ? 'Placed ' + fact.personName + '’s ' + fact.label + '. The baseline sits on the click. It is not an automatic fill.'
       : 'Placed ' + fact.personName + '’s ' + fact.label + ' on the page. The baseline could not sit on that click without leaving the page. Nudge it or choose another size.');
     if (el) fitTextHeight(el, findAnn(el.dataset.id));
+    scheduleFitNote();
   }
   function nudgeSelected(dx, dy) {
     var ann = findAnn(state.selectedId);
@@ -1638,6 +1819,7 @@
     var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
     if (el) place(el, ann);
     saveNow();
+    scheduleFitNote();
   }
 
   function wire() {
@@ -1802,6 +1984,7 @@
       ann.fontSize = clamp(Number($('fontSize').value) || 18, 8, 96);
       var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
       if (el) { place(el, ann); fitTextHeight(el, ann); }
+      scheduleFitNote();
       scheduleSave();
     });
     $('fontColor').addEventListener('input', function () {
