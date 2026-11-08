@@ -1,0 +1,41 @@
+{
+  "passed": 7,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "the image and signature are png marks",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "the same person gets the same image and signature back",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the export contains both pictures",
+      "ok": true,
+      "detail": "bytes 7193"
+    },
+    {
+      "name": "the other person does not receive the pictures",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "the pictures return with the first person",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an svg picture is not resumed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a corrupt or oversized picture is left out and the text remains",
+      "ok": true,
+      "detail": "Returned to the same page and the same marks. A picture could not be read, so it was not brought back. Ada Lane has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed. ONLYKEEP pics 0"
+    }
+  ]
+}

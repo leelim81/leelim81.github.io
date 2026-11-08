@@ -612,17 +612,240 @@
     return hex;
   }
 
+  var openingEditor = false;
+
+  function sha256Hex(bytes) {
+    return crypto.subtle.digest('SHA-256', bytes).then(function (digest) {
+      var view = new Uint8Array(digest);
+      var hex = '';
+      for (var i = 0; i < view.length; i++) hex += (view[i] < 16 ? '0' : '') + view[i].toString(16);
+      return hex;
+    });
+  }
+
+  function clearGeneration() {
+    try { return Number(localStorage.getItem('ff-editor-clear-generation') || 0); } catch (err) { return 0; }
+  }
+
+  function recordRetired(record) {
+    var mark = clearGeneration();
+    var gen = Number(record && (record.generation || record.epoch) || 0);
+    return !!(mark && gen && gen <= mark);
+  }
+
+  function readHandoff() {
+    try {
+      var raw = sessionStorage.getItem('ff-editor-handoff');
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.pages) || !parsed.pages.length) return null;
+      if (recordRetired(parsed)) return null;
+      return parsed;
+    } catch (err) { return null; }
+  }
+
+  function sameEditorFile(stored, pdfSha, sourceSha, sheet) {
+    if (!stored || !Array.isArray(stored.pages) || !stored.pages.length) return false;
+    if (recordRetired(stored)) return false;
+    if (sourceSha) {
+      if (stored.sourceSha256 !== sourceSha || !stored.sheet || !sheet || !window.FormMaps) return false;
+      return FormMaps.matchesSheet(stored.sheet, sheet);
+    }
+    return !!(pdfSha && stored.pdfSha256 === pdfSha);
+  }
+
+  async function currentResumePerson() {
+    var pick = $('profilePick');
+    if (pick && pick.value) return pick.value;
+    if (!window.FormProfiles) return '';
+    try {
+      var loaded = await FormProfiles.load();
+      if (loaded.ok && loaded.vault && loaded.vault.profiles && loaded.vault.profiles.length === 1) return loaded.vault.profiles[0].id;
+    } catch (err) {}
+    return '';
+  }
+
+  var MARK_TYPES = { text: 1, date: 1, whiteout: 1, highlight: 1, rect: 1, ellipse: 1, image: 1, signature: 1 };
+
+  function unit(n) {
+    return typeof n === 'number' && isFinite(n) && n >= -0.02 && n <= 1.02;
+  }
+
+  function cleanMark(ann) {
+    if (!ann || typeof ann !== 'object' || Array.isArray(ann)) return null;
+    if (ann.type && !MARK_TYPES[ann.type]) return null;
+    if (ann.text != null && typeof ann.text !== 'string') return null;
+    if (ann.text && ann.text.length > 4000) return null;
+    if (ann.profileId != null && typeof ann.profileId !== 'string') return null;
+    if (ann.originProfileId != null && typeof ann.originProfileId !== 'string') return null;
+    var copy = {
+      id: typeof ann.id === 'string' ? ann.id.slice(0, 40) : '',
+      type: ann.type || 'text',
+      x: Number(ann.x), y: Number(ann.y), w: Number(ann.w), h: Number(ann.h),
+      text: typeof ann.text === 'string' ? ann.text : '',
+      fontSize: Number(ann.fontSize) > 0 ? Number(ann.fontSize) : 14,
+      color: typeof ann.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ann.color) ? ann.color : '#1a1612'
+    };
+    if (!unit(copy.x) || !unit(copy.y) || !unit(copy.w) || !unit(copy.h)) return null;
+    if (ann.type === 'image' || ann.type === 'signature') {
+      var payload = typeof ann.dataUrl === 'string' ? ann.dataUrl : '';
+      var raster = /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+$/.test(payload) && payload.length <= 1500000;
+      if (!raster) return null;
+      copy.dataUrl = payload;
+      var aspect = Number(ann.pixelAspect);
+      if (!(aspect > 0) || aspect > 20000 || !isFinite(aspect)) return null;
+      copy.pixelAspect = aspect;
+      copy.text = '';
+    }
+    if (ann.profileId) copy.profileId = ann.profileId.slice(0, 80);
+    if (ann.originProfileId) copy.originProfileId = ann.originProfileId.slice(0, 80);
+    if (typeof ann.factKey === 'string') copy.factKey = ann.factKey.slice(0, 40);
+    if (ann.manual === true) copy.manual = true;
+    if (typeof ann.mapId === 'string') copy.mapId = ann.mapId.slice(0, 40);
+    if (typeof ann.role === 'string') copy.role = ann.role.slice(0, 40);
+    if (typeof ann.personName === 'string') copy.personName = ann.personName.slice(0, 80);
+    if (typeof ann.seedText === 'string') copy.seedText = ann.seedText.slice(0, 4000);
+    return copy;
+  }
+
+  function cleanMarkList(list) {
+    if (!Array.isArray(list)) return null;
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var mark = cleanMark(list[i]);
+      if (!mark) return null;
+      out.push(mark);
+    }
+    return out;
+  }
+
+  function markOwner(ann) {
+    if (ann.profileId) return ann.profileId;
+    if (ann.originProfileId) return ann.originProfileId;
+    return '';
+  }
+
+  function resumePages(stored, pageCount, personId) {
+    if (!stored || !Array.isArray(stored.pages) || stored.pages.length !== pageCount) return { invalid: true };
+    var pool = [];
+    for (var i = 0; i < pageCount; i++) {
+      var page = stored.pages[i];
+      if (!page || page.srcIndex !== i || !Array.isArray(page.annotations)) return { invalid: true };
+      var marks = cleanMarkList(page.annotations);
+      if (!marks) return { invalid: true };
+      pool.push({ id: typeof page.id === 'string' ? page.id : '', rotation: page.rotation === 90 || page.rotation === 180 || page.rotation === 270 ? page.rotation : 0, marks: marks });
+    }
+    if (stored.withheld != null) {
+      if (!Array.isArray(stored.withheld)) return { invalid: true };
+      for (var w = 0; w < stored.withheld.length; w++) {
+        var held = stored.withheld[w];
+        if (!held || typeof held.srcIndex !== 'number' || held.srcIndex < 0 || held.srcIndex >= pageCount) return { invalid: true };
+        var heldMarks = cleanMarkList(held.annotations);
+        if (!heldMarks) return { invalid: true };
+        pool[held.srcIndex].marks = pool[held.srcIndex].marks.concat(heldMarks);
+      }
+    }
+    var dropped = 0;
+    var kept = 0;
+    var pages = [];
+    var withheld = [];
+    pool.forEach(function (page, index) {
+      var mine = [];
+      var theirs = [];
+      page.marks.forEach(function (ann) {
+        var owner = markOwner(ann);
+        if (!owner || !personId || owner !== personId) {
+          dropped += 1;
+          if (owner) theirs.push(ann);
+          return;
+        }
+        kept += 1;
+        mine.push(ann);
+      });
+      pages.push({ id: page.id || Math.random().toString(36).slice(2, 10), srcIndex: index, rotation: page.rotation, annotations: mine });
+      if (theirs.length) withheld.push({ srcIndex: index, annotations: theirs });
+    });
+    return { pages: pages, withheld: withheld, dropped: dropped, kept: kept, invalid: false };
+  }
+
+  function rasterBytes(dataUrl) {
+    var comma = dataUrl.indexOf(',');
+    if (comma < 0) return null;
+    var text = dataUrl.slice(comma + 1).replace(/\s/g, '');
+    if (!text || text.length % 4 === 1) return null;
+    try {
+      var bin = atob(text);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i) & 255;
+      return bytes;
+    } catch (err) { return null; }
+  }
+
+  async function acceptedRaster(dataUrl) {
+    var bytes = rasterBytes(dataUrl);
+    if (!bytes) return false;
+    var png = bytes.length > 8 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71;
+    var jpg = bytes.length > 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+    if (dataUrl.indexOf('image/png') >= 0 && !png) return false;
+    if (dataUrl.indexOf('image/jpeg') >= 0 && !jpg) return false;
+    if (!png && !jpg) return false;
+    try {
+      var bmp = await createImageBitmap(new Blob([bytes], { type: png ? 'image/png' : 'image/jpeg' }));
+      var ok = bmp.width > 0 && bmp.height > 0 && bmp.width <= 1600 && bmp.height <= 1600 && bmp.width * bmp.height <= 1600 * 1600;
+      if (bmp.close) bmp.close();
+      return ok;
+    } catch (err) { return false; }
+  }
+
+  async function stripBadRasters(list) {
+    var dropped = 0;
+    var pages = [];
+    for (var i = 0; i < (list || []).length; i++) {
+      var page = list[i];
+      var marks = [];
+      var anns = page.annotations || [];
+      for (var j = 0; j < anns.length; j++) {
+        if (anns[j] && anns[j].dataUrl && !(await acceptedRaster(anns[j].dataUrl))) dropped += 1;
+        else marks.push(anns[j]);
+      }
+      pages.push({ id: page.id, srcIndex: page.srcIndex, rotation: page.rotation || 0, annotations: marks });
+    }
+    return { pages: pages, dropped: dropped };
+  }
+
   async function openRecovery() {
+    if (openingEditor) return;
     var bytes = pdfBytesForEditor();
     if (!bytes) {
       toast('Choose a form first.');
       return;
     }
+    openingEditor = true;
+    var opened = false;
+    var intentBytes = bytes.slice(0);
+    var intentSheet = sheetStamp();
+    var intentPick = $('profilePick') && $('profilePick').value || '';
+    var intentClear = clearGeneration();
+    var intentToken = formToken;
+    var intentSource = state.sourceBytes && state.sourceBytes.length ? state.sourceBytes.slice(0) : null;
+    try {
+    if ($('placeMissing')) $('placeMissing').disabled = true;
     status('Opening the editor so you can place a saved value…', true);
+    var seenGen = 0;
+    try {
+      var prior = await DeskDB.get(EDITOR_DB, 'session');
+      seenGen = prior && (prior.generation || prior.epoch) || 0;
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
     var probe;
     try {
-      probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+      probe = await PDFLib.PDFDocument.load(intentBytes.slice(0));
     } catch (err) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = false;
       status('That file could not be opened for placement. Nothing was written.', false);
       toast('That file could not be opened for placement.');
       return;
@@ -633,15 +856,141 @@
     }
     var kept = await persistDraft();
     if (!kept.ok || kept.skipped) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
       status(kept.ok ? 'The form was cleared before it could be opened.' : 'This browser could not store the form, so the editor was not opened. Nothing was written.', false);
       toast('The editor was not opened.');
       return;
     }
-    await DeskDB.putAll(EDITOR_DB, [
-      { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true, sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
-    ]);
+    var pdfSha = '';
+    var sourceSha = '';
+    try {
+      pdfSha = await sha256Hex(intentBytes);
+      sourceSha = (!intentSource || intentSource.length < 4 || (intentSource[0] === 0x25 && intentSource[1] === 0x50 && intentSource[2] === 0x44 && intentSource[3] === 0x46)) ? '' : await sha256Hex(intentSource);
+    } catch (err) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
+    var sheet = intentSheet;
+    var personId = intentPick;
+    var stored = null;
+    var storedPdf = null;
+    try {
+      stored = await DeskDB.get(EDITOR_DB, 'session');
+      storedPdf = await DeskDB.get(EDITOR_DB, 'pdf');
+    } catch (err) { stored = null; }
+    if (stored && !stored.pdfSha256 && storedPdf) {
+      try { stored.pdfSha256 = await sha256Hex(storedPdf instanceof Uint8Array ? storedPdf : new Uint8Array(storedPdf)); } catch (err) {}
+    }
+    var handoff = readHandoff();
+    var best = null;
+    [stored, handoff].forEach(function (candidate) {
+      if (!sameEditorFile(candidate, pdfSha, sourceSha, sheet)) return;
+      if (!best || (candidate.editedAt || 0) >= (best.editedAt || 0)) best = candidate;
+    });
+    var resumed = best ? resumePages(best, pages.length, personId) : null;
+    var note = '';
+    var withheld = [];
+    if (resumed && resumed.invalid) note = 'Saved marks could not be read, so they were not brought back.';
+    else if (!best && (stored || handoff || storedPdf)) note = 'This file or crop changed, so earlier marks were not brought back.';
+    else if (resumed && resumed.dropped) note = 'Returned to this file. The other person’s marks were left off.';
+    else if (resumed && resumed.kept) note = 'Returned to the same page and the same marks.';
+    if (resumed && !resumed.invalid) {
+      pages = resumed.pages;
+      withheld = resumed.withheld;
+    }
+    var seenStoreEdited = stored ? (stored.editedAt || 0) : 0;
+    var checkedPages = await stripBadRasters(pages);
+    var checkedHeld = await stripBadRasters(withheld);
+    if (checkedPages.dropped || checkedHeld.dropped) note = (note ? note + ' ' : '') + 'A picture could not be read, so it was not brought back.';
+    pages = checkedPages.pages;
+    withheld = checkedHeld.pages;
+    var generation = Date.now();
+    var session = {
+      fileName: state.formName || 'form.pdf',
+      zoom: 1,
+      fit: true,
+      current: 0,
+      pages: pages,
+      withheld: withheld,
+      epoch: generation,
+      generation: generation,
+      source: 'forms',
+      recover: true,
+      sourceSha256: sourceSha,
+      pdfSha256: pdfSha,
+      sheet: intentSheet,
+      resumeProfileId: intentPick || '',
+      editedAt: generation,
+      resumeNote: note
+    };
+    function writeSession() {
+      return DeskDB.change(EDITOR_DB, ['session'], function (found, put) {
+        if (clearGeneration() !== intentClear) return { ok: false, reason: 'cleared' };
+        if (formToken !== intentToken) return { ok: false, reason: 'file' };
+        var pick = $('profilePick') && $('profilePick').value || '';
+        if (pick !== intentPick) return { ok: false, reason: 'person' };
+        if (JSON.stringify(sheetStamp() || null) !== JSON.stringify(intentSheet || null)) return { ok: false, reason: 'sheet' };
+        var existing = found.session;
+        var nowGen = existing && (existing.generation || existing.epoch) || 0;
+        if (nowGen !== seenGen) return { ok: false, reason: 'newer' };
+        var nowEdited = existing ? (existing.editedAt || 0) : 0;
+        if (nowEdited !== seenStoreEdited) return { ok: false, reason: 'edited', editedAt: nowEdited };
+        put('pdf', intentBytes);
+        put('session', session);
+        return { ok: true };
+      });
+    }
+    var committed;
+    try {
+      committed = await writeSession();
+      if (committed && committed.reason === 'edited') {
+        var fresh = await DeskDB.get(EDITOR_DB, 'session');
+        var live = fresh ? resumePages(fresh, pages.length, personId) : null;
+        if (!live || live.invalid) {
+          status('A newer edit could not be read. Nothing was replaced.', false);
+          toast('The editor was not opened.');
+          return;
+        }
+        var againPages = await stripBadRasters(live.pages);
+        var againHeld = await stripBadRasters(live.withheld);
+        session.pages = againPages.pages;
+        session.withheld = againHeld.pages;
+        if (againPages.dropped || againHeld.dropped) session.resumeNote = (live.kept ? 'Returned to the same page and the same marks. ' : '') + 'A picture could not be read, so it was not brought back.';
+        else if (live.dropped) session.resumeNote = 'Returned to this file. The other person’s marks were left off.';
+        else if (live.kept) session.resumeNote = 'Returned to the same page and the same marks.';
+        seenStoreEdited = fresh && fresh.editedAt || 0;
+        committed = await writeSession();
+      }
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
+    if (!committed || !committed.ok) {
+      var why = committed && committed.reason;
+      var refused = why === 'cleared' ? 'Start over finished before the editor opened. Nothing was written.'
+        : why === 'person' ? 'The person changed before the editor opened. Nothing was written.'
+        : why === 'newer' || why === 'edited' ? 'A newer editor session is already stored. Nothing was replaced.'
+        : 'The form changed before the editor opened. Nothing was written.';
+      status(refused, false);
+      toast('The editor was not opened.');
+      return;
+    }
+    opened = true;
     location.href = '../pdf-editor/?desk=forms';
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+    } finally {
+      if (!opened) {
+        openingEditor = false;
+        if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
+      }
+    }
   }
 
   async function fillFromPapers() {
@@ -845,10 +1194,20 @@
       refreshLabels();
       return;
     }
-    await DeskDB.putAll(EDITOR_DB, [
-      { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
-    ]);
+    var editorSession;
+    try {
+      editorSession = { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), pdfSha256: await sha256Hex(bytes), sheet: sheetStamp(), editedAt: Date.now() };
+      await DeskDB.putAll(EDITOR_DB, [
+        { key: 'pdf', value: bytes },
+        { key: 'session', value: editorSession }
+      ]);
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      state.running = false;
+      refreshLabels();
+      return;
+    }
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;
     refreshLabels();
@@ -916,6 +1275,14 @@
     return enqueueDraft(function () {
       return DeskDB.clear(DB).then(function () { return { ok: true }; });
     }).catch(function (err) {
+      return { ok: false, reason: draftReason(err) };
+    });
+  }
+  function discardEditor() {
+    var clearedAt = Date.now();
+    try { localStorage.setItem('ff-editor-clear-generation', String(clearedAt)); } catch (err) {}
+    try { sessionStorage.removeItem('ff-editor-handoff'); } catch (err) {}
+    return DeskDB.clear(EDITOR_DB).then(function () { return { ok: true }; }).catch(function (err) {
       return { ok: false, reason: draftReason(err) };
     });
   }
@@ -1100,8 +1467,8 @@
   $('clearBtn').addEventListener('click', function () {
     resetDesk();
     status('Clearing the stored form…', true);
-    discardDraft().then(function (result) {
-      if (result && !result.ok) status('Start over could not finish clearing the stored form.', false);
+    Promise.all([discardDraft(), discardEditor()]).then(function (results) {
+      if (results.some(function (result) { return result && !result.ok; })) status('Start over could not finish clearing the stored form.', false);
       else status('Started over. Nothing is stored from that form.', false);
     });
   });

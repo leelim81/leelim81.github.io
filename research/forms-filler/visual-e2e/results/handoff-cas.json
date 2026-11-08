@@ -1,0 +1,31 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "start over during the handoff does not reopen or restore bytes",
+      "ok": true,
+      "detail": "Start over finished before the editor opened. Nothing was written."
+    },
+    {
+      "name": "a different file during the handoff does not store the first bytes",
+      "ok": true,
+      "detail": "The form changed before the editor opened. Nothing was written."
+    },
+    {
+      "name": "a person change during the handoff does not open the editor",
+      "ok": true,
+      "detail": "The person changed before the editor opened. Nothing was written."
+    },
+    {
+      "name": "a newer tab is not overwritten by this handoff",
+      "ok": true,
+      "detail": "newer.pdf"
+    },
+    {
+      "name": "a same-generation edit during the handoff is kept",
+      "ok": true,
+      "detail": "ONLYANEWER-EDIT"
+    }
+  ]
+}

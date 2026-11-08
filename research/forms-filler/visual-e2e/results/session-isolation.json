@@ -1,0 +1,21 @@
+{
+  "passed": 3,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "an old tab cannot resurrect marks after start over",
+      "ok": true,
+      "detail": "{}"
+    },
+    {
+      "name": "an older tab does not overwrite the newer person",
+      "ok": true,
+      "detail": "{\"fileName\":\"iso-blank.pdf\",\"zoom\":1,\"fit\":true,\"current\":0,\"pages\":[{\"id\":\"zjbqkyi4\",\"srcIndex\":0,\"rotation\":0,\"annotations\":[{\"id\":\"bmark\",\"type\":\"text\",\"x\":0.2,\"y\":0.2,\"w\":0.3,\"h\":0.05,\"text\":\"ONLYB\",\"fontSize\":14,\"co"
+    },
+    {
+      "name": "a malformed mark record is not shown",
+      "ok": true,
+      "detail": "Saved marks could not be read, so they were not brought back. Choose the person and the confirmed value, then place it on the page. http://127.0.0.1:8788/tools/pdf-editor/?desk=forms"
+    }
+  ]
+}

@@ -71,5 +71,35 @@
       });
     });
   }
-  global.DeskDB = { get: get, set: set, putAll: putAll, clear: clear, update: update };
+  function change(name, keys, mutate) {
+    return open(name).then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('kv', 'readwrite');
+        var store = tx.objectStore('kv');
+        var pending = (keys || []).length;
+        var found = {};
+        var result = { ok: false, reason: 'cancelled' };
+        function decide() {
+          try {
+            result = mutate(found, function (key, value) { store.put(value, key); }) || { ok: false, reason: 'cancelled' };
+          } catch (err) {
+            reject(err);
+            try { tx.abort(); } catch (ignore) {}
+          }
+        }
+        if (!pending) decide();
+        (keys || []).forEach(function (key) {
+          var req = store.get(key);
+          req.onsuccess = function () {
+            found[key] = req.result;
+            if (--pending === 0) decide();
+          };
+        });
+        tx.oncomplete = function () { resolve(result); };
+        tx.onerror = function () { reject(tx.error); };
+        tx.onabort = function () { if (tx.error) reject(tx.error); };
+      });
+    });
+  }
+  global.DeskDB = { get: get, set: set, putAll: putAll, clear: clear, update: update, change: change };
 })(window);

@@ -34,7 +34,10 @@
     epoch: 0,
     recoverArmed: false,
     undo: [],
-    sourceSha256: ''
+    sourceSha256: '',
+    pdfSha256: '',
+    resumeProfileId: '',
+    resumeNote: ''
   };
   var closed = false;
 
@@ -82,8 +85,24 @@
       });
     });
   }
+  function clearGeneration() {
+    try { return Number(localStorage.getItem('ff-editor-clear-generation') || 0); } catch (err) { return 0; }
+  }
+  function sessionGeneration(session) {
+    return Number(session && (session.generation || session.epoch) || 0);
+  }
+  function sessionRetired(session) {
+    var mark = clearGeneration();
+    var gen = sessionGeneration(session);
+    return !!(mark && gen && gen <= mark);
+  }
+  function rememberHandoff(session) {
+    if (!session || sessionRetired(session)) return;
+    try { sessionStorage.setItem('ff-editor-handoff', JSON.stringify(session)); } catch (err) {}
+  }
   function idbSave(pdfBytes, session) {
     var epoch = session && session.epoch;
+    if (sessionRetired(session)) return Promise.resolve();
     return openDb().then(function (db) {
       return new Promise(function (resolve, reject) {
         var tx = db.transaction('kv', 'readwrite');
@@ -91,8 +110,10 @@
         var getReq = store.get('session');
         getReq.onsuccess = function () {
           if (closed) return;
+          if (sessionRetired(session)) return;
           var existing = getReq.result;
           if (existing && existing.epoch && epoch && existing.epoch > epoch) return;
+          if (existing && sessionGeneration(existing) > sessionGeneration(session)) return;
           store.put(pdfBytes, 'pdf');
           store.put(session, 'session');
         };
@@ -124,28 +145,54 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { saveNow(); }, 160);
   }
+  async function hashBytes(bytes) {
+    var digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(function (b) { return (b < 16 ? '0' : '') + b.toString(16); }).join('');
+  }
+  function editorSession() {
+    return {
+      fileName: state.fileName,
+      zoom: state.zoom,
+      current: state.current,
+      epoch: state.epoch,
+      source: desk,
+      sourceSha256: state.sourceSha256 || '',
+      pdfSha256: state.pdfSha256 || '',
+      sheet: state.sheet || null,
+      resumeProfileId: ($('recoverPerson') && $('recoverPerson').value) || state.resumeProfileId || '',
+      generation: state.generation || state.epoch || 0,
+      editedAt: Date.now(),
+      resumeNote: '',
+      withheld: Array.isArray(state.withheld) ? state.withheld.map(function (page) {
+        return {
+          srcIndex: page.srcIndex,
+          annotations: (page.annotations || []).map(function (a) { return Object.assign({}, a); })
+        };
+      }) : [],
+      pages: state.pages.map(function (p) {
+        return {
+          id: p.id,
+          srcIndex: p.srcIndex,
+          rotation: p.rotation || 0,
+          annotations: p.annotations.map(function (a) { return Object.assign({}, a); })
+        };
+      })
+    };
+  }
   async function saveNow() {
-    if (!state.pdfBytes) return;
+    if (!state.pdfBytes) return false;
+    if (!state.pdfSha256) {
+      try { state.pdfSha256 = await hashBytes(state.pdfBytes); } catch (err) { return false; }
+    }
     var gen = ++saveGen;
     setSaveStatus('Saving…');
     try {
-      var session = {
-        fileName: state.fileName,
-        zoom: state.zoom,
-        current: state.current,
-        epoch: state.epoch,
-        source: desk,
-        sourceSha256: state.sourceSha256 || '',
-        sheet: state.sheet || null,
-        pages: state.pages.map(function (p) {
-          return {
-            id: p.id,
-            srcIndex: p.srcIndex,
-            rotation: p.rotation || 0,
-            annotations: p.annotations.map(function (a) { return Object.assign({}, a); })
-          };
-        })
-      };
+      var session = editorSession();
+      if (sessionRetired(session)) {
+        if (gen === saveGen) setSaveStatus('Not saved');
+        return false;
+      }
+      rememberHandoff(session);
       await idbSave(new Uint8Array(state.pdfBytes), session);
       if (gen !== saveGen) return true;
       var el = $('saveState');
@@ -162,7 +209,9 @@
   }
   window.addEventListener('pagehide', function () {
     cancelRecoverCommit();
-    if (state.pdfBytes) saveNow();
+    if (!state.pdfBytes) return;
+    if (state.pdfSha256) rememberHandoff(editorSession());
+    saveNow();
   });
 
   function showWorkspace() {
@@ -553,6 +602,9 @@
       id: uid(), type: 'text', x: 0.15, y: 0.15, w: 0.4, h: 0.08,
       text: '', fontSize: 18, color: '#1a1612'
     }, partial);
+    if (!ann.profileId && !ann.originProfileId) {
+      ann.originProfileId = ($('recoverPerson') && $('recoverPerson').value) || '';
+    }
     if (!partial || !partial.skipUndo) pushUndo();
     rec.annotations.push(ann);
     var el = drawOne(rec, ann);
@@ -681,8 +733,16 @@
     state.undo = [];
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     state.sourceSha256 = session && session.sourceSha256 ? session.sourceSha256 : '';
+    state.pdfSha256 = session && session.pdfSha256 ? session.pdfSha256 : '';
+    state.resumeProfileId = session && session.resumeProfileId ? session.resumeProfileId : '';
+    state.resumeNote = session && session.resumeNote ? session.resumeNote : '';
+    state.generation = session && (session.generation || session.epoch) ? (session.generation || session.epoch) : Date.now();
+    state.withheld = session && Array.isArray(session.withheld) ? session.withheld : [];
     state.sheet = session && session.sheet ? session.sheet : null;
     state.wantRecover = !!(session && session.recover);
+    if (!state.pdfSha256 && state.pdfBytes) {
+      try { state.pdfSha256 = await hashBytes(state.pdfBytes); } catch (err) {}
+    }
     closed = false;
     showWorkspace();
     if (session && session.recover) {
@@ -1676,7 +1736,11 @@
     if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
     pushUndo();
     state.pages.forEach(function (rec) {
-      rec.annotations = rec.annotations.filter(function (ann) { return ann.mapId !== map.id; });
+      rec.annotations = rec.annotations.filter(function (ann) {
+        if (ann.mapId === map.id) return false;
+        if (ann.profileId && ann.profileId !== profile.id) return false;
+        return true;
+      });
     });
     var placed = 0;
     var skipped = 0;
@@ -1751,13 +1815,21 @@
       $('recoverPlace').disabled = true;
       return;
     }
+    function sayReady(text) {
+      if (state.resumeNote) {
+        recoverSay(state.resumeNote + ' ' + text);
+        state.resumeNote = '';
+        return;
+      }
+      recoverSay(text);
+    }
     var loaded = await FormProfiles.load();
     var profiles = loaded.ok ? loaded.vault.profiles : [];
     var personLabel = $('recoverPerson') && $('recoverPerson').closest('label');
     if (personLabel) personLabel.hidden = !profiles.length;
     if (!profiles.length) {
       showRecoverCreate('person');
-      recoverSay('No one is saved yet. Add a person and a confirmed value, then place it. Text on the toolbar types on the page without saving a person.');
+      sayReady('No one is saved yet. Add a person and a confirmed value, then place it. Text on the toolbar types on the page without saving a person.');
       $('recoverPlace').disabled = true;
       if (state.wantRecover && $('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', true);
       if ($('recoverPersonName') && !$('recoverBar').hidden) $('recoverPersonName').focus();
@@ -1769,7 +1841,11 @@
       opt.textContent = profile.name;
       person.appendChild(opt);
     });
-    if (previous && profiles.some(function (profile) { return profile.id === previous; })) person.value = previous;
+    if (!state.resumePersonApplied && state.resumeProfileId && profiles.some(function (profile) { return profile.id === state.resumeProfileId; })) {
+      person.value = state.resumeProfileId;
+      state.resumePersonApplied = true;
+    } else if (previous && profiles.some(function (profile) { return profile.id === previous; })) person.value = previous;
+    state.selectedResumePerson = person.value;
     var chosen = profiles.filter(function (profile) { return profile.id === person.value; })[0] || profiles[0];
     var facts = (chosen.facts || []).filter(function (item) { return item.status === 'confirmed' && item.value; });
     facts.forEach(function (item) {
@@ -1784,10 +1860,10 @@
     $('recoverPlace').disabled = !facts.length;
     if (!facts.length) {
       showRecoverCreate('fact');
-      recoverSay(chosen.name + ' has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed.');
+      sayReady(chosen.name + ' has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed.');
     } else {
       showRecoverCreate('off');
-      if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+      if (!state.recoverArmed) sayReady('Choose the person and the confirmed value, then place it on the page.');
     }
     refreshMaps();
   }
@@ -1982,6 +2058,49 @@
       await refreshMaps();
       recoverSay('Cleared every blank map in this browser. People and values were kept.');
     });
+    function markOwner(ann) {
+      if (!ann) return '';
+      if (ann.profileId) return ann.profileId;
+      if (ann.originProfileId) return ann.originProfileId;
+      return '';
+    }
+    if ($('recoverPerson')) $('recoverPerson').addEventListener('change', function () {
+      var id = $('recoverPerson').value;
+      var from = state.selectedResumePerson || '';
+      if (!id || from === id) return;
+      state.selectedResumePerson = id;
+      var pool = {};
+      function add(srcIndex, ann) {
+        if (!pool[srcIndex]) pool[srcIndex] = [];
+        pool[srcIndex].push(ann);
+      }
+      state.pages.forEach(function (rec, index) {
+        (rec.annotations || []).forEach(function (ann) { add(rec.srcIndex == null ? index : rec.srcIndex, ann); });
+      });
+      (state.withheld || []).forEach(function (page) {
+        (page.annotations || []).forEach(function (ann) { add(page.srcIndex, ann); });
+      });
+      var withheld = [];
+      var dropped = 0;
+      state.pages.forEach(function (rec, index) {
+        var src = rec.srcIndex == null ? index : rec.srcIndex;
+        var mine = [];
+        var theirs = [];
+        (pool[src] || []).forEach(function (ann) {
+          var owner = markOwner(ann);
+          if (!owner) { dropped += 1; return; }
+          if (owner === id) mine.push(ann);
+          else { theirs.push(ann); dropped += 1; }
+        });
+        rec.annotations = mine;
+        if (theirs.length) withheld.push({ srcIndex: src, annotations: theirs });
+      });
+      state.withheld = withheld;
+      if (!dropped) return;
+      redrawAnnotations();
+      recoverSay('The other person’s marks were left off.');
+      saveNow();
+    });
     $('recoverPlace').addEventListener('click', async function () {
       var fact = selectedRecoverFact();
       if (!fact) {
@@ -2160,6 +2279,8 @@
       closed = true;
       state.epoch = 0;
       state.pdfBytes = null;
+      try { localStorage.setItem('ff-editor-clear-generation', String(Date.now())); } catch (err) {}
+      try { sessionStorage.removeItem('ff-editor-handoff'); } catch (err) {}
       await idbClear();
       if (state.doc) { try { await state.doc.destroy(); } catch (e) {} }
       state.pdfBytes = null;
