@@ -1,0 +1,375 @@
+[
+  {
+    "id": "food-order",
+    "ms": {
+      "open": 23,
+      "lines": 332,
+      "ocr": 1509,
+      "fields": 555
+    },
+    "heap": {
+      "before": 4999388,
+      "after": 84518917
+    },
+    "frame": {
+      "in": [
+        983,
+        1600
+      ],
+      "out": [
+        913,
+        1516
+      ],
+      "crop": {
+        "x": 16,
+        "y": 40,
+        "w": 913,
+        "h": 1516
+      },
+      "source": [
+        983,
+        1600
+      ]
+    },
+    "counts": {
+      "plainLines": 37,
+      "contrastLines": 37,
+      "underlines": 0,
+      "strokes": 0,
+      "wordsUnfiltered": 0,
+      "words": 0,
+      "wordsKnownKind": 0,
+      "contrastWords": 0,
+      "contrastKnownKind": 0,
+      "inkWords": 14,
+      "inkKnownKind": 2,
+      "fields": 0
+    },
+    "stages": [
+      {
+        "id": "name",
+        "kind": "name",
+        "stage": "ocr",
+        "onSheet": true,
+        "deltaP90": 1.6299999999999955,
+        "deltaMedian": -1.3000000000000114,
+        "strong30": 1,
+        "mask": 66,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 351,
+          "mask": 118,
+          "delta": 30.630000000000024
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "address",
+        "kind": "address",
+        "stage": "ocr",
+        "onSheet": true,
+        "deltaP90": 1.0000000000000284,
+        "deltaMedian": -1.3000000000000114,
+        "strong30": 2,
+        "mask": 9,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 413,
+          "mask": 145,
+          "delta": 27.730000000000018
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r1-qty",
+        "kind": "quantity",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 0.9999999999999716,
+        "deltaMedian": -1,
+        "strong30": 0,
+        "mask": 0,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 554,
+          "mask": 57,
+          "delta": 25.019999999999982
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r1-article",
+        "kind": "article",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 0.9999999999999716,
+        "deltaMedian": -0.9999999999999716,
+        "strong30": 0,
+        "mask": 0,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 554,
+          "mask": 148,
+          "delta": 29.939999999999998
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r1-price",
+        "kind": "price",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 1,
+        "deltaMedian": -0.9899999999999807,
+        "strong30": 0,
+        "mask": 0,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 556,
+          "mask": 60,
+          "delta": 27.319999999999993
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r2-qty",
+        "kind": "quantity",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 1,
+        "deltaMedian": -1.0100000000000193,
+        "strong30": 0,
+        "mask": 1,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 599,
+          "mask": 55,
+          "delta": 30.890000000000015
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r2-article",
+        "kind": "article",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 0.9999999999999716,
+        "deltaMedian": -1,
+        "strong30": 0,
+        "mask": 0,
+        "greenMedian": -8,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 600,
+          "mask": 164,
+          "delta": 27.03
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      },
+      {
+        "id": "r2-price",
+        "kind": "price",
+        "stage": "schema",
+        "onSheet": true,
+        "deltaP90": 1,
+        "deltaMedian": 0,
+        "strong30": 0,
+        "mask": 0,
+        "greenMedian": -7,
+        "lines": [
+          "plain",
+          "contrast"
+        ],
+        "bestRow": {
+          "y": 602,
+          "mask": 61,
+          "delta": 28.02000000000001
+        },
+        "wordKinds": [],
+        "contrastWordKinds": []
+      }
+    ],
+    "fieldKinds": [],
+    "falseFields": 0
+  },
+  {
+    "id": "census-3",
+    "ms": {
+      "open": 16,
+      "lines": 264,
+      "ocr": 7214,
+      "fields": 2610
+    },
+    "counts": {
+      "plainLines": 74,
+      "contrastLines": 118,
+      "underlines": 2,
+      "strokes": 12,
+      "wordsUnfiltered": 432,
+      "words": 409,
+      "wordsKnownKind": 0,
+      "contrastWords": 362,
+      "contrastKnownKind": 1,
+      "inkWords": 12,
+      "inkKnownKind": 0,
+      "fields": 2
+    },
+    "stages": [
+      {
+        "kind": "date",
+        "stage": "schema",
+        "lines": [
+          "plain",
+          "contrast",
+          "stroke"
+        ],
+        "bestDelta": 80.30000000000001,
+        "contrastWordKinds": [
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other"
+        ]
+      },
+      {
+        "kind": "place",
+        "stage": "schema",
+        "lines": [
+          "plain",
+          "contrast",
+          "stroke"
+        ],
+        "bestDelta": 67.07,
+        "contrastWordKinds": [
+          "other",
+          "other",
+          "name",
+          "other",
+          "other",
+          "other",
+          "other"
+        ]
+      },
+      {
+        "kind": "serial",
+        "stage": "schema",
+        "lines": [
+          "plain",
+          "contrast",
+          "stroke"
+        ],
+        "bestDelta": 70.33000000000001,
+        "contrastWordKinds": [
+          "name",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other",
+          "other"
+        ]
+      }
+    ],
+    "fieldKinds": [
+      "other",
+      "other"
+    ]
+  },
+  {
+    "id": "census-2",
+    "ms": {
+      "open": 18,
+      "lines": 201,
+      "ocr": 14160,
+      "fields": 5160
+    },
+    "counts": {
+      "plainLines": 171,
+      "contrastLines": 171,
+      "underlines": 1,
+      "strokes": 47,
+      "wordsUnfiltered": 451,
+      "words": 276,
+      "wordsKnownKind": 0,
+      "contrastWords": 261,
+      "contrastKnownKind": 0,
+      "inkWords": 0,
+      "inkKnownKind": 0,
+      "fields": 0
+    },
+    "stages": [
+      {
+        "kind": "name",
+        "stage": "ocr",
+        "lines": [
+          "contrast",
+          "stroke"
+        ],
+        "bestDelta": 84,
+        "contrastWordKinds": [
+          "other",
+          "other"
+        ]
+      },
+      {
+        "kind": "name",
+        "stage": "ocr",
+        "lines": [
+          "contrast",
+          "stroke"
+        ],
+        "bestDelta": 88,
+        "contrastWordKinds": [
+          "other"
+        ]
+      }
+    ],
+    "fieldKinds": []
+  }
+]

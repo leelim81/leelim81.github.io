@@ -615,9 +615,10 @@
     return out;
   }
 
-  async function wordsOn(canvas) {
+  async function wordsOn(canvas, minConfidence) {
     if (!global.FormExtract || !FormExtract.wordBoxes) return [];
-    var words = await FormExtract.wordBoxes(canvas, 11);
+    var opts = minConfidence == null ? undefined : { minConfidence: minConfidence };
+    var words = await FormExtract.wordBoxes(canvas, 11, opts);
     var h = canvas.height;
     return (words || []).map(function (word) {
       var box = word.bbox || {};
@@ -1415,5 +1416,199 @@
     return new Uint8Array(await doc.save());
   }
 
-  global.FormFields = { read: read, readImage: readImage, fill: fill };
+  function sourceToSheet(x, y, frame) {
+    var sx = frame.sourceW / frame.inW;
+    var sy = frame.sourceH / frame.inH;
+    var sheetX = x / sx - frame.crop.x;
+    var sheetY = y / sy - frame.crop.y;
+    if (frame.angle) {
+      var back = { x: sheetX, y: sheetY };
+      return back;
+    }
+    return { x: sheetX, y: sheetY };
+  }
+
+  function sampleBand(canvas, frame, rect) {
+    var a = sourceToSheet(rect[0], rect[1], frame);
+    var b = sourceToSheet(rect[2], rect[3], frame);
+    var x0 = Math.max(0, Math.floor(Math.min(a.x, b.x)));
+    var x1 = Math.min(canvas.width - 1, Math.ceil(Math.max(a.x, b.x)));
+    var y0 = Math.max(3, Math.floor(Math.min(a.y, b.y)));
+    var y1 = Math.min(canvas.height - 4, Math.ceil(Math.max(a.y, b.y)));
+    var onSheet = x1 > x0 && y1 > y0;
+    if (!onSheet) return { onSheet: false, n: 0 };
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    var w = canvas.width;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    var deltas = [];
+    var greens = [];
+    var mask = 0;
+    var yStart = Math.max(3, y1 - 5);
+    var bestRow = { y: y1, mask: 0, delta: null };
+    var rowLo = Math.max(3, y1 - 8);
+    var rowHi = Math.min(canvas.height - 4, y1 + 8);
+    for (var y = rowLo; y <= rowHi; y++) {
+      var rowMask = 0;
+      var rowDelta = [];
+      var inBand = y >= yStart && y <= y1;
+      for (var x = x0; x <= x1; x += 2) {
+        var i = (y * w + x) * 4;
+        var c = lum(x, y);
+        var delta = Math.min(lum(x, y - 3) - c, lum(x, y + 3) - c);
+        if (inBand) {
+          deltas.push(delta);
+          greens.push(data[i + 1] - Math.max(data[i], data[i + 2]));
+          if (c + 8 < lum(x, y - 4) && c + 8 < lum(x, y + 4)) mask++;
+        }
+        if (c + 8 < lum(x, y - 4) && c + 8 < lum(x, y + 4)) rowMask++;
+        rowDelta.push(delta);
+      }
+      if (rowMask > bestRow.mask) {
+        rowDelta.sort(function (p, q) { return p - q; });
+        bestRow = {
+          y: y,
+          mask: rowMask,
+          delta: rowDelta.length ? rowDelta[Math.floor(rowDelta.length * 0.9)] : null
+        };
+      }
+    }
+    deltas.sort(function (p, q) { return p - q; });
+    greens.sort(function (p, q) { return p - q; });
+    function pick(list, p) {
+      if (!list.length) return null;
+      return list[Math.min(list.length - 1, Math.floor(list.length * p))];
+    }
+    var strong = 0;
+    deltas.forEach(function (d) { if (d > 30) strong++; });
+    return {
+      onSheet: true,
+      n: deltas.length,
+      mask: mask,
+      deltaMedian: pick(deltas, 0.5),
+      deltaP90: pick(deltas, 0.9),
+      strong30: strong,
+      greenMedian: pick(greens, 0.5),
+      bestRow: bestRow
+    };
+  }
+
+  async function stageReport(bytes, mime, bands) {
+    var t0 = Date.now();
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
+    if (bmp.close) bmp.close();
+    var frame = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    frame = {
+      angle: frame.angle || 0,
+      inW: frame.inW, inH: frame.inH, turnW: frame.turnW, turnH: frame.turnH,
+      crop: canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height },
+      outW: canvas.width, outH: canvas.height, sourceW: sourceW, sourceH: sourceH
+    };
+    var h = canvas.height;
+    var tLines = Date.now();
+    var plain = await rasterGeometry(canvas);
+    var contrasted = await rasterGeometry(await stretchContrast(canvas));
+    var under = underlineRules(canvas);
+    var strokes = strokeRules(canvas);
+    var tOcr = Date.now();
+    var words = await wordsOn(canvas);
+    var unfiltered = await wordsOn(canvas, 0);
+    var contrastWords = await wordsOn(await stretchContrast(canvas));
+    var ink = document.createElement('canvas');
+    ink.width = canvas.width;
+    ink.height = canvas.height;
+    var inkCtx = ink.getContext('2d', { willReadFrequently: true });
+    inkCtx.drawImage(canvas, 0, 0);
+    var inkImage = inkCtx.getImageData(0, 0, ink.width, ink.height);
+    var inkData = inkImage.data;
+    for (var p = 0; p < inkData.length; p += 4) {
+      var excess = inkData[p + 1] - Math.max(inkData[p], inkData[p + 2]);
+      var luma = 0.3 * inkData[p] + 0.59 * inkData[p + 1] + 0.11 * inkData[p + 2];
+      var dark = excess > 6 && luma < 210;
+      inkData[p] = inkData[p + 1] = inkData[p + 2] = dark ? 20 : 245;
+    }
+    inkCtx.putImageData(inkImage, 0, 0);
+    var inkWords = await wordsOn(ink);
+    var tFields = Date.now();
+    var fields = await fieldsOnSheet(canvas);
+    function tops(list) {
+      return list.map(function (line) {
+        return { x: Math.round(line.x), y: Math.round(h - line.y), w: Math.round(line.w) };
+      });
+    }
+    function wordBoxesOf(list) {
+      var known = 0;
+      var boxes = list.map(function (word) {
+        var kind = global.FormEvidence ? FormEvidence.fieldKind({ label: word.str }) : 'other';
+        if (kind && kind !== 'other') known++;
+        return {
+          x: Math.round(word.x),
+          y: Math.round(h - (word.y + word.h)),
+          w: Math.round(word.w),
+          h: Math.round(word.h),
+          kind: kind || 'other'
+        };
+      });
+      return { known: known, boxes: boxes };
+    }
+    var rawWords = wordBoxesOf(words);
+    var stretched = wordBoxesOf(contrastWords);
+    var inkBoxed = wordBoxesOf(inkWords);
+    return {
+      ms: { open: tLines - t0, lines: tOcr - tLines, ocr: tFields - tOcr, fields: Date.now() - tFields },
+      frame: frame,
+      counts: {
+        plainLines: plain.lines.length,
+        contrastLines: contrasted.lines.length,
+        underlines: under.length,
+        strokes: strokes.length,
+        wordsUnfiltered: unfiltered.length,
+        words: words.length,
+        wordsKnownKind: rawWords.known,
+        contrastWords: contrastWords.length,
+        contrastKnownKind: stretched.known,
+        inkWords: inkWords.length,
+        inkKnownKind: inkBoxed.known,
+        fields: fields.length
+      },
+      lines: { plain: tops(plain.lines), contrast: tops(contrasted.lines), under: tops(under), stroke: tops(strokes) },
+      words: rawWords.boxes,
+      contrastWordBoxes: stretched.boxes,
+      inkWordBoxes: inkBoxed.boxes,
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      }),
+      bands: (bands || []).map(function (rect) { return sampleBand(canvas, frame, rect); })
+    };
+  }
+
+  global.FormFields = { read: read, readImage: readImage, fill: fill, stageReport: stageReport };
 })(window);

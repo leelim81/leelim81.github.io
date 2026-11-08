@@ -6,6 +6,12 @@ This is a feature-by-feature reading of the current branch. It is not a claim th
 
 This section is the current head. The table and the paragraph under it are earlier passes, not this run.
 
+The 13 frozen development targets were counted by pipeline stage. None is a contained field. Food-order lines exist for the name and address rules, and OCR returns 0 words, so those lines are dropped unlabeled. The six item cells die at the schema, which has no quantity, article, or price kind. The three-line census page has lines and only kind-other words, plus 2 kind-other fields that miss the boxes. The two-name census page has strong lines and 276 words, none of a known kind. A green-ink OCR variant found a name and an address on the food order, and both boxes missed the 8px gate, by 11px and 5px. It was not kept. The black Email/Name sheet still returns those two labels. Record: `visual-e2e/STAGE-DIAGNOSTIC.md`.
+
+The integration list under this note is the rerun from `3fbebab`, which this cycle did not repeat. This cycle did not change that path's result.
+
+
+
 An upright image-only PDF is no longer replaced by a turned picture. A spot from a private turned copy is mapped back onto the original page and offered only for review. A +5° raster produced an internal angle of −5.1°, and the email box contained the tilted rule within 8 points. A −5° raster produced +5.1° and the same containment. A level page stayed at angle 0. UserUnit 2, an offset crop, and a quarter turn kept the ledger path. Reference text did not autofill, and two people abstained. The checked export kept the original page text `ORIG-NEG`, left the unchecked name off, and the glyph was 0.0004 pt from the ledger origin. Record: `visual-e2e/PDF-RASTER-GEOMETRY.md`. `pdf-raster-geometry.mjs` 8 checks, 0 failed.
 
 The same head also reran: coordinate ledger passed; `orientation.mjs` 6 checks, 0 failed (photo sheets still keep EXIF orientation); `assert_integrity.py` train 12, dev 4, test 6; `route-check.mjs` 5 routes matched, including the CC0 scan as `raster`; `recover-e2.mjs` 0 failed, 38 steps; `template-e3.mjs` 0 failed, 36 steps; `scan-transport.mjs` 0 failed, 16 checks; `frame-anchor.mjs` 0 failed, geometry still 0/13, food-order strict miss still 1 source pixel; `large-image.mjs` 14 checks, 0 failed; `e5-boundary.mjs` 15 checks, 0 failed; `profiles-gesture-e2e.mjs` 37 checks, 0 failed. Chrome’s Load unpacked picker was not clicked. No phone was used.
