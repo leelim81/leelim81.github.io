@@ -1,0 +1,56 @@
+{
+  "passed": 7,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "two overlapping reads of the ambiguous scan both finish",
+      "ok": true,
+      "detail": "{\"ms\":2296,\"names\":[{\"bea\":true,\"cora\":true,\"chars\":106},{\"bea\":true,\"cora\":true,\"chars\":106}]}"
+    },
+    {
+      "name": "the ambiguous scan leaves Reading without replacing the confirmed email",
+      "ok": true,
+      "detail": "{\"refs\":[{\"name\":\"cora.ambiguous.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"12qpi2lh8z4h\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:08:17.636Z\"}}"
+    },
+    {
+      "name": "a read that exceeds its budget says so and keeps the confirmed email",
+      "ok": true,
+      "detail": "{\"status\":\"error\",\"preview\":\"No fields found in this file. | This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\",\"email\":{\"id\":\"12qpi2lh8z4h\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"u"
+    },
+    {
+      "name": "removing a reference cancels its read and adds no person",
+      "ok": true,
+      "detail": "{\"refs\":[\"cora.ambiguous.pdf:empty\",\"cora-budget.pdf:error\"],\"people\":[\"Cora Example\"]}"
+    },
+    {
+      "name": "a text pdf finishes without staying on Reading",
+      "ok": true,
+      "detail": "{\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
+    },
+    {
+      "name": "a corrupt file is an error, not a successful empty read",
+      "ok": true,
+      "detail": "{\"name\":\"ref-corrupt.pdf\",\"status\":\"error\",\"preview\":\"\"}"
+    },
+    {
+      "name": "start over does not delete the confirmed person",
+      "ok": true,
+      "detail": "Cora Example"
+    }
+  ],
+  "paired": {
+    "ms": 2296,
+    "names": [
+      {
+        "bea": true,
+        "cora": true,
+        "chars": 106
+      },
+      {
+        "bea": true,
+        "cora": true,
+        "chars": 106
+      }
+    ]
+  }
+}

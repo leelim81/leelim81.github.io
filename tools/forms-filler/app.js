@@ -360,7 +360,7 @@
       var preview = document.createElement('span');
       preview.className = 'ref-preview';
       if (ref.status === 'reading') preview.textContent = 'Reading…';
-      else if (ref.status === 'error') preview.textContent = 'Couldn’t read this file.';
+      else if (ref.status === 'error') preview.textContent = ref.preview || 'Couldn’t read this file.';
       else if (!ref.preview) preview.textContent = 'No fields found in this file.';
       else preview.textContent = ref.preview;
       main.appendChild(name);
@@ -389,26 +389,39 @@
 
   async function extractOne(ref) {
     var id = ref.id;
+    var epoch = state.readEpoch || 0;
     var text = '';
     var failed = false;
+    var budget = false;
+    var timer = 0;
     try {
       var isPdf = ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name);
-      var spatial = window.FormExtract && FormExtract.spatial
-        ? await FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
-        : { text: '', channel: 'text-layer' };
+      var pending = window.FormExtract && FormExtract.spatial
+        ? FormExtract.spatial(ref.bytes, isPdf ? 'application/pdf' : (ref.mime || 'image/png'))
+        : Promise.resolve({ text: '', channel: 'text-layer' });
+      var spatial = await Promise.race([
+        pending,
+        new Promise(function (_, reject) { timer = setTimeout(function () { reject(new Error('budget')); }, 15000); })
+      ]);
       text = spatial.text || '';
       ref.channel = spatial.channel || 'text-layer';
       ref.words = spatial.words || [];
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
+      budget = !!(err && err.message === 'budget');
+      if (budget && window.FormExtract && FormExtract.cancelOcr) FormExtract.cancelOcr();
+    } finally {
+      clearTimeout(timer);
     }
+    if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
     if (!live) return;
     if (failed) {
       live.status = 'error';
-      live.preview = '';
+      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : '';
       live.text = '';
+      live.words = [];
     } else {
       live.text = text || '';
       rememberRef(live);
@@ -1397,6 +1410,7 @@
     state.imageFrame = null;
     state.imageNote = '';
     state.refs = [];
+    state.readEpoch = (state.readEpoch || 0) + 1;
     state.proposals = [];
     $('formInput').value = '';
     $('refInput').value = '';
@@ -1572,6 +1586,10 @@
         };
         if (item.text) rememberRef(item);
         return item;
+      });
+      state.refs.forEach(function (ref) {
+        var n = parseInt(String(ref.id || '').replace(/^[^\d]*/, ''), 10);
+        if (n >= refSeq) refSeq = n;
       });
       state.refs.forEach(function (ref) {
         if (ref.status === 'reading' && ref.bytes) ref.pending = extractOne(ref);

@@ -4,6 +4,49 @@
 (function (global) {
   var workerPromise = null;
   var embedderPromise = null;
+  var ocrChain = Promise.resolve();
+  var readChain = Promise.resolve();
+  var workerGen = 0;
+  var OCR_BUDGET_MS = 12000;
+
+  function cancelOcr() {
+    workerGen += 1;
+    workerPromise = null;
+    ocrChain = Promise.resolve();
+  }
+
+  function enqueueOcr(work) {
+    var run = ocrChain.then(function () { return work(); }, function () { return work(); });
+    ocrChain = run.then(function () {}, function () {});
+    return run;
+  }
+
+  async function recognizeBounded(worker, source) {
+    var budget = global.__ffOcrBudgetMs > 0 ? global.__ffOcrBudgetMs : OCR_BUDGET_MS;
+    var gen = workerGen;
+    if (global.__ffHoldOcr) await global.__ffHoldOcr;
+    var timer;
+    var timeout = new Promise(function (_, reject) {
+      timer = setTimeout(function () { reject(new Error('budget')); }, budget);
+    });
+    try {
+      return await Promise.race([worker.recognize(source), timeout]);
+    } catch (err) {
+      if (gen === workerGen) {
+        workerPromise = null;
+        try { if (worker && worker.terminate) worker.terminate(); } catch (ignore) {}
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function enqueueRead(work) {
+    var run = readChain.then(function () { return work(); }, function () { return work(); });
+    readChain = run.then(function () {}, function () {});
+    return run;
+  }
 
   function pdfjs() {
     if (!global.pdfjsLib) throw new Error('pdf.js is not loaded');
@@ -13,6 +56,7 @@
 
   async function textLayer(bytes) {
     var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
+    try {
     var parts = [];
     var pages = Math.min(pdf.numPages, 12);
     for (var i = 1; i <= pages; i++) {
@@ -37,6 +81,9 @@
       if (line) parts.push(line);
     }
     return parts.join('\n');
+    } finally {
+      try { await pdf.destroy(); } catch (err) {}
+    }
   }
 
   function vendorBase() {
@@ -131,51 +178,41 @@
   }
 
   async function imageText(bytes, mime) {
-    var worker = await ocrWorker();
-    var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
-    var maxW = 1600;
-    var scale = bmp.width > maxW ? maxW / bmp.width : 1;
-    var canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(bmp.width * scale));
-    canvas.height = Math.max(1, Math.round(bmp.height * scale));
-    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    if (bmp.close) bmp.close();
-    var ready = prepareOcr(canvas);
-    var blob = await new Promise(function (resolve) { ready.toBlob(resolve, 'image/png'); });
-    try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (err) {}
-    var result = await worker.recognize(blob);
-    var text = result && result.data && result.data.text ? result.data.text : '';
-    if (text.trim()) return text;
-    try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (err) {}
-    result = await worker.recognize(blob);
-    return result && result.data && result.data.text ? result.data.text : '';
+    return enqueueOcr(async function () {
+      var worker = await ocrWorker();
+      var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
+      var maxW = 1600;
+      var scale = bmp.width > maxW ? maxW / bmp.width : 1;
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      if (bmp.close) bmp.close();
+      var ready = prepareOcr(canvas);
+      var blob = await new Promise(function (resolve) { ready.toBlob(resolve, 'image/png'); });
+      try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (err) {}
+      var result = await recognizeBounded(worker, blob);
+      var text = result && result.data && result.data.text ? result.data.text : '';
+      if (text.trim()) return text;
+      worker = await ocrWorker();
+      try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (err) {}
+      result = await recognizeBounded(worker, blob);
+      return result && result.data && result.data.text ? result.data.text : '';
+    });
   }
 
   async function wordBoxes(source, psm, opts) {
+    return enqueueOcr(async function () {
     var worker = await ocrWorker();
     if (psm) {
       try { await worker.setParameters({ tessedit_pageseg_mode: String(psm) }); } catch (err) {}
     }
-    var timer;
-    var timeout = new Promise(function (_, reject) {
-      timer = setTimeout(function () {
-        reject(new Error('Reading the words took too long.'));
-      }, 25000);
-    });
-    var result;
-    try {
-      result = await Promise.race([worker.recognize(source), timeout]);
-    } catch (err) {
-      try { if (worker.terminate) await worker.terminate(); } catch (e) {}
-      workerPromise = null;
-      throw err;
-    } finally {
-      clearTimeout(timer);
-    }
+    var result = await recognizeBounded(worker, source);
     var words = result && result.data && result.data.words ? result.data.words : [];
     var minConfidence = opts && opts.minConfidence != null ? opts.minConfidence : 35;
     return words.filter(function (word) {
       return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= minConfidence);
+    });
     });
   }
 
@@ -264,7 +301,7 @@
     ctx.fillRect(0, 0, crop.width, crop.height);
     ctx.drawImage(canvas, box.x0 || 0, box.y0 || 0, width, height, pad, pad, width, height);
     try { await worker.setParameters({ tessedit_pageseg_mode: '10' }); } catch (err) {}
-    var result = await worker.recognize(crop);
+    var result = await recognizeBounded(worker, crop);
     return result && result.data && result.data.text ? result.data.text.replace(/\s/g, '') : '';
   }
 
@@ -283,13 +320,15 @@
   }
 
   async function recognizeCanvas(canvas, scale, pageWidth, pageHeight) {
+    return enqueueOcr(async function () {
     var worker = await ocrWorker();
     var best = { text: '', items: [] };
     var bestWords = null;
     var modes = ['6', '11'];
     for (var m = 0; m < modes.length; m++) {
       try { await worker.setParameters({ tessedit_pageseg_mode: modes[m] }); } catch (err) {}
-      var result = await worker.recognize(canvas);
+      worker = await ocrWorker();
+      var result = await recognizeBounded(worker, canvas);
       var packed = linesFromWords(result && result.data && result.data.words);
       var letters = (packed.text.match(/[A-Za-z]{3,}/g) || []).length;
       var bestLetters = (best.text.match(/[A-Za-z]{3,}/g) || []).length;
@@ -316,10 +355,12 @@
         deskew: 'none'
       }
     };
+    });
   }
 
   async function spatialPdf(bytes) {
     var pdf = await pdfjs().getDocument({ data: bytes.slice(0) }).promise;
+    try {
     var parts = [];
     var words = [];
     var pages = Math.min(pdf.numPages, 2);
@@ -351,9 +392,16 @@
         deskew: 'none'
       }
     };
+    } finally {
+      try { await pdf.destroy(); } catch (err) {}
+    }
   }
 
   async function spatial(bytes, mime) {
+    return enqueueRead(function () { return spatialNow(bytes, mime); });
+  }
+
+  async function spatialNow(bytes, mime) {
     var isPdf = !mime || mime === 'application/pdf';
     if (!isPdf) {
       var bmp = await createImageBitmap(new Blob([bytes.slice(0)], { type: mime || 'image/png' }));
@@ -464,6 +512,7 @@
     imageText: imageText,
     wordBoxes: wordBoxes,
     spatial: spatial,
+    cancelOcr: cancelOcr,
     chunks: chunks,
     retrieve: retrieve
   };
