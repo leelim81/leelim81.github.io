@@ -2441,9 +2441,18 @@
       } catch (err) { toast('That image could not be read.'); }
     });
 
+    function markBody(target) {
+      return target && target.closest ? target.closest('.ann-body') : null;
+    }
+    function leaveMarkEditing(body) {
+      if (!(body && body.isConnected && document.activeElement === body)) return;
+      body.blur();
+      if ($('addText') && !$('addText').hidden) $('addText').focus();
+    }
     document.addEventListener('keydown', function (e) {
       var typing = e.target.closest && (e.target.isContentEditable || e.target.closest('input, textarea'));
       var downloadOpen = $('downloadModal') && !$('downloadModal').hidden;
+      if (e.key === 'Escape' && (e.isComposing || e.keyCode === 229)) return;
       if (e.key === 'Tab' && downloadOpen) {
         var items = dialogItems($('downloadModal'));
         if (items.length) {
@@ -2465,6 +2474,8 @@
       }
       var sigOpen = $('sigModal') && !$('sigModal').hidden;
       if (e.key === 'Escape') {
+        var editing = markBody(e.target);
+        if (editing && !downloadOpen && !sigOpen) leaveMarkEditing(editing);
         if (sigOpen) $('sigModal').hidden = true;
         if (downloadOpen) closeDownload();
         else if ($('downloadModal')) $('downloadModal').hidden = true;
