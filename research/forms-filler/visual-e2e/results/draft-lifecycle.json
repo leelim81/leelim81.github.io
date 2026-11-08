@@ -1,0 +1,117 @@
+{
+  "interactions": 67,
+  "passed": 22,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "a pdf becomes ready without a timer",
+      "ok": true,
+      "detail": "Form ready."
+    },
+    {
+      "name": "the editor opens that pdf",
+      "ok": true,
+      "detail": "flat-day-pass.pdf"
+    },
+    {
+      "name": "browser back restores the pdf and its status",
+      "ok": true,
+      "detail": "flat-day-pass.pdf · 3 entry spots || Form ready."
+    },
+    {
+      "name": "forward returns to the same editor document",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a second return still has the pdf",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "opening the form page again restores the stored pdf",
+      "ok": true,
+      "detail": "Form ready."
+    },
+    {
+      "name": "reload restores the stored pdf",
+      "ok": true,
+      "detail": "Form ready."
+    },
+    {
+      "name": "switching person does not change the document",
+      "ok": true,
+      "detail": "flat-day-pass.pdf · 3 entry spots"
+    },
+    {
+      "name": "start over says the stored form is gone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload after start over does not bring the pdf back",
+      "ok": true,
+      "detail": "A fillable PDF, a flat form, or a photo of one."
+    },
+    {
+      "name": "a corrupt file is refused",
+      "ok": true,
+      "detail": "Failed to parse PDF document (line:0 col:34 offset=17): No PDF header found"
+    },
+    {
+      "name": "reload does not restore the corrupt file or the previous pdf",
+      "ok": true,
+      "detail": "A fillable PDF, a flat form, or a photo of one. || "
+    },
+    {
+      "name": "a new pdf replaces the empty desk",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a failed store is told in the status",
+      "ok": true,
+      "detail": "This form is open in this tab, but the browser could not store it. Back or reload will not bring it back."
+    },
+    {
+      "name": "the food photo is ready for placement",
+      "ok": true,
+      "detail": "No lines were found. Use Place a missing line to put a value where you want it. Nothing was written."
+    },
+    {
+      "name": "the stored map has a sheet and no person or filename",
+      "ok": true,
+      "detail": "{\"schema\":1,\"maps\":[{\"id\":\"9racu1omqhx3\",\"name\":\"Food lines\",\"fileSha256\":\"cc3c04c8e93e759f6d33c7740e2c542034bc6fa8e3346f8abec6316d9ed03612\",\"role\":\"applicant\",\"createdAt\":\"2026-11-08T11:11:03.857Z\",\"updatedAt\":\"2026-11-08T11:11:03.857Z\",\"p"
+    },
+    {
+      "name": "back restores the food photo",
+      "ok": true,
+      "detail": "wellcome-food-order-bounded.pdf · 0 entry spots || No lines were found. Use Place a missing line to put a value where you want it. Nothing was written."
+    },
+    {
+      "name": "the same photo finds the map after a new sheet pdf",
+      "ok": true,
+      "detail": "Food lines · applicant"
+    },
+    {
+      "name": "a role change does not skip the sheet check",
+      "ok": true,
+      "detail": "Preview only, nothing written. Role applicant. 1 place(s), 0 left blank. Page 1 applicant name would be placed."
+    },
+    {
+      "name": "the second person is written and Ada is not",
+      "ok": true,
+      "detail": "Bea Shore"
+    },
+    {
+      "name": "a re-encoded photo is not the saved file",
+      "ok": true,
+      "detail": "No map for this exact file"
+    },
+    {
+      "name": "a different photo is refused",
+      "ok": true,
+      "detail": "No map for this exact file"
+    }
+  ]
+}

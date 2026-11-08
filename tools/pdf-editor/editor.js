@@ -136,6 +136,7 @@
         epoch: state.epoch,
         source: desk,
         sourceSha256: state.sourceSha256 || '',
+        sheet: state.sheet || null,
         pages: state.pages.map(function (p) {
           return {
             id: p.id,
@@ -146,13 +147,17 @@
         })
       };
       await idbSave(new Uint8Array(state.pdfBytes), session);
-      if (gen !== saveGen) return;
+      if (gen !== saveGen) return true;
       var el = $('saveState');
       el.dataset.gen = String(Number(el.dataset.gen || 0) + 1);
       setSaveStatus('Saved');
+      return true;
     } catch (err) {
-      setSaveStatus('Not saved');
-      toast('Could not save in this browser.');
+      if (gen === saveGen) {
+        setSaveStatus('Not saved');
+        toast('Could not save in this browser.');
+      }
+      return false;
     }
   }
   window.addEventListener('pagehide', function () { if (state.pdfBytes) saveNow(); });
@@ -528,6 +533,7 @@
     state.undo = [];
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     state.sourceSha256 = session && session.sourceSha256 ? session.sourceSha256 : '';
+    state.sheet = session && session.sheet ? session.sheet : null;
     closed = false;
     showWorkspace();
     if (session && session.recover) {
@@ -1160,10 +1166,15 @@
     if (found.roles.length !== 1) { recoverSay('A map remembers one role. Applicant and patient places together were not saved.'); return; }
     var loaded = await FormMaps.load();
     if (!loaded.ok && loaded.reason !== 'version') { recoverSay('Maps could not be read (' + loaded.reason + '). Nothing was saved.'); return; }
+    if (state.sourceSha256 && (!state.sheet || !window.FormMaps.matchesSheet(state.sheet, state.sheet))) {
+      recoverSay('This photo’s sheet could not be checked, so the map was not saved.');
+      return;
+    }
     var label = ($('mapName').value || '').trim();
     var draft = {
       name: label || ('Blank map ' + ((loaded.vault.maps || []).length + 1)),
       fileSha256: await fileSha(),
+      sheet: state.sourceSha256 ? state.sheet : null,
       pages: support.frames.map(function (frame, index) {
         return {
           width: frame.media.width,
@@ -1193,6 +1204,12 @@
     var support = await pagesSupported();
     if (!support.ok) { if (box) box.textContent = support.reason; return; }
     if (map.fileSha256 !== await fileSha()) { if (box) box.textContent = 'This is not the same file. Open the exact blank original.'; return; }
+    if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
+      var refused = 'This photo opened onto a different sheet. The map was not used.';
+      if (box) box.textContent = refused;
+      recoverSay(refused);
+      return;
+    }
     var person = $('recoverPerson');
     var fact = selectedRecoverFact();
     var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
@@ -1224,6 +1241,10 @@
     var support = await pagesSupported();
     if (!support.ok) { recoverSay(support.reason); return; }
     if (map.fileSha256 !== await fileSha()) { recoverSay('This is not the same file the map was saved from. Open the exact blank original. A changed copy is not used.'); return; }
+    if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
+      recoverSay('This photo opened onto a different sheet. The map was not used.');
+      return;
+    }
     if (state.pages.some(function (rec, index) { return rec.srcIndex !== index || rec.rotation; })) {
       recoverSay('Pages were rotated or reordered. The map was not applied.');
       return;
@@ -1321,7 +1342,7 @@
     else if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
     refreshMaps();
   }
-  function placeRecovered(rec, x, y) {
+  async function placeRecovered(rec, x, y) {
     var fact = selectedRecoverFact();
     if (!state.recoverArmed || !fact || !fact.value) {
       disarmRecover('That placement was cancelled.');
@@ -1347,6 +1368,11 @@
       seedText: fact.value
     }, rec);
     state.recoverArmed = false;
+    var saved = await saveNow();
+    if (!saved) {
+      recoverSay('The mark is on the page, but this browser could not store it. Back or reload will lose it.');
+      return;
+    }
     recoverSay('Placed ' + fact.personName + '’s ' + fact.label + '. You placed it. It is not an automatic fill.');
     if (el) fitTextHeight(el, findAnn(el.dataset.id));
   }

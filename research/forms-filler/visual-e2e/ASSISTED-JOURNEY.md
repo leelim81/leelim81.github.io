@@ -18,9 +18,13 @@ Choosing that same photo again still lists Food lines. Preview says 2 places, no
 
 The current-head map integration, `template-e3.mjs`, was rerun after the photo change: 36 steps, 0 failed. That run still skips an unconfirmed phone, refuses a reordered file, and keeps native widgets. The fresh walk’s Add value control only stores confirmed facts, so it did not itself create an unconfirmed read.
 
-## The one change
+## What changed since that walk
 
-A photo’s blank map was stored against the generated sheet PDF. Opening the same photo again builds a new sheet, so the map said “No map for this exact file.” The map now uses the SHA-256 of the photo bytes the person chose. A PDF still uses the PDF’s own SHA-256. `read` and `readImage` are unchanged, and scan autofill stays off.
+The desk draft is written before the editor opens, and again when the tab is hidden. Back, forward, reload, and opening the form page again restore that document and its status. Start over deletes the draft, and a later reload does not bring it back. A file that is not a PDF is refused, and the previous document is not restored. If the browser cannot store the draft, the status says so and the editor is not opened as though the form had been kept.
+
+A photo map stores the source SHA-256 and the sheet frame: source size, working size, crop, angle, output size, and sheet version 1. The same photo matches after the sheet PDF is built again. A re-encoded file and a different picture do not. A changed crop, orientation, output size, or sheet version does not match. A PDF map still has no sheet frame and still requires that PDF’s own bytes. The map file version is unchanged. An older map file is refused. An older map without a sheet stays an exact-file map. The map still does not store a person, a value, a profile id, or a filename. `read` and `readImage` are unchanged, and scan autofill stays off.
+
+`draft-lifecycle.mjs`: 22 checks, 0 failed, 67 interactions. `template-e3.mjs`: 36 steps, 0 failed. `map-sheet.test.mjs`: 0 failed. These checks are restore and map identity. They are not a placement score.
 
 ## Glyphs from the new clicks
 
@@ -28,4 +32,4 @@ The name click, plus one nudge down, exported a glyph box of 1341, 1323, 1747, 1
 
 ## Next failure
 
-Back from the editor returns to Forms Filler with no status and with Place a missing line disabled. The desk draft is written 300 ms after a read and is not flushed when Place a missing line navigates away, so that Back press has no form to restore. Choosing the photo again is the path that finds the map.
+Those two hand-placed glyphs are still outside the frozen boxes, by 29 pixels and 114 pixels. That miss is the open gap. It is not another OCR pass.

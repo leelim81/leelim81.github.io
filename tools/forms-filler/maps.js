@@ -7,6 +7,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (root) {
   var DB = 'tools-forms-maps';
   var SCHEMA = 1;
+  var SHEET_VERSION = 1;
   var ROLES = ['applicant', 'patient', 'spouse', 'other'];
   var KEYS = ['name', 'nric', 'dob', 'phone', 'email', 'address', 'postal', 'custom'];
   var LIMITS = { maps: 20, slots: 40, name: 40 };
@@ -67,6 +68,39 @@
     };
   }
 
+  function sheetOf(raw) {
+    if (raw == null) return { absent: true };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    var keys = ['version', 'sourceW', 'sourceH', 'inW', 'inH', 'angle', 'cropX', 'cropY', 'cropW', 'cropH', 'outW', 'outH'];
+    var out = {};
+    for (var i = 0; i < keys.length; i++) {
+      var n = num(raw[keys[i]]);
+      if (n == null) return null;
+      out[keys[i]] = n;
+    }
+    if (out.version !== Math.round(out.version) || out.version < 1) return null;
+    if (!(out.sourceW > 0) || !(out.sourceH > 0) || !(out.inW > 0) || !(out.inH > 0)) return null;
+    if (!(out.cropW > 0) || !(out.cropH > 0) || !(out.outW > 0) || !(out.outH > 0)) return null;
+    if (out.cropX < 0 || out.cropY < 0) return null;
+    if (out.cropX + out.cropW > out.inW + 0.5 || out.cropY + out.cropH > out.inH + 0.5) return null;
+    return out;
+  }
+
+  function matchesSheet(stored, current) {
+    if (!stored || stored.absent || !current) return false;
+    var keys = ['version', 'sourceW', 'sourceH', 'inW', 'inH', 'angle', 'cropX', 'cropY', 'cropW', 'cropH', 'outW', 'outH'];
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var a = Number(stored[key]);
+      var b = Number(current[key]);
+      if (!isFinite(a) || !isFinite(b)) return false;
+      if (key === 'angle') {
+        if (Math.abs(a - b) > 1e-6) return false;
+      } else if (a !== b) return false;
+    }
+    return stored.version === SHEET_VERSION && current.version === SHEET_VERSION;
+  }
+
   function matchesFrame(stored, frame) {
     if (!stored || !frame || !frame.media || !frame.crop || frame.ok === false) return false;
     if (Math.abs(stored.width - frame.media.width) > 0.5 || Math.abs(stored.height - frame.media.height) > 0.5) return false;
@@ -120,7 +154,9 @@
       pages.push(stored);
     }
     if (Object.keys(roles).length > 1) return null;
-    return {
+    var sheet = sheetOf(raw.sheet);
+    if (!sheet) return null;
+    var stored = {
       id: cleanName(raw.id) || id(),
       name: cleanName(raw.name) || 'Blank map',
       fileSha256: String(raw.fileSha256),
@@ -129,6 +165,8 @@
       updatedAt: now(),
       pages: pages
     };
+    if (!sheet.absent) stored.sheet = sheet;
+    return stored;
   }
 
   function migrate(raw) {
@@ -202,6 +240,7 @@
 
   return {
     SCHEMA: SCHEMA,
+    SHEET_VERSION: SHEET_VERSION,
     ROLES: ROLES,
     DB: DB,
     empty: empty,
@@ -209,6 +248,7 @@
     saveMap: saveMap,
     deleteMap: deleteMap,
     matchesFrame: matchesFrame,
+    matchesSheet: matchesSheet,
     load: load,
     persist: persist,
     clearAll: clearAll

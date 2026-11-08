@@ -6,6 +6,8 @@
     gpu: null,
     formBytes: null,
     sourceBytes: null,
+    sourceName: '',
+    sourceMime: '',
     formName: '',
     fields: [],
     kind: '',
@@ -221,6 +223,8 @@
     state.formName = '';
     state.fields = [];
     state.sourceBytes = null;
+    state.sourceName = '';
+    state.sourceMime = '';
     state.placementBlocked = '';
     state.scanReview = null;
     state.imageFrame = null;
@@ -229,7 +233,6 @@
     state.proposals = [];
     if ($('scanReview')) $('scanReview').hidden = true;
     refreshLabels();
-    scheduleSave();
   }
 
   function isImageName(name, mime) {
@@ -273,6 +276,8 @@
     }
     if (!alive() || !read) return false;
     state.sourceBytes = bytes;
+    state.sourceName = name || '';
+    state.sourceMime = mime || '';
     state.formBytes = read.bytes || bytes;
     state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
     state.proposals = [];
@@ -283,19 +288,42 @@
     state.imageFrame = image ? (read.frame || null) : null;
     state.imageNote = imageSentence(state.imageFrame);
     paintScanReview();
+    refreshLabels();
+    var kept = await persistDraft();
+    if (!alive()) return false;
+    if (!kept.ok) {
+      state.draftError = 'This form is open in this tab, but the browser could not store it. Back or reload will not bring it back.';
+      status(state.draftError, false);
+      toast('The form could not be stored in this browser.');
+      return true;
+    }
+    state.draftError = '';
+    state.deskewDeg = read.deskewDeg || 0;
+    paintDeskStatus();
+    if (state.placementBlocked) toast(state.placementBlocked);
+    return true;
+  }
+
+  function paintDeskStatus() {
+    if (state.draftError) {
+      status(state.draftError, false);
+      return;
+    }
+    if (!state.formBytes && !state.sourceBytes) {
+      status('', false);
+      return;
+    }
     var tail = state.imageNote ? ' ' + state.imageNote : '';
     if (state.placementBlocked) {
       status(state.placementBlocked + tail, false);
-      toast(state.placementBlocked);
-    } else if (state.fields.some(function (field) { return field.transport === 'viewport-review'; })) {
+    } else if ((state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) {
       status(state.fields.length + ' scan estimates. Nothing is written until you check a value.' + tail, false);
-    } else if (!state.fields.length) {
-      var tilt = read.deskewDeg ? ' The lines are tilted, and the page was not replaced with a turned picture.' : '';
+    } else if (!(state.fields || []).length) {
+      var tilt = state.deskewDeg ? ' The lines are tilted, and the page was not replaced with a turned picture.' : '';
       status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.' + tail + tilt, false);
+    } else {
+      status('Form ready.' + tail, false);
     }
-    refreshLabels();
-    scheduleSave();
-    return true;
   }
 
   function refById(id) {
@@ -603,9 +631,15 @@
     for (var i = 0; i < probe.getPageCount(); i++) {
       pages.push({ id: Math.random().toString(36).slice(2, 10), srcIndex: i, rotation: 0, annotations: [] });
     }
+    var kept = await persistDraft();
+    if (!kept.ok || kept.skipped) {
+      status(kept.ok ? 'The form was cleared before it could be opened.' : 'This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true, sourceSha256: await sourceIdentity() } }
+      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true, sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
     ]);
     location.href = '../pdf-editor/?desk=forms';
   }
@@ -803,9 +837,17 @@
       });
     }
     var fileName = blank ? (state.formName || 'form.pdf') : state.formName.replace(/\.pdf$/i, '') + '-filled.pdf';
+    var kept = await persistDraft();
+    if (!kept.ok || kept.skipped) {
+      status(kept.ok ? 'The form was cleared before it could be opened.' : 'This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      state.running = false;
+      refreshLabels();
+      return;
+    }
     await DeskDB.putAll(EDITOR_DB, [
       { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity() } }
+      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
     ]);
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;
@@ -814,19 +856,92 @@
   }
 
   var saveTimer = 0;
-  function scheduleSave() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveNow, 300);
+  var draftEpoch = 0;
+  var draftTail = Promise.resolve();
+
+  function isPdfBytes(bytes) {
+    return !!(bytes && bytes.length > 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46);
   }
-  function saveNow() {
-    DeskDB.set(DB, 'draft', {
+
+  function draftReason(err) {
+    var name = err && (err.name || err.code);
+    if (name === 'QuotaExceededError' || name === 22) return 'quota';
+    if (name === 'SecurityError' || name === 'InvalidStateError') return 'blocked';
+    return 'unavailable';
+  }
+
+  function enqueueDraft(work) {
+    var run = draftTail.then(work, work);
+    draftTail = run.then(function () {}, function () {});
+    return run;
+  }
+
+  function draftSnapshot() {
+    var image = state.sourceBytes && !isPdfBytes(state.sourceBytes);
+    var hasForm = image ? state.sourceBytes : state.formBytes;
+    if (!hasForm && !(state.refs && state.refs.length)) return null;
+    return {
       formName: state.formName,
       formBytes: state.formBytes,
+      sourceName: state.sourceName || state.formName,
+      sourceMime: state.sourceMime || '',
+      sourceBytes: image ? state.sourceBytes : null,
       kind: state.kind,
+      fields: state.fields || [],
+      placementBlocked: state.placementBlocked || '',
+      imageFrame: state.imageFrame || null,
+      imageNote: state.imageNote || '',
+      deskewDeg: state.deskewDeg || 0,
       refs: state.refs.map(function (ref) {
         return { id: ref.id, name: ref.name, bytes: ref.bytes, mime: ref.mime, text: ref.text || '' };
       })
-    }).catch(function () {});
+    };
+  }
+
+  function persistDraft() {
+    var epoch = draftEpoch;
+    return enqueueDraft(function () {
+      if (epoch !== draftEpoch) return { ok: true, skipped: true };
+      var snap = draftSnapshot();
+      if (!snap) return DeskDB.clear(DB).then(function () { return { ok: true }; });
+      return DeskDB.set(DB, 'draft', snap).then(function () { return { ok: true }; });
+    }).catch(function (err) {
+      return { ok: false, reason: draftReason(err) };
+    });
+  }
+
+  function discardDraft() {
+    draftEpoch++;
+    clearTimeout(saveTimer);
+    return enqueueDraft(function () {
+      return DeskDB.clear(DB).then(function () { return { ok: true }; });
+    }).catch(function (err) {
+      return { ok: false, reason: draftReason(err) };
+    });
+  }
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { persistDraft(); }, 300);
+  }
+
+  function sheetStamp() {
+    var frame = state.imageFrame;
+    if (!frame || !frame.crop || !window.FormMaps) return null;
+    return {
+      version: FormMaps.SHEET_VERSION,
+      sourceW: frame.sourceW,
+      sourceH: frame.sourceH,
+      inW: frame.inW,
+      inH: frame.inH,
+      angle: frame.angle || 0,
+      cropX: frame.crop.x,
+      cropY: frame.crop.y,
+      cropW: frame.crop.w,
+      cropH: frame.crop.h,
+      outW: frame.outW,
+      outH: frame.outH
+    };
   }
 
   function snapshotFiles(input) {
@@ -865,12 +980,16 @@
         if (mine !== takeToken) return;
         var item = loaded[i];
         if (kind === 'form') {
+          await discardDraft();
+          if (mine !== takeToken) return;
           var applied = await setForm(item.bytes, item.name, item.type);
           if (!applied || mine !== takeToken) return;
         } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
       if (mine !== takeToken) return;
-      if (kind === 'form' && !state.placementBlocked && state.fields.length && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) {
+      if (state.draftError) {
+        status(state.draftError, false);
+      } else if (kind === 'form' && !state.placementBlocked && state.fields.length && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) {
         status('Form ready.' + (state.imageNote ? ' ' + state.imageNote : ''), false);
       } else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
@@ -902,6 +1021,8 @@
     state.formName = '';
     state.fields = [];
     state.sourceBytes = null;
+    state.sourceName = '';
+    state.sourceMime = '';
     state.placementBlocked = '';
     state.scanReview = null;
     if ($('scanReview')) $('scanReview').hidden = true;
@@ -978,14 +1099,22 @@
   });
   $('clearBtn').addEventListener('click', function () {
     resetDesk();
-    DeskDB.clear(DB).catch(function () {});
+    status('Clearing the stored form…', true);
+    discardDraft().then(function (result) {
+      if (result && !result.ok) status('Start over could not finish clearing the stored form.', false);
+      else status('Started over. Nothing is stored from that form.', false);
+    });
+  });
+  window.addEventListener('pagehide', function () {
+    clearTimeout(saveTimer);
+    persistDraft();
   });
   window.addEventListener('pageshow', function (event) {
     state.running = false;
     $('formDrop').disabled = false;
     $('refDrop').disabled = false;
     refreshLabels();
-    if (event.persisted) status('Ready for another form.', false);
+    if (event.persisted) paintDeskStatus();
   });
 
   window.FormDesk = {
@@ -1042,9 +1171,24 @@
   DeskDB.get(DB, 'draft').then(async function (draft) {
     if (userTouched || !draft || (!draft.formBytes && !(draft.refs && draft.refs.length))) return;
     try {
-      if (draft.formBytes) {
+      if (draft.formBytes && (draft.imageFrame || draft.kind || (draft.fields && draft.fields.length))) {
+        state.sourceBytes = draft.sourceBytes && draft.sourceBytes.length ? draft.sourceBytes : draft.formBytes;
+        state.sourceName = draft.sourceName || draft.formName || '';
+        state.sourceMime = draft.sourceMime || '';
+        state.formBytes = draft.formBytes;
+        state.formName = draft.formName || 'form.pdf';
+        state.fields = draft.fields || [];
+        state.kind = draft.kind || '';
+        state.placementBlocked = draft.placementBlocked || '';
+        state.imageFrame = draft.imageFrame || null;
+        state.imageNote = draft.imageNote || imageSentence(state.imageFrame);
+        state.deskewDeg = draft.deskewDeg || 0;
+        refreshLabels();
+        paintDeskStatus();
+      } else if (draft.formBytes || (draft.sourceBytes && draft.sourceBytes.length)) {
         status('Opening the saved form…', true);
-        var applied = await setForm(draft.formBytes, draft.formName);
+        var source = draft.sourceBytes && draft.sourceBytes.length ? draft.sourceBytes : null;
+        var applied = await setForm(source || draft.formBytes, source ? (draft.sourceName || draft.formName) : draft.formName, source ? (draft.sourceMime || '') : '');
         if (!applied || userTouched) return;
       }
       if (userTouched) return;
@@ -1067,7 +1211,7 @@
       });
       refreshLabels();
       paintModel();
-      status(draft.formBytes ? 'Form ready.' : '', false);
+      paintDeskStatus();
     } catch (err) {
       if (userTouched) return;
       status(err && err.message ? err.message : 'The saved form could not be opened.', false);
