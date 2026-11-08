@@ -1,5 +1,5 @@
 {
-  "passed": 10,
+  "passed": 14,
   "failed": 0,
   "checks": [
     {
@@ -51,6 +51,26 @@
       "name": "a failed load restores the controls and stores nothing",
       "ok": true,
       "detail": "[]"
+    },
+    {
+      "name": "a kind change during the commit confirms nothing",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Lane\",\"facts\":[]}"
+    },
+    {
+      "name": "a refused commit does not say the value was saved",
+      "ok": true,
+      "detail": "That save was cancelled because the person or kind changed. Nothing was confirmed."
+    },
+    {
+      "name": "a commit that finished is not described as storing nothing",
+      "ok": true,
+      "detail": "Choose the person and the confirmed value, then place it on the page. {\"name\":\"Ada Lane\",\"facts\":[\"name=Ada Lane:confirmed\"]}"
+    },
+    {
+      "name": "a confirmed value written during the commit is not replaced",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Lane\",\"facts\":[\"name=Ada Original:confirmed\"]}"
     }
   ]
 }

@@ -184,8 +184,81 @@ await page.evaluate(() => { FormProfiles.load = FormProfiles.__realLoad; });
 stored = await facts();
 check('a failed load restores the controls and stores nothing', stored.length === 0 && await page.locator('#recoverAddPerson').isEnabled() && await page.locator('#recoverPersonName').isEnabled(), JSON.stringify(stored));
 
+await freshEditor();
+await page.locator('#recoverPersonName').fill('Ada Lane');
+await page.click('#recoverAddPerson');
+await page.waitForFunction(() => /no confirmed value yet/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
+await page.evaluate(() => {
+  const real = FormProfiles.persist.bind(FormProfiles);
+  window.__realPersist = real;
+  FormProfiles.persist = function (vault, decide) {
+    return new Promise(function (resolve) {
+      window.__releasePersist = function () { resolve(real(vault, decide)); };
+    });
+  };
+});
+await page.evaluate(() => { window.__releasePersist = null; });
+await page.locator('#recoverFactValue').fill('During commit');
+await page.click('#recoverAddFact');
+await page.waitForFunction(() => typeof window.__releasePersist === 'function');
+await page.locator('#recoverFactKey').evaluate((el) => { el.value = 'email'; el.dispatchEvent(new Event('change')); });
+await page.evaluate(() => window.__releasePersist());
+await page.waitForFunction(() => !document.getElementById('recoverAddFact').disabled);
+stored = await facts();
+const during = stored.filter((profile) => profile.name === 'Ada Lane')[0];
+check('a kind change during the commit confirms nothing', during && during.facts.length === 0, JSON.stringify(during));
+check('a refused commit does not say the value was saved', !/was saved/.test(await page.locator('#recoverStatus').innerText()), await page.locator('#recoverStatus').innerText());
+
+await page.evaluate(() => {
+  const real = window.__realPersist;
+  FormProfiles.persist = function (vault, decide) {
+    return real(vault, decide).then(function (result) {
+      return new Promise(function (resolve) { window.__releasePersist = function () { resolve(result); }; });
+    });
+  };
+});
+await page.locator('#recoverFactKey').selectOption('name');
+await page.evaluate(() => { window.__releasePersist = null; });
+await page.locator('#recoverFactValue').fill('Ada Lane');
+await page.click('#recoverAddFact');
+await page.waitForFunction(() => typeof window.__releasePersist === 'function');
+await page.keyboard.press('Escape');
+await page.evaluate(() => window.__releasePersist());
+await page.waitForFunction(() => /was saved|already confirmed|Choose the person/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
+stored = await facts();
+const written = stored.filter((profile) => profile.name === 'Ada Lane')[0];
+const afterWrite = await page.locator('#recoverStatus').innerText();
+check('a commit that finished is not described as storing nothing', written && written.facts.some((fact) => fact.indexOf('name=Ada Lane') === 0) && !/Nothing was confirmed/.test(afterWrite), afterWrite + ' ' + JSON.stringify(written));
+
+await freshEditor();
+await page.locator('#recoverPersonName').fill('Ada Lane');
+await page.click('#recoverAddPerson');
+await page.waitForFunction(() => /no confirmed value yet/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
+await page.evaluate(() => {
+  const real = FormProfiles.persist.bind(FormProfiles);
+  window.__realPersist = real;
+  FormProfiles.persist = function (vault, decide) {
+    return new Promise(function (resolve) { window.__releasePersist = function () { resolve(real(vault, decide)); }; });
+  };
+});
+await page.evaluate(() => { window.__releasePersist = null; });
+await page.locator('#recoverFactValue').fill('Replacement');
+await page.click('#recoverAddFact');
+await page.waitForFunction(() => typeof window.__releasePersist === 'function');
+await page.evaluate(async () => {
+  const cur = await FormProfiles.load();
+  const ada = cur.vault.profiles.filter((profile) => profile.name === 'Ada Lane')[0];
+  ada.facts.push({ id: 'kept', key: 'name', label: 'name', value: 'Ada Original', status: 'confirmed', origin: 'user', quote: '', updatedAt: '' });
+  await window.__realPersist(cur.vault);
+});
+await page.evaluate(() => window.__releasePersist());
+await page.waitForFunction(() => /already saved|Nothing was replaced/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
+stored = await facts();
+const conflicted = stored.filter((profile) => profile.name === 'Ada Lane')[0];
+check('a confirmed value written during the commit is not replaced', conflicted && conflicted.facts.some((fact) => fact.indexOf('name=Ada Original') === 0) && !conflicted.facts.some((fact) => fact.indexOf('Replacement') >= 0), JSON.stringify(conflicted));
+
 const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks };
-writeFileSync('/tmp/inline-wt/research/forms-filler/visual-e2e/results/confirm-race.json', JSON.stringify(out, null, 2));
+writeFileSync('/tmp/place-gate/research/forms-filler/visual-e2e/results/confirm-race.json', JSON.stringify(out, null, 2));
 console.log('SUMMARY', out.passed, '/', checks.length);
 await browser.close();
 if (out.failed) process.exit(1);
