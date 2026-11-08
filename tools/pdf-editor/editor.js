@@ -254,7 +254,9 @@
       body.spellcheck = false;
       body.textContent = ann.text || '';
       function readBody() {
-        ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+        if (el.dataset.painting) return;
+        var shown = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+        ann.text = el.dataset.painted ? logicalFromPainted(ann.text, el.dataset.painted, shown) : shown;
         if (window.FormProfiles && ann.type === 'text' && ann.factKey && ann.profileId && ann.text !== ann.seedText) {
           FormProfiles.load().then(function (loaded) {
             if (!loaded.ok) return null;
@@ -273,6 +275,11 @@
       }
       body.addEventListener('input', readBody);
       body.addEventListener('keyup', readBody);
+      body.addEventListener('focus', function () { paintWrap(el, ann, true); });
+      body.addEventListener('blur', function () {
+        readBody();
+        paintWrap(el, ann, false);
+      });
       var mirror = document.createElement('div');
       mirror.className = 'ann-mirror';
       mirror.setAttribute('aria-hidden', 'true');
@@ -328,25 +335,124 @@
   }
 
   var wrapFontPromise = null;
+  var wrapFontCached = null;
   function wrapFont() {
     if (!wrapFontPromise && window.PDFLib) {
       wrapFontPromise = PDFLib.PDFDocument.create().then(function (doc) {
-        return doc.embedFont(PDFLib.StandardFonts.Helvetica);
+        return doc.embedFont(PDFLib.StandardFonts.Helvetica).then(function (font) {
+          wrapFontCached = font;
+          return font;
+        });
       });
     }
     return wrapFontPromise;
   }
-  function paintWrap(el, ann) {
+  function flatText(value) { return String(value || '').replace(/\n/g, ''); }
+  function logicalFromPainted(logical, painted, shown) {
+    var from = flatText(painted);
+    var to = flatText(shown);
+    var base = flatText(logical);
+    var pre = 0;
+    while (pre < from.length && pre < to.length && from.charAt(pre) === to.charAt(pre)) pre++;
+    var suf = 0;
+    while (suf < from.length - pre && suf < to.length - pre && from.charAt(from.length - 1 - suf) === to.charAt(to.length - 1 - suf)) suf++;
+    var inserted = to.slice(pre, to.length - suf);
+    var removed = from.length - pre - suf;
+    var next = base.slice(0, pre) + inserted + base.slice(pre + removed);
+    var hard = [];
+    var at = 0;
+    for (var i = 0; i < logical.length; i++) {
+      if (logical.charAt(i) === '\n') hard.push(at);
+      else at++;
+    }
+    var delta = inserted.length - removed;
+    var keep = [];
+    hard.forEach(function (pos) {
+      if (pos <= pre) keep.push(pos);
+      else if (pos >= pre + removed) keep.push(pos + delta);
+    });
+    var shownAt = 0;
+    for (var s = 0; s < shown.length; s++) {
+      if (shown.charAt(s) !== '\n') { shownAt++; continue; }
+      var paintedBreak = false;
+      var pAt = 0;
+      for (var p = 0; p < painted.length; p++) {
+        if (painted.charAt(p) !== '\n') { pAt++; continue; }
+        if (pAt === shownAt) { paintedBreak = true; break; }
+      }
+      if (!paintedBreak && keep.indexOf(shownAt) < 0) keep.push(shownAt);
+    }
+    keep.sort(function (a, b) { return a - b; });
+    var out = '';
+    var n = 0;
+    for (var c = 0; c < next.length; c++) {
+      while (keep.length && keep[0] === n) { out += '\n'; keep.shift(); }
+      out += next.charAt(c);
+      n++;
+    }
+    while (keep.length && keep[0] === n) { out += '\n'; keep.shift(); }
+    return out;
+  }
+  function flatCaret(root) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !root.contains(sel.focusNode)) return null;
+    var range = sel.getRangeAt(0);
+    var pre = range.cloneRange();
+    pre.selectNodeContents(root);
+    pre.setEnd(range.endContainer, range.endOffset);
+    return pre.toString().replace(/\n/g, '').length;
+  }
+  function setFlatCaret(root, offset) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var node;
+    var seen = 0;
+    while ((node = walker.nextNode())) {
+      var text = node.textContent;
+      for (var i = 0; i <= text.length; i++) {
+        if (i < text.length && text.charAt(i) === '\n') continue;
+        if (seen === offset) {
+          var range = document.createRange();
+          range.setStart(node, i);
+          range.collapse(true);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          return;
+        }
+        if (i < text.length) seen++;
+      }
+    }
+  }
+  function applyPaint(el, ann, focused, font) {
     var mirror = el.querySelector('.ann-mirror');
-    var ready = wrapFont();
-    if (!mirror || !ready || !ann) return Promise.resolve();
+    var body = el.querySelector('.ann-body');
+    if (!mirror || !font) return;
     var size = ann.fontSize || 16;
     var maxW = Math.max(8, (el.clientWidth / (state.zoom || 1)) - 2);
-    return ready.then(function (font) {
-      var lines = wrapText(ann.text || '', font, size, maxW);
-      mirror.textContent = lines.join('\n');
-      return lines;
-    }).catch(function () {});
+    var shown = wrapText(ann.text || '', font, size, maxW).join('\n');
+    mirror.textContent = shown;
+    if (!body) return;
+    var caret = focused && document.activeElement === body ? flatCaret(body) : null;
+    el.dataset.painting = '1';
+    if (focused) {
+      body.textContent = shown;
+      el.dataset.painted = shown;
+      if (caret != null) setFlatCaret(body, caret);
+    } else {
+      body.textContent = ann.text || '';
+      delete el.dataset.painted;
+    }
+    delete el.dataset.painting;
+  }
+  function paintWrap(el, ann, focused) {
+    if (!el.querySelector('.ann-mirror') || !ann) return Promise.resolve();
+    if (wrapFontCached) {
+      applyPaint(el, ann, focused, wrapFontCached);
+      return Promise.resolve();
+    }
+    var ready = wrapFont();
+    if (!ready) return Promise.resolve();
+    return ready.then(function (font) { applyPaint(el, ann, focused, font); }).catch(function () {});
   }
   function fitTextHeight(el, ann) {
     var body = el.querySelector('.ann-body');
@@ -362,7 +468,8 @@
       node.style.height = '';
     }
     if (!mirror) { apply(body); return; }
-    paintWrap(el, ann).then(function () { if (el.parentElement) apply(mirror); });
+    var focused = document.activeElement === body;
+    paintWrap(el, ann, focused).then(function () { if (el.parentElement) apply(mirror); });
   }
 
   function startMove(e, el, ann) {

@@ -1,5 +1,5 @@
 {
-  "passed": 13,
+  "passed": 14,
   "failed": 0,
   "checks": [
     {
@@ -18,9 +18,14 @@
       "detail": ""
     },
     {
+      "name": "the focused text uses the Helvetica line breaks",
+      "ok": true,
+      "detail": "{\"body\":\"14 Harbour Lane beside the long west\\nwarehouse\",\"mirror\":\"14 Harbour Lane beside the long west\\nwarehouse\",\"same\":true}"
+    },
+    {
       "name": "a typed newline is kept",
       "ok": true,
-      "detail": "\"14 Harbour Lane beside the long west \\nUnit 2warehouse\""
+      "detail": "\"14 Harbour Lane beside the long\\nwestUnit 2 warehouse\""
     },
     {
       "name": "the name baseline is still on the rule",
@@ -30,7 +35,7 @@
     {
       "name": "export wraps the address and keeps the newline",
       "ok": true,
-      "detail": "[{\"str\":\"14 Harbour Lane beside the long west\",\"y\":356.40467622327634,\"h\":14},{\"str\":\"Unit 2warehouse\",\"y\":338.20467622327635,\"h\":14}]"
+      "detail": "[{\"str\":\"14 Harbour Lane beside the long\",\"y\":356.40467622327634,\"h\":14},{\"str\":\"westUnit 2 warehouse\",\"y\":338.20467622327635,\"h\":14}]"
     },
     {
       "name": "export keeps the long word",
@@ -75,12 +80,12 @@
       "h": 14
     },
     {
-      "str": "14 Harbour Lane beside the long west",
+      "str": "14 Harbour Lane beside the long",
       "y": 356.40467622327634,
       "h": 14
     },
     {
-      "str": "Unit 2warehouse",
+      "str": "westUnit 2 warehouse",
       "y": 338.20467622327635,
       "h": 14
     },
