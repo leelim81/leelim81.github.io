@@ -45,67 +45,108 @@
 </style>
 </head>
 <body>
-<h1>BCG X data science cheat sheet</h1><p class="lede">Syntax recall for a 90-minute Python test (pandas, NumPy, scikit-learn), plus the SQL practice. Snippets assume import numpy as np and import pandas as pd. pandas Series.std() is the sample standard deviation (ddof=1). NumPy&#x27;s default is the population one (ddof=0). Month-end resampling is &#x27;ME&#x27;. Unofficial.</p><div class="cols"><h2>Python core</h2><div class="snip"><h3>Comprehensions</h3><pre><span class="cmt"># filter sits at the end; a dict uses {k: v}; a set uses {v}</span>
-nums, pairs = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>], [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">2</span>)]
-[n * n <span class="kw">for</span> n <span class="kw">in</span> nums <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">0</span>]
-{k: v <span class="kw">for</span> k, v <span class="kw">in</span> pairs}
-{n % <span class="num">2</span> <span class="kw">for</span> n <span class="kw">in</span> nums}</pre></div><div class="snip"><h3>sorted with key</h3><pre><span class="cmt"># a leading minus flips a number; a tuple breaks ties left to right</span>
-<span class="cmt"># sorted() returns a new list; list.sort() changes the list</span>
-rows = [{<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Bo&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Ann&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">4</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Cy&quot;</span>}]
-out = sorted(rows, key=<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>Defaults and lambda</h3><pre><span class="cmt"># a default is bound once, when the function is defined, not on each call</span>
-<span class="kw">def</span> price(amount, discount=<span class="num">0.1</span>):
-    <span class="kw">return</span> amount * (<span class="num">1</span> - discount)
-price(<span class="num">100</span>)
-(<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>dict.get</h3><pre><span class="cmt"># .get returns the default instead of raising KeyError</span>
-d = {}
-<span class="kw">for</span> k <span class="kw">in</span> [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>]:
-    d[k] = d.get(k, <span class="num">0</span>) + <span class="num">1</span></pre></div><div class="snip"><h3>Counter and defaultdict</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> Counter, defaultdict
-Counter([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>]).most_common(<span class="num">1</span>)  <span class="cmt"># [(value, count)]</span>
-groups = defaultdict(list)
-<span class="kw">for</span> k, v <span class="kw">in</span> [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;a&quot;</span>, <span class="num">2</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">3</span>)]:
-    groups[k].append(v)
-dict(groups)  <span class="cmt"># a plain dict, if the caller asked for one</span></pre></div><div class="snip"><h3>zip and enumerate</h3><pre><span class="cmt"># zip stops at the shorter side; start=1 makes the first index 1</span>
-names, scores = [<span class="str">&quot;Ada&quot;</span>, <span class="str">&quot;Bo&quot;</span>], [<span class="num">10</span>, <span class="num">8</span>, <span class="num">7</span>]
-<span class="kw">for</span> i, (name, score) <span class="kw">in</span> enumerate(zip(names, scores), start=<span class="num">1</span>):
-    i, name, score</pre></div><div class="snip"><h3>f-strings and rounding</h3><pre><span class="cmt"># .1f rounds for display; :, adds thousands separators</span>
-<span class="cmt"># the numeric answers on this test want three decimals</span>
-name, score, n = <span class="str">&quot;Ada&quot;</span>, <span class="num">1.26</span>, <span class="num">12000</span>
-f<span class="str">&quot;{name} scored {score:.1f}&quot;</span>
-f<span class="str">&quot;{n:,}&quot;</span>
-f<span class="str">&quot;{score:.3f}&quot;</span></pre></div><div class="snip"><h3>String methods</h3><pre>text = <span class="str">&quot;  East-12, &quot;</span>
-text.strip().lower().replace(<span class="str">&quot;,&quot;</span>, <span class="str">&quot;&quot;</span>).split(<span class="str">&quot;-&quot;</span>)
-<span class="str">&quot;east&quot;</span>.startswith(<span class="str">&quot;e&quot;</span>)
-<span class="str">&quot;file.png&quot;</span>.endswith(<span class="str">&quot;.png&quot;</span>)
-<span class="str">&quot;a-b&quot;</span>.partition(<span class="str">&quot;-&quot;</span>)  <span class="cmt"># (&#x27;a&#x27;, &#x27;-&#x27;, &#x27;b&#x27;)</span></pre></div><div class="snip"><h3>Slices</h3><pre><span class="cmt"># [start:end] is half-open; slicing off the end does not raise</span>
-xs = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
-xs[<span class="num">1</span>:<span class="num">4</span>], xs[-<span class="num">2</span>:], xs[::-<span class="num">1</span>], xs[<span class="num">10</span>:<span class="num">20</span>]</pre></div><div class="snip"><h3>heapq</h3><pre><span class="kw">import</span> heapq
-<span class="cmt"># min-heap; put the priority first in the tuple</span>
-h = []
-heapq.heappush(h, (<span class="num">2</span>, <span class="str">&quot;b&quot;</span>))
-heapq.heappush(h, (<span class="num">1</span>, <span class="str">&quot;a&quot;</span>))
-heapq.heappop(h)             <span class="cmt"># (1, &quot;a&quot;)</span>
-heapq.nlargest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])
-heapq.nsmallest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])</pre></div><div class="snip"><h3>bisect</h3><pre><span class="kw">import</span> bisect
-xs = [<span class="num">1</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">7</span>]             <span class="cmt"># the list must already be sorted</span>
-bisect.bisect_left(xs, <span class="num">3</span>)     <span class="cmt"># first index where 3 could sit</span>
-bisect.bisect_right(xs, <span class="num">3</span>)    <span class="cmt"># just after the existing 3s</span>
-bisect.insort(xs, <span class="num">4</span>)</pre></div><div class="snip"><h3>itertools</h3><pre><span class="kw">import</span> itertools
-list(itertools.accumulate([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]))  <span class="cmt"># running sum</span>
-list(itertools.chain([<span class="num">1</span>], [<span class="num">2</span>, <span class="num">3</span>]))
-list(itertools.product([<span class="num">0</span>, <span class="num">1</span>], repeat=<span class="num">2</span>))
-<span class="cmt"># groupby only joins adjacent keys, so sort first</span>
-<span class="kw">for</span> key, grp <span class="kw">in</span> itertools.groupby(sorted([<span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>])):
-    key, list(grp)</pre></div><div class="snip"><h3>deque</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> deque
-d = deque(maxlen=<span class="num">3</span>)
-<span class="kw">for</span> x <span class="kw">in</span> (<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>):
-    d.append(x)     <span class="cmt"># full: the left end falls off</span>
-d.appendleft(<span class="num">0</span>)     <span class="cmt"># full: the right end falls off</span></pre></div><div class="snip"><h3>Exceptions</h3><pre><span class="cmt"># catch the errors you expect; a bare except also hides bugs</span>
-<span class="kw">def</span> to_int(text):
-    <span class="kw">try</span>:
-        <span class="kw">return</span> int(text)
-    <span class="kw">except</span> (ValueError, TypeError):
-        <span class="kw">return</span> <span class="kw">None</span>
-to_int(<span class="str">&quot;3&quot;</span>), to_int(<span class="str">&quot;x&quot;</span>), to_int(<span class="kw">None</span>)</pre></div><h2>pandas</h2><div class="snip"><h3>Read and inspect</h3><pre><span class="kw">from</span> io <span class="kw">import</span> StringIO
+<h1>BCG X data science cheat sheet</h1><p class="lede">Unofficial preparation reference. Your invitation and the in-test Rules govern permitted resources. Official/syntax documentation permission does not automatically allow personal notes or this sheet. Confirm with your recruiter before using it during an assessment. No AI, direct-answer searches, or outside help unless explicitly permitted. Format varies by role, office and year; the frequently reported DS screen is 90 minutes, roughly 2 probability + 6 ML theory + 3 Python data tasks.</p><div class="cols"><h2>Probability and stats</h2><div class="snip"><h3>Formulas</h3><pre><span class="cmt"># Bayes P(A|B) = P(B|A)P(A)/P(B). PPV = TP/(TP+FP) is that, with A = truly positive.</span>
+<span class="cmt"># Var = E[X^2] - (E[X])^2.</span>
+<span class="cmt"># SE = sigma/sqrt(n) for independent rows with known sigma. Else use s and t.</span>
+<span class="cmt"># Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0) = exp(-lambda).</span>
+<span class="cmt"># Geometric P(T=k) = (1-p)^(k-1) p, mean 1/p. Trials until first success.</span>
+<span class="cmt"># Gini = 2*ROC-AUC - 1 is ranking Gini, not a tree&#x27;s impurity.</span>
+<span class="cmt"># WAPE = sum(|error|) / sum(|actual|), and the denominator must be positive.</span>
+<span class="cmt"># MAPE divides by each actual and breaks at 0.</span>
+<span class="cmt"># Adj R^2 = 1 - (1-R^2)*(n-1)/(n-p-1). p excludes the intercept. Need n &gt; p+1.</span>
+<span class="kw">from</span> math <span class="kw">import</span> comb, exp
+bayes = <span class="num">0.9</span> * <span class="num">0.02</span> / <span class="num">0.05</span>
+ev = <span class="num">0</span> * <span class="num">0.2</span> + <span class="num">1</span> * <span class="num">0.5</span> + <span class="num">2</span> * <span class="num">0.3</span>
+var = (<span class="num">0</span>**<span class="num">2</span> * <span class="num">0.2</span> + <span class="num">1</span>**<span class="num">2</span> * <span class="num">0.5</span> + <span class="num">2</span>**<span class="num">2</span> * <span class="num">0.3</span>) - ev**<span class="num">2</span>
+se = <span class="num">15</span> / (<span class="num">36</span> ** <span class="num">0.5</span>)
+binom = comb(<span class="num">8</span>, <span class="num">2</span>) * (<span class="num">0.25</span> ** <span class="num">2</span>) * (<span class="num">0.75</span> ** <span class="num">6</span>)
+pois0 = exp(-<span class="num">2</span>)
+geom = (<span class="num">0.8</span> ** <span class="num">3</span>) * <span class="num">0.2</span>  <span class="cmt"># P(T=4) when p=0.2</span></pre></div><div class="snip"><h3>Binomial, Poisson, normal</h3><pre><span class="kw">from</span> scipy <span class="kw">import</span> stats
+stats.binom.pmf(<span class="num">2</span>, n=<span class="num">8</span>, p=<span class="num">0.25</span>)
+stats.poisson.pmf(<span class="num">0</span>, mu=<span class="num">2</span>)
+stats.norm.ppf(<span class="num">0.975</span>)   <span class="cmt"># about 1.96, the two-sided 95% z</span>
+stats.norm.cdf(<span class="num">0</span>)</pre></div><div class="snip"><h3>CLT, standard error, interval</h3><pre><span class="cmt"># Known sigma, independent rows: mean ± z * sigma/sqrt(n).</span>
+<span class="cmt"># z = norm.ppf(0.975) is the two-sided 95% point.</span>
+<span class="cmt"># Standardize a point as z = (x - mu) / sigma.</span>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+mean, sigma, n = <span class="num">250.0</span>, <span class="num">15.0</span>, <span class="num">36</span>
+se = sigma / np.sqrt(n)
+z = stats.norm.ppf(<span class="num">0.975</span>)
+(mean - z * se, mean + z * se)</pre></div><div class="snip"><h3>t interval, sigma unknown</h3><pre><span class="cmt"># Unknown sigma: mean ± t * s/sqrt(n), df = n - 1. s is the sample std.</span>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+s = pd.Series([<span class="num">248.0</span>, <span class="num">251</span>, <span class="num">249</span>, <span class="num">253</span>, <span class="num">250</span>, <span class="num">247</span>])
+se = s.std(ddof=<span class="num">1</span>) / np.sqrt(len(s))
+tcrit = stats.t.ppf(<span class="num">0.975</span>, len(s) - <span class="num">1</span>)
+(s.mean() - tcrit * se, s.mean() + tcrit * se)</pre></div><div class="snip"><h3>Tails, combinations, PPV</h3><pre><span class="cmt"># P(A|positive) from prevalence, sensitivity and specificity.</span>
+<span class="cmt"># C(n,k) combinations. P(n,k) = n!/(n-k)! permutations.</span>
+<span class="cmt"># P(X &gt;= k) = sf(k - 1) = 1 - cdf(k - 1).</span>
+<span class="kw">from</span> math <span class="kw">import</span> comb, factorial
+p, sens, spec = <span class="num">0.02</span>, <span class="num">0.90</span>, <span class="num">0.95</span>
+ppv = sens * p / (sens * p + (<span class="num">1</span> - spec) * (<span class="num">1</span> - p))
+tail = sum(comb(<span class="num">30</span>, k) * <span class="num">0.7</span>**k * <span class="num">0.3</span>**(<span class="num">30</span> - k) <span class="kw">for</span> k <span class="kw">in</span> range(<span class="num">25</span>, <span class="num">31</span>))
+<span class="kw">from</span> scipy.stats <span class="kw">import</span> binom
+assert np.isclose(tail, binom.sf(<span class="num">24</span>, <span class="num">30</span>, <span class="num">0.7</span>))
+comb(<span class="num">5</span>, <span class="num">2</span>), factorial(<span class="num">5</span>) // factorial(<span class="num">3</span>), ppv</pre></div><div class="snip"><h3>t-test, chi-square, two proportions</h3><pre><span class="cmt"># p is the chance of a result at least this extreme if H0</span>
+<span class="cmt"># and the test&#x27;s assumptions hold. It is not P(H0) or an effect size.</span>
+<span class="cmt"># The two-proportion z uses a normal approximation: enough</span>
+<span class="cmt"># successes and failures, and independent observations.</span>
+<span class="cmt"># chisquare below is goodness-of-fit to equal proportions.</span>
+<span class="cmt"># chi2_contingency is independence in a table.</span>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+stats.ttest_ind([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>], [<span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">6</span>], equal_var=<span class="kw">False</span>).pvalue
+stats.chisquare([<span class="num">12</span>, <span class="num">8</span>, <span class="num">10</span>, <span class="num">10</span>]).pvalue
+stats.chi2_contingency([[<span class="num">12</span>, <span class="num">8</span>], [<span class="num">6</span>, <span class="num">14</span>]]).pvalue
+p1, n1, p2, n2 = <span class="num">0.40</span>, <span class="num">100</span>, <span class="num">0.30</span>, <span class="num">100</span>
+p = (p1 * n1 + p2 * n2) / (n1 + n2)
+z = (p1 - p2) / np.sqrt(p * (<span class="num">1</span> - p) * (<span class="num">1</span> / n1 + <span class="num">1</span> / n2))
+<span class="num">2</span> * stats.norm.sf(abs(z))</pre></div><div class="snip"><h3>A/B sample size</h3><pre><span class="cmt"># Rule of thumb, two-sided 5%, about 80% power, n per arm:</span>
+<span class="cmt"># 16 * p * (1-p) / delta**2. Fix the metric before you look.</span>
+p, delta = <span class="num">0.10</span>, <span class="num">0.02</span>
+n_per_arm = <span class="num">16</span> * p * (<span class="num">1</span> - p) / delta**<span class="num">2</span></pre></div><div class="snip"><h3>Correlation and causation</h3><p class="fact">Correlation is a symmetric association. It does not pick a direction.
+A cause needs a reason: randomisation, a discontinuity, or an assumption you can defend.
+Conditioning on a mediator (a variable on the path from the cause to the effect) removes part of the effect you wanted.
+Conditioning on a common effect can create a fake association. A control that is only a common cause is the one you want.</p></div><h2>ML theory</h2><div class="snip"><h3>Bias and variance</h3><p class="fact">High bias: train and test are both weak. The model is too rigid for the pattern.
+High variance: train is strong and test is weak. The model memorised the sample.
+More data mainly cuts variance. A richer model cuts bias. Regularisation, fewer features, and a shallower tree cut variance.</p></div><div class="snip"><h3>L1 and L2</h3><p class="fact">L2 usually shrinks coefficients without making them exactly zero; correlated features can share weight.
+L1 can set coefficients exactly to zero and may select among correlated features.
+Penalties act on coefficient magnitudes. Rescaling a feature changes the coefficient required for the same predictions: larger-valued features need smaller coefficients and can be penalized less.
+Standardize predictors before comparing or regularizing coefficients.</p></div><div class="snip"><h3>Which metric</h3><p class="fact">For equal per-row misclassification costs, accuracy summarizes the relevant error rate. F1 emphasizes the positive class and ignores true negatives; choose it when that tradeoff matches the objective, not simply because classes are balanced.
+Rare positives and a review budget: precision at the top k, or recall at a fixed precision. Accuracy hides a majority classifier.
+A ranking score: ROC-AUC, or PR-AUC when positives are rare. Gini = 2*ROC-AUC - 1 is ranking Gini, not a tree&#x27;s impurity.
+Regression: MAE when outliers should not dominate, RMSE when large misses are expensive, R² against predicting the mean.
+MAPE explodes when an actual is 0. WAPE = sum(|error|) / sum(|actual|) needs a positive denominator.</p></div><div class="snip"><h3>Precision and recall</h3><p class="fact">Precision = TP / (TP + FP): of the rows you flagged, how many were real.
+Recall = TP / (TP + FN): of the real positives, how many you flagged.
+Raising the threshold usually lifts precision and cuts recall. F1 = 2PR / (P + R).
+class_weight=&#x27;balanced&#x27;, or a threshold that is not 0.5, when the rare class is the one that matters.
+Pick the threshold on validation data and the business cost, not on the test set.</p></div><div class="snip"><h3>ROC and PR</h3><p class="fact">ROC plots TPR against FPR = FP / (FP + TN). ROC-AUC measures ranking and is not itself driven by class prevalence when the class-conditional score distributions are unchanged.
+At low prevalence, even a small FPR can create many false alarms. Precision-recall and the workload at the chosen threshold are then informative. PR depends on prevalence.
+Select thresholds using validation data and business costs, not the test set.</p></div><div class="snip"><h3>Logistic coefficients</h3><p class="fact">Logistic log-odds = intercept + Xβ. Increasing x_j by 1 multiplies the odds by exp(β_j), with the other predictors held fixed.
+The coefficient is not a probability and not a risk difference.
+Binary log-loss = −mean[y log(p) + (1 − y) log(1 − p)]. Use clipped probabilities, or sklearn.metrics.log_loss.</p></div><div class="snip"><h3>Log-loss and odds</h3><pre><span class="kw">from</span> sklearn.metrics <span class="kw">import</span> log_loss
+beta = <span class="num">0.5</span>
+np.exp(beta)  <span class="cmt"># odds multiplier for a one-unit increase</span>
+y = np.array([<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>])
+p = np.clip(np.array([<span class="num">0.2</span>, <span class="num">0.8</span>, <span class="num">0.7</span>, <span class="num">0.1</span>]), <span class="num">1</span>e-<span class="num">6</span>, <span class="num">1</span> - <span class="num">1</span>e-<span class="num">6</span>)
+log_loss(y, p)</pre></div><div class="snip"><h3>k-NN</h3><p class="fact">Prediction is a vote or average of the k nearest training rows. Distance uses the feature scales, so standardize first.
+Smaller k tends toward lower bias and higher variance. Larger k smooths and can raise bias.
+Ties and duplicate rows move the vote. It does not extrapolate past the nearest training neighbourhood.</p></div><div class="snip"><h3>Neural nets, concepts only</h3><p class="fact">A sigmoid squashes a unit into (0, 1). ReLU is max(0, z) and is the usual hidden-unit default.
+Dropout randomly ignores units while training and is a regulariser, not a way to drop features at scoring time.
+Vanishing gradients: a deep stack of sigmoids can shrink updates until early layers barely move. Skip connections, ReLU and sensible initialisation are the usual answers.
+No library boilerplate here. The timed screen is pandas, NumPy and scikit-learn.</p></div><div class="snip"><h3>Bagging and boosting</h3><p class="fact">Bagging fits trees on bootstrap samples and averages them. A random forest also limits the columns each split may see. That mainly cuts variance.
+Boosting fits the next model to the previous residual, or more generally to the negative gradient of the loss. Squared error makes that gradient the residual.
+More trees in a forest usually plateau. More boosting rounds can keep fitting noise if the learning rate or depth is high.</p></div><div class="snip"><h3>Tree vs linear</h3><p class="fact">Ordinary unregularized least squares does not mathematically require standardization. Scaling can help numerical conditioning and makes coefficient comparisons meaningful.
+Scale for penalized linear and logistic models, distance-based models, PCA and SVM. Trees generally do not require scaling.
+A random forest averages trees. Classification aggregates votes or probabilities.
+Gradient boosting fits successive negative loss gradients, which equal residuals for squared-error regression.
+A tree predicts a leaf constant outside the range it saw. Fit preprocessing only inside the training fold.</p></div><div class="snip"><h3>Overfitting signs</h3><p class="fact">Train score far above the validation score.
+A deep tree, tiny leaves, or a target encoding of a high-cardinality column with no smoothing.
+A feature that would not exist at the time of the decision, added because the offline number went up.
+The cure is a holdout you did not tune on, a simpler model, or more data — not another look at the test set.</p></div><div class="snip"><h3>Cross-validation</h3><p class="fact">k-fold averages k cuts. StratifiedKFold keeps the class rate in each fold.
+Shuffle only when the rows are exchangeable. Do not shuffle a time series; train on the past and test on the next window.
+The score you tuned on is optimistic. Quote a holdout that the search never saw.</p></div><div class="snip"><h3>When to scale</h3><p class="fact">Ordinary unregularized least squares does not mathematically require standardization. Scaling can help numerical conditioning and makes coefficient comparisons meaningful.
+Scale for penalized linear and logistic models, distance-based models (k-NN, k-means), PCA and SVM.
+Trees generally do not require scaling. A random forest averages trees. Gradient boosting fits successive negative loss gradients, which equal residuals for squared-error regression.
+Fit preprocessing only within the training fold. A Pipeline does that per fold.</p></div><h2>Pandas: collect and preprocess</h2><div class="snip"><h3>Read and inspect</h3><pre><span class="kw">from</span> io <span class="kw">import</span> StringIO
 raw = <span class="str">&quot;id,region,revenue\n1,East,10\n2,West,\n3,East,30\n&quot;</span>
 df = pd.read_csv(StringIO(raw))
 df.head()
@@ -147,8 +188,9 @@ df.groupby(<span class="str">&quot;category&quot;</span>).filter(<span class="kw
 wide = pd.pivot_table(df, index=<span class="str">&quot;region&quot;</span>, columns=<span class="str">&quot;year&quot;</span>, values=<span class="str">&quot;rev&quot;</span>, aggfunc=<span class="str">&quot;sum&quot;</span>, fill_value=<span class="num">0</span>)
 wide = wide.reindex(columns=[<span class="num">2023</span>, <span class="num">2024</span>, <span class="num">2025</span>], fill_value=<span class="num">0</span>)
 wide.reset_index().melt(id_vars=<span class="str">&quot;region&quot;</span>, var_name=<span class="str">&quot;year&quot;</span>, value_name=<span class="str">&quot;rev&quot;</span>)
-pd.crosstab(df[<span class="str">&quot;region&quot;</span>], df[<span class="str">&quot;year&quot;</span>])</pre></div><div class="snip"><h3>merge</h3><pre><span class="cmt"># dedupe the right key first, or matching rows multiply</span>
-<span class="cmt"># a WHERE-style filter belongs in the result, not by dropping the left rows you meant to keep</span>
+pd.crosstab(df[<span class="str">&quot;region&quot;</span>], df[<span class="str">&quot;year&quot;</span>])</pre></div><div class="snip"><h3>merge</h3><pre><span class="cmt"># Check key cardinality. Keep records the prompt still wants.</span>
+<span class="cmt"># validate=&#x27;m:1&#x27; only if that relationship is intended.</span>
+<span class="cmt"># Current pandas can match null keys. SQL NULL does not.</span>
 orders = pd.DataFrame({<span class="str">&quot;order_id&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;customer_id&quot;</span>: [<span class="num">10</span>, <span class="num">10</span>, <span class="num">99</span>], <span class="str">&quot;amount&quot;</span>: [<span class="num">5</span>, <span class="num">7</span>, <span class="num">8</span>]})
 customers = pd.DataFrame({<span class="str">&quot;customer_id&quot;</span>: [<span class="num">10</span>, <span class="num">11</span>], <span class="str">&quot;segment&quot;</span>: [<span class="str">&quot;Pro&quot;</span>, <span class="str">&quot;Basic&quot;</span>], <span class="str">&quot;amount&quot;</span>: [<span class="num">0</span>, <span class="num">0</span>]})
 orders.merge(
@@ -176,16 +218,18 @@ df = df.sort_values([<span class="str">&quot;store&quot;</span>, <span class="st
 g = df.groupby(<span class="str">&quot;store&quot;</span>)[<span class="str">&quot;rev&quot;</span>]
 df[<span class="str">&quot;prev&quot;</span>] = g.shift(<span class="num">1</span>)
 df[<span class="str">&quot;delta&quot;</span>] = g.diff()
-df[<span class="str">&quot;pct&quot;</span>] = g.pct_change()</pre></div><div class="snip"><h3>rolling, expanding, ewm</h3><pre><span class="cmt"># min_periods=1 keeps the early rows; adjust=False is the recursive ewm</span>
+<span class="cmt"># None: do not fill a gap before the percent change</span>
+df[<span class="str">&quot;pct&quot;</span>] = g.pct_change(fill_method=<span class="kw">None</span>)</pre></div><div class="snip"><h3>rolling, expanding, ewm</h3><pre><span class="cmt"># min_periods=1 keeps the early rows; adjust=False is the recursive ewm</span>
 s = pd.Series([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>])
 s.rolling(<span class="num">3</span>, min_periods=<span class="num">1</span>).mean()
 s.expanding().mean()
-s.ewm(span=<span class="num">3</span>, adjust=<span class="kw">False</span>).mean()</pre></div><div class="snip"><h3>resample</h3><pre><span class="cmt"># &#x27;ME&#x27; is month end; the old alias &#x27;M&#x27; is gone</span>
+s.ewm(span=<span class="num">3</span>, adjust=<span class="kw">False</span>).mean()</pre></div><div class="snip"><h3>resample</h3><pre><span class="cmt"># pandas &gt;=2.2 uses &#x27;ME&#x27;; older pandas used &#x27;M&#x27;.</span>
+<span class="cmt"># The offset object avoids depending on this alias rename.</span>
 ts = pd.DataFrame({
     <span class="str">&quot;date&quot;</span>: pd.date_range(<span class="str">&quot;2024-01-15&quot;</span>, periods=<span class="num">50</span>, freq=<span class="str">&quot;D&quot;</span>),
     <span class="str">&quot;amount&quot;</span>: <span class="num">1.0</span>,
 }).set_index(<span class="str">&quot;date&quot;</span>)
-ts.resample(<span class="str">&quot;ME&quot;</span>)[<span class="str">&quot;amount&quot;</span>].sum()</pre></div><div class="snip"><h3>cumsum and cumcount</h3><pre>df = pd.DataFrame({<span class="str">&quot;cat&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">5</span>]})
+ts.resample(pd.offsets.MonthEnd())[<span class="str">&quot;amount&quot;</span>].sum()</pre></div><div class="snip"><h3>cumsum and cumcount</h3><pre>df = pd.DataFrame({<span class="str">&quot;cat&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">5</span>]})
 df[<span class="str">&quot;csum&quot;</span>] = df.groupby(<span class="str">&quot;cat&quot;</span>)[<span class="str">&quot;rev&quot;</span>].cumsum()
 df[<span class="str">&quot;i&quot;</span>] = df.groupby(<span class="str">&quot;cat&quot;</span>).cumcount()  <span class="cmt"># 0, 1, ... inside each group</span></pre></div><div class="snip"><h3>value_counts</h3><pre>s = pd.Series([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="kw">None</span>])
 s.value_counts(normalize=<span class="kw">True</span>, dropna=<span class="kw">False</span>)</pre></div><div class="snip"><h3>duplicated</h3><pre>df = pd.DataFrame({<span class="str">&quot;sku&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]})
@@ -217,10 +261,182 @@ iqr = q3 - q1
 s.clip(q1 - <span class="num">1.5</span> * iqr, q3 + <span class="num">1.5</span> * iqr)</pre></div><div class="snip"><h3>Encodings</h3><pre>s = pd.Series([<span class="str">&quot;Basic&quot;</span>, <span class="str">&quot;Pro&quot;</span>, <span class="str">&quot;Basic&quot;</span>])
 s.map({<span class="str">&quot;Basic&quot;</span>: <span class="num">0</span>, <span class="str">&quot;Plus&quot;</span>: <span class="num">1</span>, <span class="str">&quot;Pro&quot;</span>: <span class="num">2</span>})
 pd.get_dummies(s, dtype=int)
-<span class="cmt"># target mean from the training rows only; an unseen level gets the global train mean</span>
+<span class="cmt"># New rows only: train means, unseen level -&gt; train global mean.</span>
+<span class="cmt"># Do not map those means back onto the same training rows.</span>
 train = pd.DataFrame({<span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>], <span class="str">&quot;y&quot;</span>: [<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>]})
 means = train.groupby(<span class="str">&quot;city&quot;</span>)[<span class="str">&quot;y&quot;</span>].mean()
-pd.Series([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>]).map(means).fillna(train[<span class="str">&quot;y&quot;</span>].mean())</pre></div><h2>NumPy</h2><div class="snip"><h3>Creation</h3><pre>np.array([[<span class="num">1.0</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>]])
+pd.Series([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>]).map(means).fillna(train[<span class="str">&quot;y&quot;</span>].mean())</pre></div><div class="snip"><h3>Cross-fitted target encoding</h3><pre><span class="cmt"># For validation/test rows, use training-only target means.</span>
+<span class="cmt"># For training rows, cross-fit: a row&#x27;s own label stays out.</span>
+<span class="cmt"># fit_transform cross-fits. fit().transform(X_train) does not.</span>
+<span class="cmt"># Smoothing alone does not remove that leakage.</span>
+<span class="cmt"># Prefer one-hot unless the prompt asks for target means.</span>
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> TargetEncoder
+X_train = pd.DataFrame({<span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>]})
+y_train = np.array([<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>])
+X_valid = pd.DataFrame({<span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>]})
+enc = TargetEncoder(target_type=<span class="str">&quot;binary&quot;</span>, cv=<span class="num">2</span>)
+enc.fit_transform(X_train[[<span class="str">&quot;city&quot;</span>]], y_train)
+enc.transform(X_valid[[<span class="str">&quot;city&quot;</span>]])</pre></div><div class="snip"><h3>Several files, one schema</h3><pre><span class="cmt"># Inspect names and headers first. Do not glob blindly.</span>
+<span class="cmt"># Rename only spellings you have checked.</span>
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">import</span> tempfile
+root = Path(tempfile.mkdtemp())
+(root / <span class="str">&quot;part_a.csv&quot;</span>).write_text(<span class="str">&quot;id,Reveneu\n1,10\n2,\n&quot;</span>)
+(root / <span class="str">&quot;part_b.csv&quot;</span>).write_text(<span class="str">&quot;id, reveneu\n3,7\n&quot;</span>)
+frames = []
+<span class="kw">for</span> path <span class="kw">in</span> sorted(root.glob(<span class="str">&quot;part_*.csv&quot;</span>)):
+    part = pd.read_csv(path)
+    part.columns = part.columns.str.strip().str.lower()
+    part = part.rename(columns={<span class="str">&quot;reveneu&quot;</span>: <span class="str">&quot;revenue&quot;</span>})
+    frames.append(part)
+combined = pd.concat(frames, ignore_index=<span class="kw">True</span>)
+required_columns = [<span class="str">&quot;id&quot;</span>, <span class="str">&quot;revenue&quot;</span>]
+dest = root / <span class="str">&quot;output.csv&quot;</span>
+combined.loc[:, required_columns].to_csv(dest, index=<span class="kw">False</span>)
+got = pd.read_csv(dest)
+assert list(got.columns) == required_columns
+assert len(got) == <span class="num">3</span>
+(root / <span class="str">&quot;events.jsonl&quot;</span>).write_text(<span class="str">&#x27;{&quot;id&quot;: 4, &quot;revenue&quot;: 8}\n&#x27;</span>)
+pd.read_json(root / <span class="str">&quot;events.jsonl&quot;</span>, lines=<span class="kw">True</span>)</pre></div><div class="snip"><h3>size, count, missing keys</h3><pre><span class="cmt"># size counts rows. count skips null values in that column.</span>
+<span class="cmt"># dropna=False keeps a group whose key is missing.</span>
+df = pd.DataFrame({
+    <span class="str">&quot;region&quot;</span>: [<span class="str">&quot;E&quot;</span>, <span class="kw">None</span>, <span class="str">&quot;E&quot;</span>],
+    <span class="str">&quot;amount&quot;</span>: [<span class="num">1.0</span>, <span class="num">2.0</span>, <span class="kw">None</span>],
+})
+df.groupby(<span class="str">&quot;region&quot;</span>, dropna=<span class="kw">False</span>).size()
+df.groupby(<span class="str">&quot;region&quot;</span>, dropna=<span class="kw">False</span>)[<span class="str">&quot;amount&quot;</span>].count()</pre></div><h2>scikit-learn modelling</h2><div class="snip"><h3>train_test_split</h3><pre><span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+df = pd.DataFrame({<span class="str">&quot;x&quot;</span>: range(<span class="num">20</span>), <span class="str">&quot;y&quot;</span>: [<span class="num">0</span>, <span class="num">1</span>] * <span class="num">10</span>})
+train, test = train_test_split(df, test_size=<span class="num">0.25</span>, random_state=<span class="num">0</span>, stratify=df[<span class="str">&quot;y&quot;</span>])</pre></div><div class="snip"><h3>Pipeline and ColumnTransformer</h3><pre><span class="kw">from</span> sklearn.compose <span class="kw">import</span> ColumnTransformer
+<span class="kw">from</span> sklearn.impute <span class="kw">import</span> SimpleImputer
+<span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> Pipeline
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> OneHotEncoder, StandardScaler
+num = Pipeline([(<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;median&quot;</span>)), (<span class="str">&quot;sc&quot;</span>, StandardScaler())])
+cat = Pipeline([
+    (<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;most_frequent&quot;</span>)),
+    (<span class="str">&quot;oh&quot;</span>, OneHotEncoder(handle_unknown=<span class="str">&quot;ignore&quot;</span>, sparse_output=<span class="kw">False</span>)),
+])
+pre = ColumnTransformer([(<span class="str">&quot;num&quot;</span>, num, [<span class="str">&quot;age&quot;</span>]), (<span class="str">&quot;cat&quot;</span>, cat, [<span class="str">&quot;city&quot;</span>])])
+X = pd.DataFrame({
+    <span class="str">&quot;age&quot;</span>: [<span class="num">20.0</span>, np.nan, <span class="num">40.0</span>, <span class="num">50.0</span>],
+    <span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, np.nan, <span class="str">&quot;a&quot;</span>],
+})
+pre.fit_transform(X)</pre></div><div class="snip"><h3>StandardScaler</h3><pre><span class="cmt"># fit on train only; a zero-variance train column becomes 0</span>
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+train = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>, <span class="num">5</span>, <span class="num">5</span>]})
+test = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">4.0</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>]})
+scaler = StandardScaler().fit(train)
+train[list(train.columns)] = scaler.transform(train)
+test[list(test.columns)] = scaler.transform(test)</pre></div><div class="snip"><h3>Linear, Ridge, Lasso, logistic</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> Lasso, LinearRegression, LogisticRegression, Ridge
+X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">1</span>]])
+y = np.array([<span class="num">0.0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>])
+y_cls = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
+LinearRegression().fit(X, y).coef_
+Ridge(alpha=<span class="num">1.0</span>).fit(X, y).intercept_
+Lasso(alpha=<span class="num">0.01</span>, max_iter=<span class="num">5000</span>).fit(X, y).coef_
+<span class="cmt"># Column 1 is the positive label only if classes_[1] is.</span>
+clf = LogisticRegression(max_iter=<span class="num">500</span>, class_weight=<span class="str">&quot;balanced&quot;</span>)
+proba = clf.fit(X, y_cls).predict_proba(X)
+clf.classes_, proba[:, list(clf.classes_).index(<span class="num">1</span>)]</pre></div><div class="snip"><h3>Forests, boosting, k-means</h3><pre><span class="kw">from</span> sklearn.cluster <span class="kw">import</span> KMeans
+<span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> GradientBoostingClassifier, RandomForestClassifier
+X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">1</span>], [<span class="num">0.1</span>, <span class="num">0.2</span>], [<span class="num">0.8</span>, <span class="num">0.9</span>]])
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>])
+RandomForestClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>, class_weight=<span class="str">&quot;balanced&quot;</span>).fit(X, y).predict(X)
+GradientBoostingClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X, y).predict(X)
+KMeans(n_clusters=<span class="num">2</span>, n_init=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X).labels_</pre></div><div class="snip"><h3>Cross-validation and grid search</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LogisticRegression
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> GridSearchCV, KFold, StratifiedKFold, cross_val_score
+X = np.arange(<span class="num">8</span>, dtype=float).reshape(-<span class="num">1</span>, <span class="num">1</span>)
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
+est = LogisticRegression(max_iter=<span class="num">200</span>)
+cv = StratifiedKFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>)
+cross_val_score(est, X, y, cv=cv, scoring=<span class="str">&quot;accuracy&quot;</span>).mean()
+list(KFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>).split(X))
+<span class="cmt"># best_score_ is the CV score, not a fresh holdout.</span>
+<span class="cmt"># Fitting a preprocessor on all of X before CV leaks the folds.</span>
+<span class="cmt"># A pipeline step is tuned as &quot;rf__max_depth&quot;.</span>
+GridSearchCV(est, {<span class="str">&quot;C&quot;</span>: [<span class="num">0.1</span>, <span class="num">1.0</span>]}, cv=<span class="num">4</span>, scoring=<span class="str">&quot;accuracy&quot;</span>).fit(X, y).best_params_</pre></div><div class="snip"><h3>Negative scores and splitters</h3><pre><span class="cmt"># neg_mean_squared_error is a loss: less negative is better.</span>
+<span class="cmt"># sqrt of the mean MSE is not the mean of the fold RMSEs.</span>
+<span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LinearRegression
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> (
+    GroupKFold, LeaveOneOut, TimeSeriesSplit, cross_val_score,
+)
+X = np.arange(<span class="num">8</span>, dtype=float).reshape(-<span class="num">1</span>, <span class="num">1</span>)
+y = np.array([<span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">4</span>], dtype=float)
+neg = cross_val_score(
+    LinearRegression(), X, y, cv=<span class="num">4</span>,
+    scoring=<span class="str">&quot;neg_mean_squared_error&quot;</span>,
+)
+np.sqrt(-neg.mean()), np.mean(np.sqrt(-neg))
+list(TimeSeriesSplit(n_splits=<span class="num">3</span>).split(X))
+groups = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>])
+list(GroupKFold(n_splits=<span class="num">4</span>).split(X, y, groups))
+LeaveOneOut()</pre></div><div class="snip"><h3>Fit, validate, predict, CSV</h3><pre><span class="cmt"># Illustrative schema. Use the prompt&#x27;s columns and paths.</span>
+<span class="cmt"># Use a given validation split instead of making a new one.</span>
+<span class="cmt"># Time or group splits when the rows are not exchangeable.</span>
+<span class="cmt"># Stratify classification when each class can fill the folds.</span>
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">import</span> tempfile
+<span class="kw">from</span> sklearn.compose <span class="kw">import</span> ColumnTransformer
+<span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> RandomForestRegressor
+<span class="kw">from</span> sklearn.impute <span class="kw">import</span> SimpleImputer
+<span class="kw">from</span> sklearn.metrics <span class="kw">import</span> mean_absolute_error
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+<span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> Pipeline
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> OneHotEncoder
+train_df = pd.DataFrame({
+    <span class="str">&quot;age&quot;</span>: [<span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>, <span class="num">50</span>, <span class="num">60</span>, <span class="kw">None</span>],
+    <span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>],
+    <span class="str">&quot;price&quot;</span>: [<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">2.5</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>],
+})
+test_df = pd.DataFrame({<span class="str">&quot;age&quot;</span>: [<span class="num">25</span>, <span class="kw">None</span>], <span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>]})
+X, y = train_df[[<span class="str">&quot;age&quot;</span>, <span class="str">&quot;city&quot;</span>]], train_df[<span class="str">&quot;price&quot;</span>]
+Xtr, Xva, ytr, yva = train_test_split(X, y, test_size=<span class="num">0.2</span>, random_state=<span class="num">0</span>)
+pre = ColumnTransformer([
+    (<span class="str">&quot;num&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;median&quot;</span>), [<span class="str">&quot;age&quot;</span>]),
+    (<span class="str">&quot;cat&quot;</span>, Pipeline([
+        (<span class="str">&quot;impute&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;most_frequent&quot;</span>)),
+        (<span class="str">&quot;encode&quot;</span>, OneHotEncoder(handle_unknown=<span class="str">&quot;ignore&quot;</span>, sparse_output=<span class="kw">False</span>)),
+    ]), [<span class="str">&quot;city&quot;</span>]),
+])
+model = Pipeline([
+    (<span class="str">&quot;pre&quot;</span>, pre),
+    (<span class="str">&quot;rf&quot;</span>, RandomForestRegressor(n_estimators=<span class="num">20</span>, random_state=<span class="num">0</span>, n_jobs=<span class="num">1</span>)),
+])
+model.fit(Xtr, ytr)
+mean_absolute_error(yva, model.predict(Xva))
+<span class="cmt"># Refit only after the choices are fixed. Never fit on hidden labels.</span>
+model.fit(X, y)
+pred = model.predict(test_df[[<span class="str">&quot;age&quot;</span>, <span class="str">&quot;city&quot;</span>]])
+dest = Path(tempfile.mkdtemp()) / <span class="str">&quot;predictions.csv&quot;</span>
+pd.DataFrame({<span class="str">&quot;prediction&quot;</span>: pred}).to_csv(dest, index=<span class="kw">False</span>)
+pd.read_csv(dest)</pre></div><div class="snip"><h3>Metrics</h3><pre><span class="kw">from</span> sklearn.metrics <span class="kw">import</span> (
+    accuracy_score, confusion_matrix, f1_score, mean_absolute_error,
+    mean_squared_error, precision_score, r2_score, recall_score,
+    roc_auc_score, root_mean_squared_error,
+)
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
+pred = np.array([<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
+score = np.array([<span class="num">0.1</span>, <span class="num">0.4</span>, <span class="num">0.8</span>, <span class="num">0.9</span>])  <span class="cmt"># ranking score, not the 0/1 cut</span>
+accuracy_score(y, pred)
+precision_score(y, pred, zero_division=<span class="num">0</span>)
+recall_score(y, pred, zero_division=<span class="num">0</span>)
+f1_score(y, pred, zero_division=<span class="num">0</span>)
+roc_auc_score(y, score)  <span class="cmt"># the positive-class scores, not predict()</span>
+confusion_matrix(y, pred)
+yt, yp = np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>]), np.array([<span class="num">1.1</span>, <span class="num">1.8</span>, <span class="num">3.4</span>])
+mean_absolute_error(yt, yp)
+<span class="cmt"># root_mean_squared_error needs sklearn &gt;= 1.4.</span>
+<span class="cmt"># np.sqrt(mean_squared_error(...)) is the older fallback.</span>
+<span class="cmt"># Both here are single-output examples.</span>
+root_mean_squared_error(yt, yp)
+np.sqrt(mean_squared_error(yt, yp))
+r2_score(yt, yp)</pre></div><div class="snip"><h3>Leakage rules</h3><p class="fact">Fit the imputer, scaler, encoder, and any target mean on the training rows only. Transform the test with those fitted objects.
+A feature from after the decision (a later refund, a window that includes the future) will not exist when you score.
+A column that is a copy of the label, or a deterministic function of it, looks perfect offline and is useless live.
+A random row split does not fix a feature that already contains the label. For dated rows, split by time.
+A statistic computed on the whole table (a global target mean, a percentile fit on train+test) leaks the test into the train.
+For validation or test rows, use training-only target means and a train-global fallback.
+For training rows, use out-of-fold target encoding. A row&#x27;s own label must not enter its encoding.
+Refit encoders inside each outer training fold. Smoothing alone does not remove target leakage.</p></div><h2>NumPy</h2><div class="snip"><h3>Creation</h3><pre>np.array([[<span class="num">1.0</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>]])
 np.zeros((<span class="num">2</span>, <span class="num">3</span>)), np.ones(<span class="num">4</span>), np.arange(<span class="num">6</span>), np.linspace(<span class="num">0</span>, <span class="num">1</span>, <span class="num">5</span>)
 np.eye(<span class="num">3</span>)</pre></div><div class="snip"><h3>reshape and axis</h3><pre><span class="cmt"># the last axis is the one that changes fastest in a C reshape</span>
 <span class="cmt"># keepdims=True so a reduced column still broadcasts against the rows</span>
@@ -258,132 +474,87 @@ x = np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span cl
 np.mean(x)
 np.std(x)
 np.std(x, ddof=<span class="num">1</span>)
-float(pd.Series(x).std())</pre></div><h2>scikit-learn</h2><div class="snip"><h3>train_test_split</h3><pre><span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
-df = pd.DataFrame({<span class="str">&quot;x&quot;</span>: range(<span class="num">20</span>), <span class="str">&quot;y&quot;</span>: [<span class="num">0</span>, <span class="num">1</span>] * <span class="num">10</span>})
-train, test = train_test_split(df, test_size=<span class="num">0.25</span>, random_state=<span class="num">0</span>, stratify=df[<span class="str">&quot;y&quot;</span>])</pre></div><div class="snip"><h3>Pipeline and ColumnTransformer</h3><pre><span class="kw">from</span> sklearn.compose <span class="kw">import</span> ColumnTransformer
-<span class="kw">from</span> sklearn.impute <span class="kw">import</span> SimpleImputer
-<span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> Pipeline
-<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> OneHotEncoder, StandardScaler
-num = Pipeline([(<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;median&quot;</span>)), (<span class="str">&quot;sc&quot;</span>, StandardScaler())])
-cat = Pipeline([
-    (<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;most_frequent&quot;</span>)),
-    (<span class="str">&quot;oh&quot;</span>, OneHotEncoder(handle_unknown=<span class="str">&quot;ignore&quot;</span>, sparse_output=<span class="kw">False</span>)),
-])
-pre = ColumnTransformer([(<span class="str">&quot;num&quot;</span>, num, [<span class="str">&quot;age&quot;</span>]), (<span class="str">&quot;cat&quot;</span>, cat, [<span class="str">&quot;city&quot;</span>])])
-X = pd.DataFrame({
-    <span class="str">&quot;age&quot;</span>: [<span class="num">20.0</span>, np.nan, <span class="num">40.0</span>, <span class="num">50.0</span>],
-    <span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, np.nan, <span class="str">&quot;a&quot;</span>],
-})
-pre.fit_transform(X)</pre></div><div class="snip"><h3>StandardScaler</h3><pre><span class="cmt"># fit on train only; a zero-variance train column becomes 0</span>
-<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
-train = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>, <span class="num">5</span>, <span class="num">5</span>]})
-test = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">4.0</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>]})
-scaler = StandardScaler().fit(train)
-train[list(train.columns)] = scaler.transform(train)
-test[list(test.columns)] = scaler.transform(test)</pre></div><div class="snip"><h3>Linear, Ridge, Lasso, logistic</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> Lasso, LinearRegression, LogisticRegression, Ridge
-X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">1</span>]])
-y = np.array([<span class="num">0.0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>])
-y_cls = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
-LinearRegression().fit(X, y).coef_
-Ridge(alpha=<span class="num">1.0</span>).fit(X, y).intercept_
-Lasso(alpha=<span class="num">0.01</span>, max_iter=<span class="num">5000</span>).fit(X, y).coef_
-<span class="cmt"># predict_proba[:, 1] is the positive score; predict() already cut at 0.5</span>
-LogisticRegression(max_iter=<span class="num">500</span>, class_weight=<span class="str">&quot;balanced&quot;</span>).fit(X, y_cls).predict_proba(X)[:, <span class="num">1</span>]</pre></div><div class="snip"><h3>Forests, boosting, k-means</h3><pre><span class="kw">from</span> sklearn.cluster <span class="kw">import</span> KMeans
-<span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> GradientBoostingClassifier, RandomForestClassifier
-X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">1</span>], [<span class="num">0.1</span>, <span class="num">0.2</span>], [<span class="num">0.8</span>, <span class="num">0.9</span>]])
-y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>])
-RandomForestClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>, class_weight=<span class="str">&quot;balanced&quot;</span>).fit(X, y).predict(X)
-GradientBoostingClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X, y).predict(X)
-KMeans(n_clusters=<span class="num">2</span>, n_init=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X).labels_</pre></div><div class="snip"><h3>Cross-validation and grid search</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LogisticRegression
-<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> GridSearchCV, KFold, StratifiedKFold, cross_val_score
-X = np.arange(<span class="num">8</span>, dtype=float).reshape(-<span class="num">1</span>, <span class="num">1</span>)
-y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
-est = LogisticRegression(max_iter=<span class="num">200</span>)
-cv = StratifiedKFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>)
-cross_val_score(est, X, y, cv=cv, scoring=<span class="str">&quot;accuracy&quot;</span>).mean()
-list(KFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>).split(X))
-<span class="cmt"># best_score_ is the CV score, not a fresh holdout</span>
-GridSearchCV(est, {<span class="str">&quot;C&quot;</span>: [<span class="num">0.1</span>, <span class="num">1.0</span>]}, cv=<span class="num">4</span>, scoring=<span class="str">&quot;accuracy&quot;</span>).fit(X, y).best_params_</pre></div><div class="snip"><h3>Metrics</h3><pre><span class="kw">from</span> sklearn.metrics <span class="kw">import</span> (
-    accuracy_score, confusion_matrix, f1_score, mean_absolute_error,
-    mean_squared_error, precision_score, r2_score, recall_score,
-    roc_auc_score, root_mean_squared_error,
-)
-y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
-pred = np.array([<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
-score = np.array([<span class="num">0.1</span>, <span class="num">0.4</span>, <span class="num">0.8</span>, <span class="num">0.9</span>])  <span class="cmt"># ranking score, not the 0/1 cut</span>
-accuracy_score(y, pred)
-precision_score(y, pred, zero_division=<span class="num">0</span>)
-recall_score(y, pred, zero_division=<span class="num">0</span>)
-f1_score(y, pred, zero_division=<span class="num">0</span>)
-roc_auc_score(y, score)  <span class="cmt"># pass predict_proba[:, 1], not predict()</span>
-confusion_matrix(y, pred)
-yt, yp = np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>]), np.array([<span class="num">1.1</span>, <span class="num">1.8</span>, <span class="num">3.4</span>])
-mean_absolute_error(yt, yp)
-root_mean_squared_error(yt, yp)          <span class="cmt"># same as mean_squared_error(...) ** 0.5</span>
-mean_squared_error(yt, yp)
-r2_score(yt, yp)</pre></div><div class="snip"><h3>Leakage rules</h3><p class="fact">Fit the imputer, scaler, encoder, and any target mean on the training rows only. Transform the test with those fitted objects.
-A feature from after the decision (a later refund, a window that includes the future) will not exist when you score.
-A column that is a copy of the label, or a deterministic function of it, looks perfect offline and is useless live.
-A random row split does not fix a feature that already contains the label. For dated rows, split by time.
-A statistic computed on the whole table (a global target mean, a percentile fit on train+test) leaks the test into the train.</p></div><h2>Stats and probability</h2><div class="snip"><h3>Formulas</h3><pre><span class="cmt"># Bayes P(A|B) = P(B|A)P(A)/P(B). PPV = TP/(TP+FP) is that, with A = &quot;truly positive&quot;.</span>
-<span class="cmt"># Var = E[X^2] - (E[X])^2. SE = sigma/sqrt(n). A 95% margin is about 1.96*SE.</span>
-<span class="cmt"># Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0) = exp(-lambda).</span>
-<span class="cmt"># Geometric P(T=k) = (1-p)^(k-1) p, mean 1/p. Gini = 2*AUC - 1.</span>
-<span class="cmt"># WAPE = sum(|error|) / sum(|actual|). MAPE divides by each actual and breaks at 0.</span>
-<span class="cmt"># Adj R^2 = 1 - (1-R^2) * (n-1) / (n-p-1).</span>
-<span class="kw">from</span> math <span class="kw">import</span> comb, exp
-bayes = <span class="num">0.9</span> * <span class="num">0.02</span> / <span class="num">0.05</span>
-ev = <span class="num">0</span> * <span class="num">0.2</span> + <span class="num">1</span> * <span class="num">0.5</span> + <span class="num">2</span> * <span class="num">0.3</span>
-var = (<span class="num">0</span>**<span class="num">2</span> * <span class="num">0.2</span> + <span class="num">1</span>**<span class="num">2</span> * <span class="num">0.5</span> + <span class="num">2</span>**<span class="num">2</span> * <span class="num">0.3</span>) - ev**<span class="num">2</span>
-se = <span class="num">15</span> / (<span class="num">36</span> ** <span class="num">0.5</span>)
-binom = comb(<span class="num">8</span>, <span class="num">2</span>) * (<span class="num">0.25</span> ** <span class="num">2</span>) * (<span class="num">0.75</span> ** <span class="num">6</span>)
-pois0 = exp(-<span class="num">2</span>)
-geom = (<span class="num">0.8</span> ** <span class="num">3</span>) * <span class="num">0.2</span>  <span class="cmt"># P(T=4) when p=0.2</span></pre></div><div class="snip"><h3>Binomial, Poisson, normal</h3><pre><span class="kw">from</span> scipy <span class="kw">import</span> stats
-stats.binom.pmf(<span class="num">2</span>, n=<span class="num">8</span>, p=<span class="num">0.25</span>)
-stats.poisson.pmf(<span class="num">0</span>, mu=<span class="num">2</span>)
-stats.norm.ppf(<span class="num">0.975</span>)   <span class="cmt"># about 1.96, the two-sided 95% z</span>
-stats.norm.cdf(<span class="num">0</span>)</pre></div><div class="snip"><h3>CLT, standard error, interval</h3><pre><span class="cmt"># SE = sigma / sqrt(n). Large n: mean ± z * SE. z = norm.ppf(0.975) for 95%.</span>
-<span class="kw">from</span> scipy <span class="kw">import</span> stats
-mean, sigma, n = <span class="num">250.0</span>, <span class="num">15.0</span>, <span class="num">36</span>
-se = sigma / np.sqrt(n)
-z = stats.norm.ppf(<span class="num">0.975</span>)
-(mean - z * se, mean + z * se)</pre></div><div class="snip"><h3>t-test, chi-square, two proportions</h3><pre><span class="cmt"># p is not the probability the null is true; it is the chance of a result</span>
-<span class="cmt"># at least this extreme if the null is true. It is not an effect size.</span>
-<span class="kw">from</span> scipy <span class="kw">import</span> stats
-stats.ttest_ind([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>], [<span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">6</span>], equal_var=<span class="kw">False</span>).pvalue
-stats.chisquare([<span class="num">12</span>, <span class="num">8</span>, <span class="num">10</span>, <span class="num">10</span>]).pvalue
-p1, n1, p2, n2 = <span class="num">0.40</span>, <span class="num">100</span>, <span class="num">0.30</span>, <span class="num">100</span>
-p = (p1 * n1 + p2 * n2) / (n1 + n2)
-z = (p1 - p2) / np.sqrt(p * (<span class="num">1</span> - p) * (<span class="num">1</span> / n1 + <span class="num">1</span> / n2))
-<span class="num">2</span> * stats.norm.sf(abs(z))</pre></div><div class="snip"><h3>A/B sample size</h3><pre><span class="cmt"># Rule of thumb, two-sided 5%, about 80% power, n per arm:</span>
-<span class="cmt"># 16 * p * (1-p) / delta**2. Fix the metric before you look.</span>
-p, delta = <span class="num">0.10</span>, <span class="num">0.02</span>
-n_per_arm = <span class="num">16</span> * p * (<span class="num">1</span> - p) / delta**<span class="num">2</span></pre></div><div class="snip"><h3>Correlation and causation</h3><p class="fact">Correlation is a symmetric association. It does not pick a direction.
-A cause needs a reason: randomisation, a discontinuity, or an assumption you can defend.
-Conditioning on a mediator (a variable on the path from the cause to the effect) removes part of the effect you wanted.
-Conditioning on a common effect can create a fake association. A control that is only a common cause is the one you want.</p></div><h2>ML theory</h2><div class="snip"><h3>Bias and variance</h3><p class="fact">High bias: train and test are both weak. The model is too rigid for the pattern.
-High variance: train is strong and test is weak. The model memorised the sample.
-More data mainly cuts variance. A richer model cuts bias. Regularisation, fewer features, and a shallower tree cut variance.</p></div><div class="snip"><h3>L1 and L2</h3><p class="fact">L2 (Ridge) shrinks coefficients toward 0 and keeps all of them. Correlated features share the weight.
-L1 (Lasso) can set coefficients to exactly 0, so the feature list gets shorter. Of two correlated features it tends to keep one.
-The penalty is on the size of the coefficient, so scale the features first or a large-unit column eats the whole penalty.</p></div><div class="snip"><h3>Which metric</h3><p class="fact">Equal cost, balanced classes: accuracy or F1.
-Rare positives and a review budget: precision at the top k, or recall at a fixed precision. Accuracy hides a majority classifier.
-A ranking score: ROC-AUC, or PR-AUC when positives are rare. Gini = 2*AUC - 1.
-Regression: MAE when outliers should not dominate, RMSE when large misses are expensive, R² against predicting the mean.
-MAPE explodes when an actual is 0. WAPE = sum(|error|) / sum(|actual|) stays defined while the denominator is not 0.</p></div><div class="snip"><h3>Precision and recall</h3><p class="fact">Precision = TP / (TP + FP): of the rows you flagged, how many were real.
-Recall = TP / (TP + FN): of the real positives, how many you flagged.
-Raising the threshold usually lifts precision and cuts recall. You pick the point from the cost, not from 0.5.
-class_weight=&#x27;balanced&#x27; (or a threshold that is not 0.5) when the rare class is the one that matters.</p></div><div class="snip"><h3>ROC and PR</h3><p class="fact">ROC plots the true positive rate against the false positive rate. A sea of true negatives makes the false positive rate look small.
-Precision-recall plots precision against recall and ignores the true negatives. Use it when positives are rare.
-AUC summarises the ranking. It is not the operating point you will ship; the threshold chooses that.</p></div><div class="snip"><h3>Tree vs linear</h3><p class="fact">Linear: readable coefficients, wants scaled numeric inputs, misses interactions unless you add them.
-A tree cuts thresholds and interactions on its own, ignores monotone rescaling, and predicts a leaf constant outside the training range.
-A forest averages unstable trees. Boosting fits residuals and overfits if the trees are deep or there are too many of them.</p></div><div class="snip"><h3>Overfitting signs</h3><p class="fact">Train score far above the validation score.
-A deep tree, tiny leaves, or a target encoding of a high-cardinality column with no smoothing.
-A feature that would not exist at the time of the decision, added because the offline number went up.
-The cure is a holdout you did not tune on, a simpler model, or more data — not another look at the test set.</p></div><div class="snip"><h3>Cross-validation</h3><p class="fact">k-fold averages k cuts. StratifiedKFold keeps the class rate in each fold.
-Shuffle only when the rows are exchangeable. Do not shuffle a time series; train on the past and test on the next window.
-The score you tuned on is optimistic. Quote a holdout that the search never saw.</p></div><div class="snip"><h3>When to scale</h3><p class="fact">Scale for linear and logistic regression, ridge and lasso, k-means, k-NN, PCA, and SVM.
-Trees, random forests, and gradient boosting do not need scaled inputs.
-Fit the scaler on the training fold only. A Pipeline does that per fold.</p></div><h2>SQL</h2><div class="snip"><h3>JOIN, GROUP BY, HAVING</h3><pre><span class="cmt">-- WHERE filters rows before the groups. HAVING filters groups.</span>
+float(pd.Series(x).std())</pre></div><h2>Python syntax</h2><div class="snip"><h3>Comprehensions</h3><pre><span class="cmt"># filter sits at the end; a dict uses {k: v}; a set uses {v}</span>
+nums, pairs = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>], [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">2</span>)]
+[n * n <span class="kw">for</span> n <span class="kw">in</span> nums <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">0</span>]
+{k: v <span class="kw">for</span> k, v <span class="kw">in</span> pairs}
+{n % <span class="num">2</span> <span class="kw">for</span> n <span class="kw">in</span> nums}</pre></div><div class="snip"><h3>sorted with key</h3><pre><span class="cmt"># a leading minus flips a number; a tuple breaks ties left to right</span>
+<span class="cmt"># sorted() returns a new list; list.sort() changes the list</span>
+rows = [{<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Bo&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Ann&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">4</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Cy&quot;</span>}]
+out = sorted(rows, key=<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>Defaults and lambda</h3><pre><span class="cmt"># a default is bound once, when the function is defined, not on each call</span>
+<span class="kw">def</span> price(amount, discount=<span class="num">0.1</span>):
+    <span class="kw">return</span> amount * (<span class="num">1</span> - discount)
+price(<span class="num">100</span>)
+(<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>dict.get</h3><pre><span class="cmt"># .get returns the default instead of raising KeyError</span>
+d = {}
+<span class="kw">for</span> k <span class="kw">in</span> [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>]:
+    d[k] = d.get(k, <span class="num">0</span>) + <span class="num">1</span></pre></div><div class="snip"><h3>Counter and defaultdict</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> Counter, defaultdict
+Counter([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>]).most_common(<span class="num">1</span>)  <span class="cmt"># [(value, count)]</span>
+groups = defaultdict(list)
+<span class="kw">for</span> k, v <span class="kw">in</span> [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;a&quot;</span>, <span class="num">2</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">3</span>)]:
+    groups[k].append(v)
+dict(groups)  <span class="cmt"># a plain dict, if the caller asked for one</span></pre></div><div class="snip"><h3>zip and enumerate</h3><pre><span class="cmt"># zip stops at the shorter side; start=1 makes the first index 1</span>
+names, scores = [<span class="str">&quot;Ada&quot;</span>, <span class="str">&quot;Bo&quot;</span>], [<span class="num">10</span>, <span class="num">8</span>, <span class="num">7</span>]
+<span class="kw">for</span> i, (name, score) <span class="kw">in</span> enumerate(zip(names, scores), start=<span class="num">1</span>):
+    i, name, score</pre></div><div class="snip"><h3>f-strings and rounding</h3><pre><span class="cmt"># .1f rounds for display; :, adds thousands separators</span>
+<span class="cmt"># Follow the prompt. Do not assume a tolerance.</span>
+<span class="cmt"># Round only the output the prompt asks for.</span>
+name, score, n = <span class="str">&quot;Ada&quot;</span>, <span class="num">1.26</span>, <span class="num">12000</span>
+f<span class="str">&quot;{name} scored {score:.1f}&quot;</span>
+f<span class="str">&quot;{n:,}&quot;</span>
+f<span class="str">&quot;{score:.3f}&quot;</span></pre></div><div class="snip"><h3>String methods</h3><pre>text = <span class="str">&quot;  East-12, &quot;</span>
+text.strip().lower().replace(<span class="str">&quot;,&quot;</span>, <span class="str">&quot;&quot;</span>).split(<span class="str">&quot;-&quot;</span>)
+<span class="str">&quot;east&quot;</span>.startswith(<span class="str">&quot;e&quot;</span>)
+<span class="str">&quot;file.png&quot;</span>.endswith(<span class="str">&quot;.png&quot;</span>)
+<span class="str">&quot;a-b&quot;</span>.partition(<span class="str">&quot;-&quot;</span>)  <span class="cmt"># (&#x27;a&#x27;, &#x27;-&#x27;, &#x27;b&#x27;)</span></pre></div><div class="snip"><h3>Slices</h3><pre><span class="cmt"># [start:end] is half-open; slicing off the end does not raise</span>
+xs = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+xs[<span class="num">1</span>:<span class="num">4</span>], xs[-<span class="num">2</span>:], xs[::-<span class="num">1</span>], xs[<span class="num">10</span>:<span class="num">20</span>]</pre></div><div class="snip"><h3>Exceptions</h3><pre><span class="cmt"># catch the errors you expect; a bare except also hides bugs</span>
+<span class="kw">def</span> to_int(text):
+    <span class="kw">try</span>:
+        <span class="kw">return</span> int(text)
+    <span class="kw">except</span> (ValueError, TypeError):
+        <span class="kw">return</span> <span class="kw">None</span>
+to_int(<span class="str">&quot;3&quot;</span>), to_int(<span class="str">&quot;x&quot;</span>), to_int(<span class="kw">None</span>)</pre></div><h2>Test-day tactics</h2><div class="snip"><h3>Read the contract</h3><p class="fact">Read the required contract: file names and paths or the function signature, columns and their order, the index policy, types, row ordering and ties, rounding, and any metric threshold.
+Some data tasks require CSV files, not a returned DataFrame.
+Inspect examples and tests if they are exposed. Do not assume hidden tests are visible.
+Run cells in order and verify the final output exists.
+Trainer shortcuts and auto-imports are not guaranteed on the real platform.</p></div><div class="snip"><h3>Notebook and imports</h3><p class="fact">Write import pandas as pd and import numpy as np yourself. This trainer preloads them. The real platform may not.
+If a function&#x27;s age matters, print pd.__version__ and sklearn.__version__.
+Use the paths the prompt gives. Look at the file names before you read them.
+Run the notebook from the top. A name left over from an earlier cell is stale state, not a result.
+After to_csv, read the file back. Check the columns, their order, the row count and the index.
+Do not install packages in a proctored test unless that test&#x27;s rules explicitly allow it.
+Save and submit the way the platform asks. A variable on the screen is not yet an artifact.</p></div><div class="snip"><h3>Print the frame</h3><p class="fact">Before a join: print(df.head()), df.shape, df.dtypes, list(df.columns).
+Print the row count before and after a merge. A sudden multiplication means a duplicated key.</p></div><div class="snip"><h3>Edges</h3><p class="fact">Empty frame, a column that is all missing, a tie, a duplicated key, a category that appears only on the test side, and a divide by zero.
+A one-row group makes a sample z-score NaN, because pandas std uses ddof=1.</p></div><div class="snip"><h3>Rounding</h3><p class="fact">Follow the prompt&#x27;s rounding and tolerance. Some candidate reports used three decimal places. Do not assume ±0.001.
+Keep full precision during calculations and round only the requested output.
+np.std defaults to ddof=0. pandas Series.std and DataFrame.std default to ddof=1.</p></div><div class="snip"><h3>Time box</h3><p class="fact">A suggested 90-minute budget: 15 minutes probability, 15 minutes ML theory, 20 minutes collection, 15 minutes preprocessing, 20 minutes modeling, 5 minutes final checks.
+Move on when stuck, and adjust to the actual task weights. This is a suggestion, not an official timing rule.
+First produce a valid end-to-end baseline and the exact required artifact, then improve it.
+Do not assume unfinished code, a split alone, or an unexported model earns credit. Check what the platform has saved or submitted.</p></div><h2>Appendix · optional Python</h2><div class="snip"><h3>Not the data-science screen</h3><p class="fact">Optional. Heaps, bisect, deques and itertools are low priority next to pandas, probability and model export.
+Other engineering tracks differ. Do not spend the first hour here.</p></div><div class="snip"><h3>heapq</h3><pre><span class="kw">import</span> heapq
+<span class="cmt"># min-heap; put the priority first in the tuple</span>
+h = []
+heapq.heappush(h, (<span class="num">2</span>, <span class="str">&quot;b&quot;</span>))
+heapq.heappush(h, (<span class="num">1</span>, <span class="str">&quot;a&quot;</span>))
+heapq.heappop(h)
+heapq.nlargest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])
+heapq.nsmallest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])</pre></div><div class="snip"><h3>bisect</h3><pre><span class="kw">import</span> bisect
+xs = [<span class="num">1</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">7</span>]  <span class="cmt"># already sorted</span>
+bisect.bisect_left(xs, <span class="num">3</span>)
+bisect.bisect_right(xs, <span class="num">3</span>)
+bisect.insort(xs, <span class="num">4</span>)</pre></div><div class="snip"><h3>itertools</h3><pre><span class="kw">import</span> itertools
+list(itertools.accumulate([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]))
+list(itertools.chain([<span class="num">1</span>], [<span class="num">2</span>, <span class="num">3</span>]))
+list(itertools.product([<span class="num">0</span>, <span class="num">1</span>], repeat=<span class="num">2</span>))
+<span class="cmt"># groupby only joins adjacent keys, so sort first</span>
+<span class="kw">for</span> key, grp <span class="kw">in</span> itertools.groupby(sorted([<span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>])):
+    key, list(grp)</pre></div><div class="snip"><h3>deque</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> deque
+d = deque(maxlen=<span class="num">3</span>)
+<span class="kw">for</span> x <span class="kw">in</span> (<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>):
+    d.append(x)  <span class="cmt"># full: the left end falls off</span>
+d.appendleft(<span class="num">0</span>)  <span class="cmt"># full: the right end falls off</span></pre></div><h2>Appendix · SQL (optional)</h2><div class="snip"><h3>Where SQL fits</h3><p class="fact">Optional. The best-supported data-science screen is Python, not SQL. Later live rounds and other tracks sometimes use it.
+These snippets are SQLite. strftime and date() are not universal SQL.</p></div><div class="snip"><h3>JOIN, GROUP BY, HAVING</h3><pre><span class="cmt">-- WHERE filters rows before the groups. HAVING filters groups.</span>
 <span class="cmt">-- COUNT(*) counts rows; SUM ignores nulls.</span>
 <span class="kw">SELECT</span> c.segment,
        <span class="kw">ROUND</span>(<span class="kw">SUM</span>(o.amount), <span class="num">2</span>) <span class="kw">AS</span> revenue,
@@ -444,13 +615,8 @@ Fit the scaler on the training fold only. A Pipeline does that per fold.</p></di
        date(ordered_on, <span class="str">&#x27;start of month&#x27;</span>) <span class="kw">AS</span> month_start,
        date(ordered_on, <span class="str">&#x27;+1 month&#x27;</span>) <span class="kw">AS</span> next_month
 <span class="kw">FROM</span> orders
-<span class="kw">ORDER</span> <span class="kw">BY</span> ordered_on;</pre></div><h2>Test-day tactics</h2><div class="snip"><h3>Read the tests first</h3><p class="fact">The visible example is the contract: column names, order, types, and what a tie should do.
-Hidden tests follow that contract. Write the function signature the tests call, then make the example pass.</p></div><div class="snip"><h3>Print the frame</h3><p class="fact">Before a join: print(df.head()), df.shape, df.dtypes, list(df.columns).
-Print the row count before and after a merge. A sudden multiplication means a duplicated key.</p></div><div class="snip"><h3>Edges</h3><p class="fact">Empty frame, a column that is all missing, a tie, a duplicated key, a category that appears only on the test side, and a divide by zero.
-A one-row group makes a sample z-score NaN, because pandas std uses ddof=1.</p></div><div class="snip"><h3>Rounding</h3><p class="fact">Round the number you return, not the inputs along the way.
-Numeric answers are three decimals, accepted within 0.001.
-np.std is population (ddof=0). Series.std() and DataFrame.std() are sample (ddof=1).</p></div><div class="snip"><h3>Time box</h3><p class="fact">About 4 minutes for a numeric, 3 minutes for a multiple-choice item, 15 minutes for each coding task.
-A running partial that you can submit beats a blank cell. If a model is not there, ship the split and the metric.</p></div><h2>Senior cases</h2><div class="snip"><h3>Forecasting</h3><p class="fact">Name the decision and the grain first. The baseline is a seasonal naive.
+<span class="kw">ORDER</span> <span class="kw">BY</span> ordered_on;</pre></div><h2>Later interviews · senior cases</h2><div class="snip"><h3>Not the timed screen</h3><p class="fact">Study material for a later conversation, not a question known to be on the timed screen.
+The invitation is what says whether a case round exists. Do not treat these notes as approved exam material.</p></div><div class="snip"><h3>Forecasting</h3><p class="fact">Name the decision and the grain first. The baseline is a seasonal naive.
 Score WAPE and bias, not MAPE alone. Stockouts censor demand. Validate with a rolling origin.
 Intermittent demand: a rate and a size, then a stock quantile.</p></div><div class="snip"><h3>Churn</h3><p class="fact">The decision is who to contact under a budget. Risk is not uplift.
 Split by time. Value times save rate, minus cost. Compare with calling the riskiest customers.

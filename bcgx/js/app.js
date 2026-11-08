@@ -24380,7 +24380,7 @@ function leftBody(q) {
     return `<textarea class="casebox" data-act="notes" placeholder="Notes stay with this task">${esc(notes)}</textarea>`;
   }
   if (S.leftTab === "rules") {
-    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. Coding tasks are all-or-nothing: every test must pass. Numeric answers are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during the mock, the same way you should sit the real 90 minutes.</p><p>pandas and numpy are already imported as <code>pd</code> and <code>np</code>. You can still write those imports yourself.</p></div>`;
+    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. This trainer grades coding tasks all-or-nothing: every test must pass. The real assessment may score differently. Numeric answers in this trainer are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during this trainer's mock.</p><p>This trainer preloads pandas and numpy as <code>pd</code> and <code>np</code>. The real platform may not. Import them yourself there.</p></div>`;
   }
   if (S.leftTab === "info") {
     const g = S.bank.groups.find((x) => x.id === q.group);
