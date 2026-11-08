@@ -24322,7 +24322,7 @@ function renderPath() {
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" data-act="continue">Continue</button>
         <button class="btn" data-act="go" data-hash="#/mock">${mock ? "Resume mock" : "Mock test"}</button>
-        <button class="btn" data-act="go" data-hash="#/sheet">Cheat sheet</button>
+        <button class="btn" data-act="go" data-hash="#/sheet" title="${esc(tip("Cheat sheet", "Ctrl+Alt+C"))}">${face("Cheat sheet", "Ctrl+Alt+C")}</button>
       </div>
     </div>
     ${note}
@@ -24562,11 +24562,141 @@ function renderReading(q) {
     </p>
   </article></div>`;
 }
-function renderSheet(anchor) {
-  const q = (S._sheetQ || "").toLowerCase();
-  const items = S.bank.cheatsheet.filter((e) => !q || (e.section + e.title + e.body).toLowerCase().includes(q));
-  const body = items.map((e) => `<article class="sheet-item" id="${esc(e.id)}"><p class="sub">${esc(e.section)}</p><h3>${esc(e.title)}</h3><p>${esc(e.body)}</p></article>`).join("") || `<p class="empty">No matches.</p>`;
-  return `${topbar("")}<div class="sheet-wrap"><h1>Cheat sheet</h1><div class="filters"><input placeholder="Search pandas, sklearn, SQL\u2026" value="${esc(S._sheetQ || "")}" data-act="sheet-q"></div>${body}</div>`;
+var PY_KW = new Set("import from as def return for in if else elif and or not lambda with True False None class try except while break continue pass yield".split(" "));
+var SQL_KW = new Set("SELECT FROM WHERE GROUP BY HAVING JOIN LEFT RIGHT INNER OUTER ON AS WITH ORDER ASC DESC AND OR CASE WHEN THEN ELSE END NULL IS NOT OVER PARTITION ROWS BETWEEN UNBOUNDED PRECEDING CURRENT FOLLOWING ROW_NUMBER RANK DENSE_RANK LAG LEAD SUM COUNT ROUND COALESCE DISTINCT INSERT INTO VALUES CREATE TABLE".split(" "));
+function highlight(code2, lang) {
+  const kw = lang === "sql" ? SQL_KW : PY_KW;
+  let out = "";
+  let i2 = 0;
+  const n = code2.length;
+  while (i2 < n) {
+    const c = code2[i2];
+    if (lang !== "sql" && c === "#") {
+      let j = i2;
+      while (j < n && code2[j] !== "\n") j += 1;
+      out += `<span class="cmt">${esc(code2.slice(i2, j))}</span>`;
+      i2 = j;
+      continue;
+    }
+    if (lang === "sql" && c === "-" && code2[i2 + 1] === "-") {
+      let j = i2;
+      while (j < n && code2[j] !== "\n") j += 1;
+      out += `<span class="cmt">${esc(code2.slice(i2, j))}</span>`;
+      i2 = j;
+      continue;
+    }
+    if (c === "'" || c === '"') {
+      const q = c;
+      let j = i2 + 1;
+      while (j < n && code2[j] !== q) j += code2[j] === "\\" ? 2 : 1;
+      if (j < n) j += 1;
+      out += `<span class="str">${esc(code2.slice(i2, j))}</span>`;
+      i2 = j;
+      continue;
+    }
+    const prev = i2 ? code2[i2 - 1] : "";
+    if (c >= "0" && c <= "9" && !/[A-Za-z_]/.test(prev)) {
+      let j = i2;
+      while (j < n && /[0-9.]/.test(code2[j])) j += 1;
+      out += `<span class="num">${esc(code2.slice(i2, j))}</span>`;
+      i2 = j;
+      continue;
+    }
+    if (/[A-Za-z_]/.test(c)) {
+      let j = i2 + 1;
+      while (j < n && /[A-Za-z0-9_]/.test(code2[j])) j += 1;
+      const word = code2.slice(i2, j);
+      const key = lang === "sql" ? word.toUpperCase() : word;
+      out += kw.has(key) ? `<span class="kw">${esc(word)}</span>` : esc(word);
+      i2 = j;
+      continue;
+    }
+    out += esc(c);
+    i2 += 1;
+  }
+  return out;
+}
+function renderSheet() {
+  const doc2 = S.sheet || { title: "Cheat sheet", intro: "", sections: [] };
+  const q = (S._sheetQ || "").toLowerCase().trim();
+  const sections = (doc2.sections || []).map((sec) => ({
+    ...sec,
+    items: sec.items.filter((e) => !q || (sec.title + " " + e.title + " " + e.code).toLowerCase().includes(q))
+  })).filter((sec) => sec.items.length);
+  const toc = sections.map((sec) => `<button type="button" data-act="sheet-jump" data-id="sec-${esc(sec.id)}">${esc(sec.title)}</button>`).join("");
+  const body = sections.map((sec) => {
+    const cards = sec.items.map((e) => {
+      const block = e.lang === "text" ? `<p class="snip-text">${esc(e.code)}</p>` : `<pre class="codeblock"><code>${highlight(e.code, e.lang)}</code></pre>`;
+      return `<article class="snip" id="${esc(e.id)}"><header><h3>${esc(e.title)}</h3><button type="button" class="btn small copybtn" data-act="copy-snip">Copy</button></header>${block}</article>`;
+    }).join("");
+    return `<section class="sheet-sec" id="sec-${esc(sec.id)}"><h2>${esc(sec.title)}</h2><div class="snip-grid">${cards}</div></section>`;
+  }).join("") || `<p class="empty">No matches.</p>`;
+  return `${topbar("")}<div class="sheet-screen">
+    <div class="sheet-head">
+      <h1>${esc(doc2.title || "Cheat sheet")}</h1>
+      <p class="sub">${esc(doc2.intro || "")}</p>
+      <div class="sheet-actions">
+        <button class="btn primary" data-act="download-pdf">Download PDF</button>
+        <button class="btn" data-act="print-sheet">Print</button>
+        <button class="btn" data-act="download-md">Markdown</button>
+      </div>
+      <div class="filters sheet-search"><input placeholder="Filter snippets: qcut, ROC, LAG\u2026" value="${esc(S._sheetQ || "")}" data-act="sheet-q" aria-label="Filter snippets"></div>
+    </div>
+    <div class="sheet-layout">
+      <nav class="sheet-toc" aria-label="Sections">${toc}</nav>
+      <div class="sheet-main">${body}</div>
+    </div>
+  </div>`;
+}
+function saveBlob(filename, blob) {
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+async function downloadPdf() {
+  const res = await fetch("cheatsheet.pdf");
+  if (!res.ok) throw new Error("PDF unavailable");
+  saveBlob("BCGX-DS-cheatsheet.pdf", new Blob([await res.arrayBuffer()], { type: "application/pdf" }));
+}
+function downloadMarkdown() {
+  const doc2 = S.sheet || { title: "Cheat sheet", intro: "", sections: [] };
+  const lines = [`# ${doc2.title}`, "", doc2.intro || "", ""];
+  for (const sec of doc2.sections || []) {
+    lines.push(`## ${sec.title}`, "");
+    for (const item of sec.items) {
+      lines.push(`### ${item.title}`, "");
+      if (item.lang === "text") lines.push(item.code, "");
+      else lines.push("```" + (item.lang === "sql" ? "sql" : "python"), item.code, "```", "");
+    }
+  }
+  saveBlob("BCGX-DS-cheatsheet.md", new Blob([lines.join("\n")], { type: "text/markdown" }));
+}
+function copySnippet(btn) {
+  const root = btn.closest(".snip");
+  const node = root.querySelector("code") || root.querySelector(".snip-text");
+  const text = node ? node.textContent : "";
+  const done = () => {
+    btn.textContent = "Copied";
+    setTimeout(() => {
+      btn.textContent = "Copy";
+    }, 1200);
+  };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+    done();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
+  else fallback();
 }
 function renderSettings() {
   const s = S.settings;
@@ -24668,8 +24798,13 @@ function render() {
     return;
   }
   if (route.name === "sheet") {
-    root.innerHTML = renderSheet(route.anchor);
-    if (route.anchor) document.getElementById(route.anchor)?.scrollIntoView();
+    if (route.anchor && route.anchor !== S._sheetAnchor) {
+      S._sheetQ = "";
+      S._sheetAnchor = route.anchor;
+    }
+    if (!route.anchor) S._sheetAnchor = "";
+    root.innerHTML = renderSheet();
+    if (route.anchor && !(S._sheetQ || "").trim()) document.getElementById(route.anchor)?.scrollIntoView({ block: "start" });
     return;
   }
   if (route.name === "settings") {
@@ -25341,6 +25476,13 @@ function onClick(ev) {
     go("#/sandbox");
   } else if (act === "back-scratch") go(S.scratch && S.scratch.back ? S.scratch.back : "#/");
   else if (act === "run-scratch") runScratch();
+  else if (act === "copy-snip") copySnippet(btn);
+  else if (act === "download-pdf") downloadPdf().catch(() => {
+    btn.textContent = "PDF unavailable";
+  });
+  else if (act === "download-md") downloadMarkdown();
+  else if (act === "print-sheet") window.print();
+  else if (act === "sheet-jump") document.getElementById(btn.dataset.id)?.scrollIntoView({ block: "start" });
   else if (act === "help") setHelp(!document.getElementById("help-overlay"));
   else if (act === "close-help") setHelp(false);
   else if (act === "mark-read") {
@@ -25650,6 +25792,7 @@ function shortcutRows() {
     ["Description, code, or output pane", "Ctrl+Alt+1 / 2 / 3"],
     ["Focus the editor", "Ctrl+Alt+E"],
     ["Task list", "Ctrl+Alt+H"],
+    ["Cheat sheet", "Ctrl+Alt+C"],
     ["Back", "Ctrl+B or Alt+B"],
     ["Settings", "Ctrl+,"],
     ["Ask Claude (practice only)", "Ctrl+Alt+R"],
@@ -25784,6 +25927,12 @@ function onShortcut(e) {
     go("#/");
     return;
   }
+  if (mod && e.altKey && !e.shiftKey && e.code === "KeyC") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (parseRoute().name !== "sheet") go("#/sheet");
+    return;
+  }
   if ((mod || e.altKey) && !e.shiftKey && !(mod && e.altKey) && e.code === "KeyB") {
     e.preventDefault();
     e.stopPropagation();
@@ -25834,7 +25983,7 @@ async function boot() {
   window.addEventListener("keydown", onShortcut, true);
   render();
   try {
-    const [bank, harness] = await Promise.all([
+    const [bank, harness, sheet] = await Promise.all([
       fetch("questions/bank.json").then((r) => {
         if (!r.ok) throw new Error(String(r.status));
         return r.json();
@@ -25842,10 +25991,15 @@ async function boot() {
       fetch("py/harness.py").then((r) => {
         if (!r.ok) throw new Error(String(r.status));
         return r.text();
-      })
+      }),
+      fetch("cheatsheet.json").then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      }).catch(() => ({ title: "Cheat sheet", intro: "Could not load the cheat sheet.", sections: [] }))
     ]);
     S.bank = bank;
     S.harness = harness;
+    S.sheet = sheet;
   } catch (err) {
     document.getElementById("app").innerHTML = `${topbar("")}<main class="lobby"><div class="banner bad">Could not load the question bank (${esc(err.message)}).</div></main>`;
     return;

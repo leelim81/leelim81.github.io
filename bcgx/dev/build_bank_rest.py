@@ -704,47 +704,16 @@ The email list is 2 million customers. Finance will fund one campaign this quart
 # after them. Re-number so difficulty is non-decreasing: H1 E, H2 M, H3 M, H4 M, H5 M, H6 H.
 # Orders are already 1..6 with that difficulty pattern. Good.
 
+_sheet = json.loads((ROOT / "cheatsheet.json").read_text())
 CHEAT = [
-    {"id": "py-fstring", "section": "Python", "title": "f-strings", "body": "f\"{name} scored {score:.1f}\" rounds to one decimal. f\"{n:,}\" adds thousands separators."},
-    {"id": "py-slice", "section": "Python", "title": "Slices", "body": "xs[start:end] is half-open. xs[-2:] is the last two. xs[::-1] reverses. Slicing off the end does not raise."},
-    {"id": "py-dict", "section": "Python", "title": "dict.get", "body": "d.get(key, 0) returns the default instead of raising. Use it to count: d[k] = d.get(k, 0) + 1."},
-    {"id": "py-comp", "section": "Python", "title": "Comprehensions", "body": "[n*n for n in nums if n % 2 == 0]. Dict form: {k: v for k, v in pairs}."},
-    {"id": "py-loop", "section": "Python", "title": "enumerate and zip", "body": "for i, (name, score) in enumerate(zip(names, scores), start=1). zip stops at the shorter list."},
-    {"id": "py-fn", "section": "Python", "title": "Defaults and lambda", "body": "def f(prices, discount=0.1). Defaults bind at definition time. lambda r: (-r['rev'], r['name']) is a sort key."},
-    {"id": "py-sort", "section": "Python", "title": "Sort key", "body": "sorted(rows, key=lambda r: (-r['rev'], r['name'])) sorts revenue down, then name up. sorted returns a new list."},
-    {"id": "py-str", "section": "Python", "title": "String cleanup", "body": "text.strip().lower().replace(',', '').split('-'). startswith / endswith for cheap filters."},
-    {"id": "py-collections", "section": "Python", "title": "Counter and defaultdict", "body": "Counter(tokens).most_common(1). defaultdict(list) then groups[k].append(v). Wrap with dict() if you need a plain dict."},
-    {"id": "py-exc", "section": "Python", "title": "Exceptions", "body": "try: return int(text)\\nexcept (ValueError, TypeError): return None. Do not use a bare except."},
-    {"id": "pd-select", "section": "Pandas", "title": "loc and iloc", "body": "df.loc[df['region'].eq('East'), ['revenue']]. df.iloc[0, 1] is position. Masks need parentheses: (a > 0) & (b < 3)."},
-    {"id": "pd-assign", "section": "Pandas", "title": "Assign", "body": "out = df.copy(); out['margin'] = out['revenue'] - out['cost']. Assigning on a slice without loc is unreliable."},
-    {"id": "pd-concat", "section": "Pandas", "title": "Concat", "body": "pd.concat([a, b], ignore_index=True) unions columns and fills gaps with null. Then select the column order you were asked for."},
-    {"id": "pd-merge", "section": "Pandas", "title": "Merge", "body": "orders.merge(customers, on='customer_id', how='left'). Deduplicate the right table first or the row count explodes. how='left' keeps unmatched left rows."},
-    {"id": "pd-groupby", "section": "Pandas", "title": "Named aggregation", "body": "df.groupby('region', as_index=False).agg(revenue=('amount','sum'), orders=('order_id','count'), aov=('amount','mean'))."},
-    {"id": "pd-transform", "section": "Pandas", "title": "transform share and z-score", "body": "g = df.groupby('category')['revenue']; df['share'] = df['revenue'] / g.transform('sum'); df['z'] = (df['revenue'] - g.transform('mean')) / g.transform('std'). pandas std is ddof=1."},
-    {"id": "pd-pivot", "section": "Pandas", "title": "pivot_table and melt", "body": "pivot_table(index=, columns=, values=, aggfunc='sum', fill_value=0). reindex columns to force a missing level. melt(id_vars=, value_vars=, var_name=, value_name=)."},
-    {"id": "pd-time", "section": "Pandas", "title": "resample, shift, rolling", "body": "pd.to_datetime. set_index('date').resample('ME')['amount'].sum() fills empty months. groupby(key)[col].shift(1). rolling(3, min_periods=1).mean() via transform."},
-    {"id": "pd-rank", "section": "Pandas", "title": "Top-N with ties", "body": "df.sort_values(['category','revenue','product_id'], ascending=[True, False, True]).groupby('category', as_index=False).head(2)."},
-    {"id": "pr-na", "section": "Processing", "title": "Group imputation", "body": "med = df.groupby('segment')['income'].transform('median'); df['income'] = df['income'].fillna(med).fillna(df['income'].median())."},
-    {"id": "pr-outlier", "section": "Processing", "title": "IQR cap", "body": "q1, q3 = s.quantile(0.25), s.quantile(0.75); s.clip(q1 - 1.5*(q3-q1), q3 + 1.5*(q3-q1)). Fit fences on train only."},
-    {"id": "pr-bin", "section": "Processing", "title": "cut, qcut, log1p", "body": "pd.cut(age, [0,18,35,50,120], labels=[...], right=False). pd.qcut(spend, 4, labels=['Q1','Q2','Q3','Q4']). np.log1p for zeros."},
-    {"id": "pr-encode", "section": "Processing", "title": "Encodings", "body": "plan.map({'Basic':0,'Plus':1,'Pro':2}). pd.get_dummies(..., dtype=int) or OneHotEncoder(handle_unknown='ignore', sparse_output=False). Target mean from train only; unseen -> global train mean."},
-    {"id": "pr-scale", "section": "Processing", "title": "StandardScaler", "body": "scaler = StandardScaler().fit(train[cols]); train[cols] = scaler.transform(train[cols]); test[cols] = scaler.transform(test[cols]). Population std. Zero variance becomes zeros on the training rows."},
-    {"id": "pr-leak", "section": "Processing", "title": "Leakage tells", "body": "Future refunds, a column copied from the label, a statistic fit on train+test, target encoding fit on the test labels, dummies built separately on test. A random split does not fix any of these."},
-    {"id": "pr-pipe", "section": "Processing", "title": "ColumnTransformer", "body": "Pipeline([('imp', SimpleImputer(strategy='median')), ('sc', StandardScaler())]). One-hot branch with most_frequent and handle_unknown='ignore'. Wrap both in ColumnTransformer and fit on train."},
-    {"id": "sk-split", "section": "sklearn", "title": "Stratified split", "body": "train_test_split(df, test_size=0.25, random_state=0, stratify=df['y'])."},
-    {"id": "sk-linear", "section": "sklearn", "title": "Linear and logistic", "body": "LinearRegression().fit(X, y).coef_ and .intercept_. LogisticRegression(max_iter=500).predict_proba(X)[:, 1] is the positive score. predict() already cut at 0.5."},
-    {"id": "sk-tree", "section": "sklearn", "title": "Forests and weights", "body": "RandomForestClassifier(n_estimators=20, random_state=0). class_weight='balanced' on imbalance. Set random_state or the next run moves."},
-    {"id": "sk-cv", "section": "sklearn", "title": "cross_val_score and GridSearchCV", "body": "cross_val_score(est, X, y, cv=4, scoring='accuracy').mean(). GridSearchCV(est, {'max_depth':[1,4]}, cv=3, scoring='accuracy').fit(...). best_params_, best_score_."},
-    {"id": "sk-metrics", "section": "sklearn", "title": "Metric calls", "body": "precision_score, recall_score, f1_score, roc_auc_score on scores. mean_absolute_error, sqrt(mean_squared_error) for RMSE, r2_score. zero_division=0. Gini = 2*AUC-1."},
-    {"id": "met-formulas", "section": "Formulas", "title": "Numbers worth memorising", "body": "Bayes: TP / (TP+FP). SE = sigma/sqrt(n). Margin = z*SE. Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0)=e^(-lambda). Geometric P(T=k)=(1-p)^(k-1)*p, mean 1/p. Var = E[X^2]-(E[X])^2. Adj R2 = 1-(1-R2)*(n-1)/(n-p-1). WAPE = sum|e|/sum|actual|. MAPE breaks at zero."},
-    {"id": "np-broadcast", "section": "NumPy", "title": "Broadcasting", "body": "mu = X.mean(axis=0); sd = X.std(axis=0, ddof=1); (X-mu)/sd. keepdims=True when reducing axis 1 and broadcasting back. np.std default ddof is 0. Pandas std default is 1."},
-    {"id": "np-lstsq", "section": "NumPy", "title": "Least squares and k-means", "body": "design = np.column_stack([np.ones(n), X]); beta = np.linalg.lstsq(design, y, rcond=None)[0]. K-means: dist = ((pts[:,None,:]-centroids[None,:,:])**2).sum(2); labels = dist.argmin(1)."},
-    {"id": "sql-join", "section": "SQL", "title": "Join, group, having", "body": "SELECT segment, ROUND(SUM(amount),2) AS revenue, COUNT(*) AS orders FROM orders o JOIN customers c ON c.id = o.customer_id WHERE status='paid' GROUP BY segment HAVING COUNT(*)>=2 ORDER BY segment. WHERE filters rows. HAVING filters groups."},
-    {"id": "sql-window", "section": "SQL", "title": "Windows", "body": "RANK() OVER (PARTITION BY category ORDER BY revenue DESC). Filter rank in an outer query. LAG(revenue) OVER (ORDER BY month) is null on the first row. ROW_NUMBER never ties. DENSE_RANK does not skip."},
-    {"id": "case-forecast", "section": "Cases", "title": "Forecasting", "body": "Decision and grain first. Baseline = seasonal naive. WAPE and bias, not MAPE alone. Stockouts censor demand. Rolling origin. Intermittent series need a rate and a size, then a stock quantile."},
-    {"id": "case-churn", "section": "Cases", "title": "Churn", "body": "The decision is who to contact under a budget. Risk is not uplift. Time split. Value × save rate − cost. Compare with the current 'call the riskiest' policy. Randomise before you trust a save rate."},
-    {"id": "case-price", "section": "Cases", "title": "Price and markdowns", "body": "Name the decision variable and the constraints before the model. Objective is usually contribution. Sell-outs do not trace the demand curve. Pilot inside the move limit. Markdowns are a small discrete set plus a salvage value."},
-    {"id": "case-system", "section": "Cases", "title": "System design", "body": "Batch for a weekly list. One feature SQL for train and serve. On failure, republish the last good scores. Log features, version, score, decision, outcome. Timeout falls back to rules. Shadow mode, then a slice, with a kill switch."},
+    {
+        "id": _item["id"],
+        "section": _sec["title"],
+        "title": _item["title"],
+        "body": _item["code"],
+    }
+    for _sec in _sheet["sections"]
+    for _item in _sec["items"]
 ]
 
 # Attach readings and validate structure.
