@@ -8,7 +8,7 @@ import pkg from '/tmp/e2e/node_modules/playwright-core/index.js';
 
 const { chromium } = pkg;
 const root = dirname(fileURLToPath(import.meta.url));
-const shippedZip = join(root, '../../tools/forms-filler/extension/forms-filler-profiles-0.1.0.zip');
+const shippedZip = join(root, '../../tools/forms-filler/extension/forms-filler-profiles-0.1.1.zip');
 const ext = '/tmp/ff-unpacked-ext';
 spawnSync('rm', ['-rf', ext]);
 spawnSync('mkdir', ['-p', ext]);
@@ -161,7 +161,7 @@ const closedOnLoad = await filler.evaluate(() => ({
   help: document.getElementById('extensionTitle').textContent,
   zip: document.getElementById('extensionZip').getAttribute('href')
 }));
-check('saved values start collapsed and the extension download is visible', closedOnLoad.hidden && closedOnLoad.expanded === 'false' && closedOnLoad.help.includes('extension') && closedOnLoad.zip === 'extension/forms-filler-profiles-0.1.0.zip', JSON.stringify(closedOnLoad));
+check('saved values start collapsed and the extension download is visible', closedOnLoad.hidden && closedOnLoad.expanded === 'false' && closedOnLoad.help.includes('extension') && closedOnLoad.zip === 'extension/forms-filler-profiles-0.1.1.zip', JSON.stringify(closedOnLoad));
 await filler.screenshot({ path: join(shotDir, 'saved-collapsed.png'), fullPage: true });
 await filler.setViewportSize({ width: 390, height: 844 });
 await filler.screenshot({ path: join(shotDir, 'saved-collapsed-mobile.png'), fullPage: true });
@@ -184,7 +184,7 @@ await filler.setInputFiles('#profileImport', '/tmp/bad-profile.json');
 await filler.locator('#profileMsg', { hasText: 'rejected' }).waitFor();
 check('a broken import file is rejected', true);
 const zipHref = new URL(await filler.locator('#extensionZip').getAttribute('href'), filler.url()).href;
-check('the extension link stays on this site path', zipHref.endsWith('/tools/forms-filler/extension/forms-filler-profiles-0.1.0.zip'), zipHref);
+check('the extension link stays on this site path', zipHref.endsWith('/tools/forms-filler/extension/forms-filler-profiles-0.1.1.zip'), zipHref);
 const zipResponse = await fetch(zipHref);
 const zipBytes = Buffer.from(await zipResponse.arrayBuffer());
 writeFileSync('/tmp/ff-shipped-extension.zip', zipBytes);
@@ -198,7 +198,7 @@ const zipInfo = spawnSync('python3', ['-c', [
 ].join('\n')], { encoding: 'utf8' });
 const zipJson = JSON.parse(zipInfo.stdout || '{}');
 const shippedSha = spawnSync('sha256sum', [shippedZip], { encoding: 'utf8' }).stdout.split(' ')[0];
-check('the linked zip is extension 0.1.0 with no host permission', zipResponse.ok && !zipJson.missing.length && zipJson.version === '0.1.0' && JSON.stringify(zipJson.permissions) === JSON.stringify(['storage', 'activeTab', 'scripting']) && !zipJson.host && zipJson.sha256 === shippedSha, JSON.stringify(zipJson));
+check('the linked zip is extension 0.1.1 with no host permission', zipResponse.ok && !zipJson.missing.length && zipJson.version === '0.1.1' && JSON.stringify(zipJson.permissions) === JSON.stringify(['storage', 'activeTab', 'scripting']) && !zipJson.host && zipJson.sha256 === shippedSha, JSON.stringify(zipJson));
 await filler.reload({ waitUntil: 'domcontentloaded' });
 await filler.waitForFunction(() => document.getElementById('profileBox') && document.getElementById('profileBox').hidden && document.getElementById('profileToggle').getAttribute('aria-expanded') === 'false');
 check('reload keeps Saved values collapsed', true);

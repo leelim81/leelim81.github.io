@@ -107,6 +107,7 @@ for (const record of gold) {
   let wrong = 0;
   let review = 0;
   let reviewCorrect = 0;
+  let wrongPlace = 0;
   let abstain = 0;
   answerable.forEach((field) => {
     const matches = detected.filter((item) => fieldKind(item) === field.kind && !/patient/.test(String(item.label || '').toLowerCase()) === !/patient/.test(field.label_drawn.toLowerCase()));
@@ -115,12 +116,15 @@ for (const record of gold) {
     const value = decision ? decision.value || '' : '';
     const same = norm(field.kind, value) === norm(field.kind, field.gold);
     const other = (record.other_values[field.kind] || []).some((item) => norm(field.kind, item) === norm(field.kind, value) && value);
+    const placed = !!(one && hit(one, field.rect));
     if (decision && decision.decision === 'autofill') {
-      if (same && !other) correct += 1;
+      if (same && !other && placed) correct += 1;
+      else if (same && !other) { wrong += 1; wrongPlace += 1; }
       else wrong += 1;
     } else if (decision && decision.decision === 'review' && value) {
       review += 1;
-      if (same && !other) reviewCorrect += 1;
+      if (same && !other && placed) reviewCorrect += 1;
+      else if (same && !other) wrongPlace += 1;
     } else abstain += 1;
   });
   rows.push({
@@ -131,7 +135,7 @@ for (const record of gold) {
     detected: detected.length,
     pairs,
     answerable: answerable.length,
-    correct, wrong, review, reviewCorrect, abstain,
+    correct, wrong, review, reviewCorrect, wrongPlace, abstain,
     text: String(run.text || '').slice(0, 220)
   });
   console.log(record.id, run.kind, run.channel, 'fields', detected.length, 'fill', correct + '/' + answerable.length, 'wrong', wrong, 'ms', Date.now() - started);
@@ -142,6 +146,8 @@ const recall = detTP + detFN ? detTP / (detTP + detFN) : null;
 const summary = {
   split,
   ms: Date.now() - t0,
+  definition: 'v2-eligible-non-other. A matching value counts only when its rectangle overlaps that field’s gold rectangle. Recall denominator is every gold field whose kind is not other.',
+  eligible: gold.reduce((sum, record) => sum + record.fields.filter((field) => field.kind !== 'other').length, 0),
   detection: { tp: detTP, fp: detFP, fn: detFN, precision: prec, recall, labelExact: labelOK },
   fill: rows.reduce((acc, row) => {
     acc.answerable += row.answerable;
@@ -149,9 +155,10 @@ const summary = {
     acc.wrong += row.wrong;
     acc.review += row.review;
     acc.reviewCorrect += row.reviewCorrect;
+    acc.wrongPlace += row.wrongPlace;
     acc.abstain += row.abstain;
     return acc;
-  }, { answerable: 0, correct: 0, wrong: 0, review: 0, reviewCorrect: 0, abstain: 0 }),
+  }, { answerable: 0, correct: 0, wrong: 0, review: 0, reviewCorrect: 0, wrongPlace: 0, abstain: 0 }),
   rows
 };
 const tag = process.argv.slice(3).find((arg) => !arg.startsWith('--')) || (once ? 'once' : 'score');

@@ -123,7 +123,7 @@ $('look').addEventListener('click', async function () {
   try {
     var scan = await scanTab(tab);
     render(FormMatch.plan(scan, profile.facts), scan.unsupported);
-    say('Check the list, then fill. Nothing is submitted.');
+    say('Check the list, then fill. Fill copies those values into this website now. Nothing is submitted.');
   } catch (err) {
     say('This page did not allow a look. Open the form, then click the extension.');
   }
@@ -141,7 +141,7 @@ $('fill').addEventListener('click', async function () {
   var tab = await activeTab();
   try {
     var result = await writeTab(tab, jobs);
-    say('Wrote ' + ((result && result.touched) || []).length + ' field(s). The page was not submitted.');
+    say('Wrote ' + ((result && result.touched) || []).length + ' field(s) into this page. The site can read them now. The page was not submitted.');
   } catch (err) {
     say('The page was not changed.');
   }

@@ -1,0 +1,614 @@
+{
+  "research_date_sgt": "2026-11-08",
+  "timezone": "Asia/Singapore",
+  "evidence_policy": {
+    "project_results": "Supplied project reports; not independently reproduced",
+    "documented_facts": "Cited primary pages, model artifact metadata and own implementation docs",
+    "judgments": "Rankings, architecture, scope and proposed gates",
+    "unknowns": "New candidate browser graph compatibility, phone latency, full download, peak memory and app accuracy; demos not executed"
+  },
+  "sources": [
+    {
+      "id": "S01",
+      "title": "pdfme browser templates and MIT license",
+      "urls": [
+        "https://pdfme.com/docs/getting-started",
+        "https://raw.githubusercontent.com/pdfme/pdfme/main/LICENSE.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Browser Designer/Form/generator, saved templates; text-only default plugin registry. No bundle/mobile measurements. Integration not recommended by default."
+    },
+    {
+      "id": "S02",
+      "title": "FormA11y empirical study record",
+      "urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/41307077/"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read; initial successful read, subsequent duplicate429",
+      "claims_and_limits": "20-participant within-subject PDF accessibility remediation study, 2.8x vs Acrobat; not form-filling speed. Initial read succeeded, later repeated read returned429. Publication year metadata inconsistent; DOI10.1145/3702317."
+    },
+    {
+      "id": "S03",
+      "title": "WCAG2.2 understanding dragging movements",
+      "urls": [
+        "https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html"
+      ],
+      "source_date": "2026-08-10",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Non-drag single-pointer alternatives; keyboard alone insufficient for dragging criterion."
+    },
+    {
+      "id": "S04",
+      "title": "PDF.js PDFPageProxy rolling API",
+      "urls": [
+        "https://mozilla.github.io/pdf.js/api/draft/module-pdfjsLib-PDFPageProxy.html"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "User-space page view, rotation, userUnit, viewport, operator list, structure tree and XFA renderer representation; not an XFA writer."
+    },
+    {
+      "id": "S05",
+      "title": "PDF.js6.2.108 viewport type declarations",
+      "urls": [
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/types/src/display/page_viewport.d.ts"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Forward/inverse viewport conversion. Version pinned in source URL, not evidence of app dependency version."
+    },
+    {
+      "id": "S06",
+      "title": "pdf-lib PDFForm API",
+      "urls": [
+        "https://pdf-lib.js.org/docs/api/classes/pdfform"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "XFA read/modify/create unsupported; deleteXFA forces existing fallback only; flatten removes fields; font limitations."
+    },
+    {
+      "id": "S07",
+      "title": "pdf-lib PDFPage API",
+      "urls": [
+        "https://pdf-lib.js.org/docs/api/classes/pdfpage"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "MediaBox getSize, CropBox and rotation are distinct."
+    },
+    {
+      "id": "S08",
+      "title": "OpenCV.js geometric transformations",
+      "urls": [
+        "https://docs.opencv.org/4.x/dd/d52/tutorial_js_geometric_transformations.html"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Actual JS resize/affine/perspective APIs; generation date shown31Dec2025, not necessarily publication date."
+    },
+    {
+      "id": "S09",
+      "title": "OpenCV4.13 feature matching and homography",
+      "urls": [
+        "https://docs.opencv.org/4.13.0/d7/dff/tutorial_feature_homography.html"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "RANSAC feature/homography illustration; SURF C++/Python example is not proof of a browser build export."
+    },
+    {
+      "id": "S10",
+      "title": "Nutrient nano checkpoint and preprocessing contract",
+      "urls": [
+        "https://huggingface.co/nutrientdocs/form-field-v1-nano/raw/main/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "0.90M parameters, text/choice/signature destinations, Apache2.0. No checked-state or person linkage. Vendor mAP/timing not app measurements; synthetic source-rights ledger not audited.",
+      "artifact_metadata": [
+        "sources/nutrientdocs--form-field-v1-nano-metadata.json"
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "Nutrient detector demo execution declaration",
+      "urls": [
+        "https://huggingface.co/spaces/nutrientdocs/form-field-v1-demo/raw/main/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Gradio6.20.0, ONNX on ZeroGPU, not a client-only browser inference demo; small/medium weights private/commercial."
+    },
+    {
+      "id": "S12",
+      "title": "YOLOX code license",
+      "urls": [
+        "https://raw.githubusercontent.com/Megvii-BaseDetection/YOLOX/main/LICENSE"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Apache2.0 upstream code license; independent from other YOLO-family models and training asset rights."
+    },
+    {
+      "id": "S13",
+      "title": "ORT Web production deployment",
+      "urls": [
+        "https://onnxruntime.ai/docs/tutorials/web/deploy.html"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "JS/WASM/model assets separate; conditional WASM import and custom kernels; WebGPU secure context."
+    },
+    {
+      "id": "S14",
+      "title": "ORT Web environment and session options",
+      "urls": [
+        "https://onnxruntime.ai/docs/tutorials/web/env-flags-and-session-options.html"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Matching JS/WASM builds, multithread isolation requirements, proxy worker/WebGPU incompatibility. Exact candidate graph not tested."
+    },
+    {
+      "id": "S15",
+      "title": "CommonForms real browser demonstration",
+      "urls": [
+        "https://commonforms.simplepdf.com/",
+        "https://raw.githubusercontent.com/SimplePDF/commonforms-web/master/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Own live page and implementation README describe local ORT Web field detection and AcroField creation. Not executed/network-audited here; not value/person filling."
+    },
+    {
+      "id": "S16",
+      "title": "FFDNet-S original/CPU model cards and license discussion",
+      "urls": [
+        "https://huggingface.co/jbarrow/FFDNet-S-cpu/raw/main/README.md",
+        "https://huggingface.co/jbarrow/FFDNet-S/raw/main/README.md",
+        "https://github.com/jbarrow/commonforms/issues/9"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "6M card parameters, missing CPU weight license declaration, YOLO weight lineage caveat. Apache code/dataset not sufficient to license checkpoint. Parameter descriptions inconsistent with paper.",
+      "artifact_metadata": [
+        "sources/jbarrow--FFDNet-S-cpu-metadata.json"
+      ]
+    },
+    {
+      "id": "S17",
+      "title": "FFDetr upstream and fixed1024 ONNX export",
+      "urls": [
+        "https://huggingface.co/jbarrow/FFDetr/raw/main/README.md",
+        "https://huggingface.co/docspring/ffdetr-onnx/raw/main/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Apache2.0 card and converter; fixed positional embeddings because antialiased interpolation export limitation; converter parity/recall claims not browser proof. IoU.3 recall not exact placement.",
+      "artifact_metadata": [
+        "sources/jbarrow--FFDetr-metadata.json",
+        "sources/docspring--ffdetr-onnx-metadata.json"
+      ]
+    },
+    {
+      "id": "S18",
+      "title": "CommonForms primary paper",
+      "urls": [
+        "https://arxiv.org/abs/2509.16506"
+      ],
+      "source_date": "2025-09",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Detection distinguished from enrichment; annotation quality and template split limitations; no underlying corpus rights clearance or download performed."
+    },
+    {
+      "id": "S19",
+      "title": "Heron classes and primary Docling layout report",
+      "urls": [
+        "https://huggingface.co/docling-project/docling-layout-heron/raw/main/README.md",
+        "https://arxiv.org/abs/2509.11720"
+      ],
+      "source_date": "2025-09",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Selected/unselected checkbox classes, Form and Key-Value Region, RT-DETRv2. Proprietary training sources, postprocessing/scorer differences, count-mismatch skips in described docling-eval; no browser performance claim.",
+      "artifact_metadata": [
+        "sources/docling-project--docling-layout-heron-metadata.json"
+      ]
+    },
+    {
+      "id": "S20",
+      "title": "SmolDocling card and actual third-party browser demo page",
+      "urls": [
+        "https://huggingface.co/docling-project/SmolDocling-256M-preview/raw/main/README.md",
+        "https://webai.show/models/smoldocling-document/"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "DocTags localization/table/OCR, not identity filler. Demo claims Transformers.js4.2.0 q4 WebGPU ~265MB; not run. Card CDLA metadata vs Apache prose conflict; verify license before integration.",
+      "artifact_metadata": [
+        "sources/docling-project--SmolDocling-256M-preview-metadata.json"
+      ]
+    },
+    {
+      "id": "S21",
+      "title": "Surya current runtime and weight license README",
+      "urls": [
+        "https://raw.githubusercontent.com/datalab-to/surya/master/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Surya2.5 689M, Python/native serving, Apache code vs modified OpenRAIL commercial weight conditions; not browser drop-in."
+    },
+    {
+      "id": "S22",
+      "title": "LayoutLMv3 upstream model card",
+      "urls": [
+        "https://huggingface.co/microsoft/layoutlmv3-base/raw/main/README.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "CC-BY-NC-SA4.0 checkpoint, not an OCR-free ready blank-field filler; excluded from product evaluation recommendation."
+    },
+    {
+      "id": "S23",
+      "title": "Docling supported input/output formats",
+      "urls": [
+        "https://docling-project.github.io/docling/usage/supported_formats/"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Structured DoclingDocument conversion, not evidence of blank-field localization/person authority."
+    },
+    {
+      "id": "S24",
+      "title": "Tesseract.js5.1.1 pinned API and code license",
+      "urls": [
+        "https://raw.githubusercontent.com/naptha/tesseract.js/v5.1.1/docs/api.md",
+        "https://raw.githubusercontent.com/naptha/tesseract.js/v5.1.1/LICENSE.md"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Region OCR, worker reuse/cleanup, init-only dictionaries, core SIMD selection; Apache2.0 code; language data license not newly audited."
+    },
+    {
+      "id": "S25",
+      "title": "WHATWG HTML autofill living standard",
+      "urls": [
+        "https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#autofill"
+      ],
+      "source_date": "2026-11-06",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Section IDs explicitly opaque; form owner/scope/person/contact semantics; do not infer spouse/child role from section literal."
+    },
+    {
+      "id": "S26",
+      "title": "W3C Accessible Name and Description Computation1.2",
+      "urls": [
+        "https://www.w3.org/TR/accname-1.2/"
+      ],
+      "source_date": "2026-11-04",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Working Draft, not Recommendation. Native/ARIA/referenced hidden names; not proof of extension accessibility-tree API."
+    },
+    {
+      "id": "S27",
+      "title": "Chrome activeTab documentation",
+      "urls": [
+        "https://developer.chrome.com/docs/extensions/develop/concepts/activeTab"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Temporary user-gesture origin-scoped access; no broad-host expansion needed."
+    },
+    {
+      "id": "S28",
+      "title": "Chrome content scripts documentation",
+      "urls": [
+        "https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Isolated script world but shared DOM, frame matching and access boundaries; no-submit no-egress distinction is report inference."
+    },
+    {
+      "id": "S29",
+      "title": "React input reference",
+      "urls": [
+        "https://react.dev/reference/react-dom/components/input"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Controlled value/checked must update with state; direct DOM writes may revert. No universal private-internals workaround recommended."
+    },
+    {
+      "id": "S30",
+      "title": "MDN input event reference",
+      "urls": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Programmatic value assignment does not automatically dispatch input event; not universal framework integration proof."
+    },
+    {
+      "id": "S31",
+      "title": "MDN shadowRoot reference",
+      "urls": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Element/shadowRoot"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Ordinary shadowRoot returns null for closed root; open roots require traversal and tests."
+    },
+    {
+      "id": "S32",
+      "title": "MDN browser storage persistence and eviction",
+      "urls": [
+        "https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria"
+      ],
+      "source_date": null,
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Origin-scoped best-effort storage, persistence requests, quota failures, private mode loss; local not backup/encryption."
+    },
+    {
+      "id": "S33",
+      "title": "Apple WWDC25 on-device document understanding",
+      "urls": [
+        "https://developer.apple.com/videos/play/wwdc2025/272/"
+      ],
+      "source_date": "2025",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Native on-device API returns tables/cell structure/lists/text/data detection; capture-quality discussion. Not browser API or blank-form filler proof."
+    },
+    {
+      "id": "S34",
+      "title": "Google ML Kit Android OCR current guide",
+      "urls": [
+        "https://developers.google.com/ml-kit/vision/text-recognition/v2/android"
+      ],
+      "source_date": "2026-11-03",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Approx4MB per script per architecture bundled app-size increase, not exact weights; API23 current instructions vs API21 summary inconsistency. Native SDK not web replacement; SDK license distinct from docs license."
+    },
+    {
+      "id": "S35",
+      "title": "Learn then Test primary paper version5",
+      "urls": [
+        "https://arxiv.org/abs/2110.01052v5"
+      ],
+      "source_date": "2026-08-24",
+      "date_note": "Explicit source date or month/year when known; null means undated rolling page or unresolved publication metadata. Dates are calendar dates, not fabricated retrieval dates.",
+      "retrieved_date_sgt": "2026-11-08",
+      "primary": true,
+      "source_kind": "standards/maintainer docs, model release or empirical author paper; S20 demo is first-party evidence only for its own implementation",
+      "read_method": "WebFetch",
+      "read_status": "opened and read",
+      "claims_and_limits": "Finite sample held-out i.i.d. calibration, multiple testing, selective risk and marginal guarantees; not automatic validity under template clustering or distribution shift."
+    }
+  ],
+  "failed_or_limited_reads": [
+    {
+      "url": "https://raw.githubusercontent.com/pdfme/pdfme/main/LICENSE",
+      "result": 404,
+      "resolution": "Correct LICENSE.md opened successfully; cited instead."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/jbarrow/commonforms/main/LICENSE",
+      "result": 404,
+      "resolution": "No permission inferred; maintainer issue and checkpoint cards used to distinguish code/weights."
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/41307077/",
+      "result": "later repeated read429",
+      "resolution": "Initial successful reading retained; no repeated workaround."
+    },
+    {
+      "url": "https://dl.acm.org/doi/full/10.1145/3702317",
+      "result": "timeout",
+      "resolution": "Scoped empirical claim from initially opened PubMed abstract/figure captions; no full-text claim."
+    }
+  ],
+  "not_performed": [
+    "model weight download",
+    "model inference",
+    "private document upload",
+    "training",
+    "app repository checkout or code investigation",
+    "implementation",
+    "merge/deploy",
+    "browser demo execution",
+    "mobile benchmark"
+  ],
+  "prior_rights_research_reused": [
+    {
+      "url": "https://www.irs.gov/about-irs/use-of-content-from-irsgov",
+      "read_date_sgt": "2026-11-08",
+      "source_date": "2026-04-01",
+      "note": "Prior blank-form curation: copying/credit and branding conditions, not global asset clearance."
+    },
+    {
+      "url": "https://www.gsa.gov/website-information/website-policies",
+      "read_date_sgt": "2026-11-08",
+      "source_date": null,
+      "note": "Prior curation: federal employee/public domain basis and restricted licensed graphics caveat."
+    },
+    {
+      "url": "https://department.va.gov/copyright-policy/",
+      "read_date_sgt": "2026-11-08",
+      "source_date": null,
+      "note": "Prior curation: government-produced vs assigned copyright distinction; publication holds retained."
+    }
+  ]
+}

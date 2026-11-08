@@ -10,7 +10,7 @@ An empty store says no one is saved yet. Export before anything is confirmed exp
 
 ## Extension
 
-Version 0.1.0. Permissions are storage, activeTab, and scripting. No host permission. The page does not install it. Desktop Chrome or Chromium: unzip, Extensions, Developer mode, Load unpacked, pin, import an export, Preview, Fill. Fill does not submit. Password, payment, one-time-code, hidden, disabled, and read-only fields are skipped.
+Version 0.1.1. Permissions are storage, activeTab, and scripting. No host permission. The page does not install it. Desktop Chrome or Chromium: unzip, Extensions, Developer mode, Load unpacked, pin, import an export, Preview, Fill. Fill writes the checked values into that website immediately. The site can read them. Fill does not press submit. Password, payment, one-time-code, hidden, disabled, and read-only fields are skipped. The 32 headed checks were on 0.1.0, before this sentence. The fill behavior is unchanged. The zip the page links is 0.1.1.
 
 Chromium 131.0.6778.33 ran the unpacked zip from the download path. The shortcut toggles the popup: one press while it is open closes it, and the next press opens it. A DevTools connection that started before the popup does not list it. Current Chrome stable was not the browser that loaded the extension. Phones are not supported by this install.
 

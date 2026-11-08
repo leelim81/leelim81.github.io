@@ -1,0 +1,131 @@
+{
+  "checks": [
+    {
+      "name": "a caption under its rule is nearer that rule than the next one",
+      "ok": true,
+      "detail": "{\"nameRect\":{\"x\":68.32774518021795,\"y\":625.9245599329422,\"width\":62.84157585917855,\"height\":12},\"nameY\":639.625,\"nricY\":535.5}"
+    },
+    {
+      "name": "a caption above its rule stays on that rule",
+      "ok": true,
+      "detail": "{\"x\":30.922045264040236,\"y\":608.7154233025985,\"width\":237.40150880134118,\"height\":16}"
+    },
+    {
+      "name": "drawn text round-trips within one point",
+      "ok": true,
+      "detail": "{\"x\":20,\"y\":100,\"str\":\"Anchor\"}"
+    },
+    {
+      "name": "exported text sits on the chosen rule within one point",
+      "ok": true,
+      "detail": "{\"amos\":{\"x\":70.32774518021795,\"y\":629.9245599329422,\"str\":\"Amos Bent\"},\"expected\":{\"x\":70.32774518021795,\"y\":629.9245599329422},\"dx\":0,\"dy\":0}"
+    },
+    {
+      "name": "viewed above-label audit regression: each caption overlaps only its own gold",
+      "ok": true,
+      "detail": "five rules"
+    }
+  ],
+  "transforms": [
+    {
+      "case": "identity",
+      "rotate": 0,
+      "viewBox": [
+        0,
+        0,
+        200,
+        200
+      ],
+      "anchor": {
+        "x": 20,
+        "y": 100,
+        "str": "Anchor"
+      }
+    },
+    {
+      "case": "rotate90",
+      "width": 200,
+      "height": 200,
+      "rotation": 90,
+      "viewBox": [
+        0,
+        0,
+        200,
+        200
+      ],
+      "text": {
+        "x": 30,
+        "y": 40,
+        "str": "Turn"
+      },
+      "note": "Recorded. A 90 degree page is not a supported scan target in this experiment."
+    },
+    {
+      "case": "cropBox",
+      "viewBox": [
+        20,
+        20,
+        180,
+        180
+      ],
+      "width": 160,
+      "height": 160,
+      "text": {
+        "x": 40,
+        "y": 40,
+        "str": "Crop"
+      },
+      "note": "pdf.js viewBox follows the crop. Text stays in MediaBox user space."
+    }
+  ],
+  "viewedAudit": {
+    "deskew": 0,
+    "fields": [
+      {
+        "label": "Bent applicant name",
+        "rect": {
+          "x": 22.5,
+          "y": 756.25,
+          "width": 134.5,
+          "height": 16
+        }
+      },
+      {
+        "label": "Bent applicant NRIC",
+        "rect": {
+          "x": 23,
+          "y": 711.75,
+          "width": 134.5,
+          "height": 16
+        }
+      },
+      {
+        "label": "Bent applicant birth date",
+        "rect": {
+          "x": 23.5,
+          "y": 666.75,
+          "width": 134.5,
+          "height": 16
+        }
+      },
+      {
+        "label": "Bent applicant phone",
+        "rect": {
+          "x": 24,
+          "y": 622.25,
+          "width": 134.5,
+          "height": 16
+        }
+      },
+      {
+        "label": "Bent applicant email",
+        "rect": {
+          "x": 24.5,
+          "y": 577.75,
+          "width": 135,
+          "height": 16
+        }
+      }
+    ]
+  }
+}

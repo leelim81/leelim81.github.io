@@ -786,19 +786,22 @@
       if (occupied) return;
       var candidates = [];
       texts.forEach(function (text) {
-        var dy = text.y - line.y;
-        if (dy < 8 || dy > 80) return;
-        if (text.x > line.x + line.w || text.x + text.w < line.x) return;
-        candidates.push({ text: text, dy: dy });
-      });
-      if (!candidates.length) {
-        texts.forEach(function (text) {
-          var dy = Math.abs(text.y - line.y);
-          var gap = line.x - (text.x + text.w);
-          if (dy > 18 || gap < -8 || gap > 48) return;
-          candidates.push({ text: text, dy: dy });
+        var vertical = text.y - line.y;
+        var overlaps = text.x < line.x + line.w && text.x + text.w > line.x - 8;
+        var above = overlaps && vertical >= 6 && vertical <= 80;
+        var below = overlaps && vertical <= -4 && vertical >= -36;
+        var gap = line.x - (text.x + text.w);
+        var beside = gap >= -8 && gap <= 48 && Math.abs(vertical) <= 18;
+        if (!above && !below && !beside) return;
+        var dist = Math.abs(vertical);
+        var nearer = rules.some(function (other) {
+          if (other === line) return false;
+          var otherOverlap = text.x < other.x + other.w && text.x + text.w > other.x - 8;
+          return otherOverlap && Math.abs(text.y - other.y) + 3 < dist;
         });
-      }
+        if (nearer) return;
+        candidates.push({ text: text, dy: dist, above: vertical > 0 });
+      });
       var known = [];
       candidates.forEach(function (item) {
         var itemKind = FormEvidence.fieldKind({ label: item.text.str });

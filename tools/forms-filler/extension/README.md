@@ -19,7 +19,7 @@ On a fresh Chromium profile the shortcut Ctrl+Shift+Y is assigned to **Activate 
 2. Click the extension. Import a profile if this browser does not have one yet.
 3. Choose the person. Click **Preview this page**.
 4. Check the rows you want. A field that already has text stays as it is unless you check it.
-5. Click **Fill checked empty fields**. The extension does not press submit.
+5. Click **Fill checked empty fields**. That writes the checked values into the open page immediately. The site’s own scripts can read or save them. The extension does not press submit.
 
 Password, payment, and one-time-code fields are skipped. Hidden, disabled, and read-only fields are skipped. A label that matches two saved values is left blank. Shadow DOM and frames inside other sites are not filled.
 

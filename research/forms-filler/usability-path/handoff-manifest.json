@@ -1,0 +1,55 @@
+{
+  "research_date_sgt": "2026-11-08",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1416,
+      "sha256": "4b6343d61f755b6588b052c6505c9a787d4b9146a8237e43d2b73e26e9925f36"
+    },
+    {
+      "path": "experiment-plan.json",
+      "bytes": 8670,
+      "sha256": "65dea4227da821a9e7e5f767546809b9f99e8bc9a4c02f65b3b6c270117ac9b6"
+    },
+    {
+      "path": "sources/docling-project--SmolDocling-256M-preview-metadata.json",
+      "bytes": 6317,
+      "sha256": "f4230be69f0cafbd90199bdf9566020beaddfa48ad9a3ac02bdcdd3e7da04625"
+    },
+    {
+      "path": "sources/docling-project--docling-layout-heron-metadata.json",
+      "bytes": 1086,
+      "sha256": "afec9f768447a8e789cd9d0cb478c3bba45b45ffe4842e4e815f780ce0414244"
+    },
+    {
+      "path": "sources/docspring--ffdetr-onnx-metadata.json",
+      "bytes": 857,
+      "sha256": "60f8d19256168bdeb7d80f471e2628457d5be64ee0bcb5828812b237039cc3bf"
+    },
+    {
+      "path": "sources/jbarrow--FFDNet-S-cpu-metadata.json",
+      "bytes": 762,
+      "sha256": "bbc5c2f100dbd02344a2160b49ef08dda5494cbfdf2645e6c6a99d6347c86ace"
+    },
+    {
+      "path": "sources/jbarrow--FFDetr-metadata.json",
+      "bytes": 755,
+      "sha256": "eaeef90d60779ca825bc1dcc3438784d5de2b45f942e800934da0432f82770cc"
+    },
+    {
+      "path": "sources/nutrientdocs--form-field-v1-nano-metadata.json",
+      "bytes": 1171,
+      "sha256": "0e7ebfc46033ce6d7012bebb189a251dd9d0fc3d1002bf5b070df12f3d2d8651"
+    },
+    {
+      "path": "sources.json",
+      "bytes": 34125,
+      "sha256": "735cb3a7715029a2d018743d5016725318a8e6d11d46e53e052bf2bfb40f74fe"
+    },
+    {
+      "path": "usability-path-research.md",
+      "bytes": 38674,
+      "sha256": "bd0b8909ba89d484e01ba1eb11ba8c6362dfa5c52e083f16268c4d2e152691ae"
+    }
+  ]
+}
