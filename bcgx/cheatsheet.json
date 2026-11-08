@@ -1,100 +1,154 @@
 {
   "title": "BCG X data science cheat sheet",
-  "intro": "Syntax recall for a 90-minute Python test (pandas, NumPy, scikit-learn), plus the SQL practice. Snippets assume import numpy as np and import pandas as pd. pandas Series.std() is the sample standard deviation (ddof=1). NumPy's default is the population one (ddof=0). Month-end resampling is 'ME'.",
+  "intro": "Unofficial preparation reference. Your invitation and the in-test Rules govern permitted resources. Official/syntax documentation permission does not automatically allow personal notes or this sheet. Confirm with your recruiter before using it during an assessment. No AI, direct-answer searches, or outside help unless explicitly permitted. Format varies by role, office and year; the frequently reported DS screen is 90 minutes, roughly 2 probability + 6 ML theory + 3 Python data tasks.",
   "sections": [
     {
-      "id": "python",
-      "title": "Python core",
+      "id": "stats",
+      "title": "Probability and stats",
       "items": [
         {
-          "id": "py-comp",
-          "title": "Comprehensions",
+          "id": "met-formulas",
+          "title": "Formulas",
           "lang": "python",
-          "code": "# filter sits at the end; a dict uses {k: v}; a set uses {v}\nnums, pairs = [1, 2, 3, 4], [(\"a\", 1), (\"b\", 2)]\n[n * n for n in nums if n % 2 == 0]\n{k: v for k, v in pairs}\n{n % 2 for n in nums}"
+          "code": "# Bayes P(A|B) = P(B|A)P(A)/P(B). PPV = TP/(TP+FP) is that, with A = truly positive.\n# Var = E[X^2] - (E[X])^2.\n# SE = sigma/sqrt(n) for independent rows with known sigma. Else use s and t.\n# Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0) = exp(-lambda).\n# Geometric P(T=k) = (1-p)^(k-1) p, mean 1/p. Trials until first success.\n# Gini = 2*ROC-AUC - 1 is ranking Gini, not a tree's impurity.\n# WAPE = sum(|error|) / sum(|actual|), and the denominator must be positive.\n# MAPE divides by each actual and breaks at 0.\n# Adj R^2 = 1 - (1-R^2)*(n-1)/(n-p-1). p excludes the intercept. Need n > p+1.\nfrom math import comb, exp\nbayes = 0.9 * 0.02 / 0.05\nev = 0 * 0.2 + 1 * 0.5 + 2 * 0.3\nvar = (0**2 * 0.2 + 1**2 * 0.5 + 2**2 * 0.3) - ev**2\nse = 15 / (36 ** 0.5)\nbinom = comb(8, 2) * (0.25 ** 2) * (0.75 ** 6)\npois0 = exp(-2)\ngeom = (0.8 ** 3) * 0.2  # P(T=4) when p=0.2"
         },
         {
-          "id": "py-sort",
-          "title": "sorted with key",
+          "id": "st-dist",
+          "title": "Binomial, Poisson, normal",
           "lang": "python",
-          "code": "# a leading minus flips a number; a tuple breaks ties left to right\n# sorted() returns a new list; list.sort() changes the list\nrows = [{\"rev\": 10, \"name\": \"Bo\"}, {\"rev\": 10, \"name\": \"Ann\"}, {\"rev\": 4, \"name\": \"Cy\"}]\nout = sorted(rows, key=lambda r: (-r[\"rev\"], r[\"name\"]))"
+          "code": "from scipy import stats\nstats.binom.pmf(2, n=8, p=0.25)\nstats.poisson.pmf(0, mu=2)\nstats.norm.ppf(0.975)   # about 1.96, the two-sided 95% z\nstats.norm.cdf(0)"
         },
         {
-          "id": "py-fn",
-          "title": "Defaults and lambda",
+          "id": "st-ci",
+          "title": "CLT, standard error, interval",
           "lang": "python",
-          "code": "# a default is bound once, when the function is defined, not on each call\ndef price(amount, discount=0.1):\n    return amount * (1 - discount)\nprice(100)\n(lambda r: (-r[\"rev\"], r[\"name\"]))"
+          "code": "# Known sigma, independent rows: mean ± z * sigma/sqrt(n).\n# z = norm.ppf(0.975) is the two-sided 95% point.\n# Standardize a point as z = (x - mu) / sigma.\nfrom scipy import stats\nmean, sigma, n = 250.0, 15.0, 36\nse = sigma / np.sqrt(n)\nz = stats.norm.ppf(0.975)\n(mean - z * se, mean + z * se)"
         },
         {
-          "id": "py-dict",
-          "title": "dict.get",
+          "id": "st-t",
+          "title": "t interval, sigma unknown",
           "lang": "python",
-          "code": "# .get returns the default instead of raising KeyError\nd = {}\nfor k in [\"a\", \"b\", \"a\"]:\n    d[k] = d.get(k, 0) + 1"
+          "code": "# Unknown sigma: mean ± t * s/sqrt(n), df = n - 1. s is the sample std.\nfrom scipy import stats\ns = pd.Series([248.0, 251, 249, 253, 250, 247])\nse = s.std(ddof=1) / np.sqrt(len(s))\ntcrit = stats.t.ppf(0.975, len(s) - 1)\n(s.mean() - tcrit * se, s.mean() + tcrit * se)"
         },
         {
-          "id": "py-collections",
-          "title": "Counter and defaultdict",
+          "id": "st-tail",
+          "title": "Tails, combinations, PPV",
           "lang": "python",
-          "code": "from collections import Counter, defaultdict\nCounter([\"a\", \"a\", \"b\"]).most_common(1)  # [(value, count)]\ngroups = defaultdict(list)\nfor k, v in [(\"a\", 1), (\"a\", 2), (\"b\", 3)]:\n    groups[k].append(v)\ndict(groups)  # a plain dict, if the caller asked for one"
+          "code": "# P(A|positive) from prevalence, sensitivity and specificity.\n# C(n,k) combinations. P(n,k) = n!/(n-k)! permutations.\n# P(X >= k) = sf(k - 1) = 1 - cdf(k - 1).\nfrom math import comb, factorial\np, sens, spec = 0.02, 0.90, 0.95\nppv = sens * p / (sens * p + (1 - spec) * (1 - p))\ntail = sum(comb(30, k) * 0.7**k * 0.3**(30 - k) for k in range(25, 31))\nfrom scipy.stats import binom\nassert np.isclose(tail, binom.sf(24, 30, 0.7))\ncomb(5, 2), factorial(5) // factorial(3), ppv"
         },
         {
-          "id": "py-loop",
-          "title": "zip and enumerate",
+          "id": "st-test",
+          "title": "t-test, chi-square, two proportions",
           "lang": "python",
-          "code": "# zip stops at the shorter side; start=1 makes the first index 1\nnames, scores = [\"Ada\", \"Bo\"], [10, 8, 7]\nfor i, (name, score) in enumerate(zip(names, scores), start=1):\n    i, name, score"
+          "code": "# p is the chance of a result at least this extreme if H0\n# and the test's assumptions hold. It is not P(H0) or an effect size.\n# The two-proportion z uses a normal approximation: enough\n# successes and failures, and independent observations.\n# chisquare below is goodness-of-fit to equal proportions.\n# chi2_contingency is independence in a table.\nfrom scipy import stats\nstats.ttest_ind([1, 2, 3, 4, 5], [2, 2, 3, 4, 6], equal_var=False).pvalue\nstats.chisquare([12, 8, 10, 10]).pvalue\nstats.chi2_contingency([[12, 8], [6, 14]]).pvalue\np1, n1, p2, n2 = 0.40, 100, 0.30, 100\np = (p1 * n1 + p2 * n2) / (n1 + n2)\nz = (p1 - p2) / np.sqrt(p * (1 - p) * (1 / n1 + 1 / n2))\n2 * stats.norm.sf(abs(z))"
         },
         {
-          "id": "py-fstring",
-          "title": "f-strings and rounding",
+          "id": "st-ab",
+          "title": "A/B sample size",
           "lang": "python",
-          "code": "# .1f rounds for display; :, adds thousands separators\n# the numeric answers on this test want three decimals\nname, score, n = \"Ada\", 1.26, 12000\nf\"{name} scored {score:.1f}\"\nf\"{n:,}\"\nf\"{score:.3f}\""
+          "code": "# Rule of thumb, two-sided 5%, about 80% power, n per arm:\n# 16 * p * (1-p) / delta**2. Fix the metric before you look.\np, delta = 0.10, 0.02\nn_per_arm = 16 * p * (1 - p) / delta**2"
         },
         {
-          "id": "py-str",
-          "title": "String methods",
-          "lang": "python",
-          "code": "text = \"  East-12, \"\ntext.strip().lower().replace(\",\", \"\").split(\"-\")\n\"east\".startswith(\"e\")\n\"file.png\".endswith(\".png\")\n\"a-b\".partition(\"-\")  # ('a', '-', 'b')"
+          "id": "st-cause",
+          "title": "Correlation and causation",
+          "lang": "text",
+          "code": "Correlation is a symmetric association. It does not pick a direction.\nA cause needs a reason: randomisation, a discontinuity, or an assumption you can defend.\nConditioning on a mediator (a variable on the path from the cause to the effect) removes part of the effect you wanted.\nConditioning on a common effect can create a fake association. A control that is only a common cause is the one you want."
+        }
+      ]
+    },
+    {
+      "id": "ml",
+      "title": "ML theory",
+      "items": [
+        {
+          "id": "ml-bias",
+          "title": "Bias and variance",
+          "lang": "text",
+          "code": "High bias: train and test are both weak. The model is too rigid for the pattern.\nHigh variance: train is strong and test is weak. The model memorised the sample.\nMore data mainly cuts variance. A richer model cuts bias. Regularisation, fewer features, and a shallower tree cut variance."
         },
         {
-          "id": "py-slice",
-          "title": "Slices",
-          "lang": "python",
-          "code": "# [start:end] is half-open; slicing off the end does not raise\nxs = [0, 1, 2, 3, 4]\nxs[1:4], xs[-2:], xs[::-1], xs[10:20]"
+          "id": "ml-reg",
+          "title": "L1 and L2",
+          "lang": "text",
+          "code": "L2 usually shrinks coefficients without making them exactly zero; correlated features can share weight.\nL1 can set coefficients exactly to zero and may select among correlated features.\nPenalties act on coefficient magnitudes. Rescaling a feature changes the coefficient required for the same predictions: larger-valued features need smaller coefficients and can be penalized less.\nStandardize predictors before comparing or regularizing coefficients."
         },
         {
-          "id": "py-heap",
-          "title": "heapq",
-          "lang": "python",
-          "code": "import heapq\n# min-heap; put the priority first in the tuple\nh = []\nheapq.heappush(h, (2, \"b\"))\nheapq.heappush(h, (1, \"a\"))\nheapq.heappop(h)             # (1, \"a\")\nheapq.nlargest(2, [3, 1, 4])\nheapq.nsmallest(2, [3, 1, 4])"
+          "id": "ml-metrics",
+          "title": "Which metric",
+          "lang": "text",
+          "code": "For equal per-row misclassification costs, accuracy summarizes the relevant error rate. F1 emphasizes the positive class and ignores true negatives; choose it when that tradeoff matches the objective, not simply because classes are balanced.\nRare positives and a review budget: precision at the top k, or recall at a fixed precision. Accuracy hides a majority classifier.\nA ranking score: ROC-AUC, or PR-AUC when positives are rare. Gini = 2*ROC-AUC - 1 is ranking Gini, not a tree's impurity.\nRegression: MAE when outliers should not dominate, RMSE when large misses are expensive, R² against predicting the mean.\nMAPE explodes when an actual is 0. WAPE = sum(|error|) / sum(|actual|) needs a positive denominator."
         },
         {
-          "id": "py-bisect",
-          "title": "bisect",
-          "lang": "python",
-          "code": "import bisect\nxs = [1, 3, 3, 7]             # the list must already be sorted\nbisect.bisect_left(xs, 3)     # first index where 3 could sit\nbisect.bisect_right(xs, 3)    # just after the existing 3s\nbisect.insort(xs, 4)"
+          "id": "ml-pr",
+          "title": "Precision and recall",
+          "lang": "text",
+          "code": "Precision = TP / (TP + FP): of the rows you flagged, how many were real.\nRecall = TP / (TP + FN): of the real positives, how many you flagged.\nRaising the threshold usually lifts precision and cuts recall. F1 = 2PR / (P + R).\nclass_weight='balanced', or a threshold that is not 0.5, when the rare class is the one that matters.\nPick the threshold on validation data and the business cost, not on the test set."
         },
         {
-          "id": "py-iter",
-          "title": "itertools",
-          "lang": "python",
-          "code": "import itertools\nlist(itertools.accumulate([1, 2, 3]))  # running sum\nlist(itertools.chain([1], [2, 3]))\nlist(itertools.product([0, 1], repeat=2))\n# groupby only joins adjacent keys, so sort first\nfor key, grp in itertools.groupby(sorted([\"b\", \"a\", \"a\"])):\n    key, list(grp)"
+          "id": "ml-roc",
+          "title": "ROC and PR",
+          "lang": "text",
+          "code": "ROC plots TPR against FPR = FP / (FP + TN). ROC-AUC measures ranking and is not itself driven by class prevalence when the class-conditional score distributions are unchanged.\nAt low prevalence, even a small FPR can create many false alarms. Precision-recall and the workload at the chosen threshold are then informative. PR depends on prevalence.\nSelect thresholds using validation data and business costs, not the test set."
         },
         {
-          "id": "py-deque",
-          "title": "deque",
-          "lang": "python",
-          "code": "from collections import deque\nd = deque(maxlen=3)\nfor x in (1, 2, 3, 4):\n    d.append(x)     # full: the left end falls off\nd.appendleft(0)     # full: the right end falls off"
+          "id": "ml-logit",
+          "title": "Logistic coefficients",
+          "lang": "text",
+          "code": "Logistic log-odds = intercept + Xβ. Increasing x_j by 1 multiplies the odds by exp(β_j), with the other predictors held fixed.\nThe coefficient is not a probability and not a risk difference.\nBinary log-loss = −mean[y log(p) + (1 − y) log(1 − p)]. Use clipped probabilities, or sklearn.metrics.log_loss."
         },
         {
-          "id": "py-exc",
-          "title": "Exceptions",
+          "id": "ml-logloss",
+          "title": "Log-loss and odds",
           "lang": "python",
-          "code": "# catch the errors you expect; a bare except also hides bugs\ndef to_int(text):\n    try:\n        return int(text)\n    except (ValueError, TypeError):\n        return None\nto_int(\"3\"), to_int(\"x\"), to_int(None)"
+          "code": "from sklearn.metrics import log_loss\nbeta = 0.5\nnp.exp(beta)  # odds multiplier for a one-unit increase\ny = np.array([0, 1, 1, 0])\np = np.clip(np.array([0.2, 0.8, 0.7, 0.1]), 1e-6, 1 - 1e-6)\nlog_loss(y, p)"
+        },
+        {
+          "id": "ml-knn",
+          "title": "k-NN",
+          "lang": "text",
+          "code": "Prediction is a vote or average of the k nearest training rows. Distance uses the feature scales, so standardize first.\nSmaller k tends toward lower bias and higher variance. Larger k smooths and can raise bias.\nTies and duplicate rows move the vote. It does not extrapolate past the nearest training neighbourhood."
+        },
+        {
+          "id": "ml-nn",
+          "title": "Neural nets, concepts only",
+          "lang": "text",
+          "code": "A sigmoid squashes a unit into (0, 1). ReLU is max(0, z) and is the usual hidden-unit default.\nDropout randomly ignores units while training and is a regulariser, not a way to drop features at scoring time.\nVanishing gradients: a deep stack of sigmoids can shrink updates until early layers barely move. Skip connections, ReLU and sensible initialisation are the usual answers.\nNo library boilerplate here. The timed screen is pandas, NumPy and scikit-learn."
+        },
+        {
+          "id": "ml-bag",
+          "title": "Bagging and boosting",
+          "lang": "text",
+          "code": "Bagging fits trees on bootstrap samples and averages them. A random forest also limits the columns each split may see. That mainly cuts variance.\nBoosting fits the next model to the previous residual, or more generally to the negative gradient of the loss. Squared error makes that gradient the residual.\nMore trees in a forest usually plateau. More boosting rounds can keep fitting noise if the learning rate or depth is high."
+        },
+        {
+          "id": "ml-tree",
+          "title": "Tree vs linear",
+          "lang": "text",
+          "code": "Ordinary unregularized least squares does not mathematically require standardization. Scaling can help numerical conditioning and makes coefficient comparisons meaningful.\nScale for penalized linear and logistic models, distance-based models, PCA and SVM. Trees generally do not require scaling.\nA random forest averages trees. Classification aggregates votes or probabilities.\nGradient boosting fits successive negative loss gradients, which equal residuals for squared-error regression.\nA tree predicts a leaf constant outside the range it saw. Fit preprocessing only inside the training fold."
+        },
+        {
+          "id": "ml-over",
+          "title": "Overfitting signs",
+          "lang": "text",
+          "code": "Train score far above the validation score.\nA deep tree, tiny leaves, or a target encoding of a high-cardinality column with no smoothing.\nA feature that would not exist at the time of the decision, added because the offline number went up.\nThe cure is a holdout you did not tune on, a simpler model, or more data — not another look at the test set."
+        },
+        {
+          "id": "ml-cv",
+          "title": "Cross-validation",
+          "lang": "text",
+          "code": "k-fold averages k cuts. StratifiedKFold keeps the class rate in each fold.\nShuffle only when the rows are exchangeable. Do not shuffle a time series; train on the past and test on the next window.\nThe score you tuned on is optimistic. Quote a holdout that the search never saw."
+        },
+        {
+          "id": "ml-scale",
+          "title": "When to scale",
+          "lang": "text",
+          "code": "Ordinary unregularized least squares does not mathematically require standardization. Scaling can help numerical conditioning and makes coefficient comparisons meaningful.\nScale for penalized linear and logistic models, distance-based models (k-NN, k-means), PCA and SVM.\nTrees generally do not require scaling. A random forest averages trees. Gradient boosting fits successive negative loss gradients, which equal residuals for squared-error regression.\nFit preprocessing only within the training fold. A Pipeline does that per fold."
         }
       ]
     },
     {
       "id": "pandas",
-      "title": "pandas",
+      "title": "Pandas: collect and preprocess",
       "items": [
         {
           "id": "pd-inspect",
@@ -148,7 +202,7 @@
           "id": "pd-merge",
           "title": "merge",
           "lang": "python",
-          "code": "# dedupe the right key first, or matching rows multiply\n# a WHERE-style filter belongs in the result, not by dropping the left rows you meant to keep\norders = pd.DataFrame({\"order_id\": [1, 2, 3], \"customer_id\": [10, 10, 99], \"amount\": [5, 7, 8]})\ncustomers = pd.DataFrame({\"customer_id\": [10, 11], \"segment\": [\"Pro\", \"Basic\"], \"amount\": [0, 0]})\norders.merge(\n    customers, on=\"customer_id\", how=\"left\",\n    suffixes=(\"_ord\", \"_cus\"), indicator=True, validate=\"m:1\",\n)"
+          "code": "# Check key cardinality. Keep records the prompt still wants.\n# validate='m:1' only if that relationship is intended.\n# Current pandas can match null keys. SQL NULL does not.\norders = pd.DataFrame({\"order_id\": [1, 2, 3], \"customer_id\": [10, 10, 99], \"amount\": [5, 7, 8]})\ncustomers = pd.DataFrame({\"customer_id\": [10, 11], \"segment\": [\"Pro\", \"Basic\"], \"amount\": [0, 0]})\norders.merge(\n    customers, on=\"customer_id\", how=\"left\",\n    suffixes=(\"_ord\", \"_cus\"), indicator=True, validate=\"m:1\",\n)"
         },
         {
           "id": "pd-concat",
@@ -166,7 +220,7 @@
           "id": "pd-shift",
           "title": "shift, diff, pct_change",
           "lang": "python",
-          "code": "# sort first; the first row in each group is NaN\ndf = pd.DataFrame({\"store\": [\"S\", \"S\", \"S\"], \"month\": [1, 2, 3], \"rev\": [10.0, 12.0, 15.0]})\ndf = df.sort_values([\"store\", \"month\"])\ng = df.groupby(\"store\")[\"rev\"]\ndf[\"prev\"] = g.shift(1)\ndf[\"delta\"] = g.diff()\ndf[\"pct\"] = g.pct_change()"
+          "code": "# sort first; the first row in each group is NaN\ndf = pd.DataFrame({\"store\": [\"S\", \"S\", \"S\"], \"month\": [1, 2, 3], \"rev\": [10.0, 12.0, 15.0]})\ndf = df.sort_values([\"store\", \"month\"])\ng = df.groupby(\"store\")[\"rev\"]\ndf[\"prev\"] = g.shift(1)\ndf[\"delta\"] = g.diff()\n# None: do not fill a gap before the percent change\ndf[\"pct\"] = g.pct_change(fill_method=None)"
         },
         {
           "id": "pd-rolling",
@@ -178,7 +232,7 @@
           "id": "pd-time",
           "title": "resample",
           "lang": "python",
-          "code": "# 'ME' is month end; the old alias 'M' is gone\nts = pd.DataFrame({\n    \"date\": pd.date_range(\"2024-01-15\", periods=50, freq=\"D\"),\n    \"amount\": 1.0,\n}).set_index(\"date\")\nts.resample(\"ME\")[\"amount\"].sum()"
+          "code": "# pandas >=2.2 uses 'ME'; older pandas used 'M'.\n# The offset object avoids depending on this alias rename.\nts = pd.DataFrame({\n    \"date\": pd.date_range(\"2024-01-15\", periods=50, freq=\"D\"),\n    \"amount\": 1.0,\n}).set_index(\"date\")\nts.resample(pd.offsets.MonthEnd())[\"amount\"].sum()"
         },
         {
           "id": "pd-cum",
@@ -238,7 +292,91 @@
           "id": "pr-encode",
           "title": "Encodings",
           "lang": "python",
-          "code": "s = pd.Series([\"Basic\", \"Pro\", \"Basic\"])\ns.map({\"Basic\": 0, \"Plus\": 1, \"Pro\": 2})\npd.get_dummies(s, dtype=int)\n# target mean from the training rows only; an unseen level gets the global train mean\ntrain = pd.DataFrame({\"city\": [\"a\", \"a\", \"b\"], \"y\": [0, 1, 1]})\nmeans = train.groupby(\"city\")[\"y\"].mean()\npd.Series([\"a\", \"c\"]).map(means).fillna(train[\"y\"].mean())"
+          "code": "s = pd.Series([\"Basic\", \"Pro\", \"Basic\"])\ns.map({\"Basic\": 0, \"Plus\": 1, \"Pro\": 2})\npd.get_dummies(s, dtype=int)\n# New rows only: train means, unseen level -> train global mean.\n# Do not map those means back onto the same training rows.\ntrain = pd.DataFrame({\"city\": [\"a\", \"a\", \"b\"], \"y\": [0, 1, 1]})\nmeans = train.groupby(\"city\")[\"y\"].mean()\npd.Series([\"a\", \"c\"]).map(means).fillna(train[\"y\"].mean())"
+        },
+        {
+          "id": "pr-target",
+          "title": "Cross-fitted target encoding",
+          "lang": "python",
+          "code": "# For validation/test rows, use training-only target means.\n# For training rows, cross-fit: a row's own label stays out.\n# fit_transform cross-fits. fit().transform(X_train) does not.\n# Smoothing alone does not remove that leakage.\n# Prefer one-hot unless the prompt asks for target means.\nfrom sklearn.preprocessing import TargetEncoder\nX_train = pd.DataFrame({\"city\": [\"a\", \"a\", \"b\", \"b\", \"a\", \"b\"]})\ny_train = np.array([0, 1, 1, 0, 0, 1])\nX_valid = pd.DataFrame({\"city\": [\"a\", \"c\"]})\nenc = TargetEncoder(target_type=\"binary\", cv=2)\nenc.fit_transform(X_train[[\"city\"]], y_train)\nenc.transform(X_valid[[\"city\"]])"
+        },
+        {
+          "id": "pd-files",
+          "title": "Several files, one schema",
+          "lang": "python",
+          "code": "# Inspect names and headers first. Do not glob blindly.\n# Rename only spellings you have checked.\nfrom pathlib import Path\nimport tempfile\nroot = Path(tempfile.mkdtemp())\n(root / \"part_a.csv\").write_text(\"id,Reveneu\\n1,10\\n2,\\n\")\n(root / \"part_b.csv\").write_text(\"id, reveneu\\n3,7\\n\")\nframes = []\nfor path in sorted(root.glob(\"part_*.csv\")):\n    part = pd.read_csv(path)\n    part.columns = part.columns.str.strip().str.lower()\n    part = part.rename(columns={\"reveneu\": \"revenue\"})\n    frames.append(part)\ncombined = pd.concat(frames, ignore_index=True)\nrequired_columns = [\"id\", \"revenue\"]\ndest = root / \"output.csv\"\ncombined.loc[:, required_columns].to_csv(dest, index=False)\ngot = pd.read_csv(dest)\nassert list(got.columns) == required_columns\nassert len(got) == 3\n(root / \"events.jsonl\").write_text('{\"id\": 4, \"revenue\": 8}\\n')\npd.read_json(root / \"events.jsonl\", lines=True)"
+        },
+        {
+          "id": "pd-size",
+          "title": "size, count, missing keys",
+          "lang": "python",
+          "code": "# size counts rows. count skips null values in that column.\n# dropna=False keeps a group whose key is missing.\ndf = pd.DataFrame({\n    \"region\": [\"E\", None, \"E\"],\n    \"amount\": [1.0, 2.0, None],\n})\ndf.groupby(\"region\", dropna=False).size()\ndf.groupby(\"region\", dropna=False)[\"amount\"].count()"
+        }
+      ]
+    },
+    {
+      "id": "sklearn",
+      "title": "scikit-learn modelling",
+      "items": [
+        {
+          "id": "sk-split",
+          "title": "train_test_split",
+          "lang": "python",
+          "code": "from sklearn.model_selection import train_test_split\ndf = pd.DataFrame({\"x\": range(20), \"y\": [0, 1] * 10})\ntrain, test = train_test_split(df, test_size=0.25, random_state=0, stratify=df[\"y\"])"
+        },
+        {
+          "id": "pr-pipe",
+          "title": "Pipeline and ColumnTransformer",
+          "lang": "python",
+          "code": "from sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nnum = Pipeline([(\"imp\", SimpleImputer(strategy=\"median\")), (\"sc\", StandardScaler())])\ncat = Pipeline([\n    (\"imp\", SimpleImputer(strategy=\"most_frequent\")),\n    (\"oh\", OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False)),\n])\npre = ColumnTransformer([(\"num\", num, [\"age\"]), (\"cat\", cat, [\"city\"])])\nX = pd.DataFrame({\n    \"age\": [20.0, np.nan, 40.0, 50.0],\n    \"city\": [\"a\", \"b\", np.nan, \"a\"],\n})\npre.fit_transform(X)"
+        },
+        {
+          "id": "pr-scale",
+          "title": "StandardScaler",
+          "lang": "python",
+          "code": "# fit on train only; a zero-variance train column becomes 0\nfrom sklearn.preprocessing import StandardScaler\ntrain = pd.DataFrame({\"a\": [1.0, 2, 3], \"b\": [5.0, 5, 5]})\ntest = pd.DataFrame({\"a\": [4.0], \"b\": [5.0]})\nscaler = StandardScaler().fit(train)\ntrain[list(train.columns)] = scaler.transform(train)\ntest[list(test.columns)] = scaler.transform(test)"
+        },
+        {
+          "id": "sk-linear",
+          "title": "Linear, Ridge, Lasso, logistic",
+          "lang": "python",
+          "code": "from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge\nX = np.array([[0.0, 0], [1, 0], [0, 1], [1, 1]])\ny = np.array([0.0, 1, 1, 2])\ny_cls = np.array([0, 0, 1, 1])\nLinearRegression().fit(X, y).coef_\nRidge(alpha=1.0).fit(X, y).intercept_\nLasso(alpha=0.01, max_iter=5000).fit(X, y).coef_\n# Column 1 is the positive label only if classes_[1] is.\nclf = LogisticRegression(max_iter=500, class_weight=\"balanced\")\nproba = clf.fit(X, y_cls).predict_proba(X)\nclf.classes_, proba[:, list(clf.classes_).index(1)]"
+        },
+        {
+          "id": "sk-tree",
+          "title": "Forests, boosting, k-means",
+          "lang": "python",
+          "code": "from sklearn.cluster import KMeans\nfrom sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier\nX = np.array([[0.0, 0], [0, 1], [1, 0], [1, 1], [0.1, 0.2], [0.8, 0.9]])\ny = np.array([0, 0, 0, 1, 0, 1])\nRandomForestClassifier(n_estimators=10, random_state=0, class_weight=\"balanced\").fit(X, y).predict(X)\nGradientBoostingClassifier(n_estimators=10, random_state=0).fit(X, y).predict(X)\nKMeans(n_clusters=2, n_init=10, random_state=0).fit(X).labels_"
+        },
+        {
+          "id": "sk-cv",
+          "title": "Cross-validation and grid search",
+          "lang": "python",
+          "code": "from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold, cross_val_score\nX = np.arange(8, dtype=float).reshape(-1, 1)\ny = np.array([0, 0, 0, 0, 1, 1, 1, 1])\nest = LogisticRegression(max_iter=200)\ncv = StratifiedKFold(n_splits=4, shuffle=True, random_state=0)\ncross_val_score(est, X, y, cv=cv, scoring=\"accuracy\").mean()\nlist(KFold(n_splits=4, shuffle=True, random_state=0).split(X))\n# best_score_ is the CV score, not a fresh holdout.\n# Fitting a preprocessor on all of X before CV leaks the folds.\n# A pipeline step is tuned as \"rf__max_depth\".\nGridSearchCV(est, {\"C\": [0.1, 1.0]}, cv=4, scoring=\"accuracy\").fit(X, y).best_params_"
+        },
+        {
+          "id": "sk-scores",
+          "title": "Negative scores and splitters",
+          "lang": "python",
+          "code": "# neg_mean_squared_error is a loss: less negative is better.\n# sqrt of the mean MSE is not the mean of the fold RMSEs.\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.model_selection import (\n    GroupKFold, LeaveOneOut, TimeSeriesSplit, cross_val_score,\n)\nX = np.arange(8, dtype=float).reshape(-1, 1)\ny = np.array([1, 1, 2, 2, 3, 3, 4, 4], dtype=float)\nneg = cross_val_score(\n    LinearRegression(), X, y, cv=4,\n    scoring=\"neg_mean_squared_error\",\n)\nnp.sqrt(-neg.mean()), np.mean(np.sqrt(-neg))\nlist(TimeSeriesSplit(n_splits=3).split(X))\ngroups = np.array([0, 0, 1, 1, 2, 2, 3, 3])\nlist(GroupKFold(n_splits=4).split(X, y, groups))\nLeaveOneOut()"
+        },
+        {
+          "id": "sk-workflow",
+          "title": "Fit, validate, predict, CSV",
+          "lang": "python",
+          "code": "# Illustrative schema. Use the prompt's columns and paths.\n# Use a given validation split instead of making a new one.\n# Time or group splits when the rows are not exchangeable.\n# Stratify classification when each class can fill the folds.\nfrom pathlib import Path\nimport tempfile\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.ensemble import RandomForestRegressor\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.metrics import mean_absolute_error\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder\ntrain_df = pd.DataFrame({\n    \"age\": [20, 30, 40, 50, 60, None],\n    \"city\": [\"a\", \"b\", \"a\", \"b\", \"a\", \"b\"],\n    \"price\": [1.0, 2, 2.5, 3, 4, 5],\n})\ntest_df = pd.DataFrame({\"age\": [25, None], \"city\": [\"a\", \"c\"]})\nX, y = train_df[[\"age\", \"city\"]], train_df[\"price\"]\nXtr, Xva, ytr, yva = train_test_split(X, y, test_size=0.2, random_state=0)\npre = ColumnTransformer([\n    (\"num\", SimpleImputer(strategy=\"median\"), [\"age\"]),\n    (\"cat\", Pipeline([\n        (\"impute\", SimpleImputer(strategy=\"most_frequent\")),\n        (\"encode\", OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False)),\n    ]), [\"city\"]),\n])\nmodel = Pipeline([\n    (\"pre\", pre),\n    (\"rf\", RandomForestRegressor(n_estimators=20, random_state=0, n_jobs=1)),\n])\nmodel.fit(Xtr, ytr)\nmean_absolute_error(yva, model.predict(Xva))\n# Refit only after the choices are fixed. Never fit on hidden labels.\nmodel.fit(X, y)\npred = model.predict(test_df[[\"age\", \"city\"]])\ndest = Path(tempfile.mkdtemp()) / \"predictions.csv\"\npd.DataFrame({\"prediction\": pred}).to_csv(dest, index=False)\npd.read_csv(dest)"
+        },
+        {
+          "id": "sk-metrics",
+          "title": "Metrics",
+          "lang": "python",
+          "code": "from sklearn.metrics import (\n    accuracy_score, confusion_matrix, f1_score, mean_absolute_error,\n    mean_squared_error, precision_score, r2_score, recall_score,\n    roc_auc_score, root_mean_squared_error,\n)\ny = np.array([0, 0, 1, 1])\npred = np.array([0, 1, 1, 1])\nscore = np.array([0.1, 0.4, 0.8, 0.9])  # ranking score, not the 0/1 cut\naccuracy_score(y, pred)\nprecision_score(y, pred, zero_division=0)\nrecall_score(y, pred, zero_division=0)\nf1_score(y, pred, zero_division=0)\nroc_auc_score(y, score)  # the positive-class scores, not predict()\nconfusion_matrix(y, pred)\nyt, yp = np.array([1.0, 2, 3]), np.array([1.1, 1.8, 3.4])\nmean_absolute_error(yt, yp)\n# root_mean_squared_error needs sklearn >= 1.4.\n# np.sqrt(mean_squared_error(...)) is the older fallback.\n# Both here are single-output examples.\nroot_mean_squared_error(yt, yp)\nnp.sqrt(mean_squared_error(yt, yp))\nr2_score(yt, yp)"
+        },
+        {
+          "id": "pr-leak",
+          "title": "Leakage rules",
+          "lang": "text",
+          "code": "Fit the imputer, scaler, encoder, and any target mean on the training rows only. Transform the test with those fitted objects.\nA feature from after the decision (a later refund, a window that includes the future) will not exist when you score.\nA column that is a copy of the label, or a deterministic function of it, looks perfect offline and is useless live.\nA random row split does not fix a feature that already contains the label. For dated rows, split by time.\nA statistic computed on the whole table (a global target mean, a percentile fit on train+test) leaks the test into the train.\nFor validation or test rows, use training-only target means and a train-global fallback.\nFor training rows, use out-of-fold target encoding. A row's own label must not enter its encoding.\nRefit encoders inside each outer training fold. Smoothing alone does not remove target leakage."
         }
       ]
     },
@@ -321,165 +459,159 @@
       ]
     },
     {
-      "id": "sklearn",
-      "title": "scikit-learn",
+      "id": "python",
+      "title": "Python syntax",
       "items": [
         {
-          "id": "sk-split",
-          "title": "train_test_split",
+          "id": "py-comp",
+          "title": "Comprehensions",
           "lang": "python",
-          "code": "from sklearn.model_selection import train_test_split\ndf = pd.DataFrame({\"x\": range(20), \"y\": [0, 1] * 10})\ntrain, test = train_test_split(df, test_size=0.25, random_state=0, stratify=df[\"y\"])"
+          "code": "# filter sits at the end; a dict uses {k: v}; a set uses {v}\nnums, pairs = [1, 2, 3, 4], [(\"a\", 1), (\"b\", 2)]\n[n * n for n in nums if n % 2 == 0]\n{k: v for k, v in pairs}\n{n % 2 for n in nums}"
         },
         {
-          "id": "pr-pipe",
-          "title": "Pipeline and ColumnTransformer",
+          "id": "py-sort",
+          "title": "sorted with key",
           "lang": "python",
-          "code": "from sklearn.compose import ColumnTransformer\nfrom sklearn.impute import SimpleImputer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nnum = Pipeline([(\"imp\", SimpleImputer(strategy=\"median\")), (\"sc\", StandardScaler())])\ncat = Pipeline([\n    (\"imp\", SimpleImputer(strategy=\"most_frequent\")),\n    (\"oh\", OneHotEncoder(handle_unknown=\"ignore\", sparse_output=False)),\n])\npre = ColumnTransformer([(\"num\", num, [\"age\"]), (\"cat\", cat, [\"city\"])])\nX = pd.DataFrame({\n    \"age\": [20.0, np.nan, 40.0, 50.0],\n    \"city\": [\"a\", \"b\", np.nan, \"a\"],\n})\npre.fit_transform(X)"
+          "code": "# a leading minus flips a number; a tuple breaks ties left to right\n# sorted() returns a new list; list.sort() changes the list\nrows = [{\"rev\": 10, \"name\": \"Bo\"}, {\"rev\": 10, \"name\": \"Ann\"}, {\"rev\": 4, \"name\": \"Cy\"}]\nout = sorted(rows, key=lambda r: (-r[\"rev\"], r[\"name\"]))"
         },
         {
-          "id": "pr-scale",
-          "title": "StandardScaler",
+          "id": "py-fn",
+          "title": "Defaults and lambda",
           "lang": "python",
-          "code": "# fit on train only; a zero-variance train column becomes 0\nfrom sklearn.preprocessing import StandardScaler\ntrain = pd.DataFrame({\"a\": [1.0, 2, 3], \"b\": [5.0, 5, 5]})\ntest = pd.DataFrame({\"a\": [4.0], \"b\": [5.0]})\nscaler = StandardScaler().fit(train)\ntrain[list(train.columns)] = scaler.transform(train)\ntest[list(test.columns)] = scaler.transform(test)"
+          "code": "# a default is bound once, when the function is defined, not on each call\ndef price(amount, discount=0.1):\n    return amount * (1 - discount)\nprice(100)\n(lambda r: (-r[\"rev\"], r[\"name\"]))"
         },
         {
-          "id": "sk-linear",
-          "title": "Linear, Ridge, Lasso, logistic",
+          "id": "py-dict",
+          "title": "dict.get",
           "lang": "python",
-          "code": "from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge\nX = np.array([[0.0, 0], [1, 0], [0, 1], [1, 1]])\ny = np.array([0.0, 1, 1, 2])\ny_cls = np.array([0, 0, 1, 1])\nLinearRegression().fit(X, y).coef_\nRidge(alpha=1.0).fit(X, y).intercept_\nLasso(alpha=0.01, max_iter=5000).fit(X, y).coef_\n# predict_proba[:, 1] is the positive score; predict() already cut at 0.5\nLogisticRegression(max_iter=500, class_weight=\"balanced\").fit(X, y_cls).predict_proba(X)[:, 1]"
+          "code": "# .get returns the default instead of raising KeyError\nd = {}\nfor k in [\"a\", \"b\", \"a\"]:\n    d[k] = d.get(k, 0) + 1"
         },
         {
-          "id": "sk-tree",
-          "title": "Forests, boosting, k-means",
+          "id": "py-collections",
+          "title": "Counter and defaultdict",
           "lang": "python",
-          "code": "from sklearn.cluster import KMeans\nfrom sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier\nX = np.array([[0.0, 0], [0, 1], [1, 0], [1, 1], [0.1, 0.2], [0.8, 0.9]])\ny = np.array([0, 0, 0, 1, 0, 1])\nRandomForestClassifier(n_estimators=10, random_state=0, class_weight=\"balanced\").fit(X, y).predict(X)\nGradientBoostingClassifier(n_estimators=10, random_state=0).fit(X, y).predict(X)\nKMeans(n_clusters=2, n_init=10, random_state=0).fit(X).labels_"
+          "code": "from collections import Counter, defaultdict\nCounter([\"a\", \"a\", \"b\"]).most_common(1)  # [(value, count)]\ngroups = defaultdict(list)\nfor k, v in [(\"a\", 1), (\"a\", 2), (\"b\", 3)]:\n    groups[k].append(v)\ndict(groups)  # a plain dict, if the caller asked for one"
         },
         {
-          "id": "sk-cv",
-          "title": "Cross-validation and grid search",
+          "id": "py-loop",
+          "title": "zip and enumerate",
           "lang": "python",
-          "code": "from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold, cross_val_score\nX = np.arange(8, dtype=float).reshape(-1, 1)\ny = np.array([0, 0, 0, 0, 1, 1, 1, 1])\nest = LogisticRegression(max_iter=200)\ncv = StratifiedKFold(n_splits=4, shuffle=True, random_state=0)\ncross_val_score(est, X, y, cv=cv, scoring=\"accuracy\").mean()\nlist(KFold(n_splits=4, shuffle=True, random_state=0).split(X))\n# best_score_ is the CV score, not a fresh holdout\nGridSearchCV(est, {\"C\": [0.1, 1.0]}, cv=4, scoring=\"accuracy\").fit(X, y).best_params_"
+          "code": "# zip stops at the shorter side; start=1 makes the first index 1\nnames, scores = [\"Ada\", \"Bo\"], [10, 8, 7]\nfor i, (name, score) in enumerate(zip(names, scores), start=1):\n    i, name, score"
         },
         {
-          "id": "sk-metrics",
-          "title": "Metrics",
+          "id": "py-fstring",
+          "title": "f-strings and rounding",
           "lang": "python",
-          "code": "from sklearn.metrics import (\n    accuracy_score, confusion_matrix, f1_score, mean_absolute_error,\n    mean_squared_error, precision_score, r2_score, recall_score,\n    roc_auc_score, root_mean_squared_error,\n)\ny = np.array([0, 0, 1, 1])\npred = np.array([0, 1, 1, 1])\nscore = np.array([0.1, 0.4, 0.8, 0.9])  # ranking score, not the 0/1 cut\naccuracy_score(y, pred)\nprecision_score(y, pred, zero_division=0)\nrecall_score(y, pred, zero_division=0)\nf1_score(y, pred, zero_division=0)\nroc_auc_score(y, score)  # pass predict_proba[:, 1], not predict()\nconfusion_matrix(y, pred)\nyt, yp = np.array([1.0, 2, 3]), np.array([1.1, 1.8, 3.4])\nmean_absolute_error(yt, yp)\nroot_mean_squared_error(yt, yp)          # same as mean_squared_error(...) ** 0.5\nmean_squared_error(yt, yp)\nr2_score(yt, yp)"
+          "code": "# .1f rounds for display; :, adds thousands separators\n# Follow the prompt. Do not assume a tolerance.\n# Round only the output the prompt asks for.\nname, score, n = \"Ada\", 1.26, 12000\nf\"{name} scored {score:.1f}\"\nf\"{n:,}\"\nf\"{score:.3f}\""
         },
         {
-          "id": "pr-leak",
-          "title": "Leakage rules",
-          "lang": "text",
-          "code": "Fit the imputer, scaler, encoder, and any target mean on the training rows only. Transform the test with those fitted objects.\nA feature from after the decision (a later refund, a window that includes the future) will not exist when you score.\nA column that is a copy of the label, or a deterministic function of it, looks perfect offline and is useless live.\nA random row split does not fix a feature that already contains the label. For dated rows, split by time.\nA statistic computed on the whole table (a global target mean, a percentile fit on train+test) leaks the test into the train."
+          "id": "py-str",
+          "title": "String methods",
+          "lang": "python",
+          "code": "text = \"  East-12, \"\ntext.strip().lower().replace(\",\", \"\").split(\"-\")\n\"east\".startswith(\"e\")\n\"file.png\".endswith(\".png\")\n\"a-b\".partition(\"-\")  # ('a', '-', 'b')"
+        },
+        {
+          "id": "py-slice",
+          "title": "Slices",
+          "lang": "python",
+          "code": "# [start:end] is half-open; slicing off the end does not raise\nxs = [0, 1, 2, 3, 4]\nxs[1:4], xs[-2:], xs[::-1], xs[10:20]"
+        },
+        {
+          "id": "py-exc",
+          "title": "Exceptions",
+          "lang": "python",
+          "code": "# catch the errors you expect; a bare except also hides bugs\ndef to_int(text):\n    try:\n        return int(text)\n    except (ValueError, TypeError):\n        return None\nto_int(\"3\"), to_int(\"x\"), to_int(None)"
         }
       ]
     },
     {
-      "id": "stats",
-      "title": "Stats and probability",
+      "id": "tactics",
+      "title": "Test-day tactics",
       "items": [
         {
-          "id": "met-formulas",
-          "title": "Formulas",
-          "lang": "python",
-          "code": "# Bayes P(A|B) = P(B|A)P(A)/P(B). PPV = TP/(TP+FP) is that, with A = \"truly positive\".\n# Var = E[X^2] - (E[X])^2. SE = sigma/sqrt(n). A 95% margin is about 1.96*SE.\n# Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0) = exp(-lambda).\n# Geometric P(T=k) = (1-p)^(k-1) p, mean 1/p. Gini = 2*AUC - 1.\n# WAPE = sum(|error|) / sum(|actual|). MAPE divides by each actual and breaks at 0.\n# Adj R^2 = 1 - (1-R^2) * (n-1) / (n-p-1).\nfrom math import comb, exp\nbayes = 0.9 * 0.02 / 0.05\nev = 0 * 0.2 + 1 * 0.5 + 2 * 0.3\nvar = (0**2 * 0.2 + 1**2 * 0.5 + 2**2 * 0.3) - ev**2\nse = 15 / (36 ** 0.5)\nbinom = comb(8, 2) * (0.25 ** 2) * (0.75 ** 6)\npois0 = exp(-2)\ngeom = (0.8 ** 3) * 0.2  # P(T=4) when p=0.2"
-        },
-        {
-          "id": "st-dist",
-          "title": "Binomial, Poisson, normal",
-          "lang": "python",
-          "code": "from scipy import stats\nstats.binom.pmf(2, n=8, p=0.25)\nstats.poisson.pmf(0, mu=2)\nstats.norm.ppf(0.975)   # about 1.96, the two-sided 95% z\nstats.norm.cdf(0)"
-        },
-        {
-          "id": "st-ci",
-          "title": "CLT, standard error, interval",
-          "lang": "python",
-          "code": "# SE = sigma / sqrt(n). Large n: mean ± z * SE. z = norm.ppf(0.975) for 95%.\nfrom scipy import stats\nmean, sigma, n = 250.0, 15.0, 36\nse = sigma / np.sqrt(n)\nz = stats.norm.ppf(0.975)\n(mean - z * se, mean + z * se)"
-        },
-        {
-          "id": "st-test",
-          "title": "t-test, chi-square, two proportions",
-          "lang": "python",
-          "code": "# p is not the probability the null is true; it is the chance of a result\n# at least this extreme if the null is true. It is not an effect size.\nfrom scipy import stats\nstats.ttest_ind([1, 2, 3, 4, 5], [2, 2, 3, 4, 6], equal_var=False).pvalue\nstats.chisquare([12, 8, 10, 10]).pvalue\np1, n1, p2, n2 = 0.40, 100, 0.30, 100\np = (p1 * n1 + p2 * n2) / (n1 + n2)\nz = (p1 - p2) / np.sqrt(p * (1 - p) * (1 / n1 + 1 / n2))\n2 * stats.norm.sf(abs(z))"
-        },
-        {
-          "id": "st-ab",
-          "title": "A/B sample size",
-          "lang": "python",
-          "code": "# Rule of thumb, two-sided 5%, about 80% power, n per arm:\n# 16 * p * (1-p) / delta**2. Fix the metric before you look.\np, delta = 0.10, 0.02\nn_per_arm = 16 * p * (1 - p) / delta**2"
-        },
-        {
-          "id": "st-cause",
-          "title": "Correlation and causation",
+          "id": "day-tests",
+          "title": "Read the contract",
           "lang": "text",
-          "code": "Correlation is a symmetric association. It does not pick a direction.\nA cause needs a reason: randomisation, a discontinuity, or an assumption you can defend.\nConditioning on a mediator (a variable on the path from the cause to the effect) removes part of the effect you wanted.\nConditioning on a common effect can create a fake association. A control that is only a common cause is the one you want."
+          "code": "Read the required contract: file names and paths or the function signature, columns and their order, the index policy, types, row ordering and ties, rounding, and any metric threshold.\nSome data tasks require CSV files, not a returned DataFrame.\nInspect examples and tests if they are exposed. Do not assume hidden tests are visible.\nRun cells in order and verify the final output exists.\nTrainer shortcuts and auto-imports are not guaranteed on the real platform."
+        },
+        {
+          "id": "day-notebook",
+          "title": "Notebook and imports",
+          "lang": "text",
+          "code": "Write import pandas as pd and import numpy as np yourself. This trainer preloads them. The real platform may not.\nIf a function's age matters, print pd.__version__ and sklearn.__version__.\nUse the paths the prompt gives. Look at the file names before you read them.\nRun the notebook from the top. A name left over from an earlier cell is stale state, not a result.\nAfter to_csv, read the file back. Check the columns, their order, the row count and the index.\nDo not install packages in a proctored test unless that test's rules explicitly allow it.\nSave and submit the way the platform asks. A variable on the screen is not yet an artifact."
+        },
+        {
+          "id": "day-print",
+          "title": "Print the frame",
+          "lang": "text",
+          "code": "Before a join: print(df.head()), df.shape, df.dtypes, list(df.columns).\nPrint the row count before and after a merge. A sudden multiplication means a duplicated key."
+        },
+        {
+          "id": "day-edge",
+          "title": "Edges",
+          "lang": "text",
+          "code": "Empty frame, a column that is all missing, a tie, a duplicated key, a category that appears only on the test side, and a divide by zero.\nA one-row group makes a sample z-score NaN, because pandas std uses ddof=1."
+        },
+        {
+          "id": "day-round",
+          "title": "Rounding",
+          "lang": "text",
+          "code": "Follow the prompt's rounding and tolerance. Some candidate reports used three decimal places. Do not assume ±0.001.\nKeep full precision during calculations and round only the requested output.\nnp.std defaults to ddof=0. pandas Series.std and DataFrame.std default to ddof=1."
+        },
+        {
+          "id": "day-time",
+          "title": "Time box",
+          "lang": "text",
+          "code": "A suggested 90-minute budget: 15 minutes probability, 15 minutes ML theory, 20 minutes collection, 15 minutes preprocessing, 20 minutes modeling, 5 minutes final checks.\nMove on when stuck, and adjust to the actual task weights. This is a suggestion, not an official timing rule.\nFirst produce a valid end-to-end baseline and the exact required artifact, then improve it.\nDo not assume unfinished code, a split alone, or an unexported model earns credit. Check what the platform has saved or submitted."
         }
       ]
     },
     {
-      "id": "ml",
-      "title": "ML theory",
+      "id": "appendix-py",
+      "title": "Appendix · optional Python",
       "items": [
         {
-          "id": "ml-bias",
-          "title": "Bias and variance",
+          "id": "py-opt-note",
+          "title": "Not the data-science screen",
           "lang": "text",
-          "code": "High bias: train and test are both weak. The model is too rigid for the pattern.\nHigh variance: train is strong and test is weak. The model memorised the sample.\nMore data mainly cuts variance. A richer model cuts bias. Regularisation, fewer features, and a shallower tree cut variance."
+          "code": "Optional. Heaps, bisect, deques and itertools are low priority next to pandas, probability and model export.\nOther engineering tracks differ. Do not spend the first hour here."
         },
         {
-          "id": "ml-reg",
-          "title": "L1 and L2",
-          "lang": "text",
-          "code": "L2 (Ridge) shrinks coefficients toward 0 and keeps all of them. Correlated features share the weight.\nL1 (Lasso) can set coefficients to exactly 0, so the feature list gets shorter. Of two correlated features it tends to keep one.\nThe penalty is on the size of the coefficient, so scale the features first or a large-unit column eats the whole penalty."
+          "id": "py-heap",
+          "title": "heapq",
+          "lang": "python",
+          "code": "import heapq\n# min-heap; put the priority first in the tuple\nh = []\nheapq.heappush(h, (2, \"b\"))\nheapq.heappush(h, (1, \"a\"))\nheapq.heappop(h)\nheapq.nlargest(2, [3, 1, 4])\nheapq.nsmallest(2, [3, 1, 4])"
         },
         {
-          "id": "ml-metrics",
-          "title": "Which metric",
-          "lang": "text",
-          "code": "Equal cost, balanced classes: accuracy or F1.\nRare positives and a review budget: precision at the top k, or recall at a fixed precision. Accuracy hides a majority classifier.\nA ranking score: ROC-AUC, or PR-AUC when positives are rare. Gini = 2*AUC - 1.\nRegression: MAE when outliers should not dominate, RMSE when large misses are expensive, R² against predicting the mean.\nMAPE explodes when an actual is 0. WAPE = sum(|error|) / sum(|actual|) stays defined while the denominator is not 0."
+          "id": "py-bisect",
+          "title": "bisect",
+          "lang": "python",
+          "code": "import bisect\nxs = [1, 3, 3, 7]  # already sorted\nbisect.bisect_left(xs, 3)\nbisect.bisect_right(xs, 3)\nbisect.insort(xs, 4)"
         },
         {
-          "id": "ml-pr",
-          "title": "Precision and recall",
-          "lang": "text",
-          "code": "Precision = TP / (TP + FP): of the rows you flagged, how many were real.\nRecall = TP / (TP + FN): of the real positives, how many you flagged.\nRaising the threshold usually lifts precision and cuts recall. You pick the point from the cost, not from 0.5.\nclass_weight='balanced' (or a threshold that is not 0.5) when the rare class is the one that matters."
+          "id": "py-iter",
+          "title": "itertools",
+          "lang": "python",
+          "code": "import itertools\nlist(itertools.accumulate([1, 2, 3]))\nlist(itertools.chain([1], [2, 3]))\nlist(itertools.product([0, 1], repeat=2))\n# groupby only joins adjacent keys, so sort first\nfor key, grp in itertools.groupby(sorted([\"b\", \"a\", \"a\"])):\n    key, list(grp)"
         },
         {
-          "id": "ml-roc",
-          "title": "ROC and PR",
-          "lang": "text",
-          "code": "ROC plots the true positive rate against the false positive rate. A sea of true negatives makes the false positive rate look small.\nPrecision-recall plots precision against recall and ignores the true negatives. Use it when positives are rare.\nAUC summarises the ranking. It is not the operating point you will ship; the threshold chooses that."
-        },
-        {
-          "id": "ml-tree",
-          "title": "Tree vs linear",
-          "lang": "text",
-          "code": "Linear: readable coefficients, wants scaled numeric inputs, misses interactions unless you add them.\nA tree cuts thresholds and interactions on its own, ignores monotone rescaling, and predicts a leaf constant outside the training range.\nA forest averages unstable trees. Boosting fits residuals and overfits if the trees are deep or there are too many of them."
-        },
-        {
-          "id": "ml-over",
-          "title": "Overfitting signs",
-          "lang": "text",
-          "code": "Train score far above the validation score.\nA deep tree, tiny leaves, or a target encoding of a high-cardinality column with no smoothing.\nA feature that would not exist at the time of the decision, added because the offline number went up.\nThe cure is a holdout you did not tune on, a simpler model, or more data — not another look at the test set."
-        },
-        {
-          "id": "ml-cv",
-          "title": "Cross-validation",
-          "lang": "text",
-          "code": "k-fold averages k cuts. StratifiedKFold keeps the class rate in each fold.\nShuffle only when the rows are exchangeable. Do not shuffle a time series; train on the past and test on the next window.\nThe score you tuned on is optimistic. Quote a holdout that the search never saw."
-        },
-        {
-          "id": "ml-scale",
-          "title": "When to scale",
-          "lang": "text",
-          "code": "Scale for linear and logistic regression, ridge and lasso, k-means, k-NN, PCA, and SVM.\nTrees, random forests, and gradient boosting do not need scaled inputs.\nFit the scaler on the training fold only. A Pipeline does that per fold."
+          "id": "py-deque",
+          "title": "deque",
+          "lang": "python",
+          "code": "from collections import deque\nd = deque(maxlen=3)\nfor x in (1, 2, 3, 4):\n    d.append(x)  # full: the left end falls off\nd.appendleft(0)  # full: the right end falls off"
         }
       ]
     },
     {
       "id": "sql",
-      "title": "SQL",
+      "title": "Appendix · SQL (optional)",
       "items": [
+        {
+          "id": "sql-note",
+          "title": "Where SQL fits",
+          "lang": "text",
+          "code": "Optional. The best-supported data-science screen is Python, not SQL. Later live rounds and other tracks sometimes use it.\nThese snippets are SQLite. strftime and date() are not universal SQL."
+        },
         {
           "id": "sql-join",
           "title": "JOIN, GROUP BY, HAVING",
@@ -518,45 +650,15 @@
       ]
     },
     {
-      "id": "tactics",
-      "title": "Test-day tactics",
-      "items": [
-        {
-          "id": "day-tests",
-          "title": "Read the tests first",
-          "lang": "text",
-          "code": "The visible example is the contract: column names, order, types, and what a tie should do.\nHidden tests follow that contract. Write the function signature the tests call, then make the example pass."
-        },
-        {
-          "id": "day-print",
-          "title": "Print the frame",
-          "lang": "text",
-          "code": "Before a join: print(df.head()), df.shape, df.dtypes, list(df.columns).\nPrint the row count before and after a merge. A sudden multiplication means a duplicated key."
-        },
-        {
-          "id": "day-edge",
-          "title": "Edges",
-          "lang": "text",
-          "code": "Empty frame, a column that is all missing, a tie, a duplicated key, a category that appears only on the test side, and a divide by zero.\nA one-row group makes a sample z-score NaN, because pandas std uses ddof=1."
-        },
-        {
-          "id": "day-round",
-          "title": "Rounding",
-          "lang": "text",
-          "code": "Round the number you return, not the inputs along the way.\nNumeric answers are three decimals, accepted within 0.001.\nnp.std is population (ddof=0). Series.std() and DataFrame.std() are sample (ddof=1)."
-        },
-        {
-          "id": "day-time",
-          "title": "Time box",
-          "lang": "text",
-          "code": "About 4 minutes for a numeric, 3 minutes for a multiple-choice item, 15 minutes for each coding task.\nA running partial that you can submit beats a blank cell. If a model is not there, ship the split and the metric."
-        }
-      ]
-    },
-    {
       "id": "cases",
-      "title": "Senior cases",
+      "title": "Later interviews · senior cases",
       "items": [
+        {
+          "id": "case-note",
+          "title": "Not the timed screen",
+          "lang": "text",
+          "code": "Study material for a later conversation, not a question known to be on the timed screen.\nThe invitation is what says whether a case round exists. Do not treat these notes as approved exam material."
+        },
         {
           "id": "case-forecast",
           "title": "Forecasting",
