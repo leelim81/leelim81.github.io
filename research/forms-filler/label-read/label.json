@@ -1,0 +1,101 @@
+{
+  "segments": 26,
+  "working": {
+    "planned": 12,
+    "pixels": 161244,
+    "ms": 1210.5,
+    "read": 12,
+    "stopped": "",
+    "words": [
+      {
+        "str": "fo.",
+        "kind": "other",
+        "confidence": 61
+      },
+      {
+        "str": "ES",
+        "kind": "other",
+        "confidence": 37
+      },
+      {
+        "str": "cd",
+        "kind": "other",
+        "confidence": 41
+      }
+    ],
+    "heap": 34274646,
+    "fields": [],
+    "score": {
+      "hits": [
+        {
+          "id": "name",
+          "hit": false
+        },
+        {
+          "id": "address",
+          "hit": false
+        }
+      ],
+      "correct": 0,
+      "falseFields": 0,
+      "suggestions": []
+    }
+  },
+  "native": {
+    "planned": 9,
+    "pixels": 1409562,
+    "firstY": [
+      66,
+      392,
+      454,
+      504,
+      549,
+      594,
+      595,
+      640,
+      686
+    ],
+    "ms": 269.90000000596046,
+    "read": 9,
+    "stopped": "",
+    "words": [
+      {
+        "str": "aed",
+        "kind": "other",
+        "confidence": 40
+      },
+      {
+        "str": ":",
+        "kind": "other",
+        "confidence": 53
+      },
+      {
+        "str": ":",
+        "kind": "other",
+        "confidence": 80
+      },
+      {
+        "str": "gor",
+        "kind": "other",
+        "confidence": 52
+      }
+    ],
+    "heap": 24375599,
+    "fields": [],
+    "score": {
+      "hits": [
+        {
+          "id": "name",
+          "hit": false
+        },
+        {
+          "id": "address",
+          "hit": false
+        }
+      ],
+      "correct": 0,
+      "falseFields": 0,
+      "suggestions": []
+    }
+  }
+}
