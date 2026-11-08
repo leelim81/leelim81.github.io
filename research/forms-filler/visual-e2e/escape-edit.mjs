@@ -70,15 +70,15 @@ const native = await page.evaluate(() => {
     text: document.activeElement.innerText
   };
 });
-check('Ctrl+Z while editing does not undo the annotation', native.editing && native.countAfter === native.count && native.undo === native.undoAfter && /Bea Note/.test(native.text), JSON.stringify(native));
+check('a synthetic Ctrl+Z only checks routing and does not undo the annotation', native.editing && native.countAfter === native.count && native.undo === native.undoAfter && /Bea Note/.test(native.text), JSON.stringify(native));
 const ime = await page.evaluate(() => {
   const body = document.activeElement;
   body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 229, which: 229, isComposing: true, bubbles: true, cancelable: true }));
   const during = document.activeElement.classList.contains('ann-body') && /Bea Note/.test(document.activeElement.innerText);
   body.dispatchEvent(new CompositionEvent('compositionend', { data: '测', bubbles: true }));
-  return { during, id: document.activeElement && document.activeElement.id, text: document.querySelector('.ann-body') && document.querySelector('.ann-body').innerText };
+  return { during, id: document.activeElement && document.activeElement.id, editing: document.activeElement.classList.contains('ann-body'), text: document.querySelector('.ann-body') && document.querySelector('.ann-body').innerText };
 });
-check('an IME Escape keeps the text and then leaves the mark', ime.during && ime.id === 'addText' && /Bea Note/.test(ime.text || ''), JSON.stringify(ime));
+check('a composing Escape and its composition end stay in the mark', ime.during && ime.editing && /Bea Note/.test(ime.text || ''), JSON.stringify(ime));
 await page.locator('.ann-body').last().focus();
 await page.keyboard.type(' OK');
 await page.keyboard.press('Escape');

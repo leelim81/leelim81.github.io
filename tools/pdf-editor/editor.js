@@ -2441,28 +2441,18 @@
       } catch (err) { toast('That image could not be read.'); }
     });
 
-    var leaveAfterComposition = false;
     function markBody(target) {
       return target && target.closest ? target.closest('.ann-body') : null;
     }
     function leaveMarkEditing(body) {
-      if (body && body.isConnected && document.activeElement === body) body.blur();
+      if (!(body && body.isConnected && document.activeElement === body)) return;
+      body.blur();
       if ($('addText') && !$('addText').hidden) $('addText').focus();
     }
-    document.addEventListener('compositionend', function () {
-      var body = leaveAfterComposition;
-      if (!body) return;
-      leaveAfterComposition = false;
-      leaveMarkEditing(body);
-    });
     document.addEventListener('keydown', function (e) {
       var typing = e.target.closest && (e.target.isContentEditable || e.target.closest('input, textarea'));
       var downloadOpen = $('downloadModal') && !$('downloadModal').hidden;
-      if (e.key === 'Escape' && (e.isComposing || e.keyCode === 229)) {
-        var composing = markBody(e.target);
-        if (composing) leaveAfterComposition = composing;
-        return;
-      }
+      if (e.key === 'Escape' && (e.isComposing || e.keyCode === 229)) return;
       if (e.key === 'Tab' && downloadOpen) {
         var items = dialogItems($('downloadModal'));
         if (items.length) {
