@@ -40,8 +40,32 @@ await page.locator('#addText').focus();
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('ann-body'));
 await page.keyboard.type('Ada Kept');
-await page.keyboard.press('Escape');
 await page.waitForFunction(() => document.getElementById('saveState').textContent === 'Saved');
+async function markNow() {
+  return page.evaluate(() => {
+    const ann = document.querySelector('.ann');
+    const body = document.querySelector('.ann-body');
+    return {
+      text: body ? body.innerText : '',
+      count: document.querySelectorAll('.ann').length,
+      left: ann ? ann.style.left : '',
+      top: ann ? ann.style.top : '',
+      undoDisabled: document.getElementById('recoverUndo').disabled
+    };
+  });
+}
+await page.locator('#addSignature').focus();
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => !document.getElementById('sigModal').hidden);
+await page.locator('#sigClose').focus();
+const beforeSig = await markNow();
+for (const key of ['Delete', 'Backspace', 'ArrowRight', 'ArrowDown', 'Control+z', 'Control+Shift+Z', 'Control+y']) {
+  await page.keyboard.press(key);
+}
+const afterSig = await markNow();
+check('signature dialog keys do not change the selected mark', JSON.stringify(beforeSig) === JSON.stringify(afterSig), JSON.stringify({ beforeSig, afterSig }));
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => document.getElementById('sigModal').hidden);
 await page.locator('#downloadBtn').focus();
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => !document.getElementById('downloadModal').hidden);
@@ -51,6 +75,12 @@ const opened = await page.evaluate(() => {
   return { inside: !!(el && modal.contains(el)), id: el && el.id };
 });
 check('Enter on Download moves focus into the dialog', opened.inside && opened.id === 'dlClose', JSON.stringify(opened));
+const beforeKeys = await markNow();
+for (const key of ['Delete', 'Backspace', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Control+z', 'Control+Shift+Z', 'Control+y']) {
+  await page.keyboard.press(key);
+}
+const afterKeys = await markNow();
+check('download dialog keys do not change the mark or its undo history', JSON.stringify(beforeKeys) === JSON.stringify(afterKeys), JSON.stringify({ beforeKeys, afterKeys }));
 await page.keyboard.press('Shift+Tab');
 const shifted = await page.evaluate(() => {
   const el = document.activeElement;
@@ -77,11 +107,16 @@ await page.keyboard.press('Enter');
 await (await download).saveAs('/tmp/keyboard-export.pdf');
 const pdf = decode(readFileSync('/tmp/keyboard-export.pdf'));
 check('the rendered PDF contains the typed text', pdf.includes('Ada Kept'), pdf.slice(0, 120));
+await page.keyboard.press('Escape');
+await page.waitForFunction(() => document.getElementById('downloadModal').hidden && document.activeElement && document.activeElement.id === 'downloadBtn');
+await page.keyboard.press('Control+z');
+await page.waitForFunction(() => document.querySelectorAll('.ann').length === 0);
+check('after the dialog closes, Ctrl+Z undoes the mark again', (await markNow()).count === 0, JSON.stringify(await markNow()));
 await page.waitForFunction(() => document.getElementById('saveState').textContent === 'Saved');
 await page.reload({ waitUntil: 'domcontentloaded' });
-await page.waitForFunction(() => document.querySelector('.ann-body'));
+await page.waitForTimeout(400);
 const reloaded = await page.evaluate(() => Array.from(document.querySelectorAll('.ann-body')).map((node) => node.innerText));
-check('reload keeps the typed text', reloaded.some((text) => text.indexOf('Ada Kept') === 0), reloaded.join('|'));
+check('reload keeps the undone page empty', reloaded.length === 0, reloaded.join('|'));
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
 await browser.close();
 if (checks.some((item) => !item.ok)) process.exit(1);

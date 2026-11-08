@@ -2463,13 +2463,14 @@
           }
         }
       }
+      var sigOpen = $('sigModal') && !$('sigModal').hidden;
       if (e.key === 'Escape') {
-        $('sigModal').hidden = true;
+        if (sigOpen) $('sigModal').hidden = true;
         if (downloadOpen) closeDownload();
         else if ($('downloadModal')) $('downloadModal').hidden = true;
         if (!downloadOpen) select(null);
         var inAssist = e.target.closest && e.target.closest('#recoverBar, #mapBox');
-        if (inAssist || state.recoverArmed) {
+        if (!downloadOpen && !sigOpen && (inAssist || state.recoverArmed)) {
           if ($('recoverBar') && !$('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', false);
           if ($('mapBox') && !$('mapBox').hidden) {
             $('mapBox').hidden = true;
@@ -2477,6 +2478,7 @@
           }
         }
       }
+      if (downloadOpen || sigOpen) return;
       if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && !typing) {
         e.preventDefault();
         removeAnn(state.selectedId);
