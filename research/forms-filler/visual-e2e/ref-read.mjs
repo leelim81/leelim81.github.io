@@ -520,6 +520,28 @@ const hungInit = await ui.evaluate(async () => {
 });
 check('a hung image read releases the OCR queue for the next PDF', /budget|cancelled/.test(hungInit.imageState) && /Ada Example/.test(hungInit.textState) && hungInit.textMs < 3500 && hungInit.terminated, JSON.stringify(hungInit));
 
+await ui.evaluate(async () => {
+  const bytes = new TextEncoder().encode('full name: Max Keep');
+  await DeskDB.set('tools-forms-filler', 'draft', {
+    refs: [{ id: 'r9007199254740991', name: 'max-keep', bytes, mime: 'text/plain', text: 'full name: Max Keep' }]
+  });
+});
+await ui.reload({ waitUntil: 'domcontentloaded' });
+await ui.waitForFunction(() => {
+  const row = FormDesk.refs().find((item) => item.name === 'max-keep');
+  return row && row.id === 'r9007199254740991' && row.status !== 'reading';
+});
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-max-a.pdf');
+copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-max-b.pdf');
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-max-a.pdf');
+await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-after-max-a.pdf' && item.status && item.status !== 'reading'));
+await ui.locator('#refInput').setInputFiles('/tmp/ref-after-max-b.pdf');
+await ui.waitForFunction(() => FormDesk.refs().every((item) => item.status && item.status !== 'reading') && FormDesk.refs().some((item) => item.name === 'ref-after-max-b.pdf'));
+const maxRows = await ui.evaluate(() => FormDesk.refs());
+const byMax = Object.fromEntries(maxRows.map((item) => [item.name, item]));
+const freshIds = [byMax['ref-after-max-a.pdf'] && byMax['ref-after-max-a.pdf'].id, byMax['ref-after-max-b.pdf'] && byMax['ref-after-max-b.pdf'].id];
+check('a restored maximum safe id and two later uploads stay unique and finished', byMax['max-keep'] && byMax['max-keep'].id === 'r9007199254740991' && byMax['max-keep'].status !== 'reading' && freshIds[0] && freshIds[1] && new Set(freshIds.concat([byMax['max-keep'].id])).size === 3 && freshIds.every((id) => /^r[1-9][0-9]*$/.test(id) && id.length < 16) && maxRows.every((item) => item.status !== 'reading'), JSON.stringify(maxRows.map((item) => item.id + ':' + item.name + ':' + item.status)));
+
 const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks, paired, lease, hungInit };
 writeFileSync('/tmp/inline-wt/research/forms-filler/visual-e2e/results/ref-read.json', JSON.stringify(out, null, 2));
 console.log('SUMMARY', out.passed, '/', checks.length, 'paired-ms', paired.ms);

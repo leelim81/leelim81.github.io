@@ -1,11 +1,11 @@
 {
-  "passed": 25,
+  "passed": 26,
   "failed": 0,
   "checks": [
     {
       "name": "two overlapping reads of the ambiguous scan both finish",
       "ok": true,
-      "detail": "{\"ms\":2437,\"names\":[{\"bea\":true,\"cora\":true,\"chars\":106},{\"bea\":true,\"cora\":true,\"chars\":106}]}"
+      "detail": "{\"ms\":2309,\"names\":[{\"bea\":true,\"cora\":true,\"chars\":106},{\"bea\":true,\"cora\":true,\"chars\":106}]}"
     },
     {
       "name": "those two reads never open two PDF jobs at once",
@@ -15,12 +15,12 @@
     {
       "name": "the ambiguous scan leaves Reading without replacing the confirmed email",
       "ok": true,
-      "detail": "{\"ms\":1521,\"refs\":[{\"id\":\"r1\",\"name\":\"cora.ambiguous.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"dyzf1sy6djyk\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:47:40.674Z\"}}"
+      "detail": "{\"ms\":1520,\"refs\":[{\"id\":\"r1\",\"name\":\"cora.ambiguous.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"1qk24oil9koq\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:56:24.787Z\"}}"
     },
     {
       "name": "a read that exceeds its budget says so and keeps the confirmed email",
       "ok": true,
-      "detail": "{\"status\":\"error\",\"preview\":\"No fields found in this file. | This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\",\"email\":{\"id\":\"dyzf1sy6djyk\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"u"
+      "detail": "{\"status\":\"error\",\"preview\":\"No fields found in this file. | This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\",\"email\":{\"id\":\"1qk24oil9koq\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"u"
     },
     {
       "name": "removing a reference cancels its read and adds no person",
@@ -60,42 +60,42 @@
     {
       "name": "restored duplicate and malformed ids become unique well-formed ids",
       "ok": true,
-      "detail": "[{\"id\":\"r1\",\"name\":\"ada-keep\",\"status\":\"ready\",\"preview\":\"Name Ada Keep\"},{\"id\":\"r2\",\"name\":\"bea-keep\",\"status\":\"ready\",\"preview\":\"Name Bea Keep\"},{\"id\":\"d1\",\"name\":\"blank-id\",\"status\":\"ready\",\"preview\":\"Name Blank Id\"},{\"id\":\"r3\",\"name\":\"malformed\",\"status\":\"ready\",\"preview\":\"Name Mal Form\"},{\"id\":"
+      "detail": "[{\"id\":\"r1\",\"name\":\"ada-keep\",\"status\":\"ready\",\"preview\":\"Name Ada Keep\"},{\"id\":\"r2\",\"name\":\"bea-keep\",\"status\":\"ready\",\"preview\":\"Name Bea Keep\"},{\"id\":\"r3\",\"name\":\"blank-id\",\"status\":\"ready\",\"preview\":\"Name Blank Id\"},{\"id\":\"r4\",\"name\":\"malformed\",\"status\":\"ready\",\"preview\":\"Name Mal Form\"},{\"id\":"
     },
     {
       "name": "a second reload keeps the normalized ids",
       "ok": true,
-      "detail": "d1:blank-id|r10:unsafe-int|r11:inf-id|r1:ada-keep|r2:bea-keep|r3:malformed|r4:zero-id|r5:padded-id|r6:four-keep|r7:four-dup|r8:huge-digits|r9:huge-dup"
+      "detail": "r10:huge-dup|r11:unsafe-int|r12:inf-id|r1:ada-keep|r2:bea-keep|r3:blank-id|r4:malformed|r5:zero-id|r6:padded-id|r7:four-keep|r8:four-dup|r9:huge-digits"
     },
     {
       "name": "a new file after restore gets a fresh id and does not rewrite the kept rows",
       "ok": true,
-      "detail": "{\"added\":{\"id\":\"r12\",\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"ada\":\"Name Ada Keep\",\"bea\":\"Name Bea Keep\",\"people\":[\"Cora Example\"]}"
+      "detail": "{\"added\":{\"id\":\"r13\",\"name\":\"ref-text.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"ada\":\"Name Ada Keep\",\"bea\":\"Name Bea Keep\",\"people\":[\"Cora Example\"]}"
     },
     {
       "name": "a hung PDF load is destroyed and the queued read still finishes",
       "ok": true,
-      "detail": "{\"loadMs\":849,\"loadStall\":{\"loads\":1,\"renders\":0,\"terminated\":0,\"recognizes\":0,\"usedLoad\":true},\"loadTrace\":{\"destroyedLoad\":1,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"hung\":{\"id\":\"r13\",\"name\":\"ref-text.pdf\",\"status\":\"error\",\"preview\""
+      "detail": "{\"loadMs\":852,\"loadStall\":{\"loads\":1,\"renders\":0,\"terminated\":0,\"recognizes\":0,\"usedLoad\":true},\"loadTrace\":{\"destroyedLoad\":1,\"cancelledRender\":0,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"hung\":{\"id\":\"r14\",\"name\":\"ref-text.pdf\",\"status\":\"error\",\"preview\""
     },
     {
       "name": "a hung page render is cancelled and the next reference finishes",
       "ok": true,
-      "detail": "{\"renderMs\":2649,\"renderStall\":{\"renders\":1,\"terminated\":0},\"renderTrace\":{\"destroyedLoad\":0,\"cancelledRender\":1,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"renderRow\":{\"id\":\"r15\",\"name\":\"ref-render-stall.pdf\",\"status\":\"error\",\"preview\":\"This file took too "
+      "detail": "{\"renderMs\":2640,\"renderStall\":{\"renders\":1,\"terminated\":0},\"renderTrace\":{\"destroyedLoad\":0,\"cancelledRender\":1,\"terminatedWorker\":0,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"renderRow\":{\"id\":\"r16\",\"name\":\"ref-render-stall.pdf\",\"status\":\"error\",\"preview\":\"This file took too "
     },
     {
       "name": "a hung worker start is dropped and the next reference finishes first",
       "ok": true,
-      "detail": "{\"initMs\":1330,\"initBeforeRelease\":{\"released\":true,\"terminated\":0,\"recognizes\":0},\"initStall\":{\"terminated\":1,\"worker\":true,\"recognizes\":0},\"initTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"initRow\":{\"id\":\"r17\","
+      "detail": "{\"initMs\":1330,\"initBeforeRelease\":{\"released\":true,\"terminated\":0,\"recognizes\":0},\"initStall\":{\"terminated\":1,\"worker\":true,\"recognizes\":0},\"initTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":0},\"initRow\":{\"id\":\"r18\","
     },
     {
       "name": "a hung setParameters terminates the worker and the next reference finishes",
       "ok": true,
-      "detail": "{\"paramsMs\":1341,\"paramsStall\":{\"terminated\":2,\"recognizes\":0},\"paramsTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":1},\"paramsRow\":{\"id\":\"r19\",\"name\":\"ref-params-stall.png\",\"status\":\"error\",\"preview\":\"This file took t"
+      "detail": "{\"paramsMs\":1341,\"paramsStall\":{\"terminated\":2,\"recognizes\":0},\"paramsTrace\":{\"destroyedLoad\":0,\"cancelledRender\":0,\"terminatedWorker\":1,\"spatialInflight\":0,\"peakSpatial\":1,\"ocrInflight\":0,\"peakOcr\":1},\"paramsRow\":{\"id\":\"r20\",\"name\":\"ref-params-stall.png\",\"status\":\"error\",\"preview\":\"This file took t"
     },
     {
       "name": "a late OCR result cannot change the timed-out row, the next row, or the confirmed email",
       "ok": true,
-      "detail": "{\"lateRow\":{\"id\":\"r21\",\"name\":\"ref-late-stall.png\",\"status\":\"error\",\"preview\":\"This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\"},\"lateNext\":{\"id\":\"r22\",\"name\":\"ref-after-late.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"people\":[\"Cora Example\"]}"
+      "detail": "{\"lateRow\":{\"id\":\"r22\",\"name\":\"ref-late-stall.png\",\"status\":\"error\",\"preview\":\"This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.\"},\"lateNext\":{\"id\":\"r23\",\"name\":\"ref-after-late.pdf\",\"status\":\"empty\",\"preview\":\"\"},\"people\":[\"Cora Example\"]}"
     },
     {
       "name": "removing a queued reference does not let it open a PDF or stay in the list",
@@ -105,17 +105,17 @@
     {
       "name": "start over releases the active PDF load and writes no person",
       "ok": true,
-      "detail": "{\"clearedMid\":{\"refs\":[],\"email\":{\"id\":\"dyzf1sy6djyk\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:47:40.674Z\"},\"people\":[\"Cora Example\"]},\"clearStall\":{\"loads\":3,\"trace\":{\"destroyedLoad\":1,\"cancelledRender\""
+      "detail": "{\"clearedMid\":{\"refs\":[],\"email\":{\"id\":\"1qk24oil9koq\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:56:24.787Z\"},\"people\":[\"Cora Example\"]},\"clearStall\":{\"loads\":3,\"trace\":{\"destroyedLoad\":1,\"cancelledRender\""
     },
     {
       "name": "a reference added after start over finishes on its own",
       "ok": true,
-      "detail": "{\"ms\":130,\"retried\":{\"refs\":[{\"id\":\"r26\",\"name\":\"ref-after-clear.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"dyzf1sy6djyk\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:47:40.674Z\"},\"people\":[\"Cora Ex"
+      "detail": "{\"ms\":129,\"retried\":{\"refs\":[{\"id\":\"r27\",\"name\":\"ref-after-clear.pdf\",\"status\":\"empty\",\"preview\":\"\"}],\"email\":{\"id\":\"1qk24oil9koq\",\"key\":\"email\",\"label\":\"email\",\"value\":\"cora.fixed@example.com\",\"status\":\"confirmed\",\"origin\":\"user\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T20:56:24.787Z\"},\"people\":[\"Cora Ex"
     },
     {
       "name": "reload while a read is active finishes that file instead of leaving it on Reading",
       "ok": true,
-      "detail": "{\"id\":\"r27\",\"name\":\"ref-reload.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
+      "detail": "{\"id\":\"r28\",\"name\":\"ref-reload.pdf\",\"status\":\"empty\",\"preview\":\"\"}"
     },
     {
       "name": "removing a spatial read between pages does not terminate the standalone OCR worker",
@@ -125,11 +125,16 @@
     {
       "name": "a hung image read releases the OCR queue for the next PDF",
       "ok": true,
-      "detail": "{\"imageState\":\"budget\",\"textState\":\"Applicant full name is Ada Example and the phone is 8\",\"textMs\":124,\"terminated\":true}"
+      "detail": "{\"imageState\":\"budget\",\"textState\":\"Applicant full name is Ada Example and the phone is 8\",\"textMs\":122,\"terminated\":true}"
+    },
+    {
+      "name": "a restored maximum safe id and two later uploads stay unique and finished",
+      "ok": true,
+      "detail": "[\"r9007199254740991:max-keep:ready\",\"r1:ref-after-max-a.pdf:empty\",\"r2:ref-after-max-b.pdf:empty\"]"
     }
   ],
   "paired": {
-    "ms": 2437,
+    "ms": 2309,
     "names": [
       {
         "bea": true,
@@ -166,7 +171,7 @@
   "hungInit": {
     "imageState": "budget",
     "textState": "Applicant full name is Ada Example and the phone is 8",
-    "textMs": 124,
+    "textMs": 122,
     "terminated": true
   }
 }

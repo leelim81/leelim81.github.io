@@ -467,6 +467,14 @@
     scheduleSave();
   }
 
+  function currentRefIds() {
+    var seen = {};
+    state.refs.forEach(function (ref) {
+      if (ref && ref.id) seen[String(ref.id)] = true;
+    });
+    return seen;
+  }
+
   function addRef(bytes, name, mime) {
     var label = name || 'reference';
     var dup = state.refs.some(function (ref) { return ref.name === label && sameFile(ref.bytes, bytes); });
@@ -475,7 +483,7 @@
       return false;
     }
     var ref = {
-      id: 'r' + (++refSeq),
+      id: mintRefId(currentRefIds()),
       name: label,
       bytes: bytes,
       mime: mime || '',
@@ -1620,7 +1628,7 @@
       if (userTouched) return;
       state.refs = (draft.refs || []).map(function (ref) {
         var item = {
-          id: ref.id || ('d' + (++refSeq)),
+          id: ref.id || '',
           name: ref.name || 'reference',
           bytes: ref.bytes,
           mime: ref.mime || '',
