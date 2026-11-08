@@ -1,5 +1,5 @@
 {
-  "passed": 4,
+  "passed": 5,
   "failed": 0,
   "checks": [
     {
@@ -21,6 +21,11 @@
       "name": "a newer tab is not overwritten by this handoff",
       "ok": true,
       "detail": "newer.pdf"
+    },
+    {
+      "name": "a same-generation edit during the handoff is kept",
+      "ok": true,
+      "detail": "ONLYANEWER-EDIT"
     }
   ]
 }

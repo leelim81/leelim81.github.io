@@ -693,7 +693,7 @@
       if (!raster) return null;
       copy.dataUrl = payload;
       var aspect = Number(ann.pixelAspect);
-      if (!(aspect > 0) || aspect > 100 || !isFinite(aspect)) return null;
+      if (!(aspect > 0) || aspect > 20000 || !isFinite(aspect)) return null;
       copy.pixelAspect = aspect;
       copy.text = '';
     }
@@ -766,6 +766,51 @@
       if (theirs.length) withheld.push({ srcIndex: index, annotations: theirs });
     });
     return { pages: pages, withheld: withheld, dropped: dropped, kept: kept, invalid: false };
+  }
+
+  function rasterBytes(dataUrl) {
+    var comma = dataUrl.indexOf(',');
+    if (comma < 0) return null;
+    var text = dataUrl.slice(comma + 1).replace(/\s/g, '');
+    if (!text || text.length % 4 === 1) return null;
+    try {
+      var bin = atob(text);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i) & 255;
+      return bytes;
+    } catch (err) { return null; }
+  }
+
+  async function acceptedRaster(dataUrl) {
+    var bytes = rasterBytes(dataUrl);
+    if (!bytes) return false;
+    var png = bytes.length > 8 && bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71;
+    var jpg = bytes.length > 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+    if (dataUrl.indexOf('image/png') >= 0 && !png) return false;
+    if (dataUrl.indexOf('image/jpeg') >= 0 && !jpg) return false;
+    if (!png && !jpg) return false;
+    try {
+      var bmp = await createImageBitmap(new Blob([bytes], { type: png ? 'image/png' : 'image/jpeg' }));
+      var ok = bmp.width > 0 && bmp.height > 0 && bmp.width <= 1600 && bmp.height <= 1600 && bmp.width * bmp.height <= 1600 * 1600;
+      if (bmp.close) bmp.close();
+      return ok;
+    } catch (err) { return false; }
+  }
+
+  async function stripBadRasters(list) {
+    var dropped = 0;
+    var pages = [];
+    for (var i = 0; i < (list || []).length; i++) {
+      var page = list[i];
+      var marks = [];
+      var anns = page.annotations || [];
+      for (var j = 0; j < anns.length; j++) {
+        if (anns[j] && anns[j].dataUrl && !(await acceptedRaster(anns[j].dataUrl))) dropped += 1;
+        else marks.push(anns[j]);
+      }
+      pages.push({ id: page.id, srcIndex: page.srcIndex, rotation: page.rotation || 0, annotations: marks });
+    }
+    return { pages: pages, dropped: dropped };
   }
 
   async function openRecovery() {
@@ -857,6 +902,12 @@
       pages = resumed.pages;
       withheld = resumed.withheld;
     }
+    var seenStoreEdited = stored ? (stored.editedAt || 0) : 0;
+    var checkedPages = await stripBadRasters(pages);
+    var checkedHeld = await stripBadRasters(withheld);
+    if (checkedPages.dropped || checkedHeld.dropped) note = (note ? note + ' ' : '') + 'A picture could not be read, so it was not brought back.';
+    pages = checkedPages.pages;
+    withheld = checkedHeld.pages;
     var generation = Date.now();
     var session = {
       fileName: state.formName || 'form.pdf',
@@ -876,9 +927,8 @@
       editedAt: generation,
       resumeNote: note
     };
-    var committed;
-    try {
-      committed = await DeskDB.change(EDITOR_DB, ['session'], function (found, put) {
+    function writeSession() {
+      return DeskDB.change(EDITOR_DB, ['session'], function (found, put) {
         if (clearGeneration() !== intentClear) return { ok: false, reason: 'cleared' };
         if (formToken !== intentToken) return { ok: false, reason: 'file' };
         var pick = $('profilePick') && $('profilePick').value || '';
@@ -887,10 +937,34 @@
         var existing = found.session;
         var nowGen = existing && (existing.generation || existing.epoch) || 0;
         if (nowGen !== seenGen) return { ok: false, reason: 'newer' };
+        var nowEdited = existing ? (existing.editedAt || 0) : 0;
+        if (nowEdited !== seenStoreEdited) return { ok: false, reason: 'edited', editedAt: nowEdited };
         put('pdf', intentBytes);
         put('session', session);
         return { ok: true };
       });
+    }
+    var committed;
+    try {
+      committed = await writeSession();
+      if (committed && committed.reason === 'edited') {
+        var fresh = await DeskDB.get(EDITOR_DB, 'session');
+        var live = fresh ? resumePages(fresh, pages.length, personId) : null;
+        if (!live || live.invalid) {
+          status('A newer edit could not be read. Nothing was replaced.', false);
+          toast('The editor was not opened.');
+          return;
+        }
+        var againPages = await stripBadRasters(live.pages);
+        var againHeld = await stripBadRasters(live.withheld);
+        session.pages = againPages.pages;
+        session.withheld = againHeld.pages;
+        if (againPages.dropped || againHeld.dropped) session.resumeNote = (live.kept ? 'Returned to the same page and the same marks. ' : '') + 'A picture could not be read, so it was not brought back.';
+        else if (live.dropped) session.resumeNote = 'Returned to this file. The other person’s marks were left off.';
+        else if (live.kept) session.resumeNote = 'Returned to the same page and the same marks.';
+        seenStoreEdited = fresh && fresh.editedAt || 0;
+        committed = await writeSession();
+      }
     } catch (err) {
       status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
       toast('The editor was not opened.');
@@ -900,7 +974,7 @@
       var why = committed && committed.reason;
       var refused = why === 'cleared' ? 'Start over finished before the editor opened. Nothing was written.'
         : why === 'person' ? 'The person changed before the editor opened. Nothing was written.'
-        : why === 'newer' ? 'A newer editor session is already stored. Nothing was replaced.'
+        : why === 'newer' || why === 'edited' ? 'A newer editor session is already stored. Nothing was replaced.'
         : 'The form changed before the editor opened. Nothing was written.';
       status(refused, false);
       toast('The editor was not opened.');

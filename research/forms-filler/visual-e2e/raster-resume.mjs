@@ -108,6 +108,44 @@ await page.waitForURL(/pdf-editor/);
 await page.waitForFunction(() => /could not be read/.test((document.getElementById('recoverStatus') || {}).textContent || ''));
 const body = await page.locator('body').innerText();
 check('an svg picture is not resumed', body.indexOf('<svg') < 0 && /could not be read/.test(await page.locator('#recoverStatus').innerText()));
+
+await page.goBack();
+await page.waitForURL(/forms-filler/);
+await page.evaluate(async () => {
+  const db = await new Promise((resolve, reject) => {
+    const req = indexedDB.open('tools-forms-editor');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  const session = await new Promise((resolve) => {
+    const req = db.transaction('kv').objectStore('kv').get('session');
+    req.onsuccess = () => resolve(req.result);
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = 1700;
+  canvas.height = 2;
+  const big = canvas.toDataURL('image/png');
+  const owner = session.resumeProfileId;
+  session.pages[0].annotations = [
+    { id: 'keep', type: 'text', x: 0.2, y: 0.2, w: 0.4, h: 0.05, text: 'ONLYKEEP', fontSize: 14, color: '#1a1612', profileId: owner },
+    { id: 'bad', type: 'image', x: 0.1, y: 0.5, w: 0.2, h: 0.2, dataUrl: 'data:image/png;base64,AAAA', pixelAspect: 1, originProfileId: owner },
+    { id: 'big', type: 'image', x: 0.1, y: 0.7, w: 0.4, h: 0.05, dataUrl: big, pixelAspect: 850, originProfileId: owner }
+  ];
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(session, 'session');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+  sessionStorage.removeItem('ff-editor-handoff');
+});
+await page.click('#placeMissing');
+await page.waitForURL(/pdf-editor/);
+await page.waitForFunction(() => /ONLYKEEP|picture could not be read/.test((document.getElementById('recoverStatus') || {}).textContent || '') || document.querySelector('.ann-body'));
+const keptText = await page.locator('.ann-body').allInnerTexts();
+const pics = await imageSrcs();
+const note = await page.locator('#recoverStatus').innerText();
+check('a corrupt or oversized picture is left out and the text remains', keptText.some((text) => text.indexOf('ONLYKEEP') >= 0) && pics.every((src) => src.indexOf('AAAA') < 0) && /picture could not be read/.test(note), note + ' ' + keptText.join('|') + ' pics ' + pics.length);
 const out = { passed: checks.filter((item) => item.ok).length, failed: checks.filter((item) => !item.ok).length, checks };
 writeFileSync('/tmp/inline-wt/research/forms-filler/visual-e2e/results/raster-resume.json', JSON.stringify(out, null, 2));
 console.log('SUMMARY', out.passed, '/', checks.length);

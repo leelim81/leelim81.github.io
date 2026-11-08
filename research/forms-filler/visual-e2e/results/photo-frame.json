@@ -1,0 +1,90 @@
+{
+  "passed": 6,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "the same photo keeps the sheet frame",
+      "ok": true,
+      "detail": "{\"angle\":0,\"inW\":180,\"inH\":220,\"outW\":73,\"outH\":73,\"cropX\":22,\"cropY\":34,\"cropW\":73,\"cropH\":73,\"sourceW\":180,\"sourceH\":220}"
+    },
+    {
+      "name": "the regenerated pdf resumes the mark",
+      "ok": true,
+      "detail": "PHOTOADA"
+    },
+    {
+      "name": "the resumed pdf bytes are not required to match the first export",
+      "ok": true,
+      "detail": "c060e3328e3d 5b4a9901f88d"
+    },
+    {
+      "name": "a changed crop does not bring the mark back",
+      "ok": true,
+      "detail": "This file or crop changed, so earlier marks were not brought back. Choose the person and the confirmed value, then place it on the page. {\"angle\":0,\"inW\":180,\"inH\":220,\"outW\":157,\"outH\":185,\"cropX\":22,\"cropY\":34,\"cropW\":157,\"cropH\":185,\"sourceW\":180,\"sourceH\":220}"
+    },
+    {
+      "name": "the other person does not receive the photo mark",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a turned photo does not bring the mark back",
+      "ok": true,
+      "detail": "This file or crop changed, so earlier marks were not brought back. Choose the person and the confirmed value, then place it on the page. {\"angle\":0,\"inW\":220,\"inH\":180,\"outW\":73,\"outH\":73,\"cropX\":34,\"cropY\":22,\"cropW\":73,\"cropH\":73,\"sourceW\":220,\"sourceH\":180}"
+    }
+  ],
+  "frames": {
+    "firstFrame": {
+      "angle": 0,
+      "inW": 180,
+      "inH": 220,
+      "outW": 73,
+      "outH": 73,
+      "cropX": 22,
+      "cropY": 34,
+      "cropW": 73,
+      "cropH": 73,
+      "sourceW": 180,
+      "sourceH": 220
+    },
+    "secondFrame": {
+      "angle": 0,
+      "inW": 180,
+      "inH": 220,
+      "outW": 73,
+      "outH": 73,
+      "cropX": 22,
+      "cropY": 34,
+      "cropW": 73,
+      "cropH": 73,
+      "sourceW": 180,
+      "sourceH": 220
+    },
+    "cropFrame": {
+      "angle": 0,
+      "inW": 180,
+      "inH": 220,
+      "outW": 157,
+      "outH": 185,
+      "cropX": 22,
+      "cropY": 34,
+      "cropW": 157,
+      "cropH": 185,
+      "sourceW": 180,
+      "sourceH": 220
+    },
+    "turned": {
+      "angle": 0,
+      "inW": 220,
+      "inH": 180,
+      "outW": 73,
+      "outH": 73,
+      "cropX": 34,
+      "cropY": 22,
+      "cropW": 73,
+      "cropH": 73,
+      "sourceW": 220,
+      "sourceH": 180
+    }
+  }
+}

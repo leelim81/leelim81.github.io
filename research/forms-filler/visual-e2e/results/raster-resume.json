@@ -1,5 +1,5 @@
 {
-  "passed": 6,
+  "passed": 7,
   "failed": 0,
   "checks": [
     {
@@ -31,6 +31,11 @@
       "name": "an svg picture is not resumed",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "a corrupt or oversized picture is left out and the text remains",
+      "ok": true,
+      "detail": "Returned to the same page and the same marks. A picture could not be read, so it was not brought back. Ada Lane has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed. ONLYKEEP pics 0"
     }
   ]
 }
