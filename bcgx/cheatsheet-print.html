@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BCGX DS cheat sheet</title>
+<style>
+  @page { size: A4; margin: 9mm 8mm 12mm 8mm;
+    @bottom-right { content: counter(page); font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #333; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: #111; }
+  body { font: 8pt/1.25 Helvetica, Arial, sans-serif; }
+  h1 { font-size: 13pt; line-height: 1.15; margin: 0 0 1mm; }
+  .lede { margin: 0 0 1.6mm; color: #222; font-size: 7.6pt; }
+  .cols { column-count: 2; column-gap: 4.5mm; }
+  h2 {
+    column-span: all;
+    break-after: avoid;
+    font-size: 10.5pt;
+    line-height: 1.15;
+    margin: 1.6mm 0 1mm;
+    padding-bottom: 0.3mm;
+    border-bottom: 0.3mm solid #222;
+  }
+  h2:first-child { margin-top: 0; }
+  .snip { break-inside: avoid; margin: 0 0 1.5mm; }
+  .snip h3 { font-size: 8.6pt; margin: 0 0 0.5mm; }
+  pre, .fact {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    font: 7.05pt/1.22 "Liberation Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  }
+  pre {
+    background: #f3f4f6;
+    border: 0.2mm solid #e5e7eb;
+    padding: 0.9mm 1.2mm;
+    color: #111;
+  }
+  .fact { font-family: Helvetica, Arial, sans-serif; font-size: 8pt; line-height: 1.28; }
+  .cmt { color: #4b5563; }
+  .kw { color: #1d4ed8; }
+  .str { color: #047857; }
+  .num { color: #c2410c; }
+</style>
+</head>
+<body>
+<h1>BCG X data science cheat sheet</h1><p class="lede">Syntax recall for a 90-minute Python test (pandas, NumPy, scikit-learn), plus the SQL practice. Snippets assume import numpy as np and import pandas as pd. pandas Series.std() is the sample standard deviation (ddof=1). NumPy&#x27;s default is the population one (ddof=0). Month-end resampling is &#x27;ME&#x27;. Unofficial.</p><div class="cols"><h2>Python core</h2><div class="snip"><h3>Comprehensions</h3><pre><span class="cmt"># filter sits at the end; a dict uses {k: v}; a set uses {v}</span>
+nums, pairs = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>], [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">2</span>)]
+[n * n <span class="kw">for</span> n <span class="kw">in</span> nums <span class="kw">if</span> n % <span class="num">2</span> == <span class="num">0</span>]
+{k: v <span class="kw">for</span> k, v <span class="kw">in</span> pairs}
+{n % <span class="num">2</span> <span class="kw">for</span> n <span class="kw">in</span> nums}</pre></div><div class="snip"><h3>sorted with key</h3><pre><span class="cmt"># a leading minus flips a number; a tuple breaks ties left to right</span>
+<span class="cmt"># sorted() returns a new list; list.sort() changes the list</span>
+rows = [{<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Bo&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">10</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Ann&quot;</span>}, {<span class="str">&quot;rev&quot;</span>: <span class="num">4</span>, <span class="str">&quot;name&quot;</span>: <span class="str">&quot;Cy&quot;</span>}]
+out = sorted(rows, key=<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>Defaults and lambda</h3><pre><span class="cmt"># a default is bound once, when the function is defined, not on each call</span>
+<span class="kw">def</span> price(amount, discount=<span class="num">0.1</span>):
+    <span class="kw">return</span> amount * (<span class="num">1</span> - discount)
+price(<span class="num">100</span>)
+(<span class="kw">lambda</span> r: (-r[<span class="str">&quot;rev&quot;</span>], r[<span class="str">&quot;name&quot;</span>]))</pre></div><div class="snip"><h3>dict.get</h3><pre><span class="cmt"># .get returns the default instead of raising KeyError</span>
+d = {}
+<span class="kw">for</span> k <span class="kw">in</span> [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>]:
+    d[k] = d.get(k, <span class="num">0</span>) + <span class="num">1</span></pre></div><div class="snip"><h3>Counter and defaultdict</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> Counter, defaultdict
+Counter([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>]).most_common(<span class="num">1</span>)  <span class="cmt"># [(value, count)]</span>
+groups = defaultdict(list)
+<span class="kw">for</span> k, v <span class="kw">in</span> [(<span class="str">&quot;a&quot;</span>, <span class="num">1</span>), (<span class="str">&quot;a&quot;</span>, <span class="num">2</span>), (<span class="str">&quot;b&quot;</span>, <span class="num">3</span>)]:
+    groups[k].append(v)
+dict(groups)  <span class="cmt"># a plain dict, if the caller asked for one</span></pre></div><div class="snip"><h3>zip and enumerate</h3><pre><span class="cmt"># zip stops at the shorter side; start=1 makes the first index 1</span>
+names, scores = [<span class="str">&quot;Ada&quot;</span>, <span class="str">&quot;Bo&quot;</span>], [<span class="num">10</span>, <span class="num">8</span>, <span class="num">7</span>]
+<span class="kw">for</span> i, (name, score) <span class="kw">in</span> enumerate(zip(names, scores), start=<span class="num">1</span>):
+    i, name, score</pre></div><div class="snip"><h3>f-strings and rounding</h3><pre><span class="cmt"># .1f rounds for display; :, adds thousands separators</span>
+<span class="cmt"># the numeric answers on this test want three decimals</span>
+name, score, n = <span class="str">&quot;Ada&quot;</span>, <span class="num">1.26</span>, <span class="num">12000</span>
+f<span class="str">&quot;{name} scored {score:.1f}&quot;</span>
+f<span class="str">&quot;{n:,}&quot;</span>
+f<span class="str">&quot;{score:.3f}&quot;</span></pre></div><div class="snip"><h3>String methods</h3><pre>text = <span class="str">&quot;  East-12, &quot;</span>
+text.strip().lower().replace(<span class="str">&quot;,&quot;</span>, <span class="str">&quot;&quot;</span>).split(<span class="str">&quot;-&quot;</span>)
+<span class="str">&quot;east&quot;</span>.startswith(<span class="str">&quot;e&quot;</span>)
+<span class="str">&quot;file.png&quot;</span>.endswith(<span class="str">&quot;.png&quot;</span>)
+<span class="str">&quot;a-b&quot;</span>.partition(<span class="str">&quot;-&quot;</span>)  <span class="cmt"># (&#x27;a&#x27;, &#x27;-&#x27;, &#x27;b&#x27;)</span></pre></div><div class="snip"><h3>Slices</h3><pre><span class="cmt"># [start:end] is half-open; slicing off the end does not raise</span>
+xs = [<span class="num">0</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+xs[<span class="num">1</span>:<span class="num">4</span>], xs[-<span class="num">2</span>:], xs[::-<span class="num">1</span>], xs[<span class="num">10</span>:<span class="num">20</span>]</pre></div><div class="snip"><h3>heapq</h3><pre><span class="kw">import</span> heapq
+<span class="cmt"># min-heap; put the priority first in the tuple</span>
+h = []
+heapq.heappush(h, (<span class="num">2</span>, <span class="str">&quot;b&quot;</span>))
+heapq.heappush(h, (<span class="num">1</span>, <span class="str">&quot;a&quot;</span>))
+heapq.heappop(h)             <span class="cmt"># (1, &quot;a&quot;)</span>
+heapq.nlargest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])
+heapq.nsmallest(<span class="num">2</span>, [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>])</pre></div><div class="snip"><h3>bisect</h3><pre><span class="kw">import</span> bisect
+xs = [<span class="num">1</span>, <span class="num">3</span>, <span class="num">3</span>, <span class="num">7</span>]             <span class="cmt"># the list must already be sorted</span>
+bisect.bisect_left(xs, <span class="num">3</span>)     <span class="cmt"># first index where 3 could sit</span>
+bisect.bisect_right(xs, <span class="num">3</span>)    <span class="cmt"># just after the existing 3s</span>
+bisect.insort(xs, <span class="num">4</span>)</pre></div><div class="snip"><h3>itertools</h3><pre><span class="kw">import</span> itertools
+list(itertools.accumulate([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]))  <span class="cmt"># running sum</span>
+list(itertools.chain([<span class="num">1</span>], [<span class="num">2</span>, <span class="num">3</span>]))
+list(itertools.product([<span class="num">0</span>, <span class="num">1</span>], repeat=<span class="num">2</span>))
+<span class="cmt"># groupby only joins adjacent keys, so sort first</span>
+<span class="kw">for</span> key, grp <span class="kw">in</span> itertools.groupby(sorted([<span class="str">&quot;b&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>])):
+    key, list(grp)</pre></div><div class="snip"><h3>deque</h3><pre><span class="kw">from</span> collections <span class="kw">import</span> deque
+d = deque(maxlen=<span class="num">3</span>)
+<span class="kw">for</span> x <span class="kw">in</span> (<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>):
+    d.append(x)     <span class="cmt"># full: the left end falls off</span>
+d.appendleft(<span class="num">0</span>)     <span class="cmt"># full: the right end falls off</span></pre></div><div class="snip"><h3>Exceptions</h3><pre><span class="cmt"># catch the errors you expect; a bare except also hides bugs</span>
+<span class="kw">def</span> to_int(text):
+    <span class="kw">try</span>:
+        <span class="kw">return</span> int(text)
+    <span class="kw">except</span> (ValueError, TypeError):
+        <span class="kw">return</span> <span class="kw">None</span>
+to_int(<span class="str">&quot;3&quot;</span>), to_int(<span class="str">&quot;x&quot;</span>), to_int(<span class="kw">None</span>)</pre></div><h2>pandas</h2><div class="snip"><h3>Read and inspect</h3><pre><span class="kw">from</span> io <span class="kw">import</span> StringIO
+raw = <span class="str">&quot;id,region,revenue\n1,East,10\n2,West,\n3,East,30\n&quot;</span>
+df = pd.read_csv(StringIO(raw))
+df.head()
+df.shape, list(df.columns), df.dtypes
+df.describe(include=<span class="str">&quot;all&quot;</span>)</pre></div><div class="snip"><h3>Selection</h3><pre><span class="cmt"># parentheses around each mask; &amp; and | beat comparison operators</span>
+<span class="cmt"># between() includes both ends; query() uses quotes for strings</span>
+df = pd.DataFrame({<span class="str">&quot;region&quot;</span>: [<span class="str">&quot;East&quot;</span>, <span class="str">&quot;West&quot;</span>, <span class="str">&quot;East&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">30</span>, <span class="num">5</span>], <span class="str">&quot;sku&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="str">&quot;c&quot;</span>]})
+df.loc[(df[<span class="str">&quot;region&quot;</span>].eq(<span class="str">&quot;East&quot;</span>)) &amp; (df[<span class="str">&quot;rev&quot;</span>] &gt; <span class="num">0</span>), [<span class="str">&quot;sku&quot;</span>, <span class="str">&quot;rev&quot;</span>]]
+df.iloc[<span class="num">0</span>, <span class="num">1</span>]
+df.query(<span class="str">&quot;region == &#x27;East&#x27; and rev &gt;= 10&quot;</span>)
+df.loc[df[<span class="str">&quot;sku&quot;</span>].isin([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>])]
+df.loc[df[<span class="str">&quot;rev&quot;</span>].between(<span class="num">5</span>, <span class="num">10</span>)]</pre></div><div class="snip"><h3>Missing values</h3><pre><span class="cmt"># group median first; a group that is all missing falls through to the global median</span>
+df = pd.DataFrame({<span class="str">&quot;segment&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>, <span class="str">&quot;B&quot;</span>], <span class="str">&quot;income&quot;</span>: [<span class="num">10.0</span>, <span class="kw">None</span>, <span class="kw">None</span>, <span class="kw">None</span>]})
+med = df.groupby(<span class="str">&quot;segment&quot;</span>)[<span class="str">&quot;income&quot;</span>].transform(<span class="str">&quot;median&quot;</span>)
+df[<span class="str">&quot;income&quot;</span>] = df[<span class="str">&quot;income&quot;</span>].fillna(med).fillna(df[<span class="str">&quot;income&quot;</span>].median())</pre></div><div class="snip"><h3>dtypes and dates</h3><pre>df = pd.DataFrame({<span class="str">&quot;when&quot;</span>: [<span class="str">&quot;2024-01-02&quot;</span>, <span class="str">&quot;bad&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="str">&quot;10&quot;</span>, <span class="str">&quot;20&quot;</span>]})
+df[<span class="str">&quot;when&quot;</span>] = pd.to_datetime(df[<span class="str">&quot;when&quot;</span>], format=<span class="str">&quot;%Y-%m-%d&quot;</span>, errors=<span class="str">&quot;coerce&quot;</span>)
+df[<span class="str">&quot;rev&quot;</span>] = pd.to_numeric(df[<span class="str">&quot;rev&quot;</span>], errors=<span class="str">&quot;coerce&quot;</span>)
+df[<span class="str">&quot;when&quot;</span>].dt.year
+df[<span class="str">&quot;when&quot;</span>].dt.month
+df[<span class="str">&quot;when&quot;</span>].dt.day_name()</pre></div><div class="snip"><h3>assign, where, map, apply</h3><pre>df = pd.DataFrame({<span class="str">&quot;plan&quot;</span>: [<span class="str">&quot;Basic&quot;</span>, <span class="str">&quot;Pro&quot;</span>, <span class="kw">None</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>], <span class="str">&quot;cost&quot;</span>: [<span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>]})
+df = df.assign(margin=<span class="kw">lambda</span> d: d[<span class="str">&quot;rev&quot;</span>] - d[<span class="str">&quot;cost&quot;</span>])
+df[<span class="str">&quot;flag&quot;</span>] = np.where(df[<span class="str">&quot;rev&quot;</span>] &gt;= <span class="num">20</span>, <span class="str">&quot;high&quot;</span>, <span class="str">&quot;low&quot;</span>)
+df[<span class="str">&quot;band&quot;</span>] = np.select([df[<span class="str">&quot;rev&quot;</span>] &lt; <span class="num">15</span>, df[<span class="str">&quot;rev&quot;</span>] &lt; <span class="num">25</span>], [<span class="str">&quot;s&quot;</span>, <span class="str">&quot;m&quot;</span>], default=<span class="str">&quot;l&quot;</span>)
+df[<span class="str">&quot;plan_n&quot;</span>] = df[<span class="str">&quot;plan&quot;</span>].map({<span class="str">&quot;Basic&quot;</span>: <span class="num">0</span>, <span class="str">&quot;Pro&quot;</span>: <span class="num">1</span>})  <span class="cmt"># unseen -&gt; NaN</span>
+df[<span class="str">&quot;margin2&quot;</span>] = df.apply(<span class="kw">lambda</span> r: r[<span class="str">&quot;rev&quot;</span>] - r[<span class="str">&quot;cost&quot;</span>], axis=<span class="num">1</span>)</pre></div><div class="snip"><h3>groupby named agg</h3><pre>df = pd.DataFrame({<span class="str">&quot;region&quot;</span>: [<span class="str">&quot;E&quot;</span>, <span class="str">&quot;E&quot;</span>, <span class="str">&quot;W&quot;</span>], <span class="str">&quot;amount&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>], <span class="str">&quot;order_id&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]})
+<span class="cmt"># as_index=False keeps the key as a column, so you can skip reset_index</span>
+df.groupby(<span class="str">&quot;region&quot;</span>, as_index=<span class="kw">False</span>).agg(
+    revenue=(<span class="str">&quot;amount&quot;</span>, <span class="str">&quot;sum&quot;</span>),
+    orders=(<span class="str">&quot;order_id&quot;</span>, <span class="str">&quot;count&quot;</span>),
+    aov=(<span class="str">&quot;amount&quot;</span>, <span class="str">&quot;mean&quot;</span>),
+)</pre></div><div class="snip"><h3>transform vs agg vs filter</h3><pre><span class="cmt"># transform aligns back to the original rows; agg shrinks to one row per group</span>
+<span class="cmt"># filter keeps whole groups. pandas std is the sample one (ddof=1); a 1-row group -&gt; NaN</span>
+df = pd.DataFrame({<span class="str">&quot;category&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>], <span class="str">&quot;revenue&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">5</span>]})
+g = df.groupby(<span class="str">&quot;category&quot;</span>)[<span class="str">&quot;revenue&quot;</span>]
+df[<span class="str">&quot;share&quot;</span>] = df[<span class="str">&quot;revenue&quot;</span>] / g.transform(<span class="str">&quot;sum&quot;</span>)
+df[<span class="str">&quot;z&quot;</span>] = (df[<span class="str">&quot;revenue&quot;</span>] - g.transform(<span class="str">&quot;mean&quot;</span>)) / g.transform(<span class="str">&quot;std&quot;</span>)
+df.groupby(<span class="str">&quot;category&quot;</span>, as_index=<span class="kw">False</span>).agg(total=(<span class="str">&quot;revenue&quot;</span>, <span class="str">&quot;sum&quot;</span>))
+df.groupby(<span class="str">&quot;category&quot;</span>).filter(<span class="kw">lambda</span> part: part[<span class="str">&quot;revenue&quot;</span>].sum() &gt;= <span class="num">50</span>)</pre></div><div class="snip"><h3>pivot_table, melt, crosstab</h3><pre>df = pd.DataFrame({<span class="str">&quot;region&quot;</span>: [<span class="str">&quot;E&quot;</span>, <span class="str">&quot;E&quot;</span>, <span class="str">&quot;W&quot;</span>], <span class="str">&quot;year&quot;</span>: [<span class="num">2023</span>, <span class="num">2024</span>, <span class="num">2024</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">5</span>]})
+wide = pd.pivot_table(df, index=<span class="str">&quot;region&quot;</span>, columns=<span class="str">&quot;year&quot;</span>, values=<span class="str">&quot;rev&quot;</span>, aggfunc=<span class="str">&quot;sum&quot;</span>, fill_value=<span class="num">0</span>)
+wide = wide.reindex(columns=[<span class="num">2023</span>, <span class="num">2024</span>, <span class="num">2025</span>], fill_value=<span class="num">0</span>)
+wide.reset_index().melt(id_vars=<span class="str">&quot;region&quot;</span>, var_name=<span class="str">&quot;year&quot;</span>, value_name=<span class="str">&quot;rev&quot;</span>)
+pd.crosstab(df[<span class="str">&quot;region&quot;</span>], df[<span class="str">&quot;year&quot;</span>])</pre></div><div class="snip"><h3>merge</h3><pre><span class="cmt"># dedupe the right key first, or matching rows multiply</span>
+<span class="cmt"># a WHERE-style filter belongs in the result, not by dropping the left rows you meant to keep</span>
+orders = pd.DataFrame({<span class="str">&quot;order_id&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;customer_id&quot;</span>: [<span class="num">10</span>, <span class="num">10</span>, <span class="num">99</span>], <span class="str">&quot;amount&quot;</span>: [<span class="num">5</span>, <span class="num">7</span>, <span class="num">8</span>]})
+customers = pd.DataFrame({<span class="str">&quot;customer_id&quot;</span>: [<span class="num">10</span>, <span class="num">11</span>], <span class="str">&quot;segment&quot;</span>: [<span class="str">&quot;Pro&quot;</span>, <span class="str">&quot;Basic&quot;</span>], <span class="str">&quot;amount&quot;</span>: [<span class="num">0</span>, <span class="num">0</span>]})
+orders.merge(
+    customers, on=<span class="str">&quot;customer_id&quot;</span>, how=<span class="str">&quot;left&quot;</span>,
+    suffixes=(<span class="str">&quot;_ord&quot;</span>, <span class="str">&quot;_cus&quot;</span>), indicator=<span class="kw">True</span>, validate=<span class="str">&quot;m:1&quot;</span>,
+)</pre></div><div class="snip"><h3>concat</h3><pre><span class="cmt"># axis=0 stacks rows and takes the union of columns; missing cells are null</span>
+a = pd.DataFrame({<span class="str">&quot;id&quot;</span>: [<span class="num">1</span>], <span class="str">&quot;revenue&quot;</span>: [<span class="num">10</span>]})
+b = pd.DataFrame({<span class="str">&quot;id&quot;</span>: [<span class="num">2</span>], <span class="str">&quot;units&quot;</span>: [<span class="num">3</span>]})
+both = pd.concat([a, b], ignore_index=<span class="kw">True</span>)
+both[[<span class="str">&quot;id&quot;</span>, <span class="str">&quot;revenue&quot;</span>, <span class="str">&quot;units&quot;</span>]]</pre></div><div class="snip"><h3>sort_values and rank</h3><pre><span class="cmt"># kind=&#x27;mergesort&#x27; is stable; na_position=&#x27;last&#x27; keeps nulls at the bottom</span>
+<span class="cmt"># dense rank shares a place and does not skip; head(n) after the tie-break is top-N</span>
+df = pd.DataFrame({
+    <span class="str">&quot;category&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>],
+    <span class="str">&quot;revenue&quot;</span>: [<span class="num">10</span>, <span class="num">30</span>, <span class="num">30</span>, <span class="num">5</span>],
+    <span class="str">&quot;product_id&quot;</span>: [<span class="str">&quot;b&quot;</span>, <span class="str">&quot;c&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;d&quot;</span>],
+})
+df[<span class="str">&quot;rk&quot;</span>] = df.groupby(<span class="str">&quot;category&quot;</span>)[<span class="str">&quot;revenue&quot;</span>].rank(ascending=<span class="kw">False</span>, method=<span class="str">&quot;dense&quot;</span>)
+ordered = df.sort_values(
+    [<span class="str">&quot;category&quot;</span>, <span class="str">&quot;revenue&quot;</span>, <span class="str">&quot;product_id&quot;</span>],
+    ascending=[<span class="kw">True</span>, <span class="kw">False</span>, <span class="kw">True</span>], kind=<span class="str">&quot;mergesort&quot;</span>,
+)
+ordered.groupby(<span class="str">&quot;category&quot;</span>, as_index=<span class="kw">False</span>).head(<span class="num">2</span>)</pre></div><div class="snip"><h3>shift, diff, pct_change</h3><pre><span class="cmt"># sort first; the first row in each group is NaN</span>
+df = pd.DataFrame({<span class="str">&quot;store&quot;</span>: [<span class="str">&quot;S&quot;</span>, <span class="str">&quot;S&quot;</span>, <span class="str">&quot;S&quot;</span>], <span class="str">&quot;month&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10.0</span>, <span class="num">12.0</span>, <span class="num">15.0</span>]})
+df = df.sort_values([<span class="str">&quot;store&quot;</span>, <span class="str">&quot;month&quot;</span>])
+g = df.groupby(<span class="str">&quot;store&quot;</span>)[<span class="str">&quot;rev&quot;</span>]
+df[<span class="str">&quot;prev&quot;</span>] = g.shift(<span class="num">1</span>)
+df[<span class="str">&quot;delta&quot;</span>] = g.diff()
+df[<span class="str">&quot;pct&quot;</span>] = g.pct_change()</pre></div><div class="snip"><h3>rolling, expanding, ewm</h3><pre><span class="cmt"># min_periods=1 keeps the early rows; adjust=False is the recursive ewm</span>
+s = pd.Series([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>])
+s.rolling(<span class="num">3</span>, min_periods=<span class="num">1</span>).mean()
+s.expanding().mean()
+s.ewm(span=<span class="num">3</span>, adjust=<span class="kw">False</span>).mean()</pre></div><div class="snip"><h3>resample</h3><pre><span class="cmt"># &#x27;ME&#x27; is month end; the old alias &#x27;M&#x27; is gone</span>
+ts = pd.DataFrame({
+    <span class="str">&quot;date&quot;</span>: pd.date_range(<span class="str">&quot;2024-01-15&quot;</span>, periods=<span class="num">50</span>, freq=<span class="str">&quot;D&quot;</span>),
+    <span class="str">&quot;amount&quot;</span>: <span class="num">1.0</span>,
+}).set_index(<span class="str">&quot;date&quot;</span>)
+ts.resample(<span class="str">&quot;ME&quot;</span>)[<span class="str">&quot;amount&quot;</span>].sum()</pre></div><div class="snip"><h3>cumsum and cumcount</h3><pre>df = pd.DataFrame({<span class="str">&quot;cat&quot;</span>: [<span class="str">&quot;A&quot;</span>, <span class="str">&quot;A&quot;</span>, <span class="str">&quot;B&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">5</span>]})
+df[<span class="str">&quot;csum&quot;</span>] = df.groupby(<span class="str">&quot;cat&quot;</span>)[<span class="str">&quot;rev&quot;</span>].cumsum()
+df[<span class="str">&quot;i&quot;</span>] = df.groupby(<span class="str">&quot;cat&quot;</span>).cumcount()  <span class="cmt"># 0, 1, ... inside each group</span></pre></div><div class="snip"><h3>value_counts</h3><pre>s = pd.Series([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, <span class="kw">None</span>])
+s.value_counts(normalize=<span class="kw">True</span>, dropna=<span class="kw">False</span>)</pre></div><div class="snip"><h3>duplicated</h3><pre>df = pd.DataFrame({<span class="str">&quot;sku&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]})
+df.duplicated([<span class="str">&quot;sku&quot;</span>], keep=<span class="str">&quot;first&quot;</span>)
+df.drop_duplicates([<span class="str">&quot;sku&quot;</span>], keep=<span class="str">&quot;last&quot;</span>)</pre></div><div class="snip"><h3>str accessor</h3><pre>s = pd.Series([<span class="str">&quot;  Ab-1 &quot;</span>, <span class="kw">None</span>])
+s.str.strip().str.lower().str.replace(<span class="str">&quot;-&quot;</span>, <span class="str">&quot;&quot;</span>, regex=<span class="kw">False</span>)
+s.str.extract(r<span class="str">&quot;([A-Za-z]+)&quot;</span>)
+s.str.contains(<span class="str">&quot;Ab&quot;</span>, na=<span class="kw">False</span>)</pre></div><div class="snip"><h3>cut and qcut</h3><pre><span class="cmt"># cut uses edges you choose; right=False makes the left edge included</span>
+<span class="cmt"># qcut uses quantiles; log1p is log(1+x) so zeros survive</span>
+age = pd.Series([<span class="num">17</span>, <span class="num">18</span>, <span class="num">34</span>, <span class="num">35</span>])
+pd.cut(age, [<span class="num">0</span>, <span class="num">18</span>, <span class="num">35</span>, <span class="num">50</span>, <span class="num">120</span>], labels=[<span class="str">&quot;u18&quot;</span>, <span class="str">&quot;18-34&quot;</span>, <span class="str">&quot;35-49&quot;</span>, <span class="str">&quot;50+&quot;</span>], right=<span class="kw">False</span>)
+pd.qcut(pd.Series([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>]), <span class="num">4</span>, labels=[<span class="str">&quot;Q1&quot;</span>, <span class="str">&quot;Q2&quot;</span>, <span class="str">&quot;Q3&quot;</span>, <span class="str">&quot;Q4&quot;</span>])
+np.log1p(pd.Series([<span class="num">0.0</span>, <span class="num">1</span>, <span class="num">10</span>]))</pre></div><div class="snip"><h3>explode</h3><pre><span class="cmt"># one output row per list element; an empty list becomes a null</span>
+df = pd.DataFrame({<span class="str">&quot;id&quot;</span>: [<span class="num">1</span>, <span class="num">2</span>], <span class="str">&quot;tags&quot;</span>: [[<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>], []]})
+df.explode(<span class="str">&quot;tags&quot;</span>)</pre></div><div class="snip"><h3>reset_index</h3><pre><span class="cmt"># without as_index=False the key is the index, not a column</span>
+<span class="cmt"># reset_index() brings it back; drop=True throws the key away</span>
+df = pd.DataFrame({<span class="str">&quot;region&quot;</span>: [<span class="str">&quot;E&quot;</span>, <span class="str">&quot;E&quot;</span>, <span class="str">&quot;W&quot;</span>], <span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">20</span>, <span class="num">5</span>]})
+totals = df.groupby(<span class="str">&quot;region&quot;</span>)[<span class="str">&quot;rev&quot;</span>].sum()
+totals.reset_index()
+totals.reset_index(drop=<span class="kw">True</span>)</pre></div><div class="snip"><h3>SettingWithCopy</h3><pre><span class="cmt"># df[mask][col] = ... can write into a copy and change nothing</span>
+<span class="cmt"># use .loc on the frame you own, or .copy() before editing a subset</span>
+df = pd.DataFrame({<span class="str">&quot;rev&quot;</span>: [<span class="num">10</span>, <span class="num">30</span>], <span class="str">&quot;flag&quot;</span>: [<span class="num">0</span>, <span class="num">0</span>]})
+df.loc[df[<span class="str">&quot;rev&quot;</span>] &gt; <span class="num">10</span>, <span class="str">&quot;flag&quot;</span>] = <span class="num">1</span>
+sub = df.loc[df[<span class="str">&quot;rev&quot;</span>] &gt; <span class="num">10</span>].copy()
+sub.loc[:, <span class="str">&quot;flag&quot;</span>] = <span class="num">2</span></pre></div><div class="snip"><h3>IQR cap</h3><pre><span class="cmt"># fit the fences on the training rows only, then clip train and test with those numbers</span>
+s = pd.Series([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">100</span>])
+q1, q3 = s.quantile(<span class="num">0.25</span>), s.quantile(<span class="num">0.75</span>)
+iqr = q3 - q1
+s.clip(q1 - <span class="num">1.5</span> * iqr, q3 + <span class="num">1.5</span> * iqr)</pre></div><div class="snip"><h3>Encodings</h3><pre>s = pd.Series([<span class="str">&quot;Basic&quot;</span>, <span class="str">&quot;Pro&quot;</span>, <span class="str">&quot;Basic&quot;</span>])
+s.map({<span class="str">&quot;Basic&quot;</span>: <span class="num">0</span>, <span class="str">&quot;Plus&quot;</span>: <span class="num">1</span>, <span class="str">&quot;Pro&quot;</span>: <span class="num">2</span>})
+pd.get_dummies(s, dtype=int)
+<span class="cmt"># target mean from the training rows only; an unseen level gets the global train mean</span>
+train = pd.DataFrame({<span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>], <span class="str">&quot;y&quot;</span>: [<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>]})
+means = train.groupby(<span class="str">&quot;city&quot;</span>)[<span class="str">&quot;y&quot;</span>].mean()
+pd.Series([<span class="str">&quot;a&quot;</span>, <span class="str">&quot;c&quot;</span>]).map(means).fillna(train[<span class="str">&quot;y&quot;</span>].mean())</pre></div><h2>NumPy</h2><div class="snip"><h3>Creation</h3><pre>np.array([[<span class="num">1.0</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>]])
+np.zeros((<span class="num">2</span>, <span class="num">3</span>)), np.ones(<span class="num">4</span>), np.arange(<span class="num">6</span>), np.linspace(<span class="num">0</span>, <span class="num">1</span>, <span class="num">5</span>)
+np.eye(<span class="num">3</span>)</pre></div><div class="snip"><h3>reshape and axis</h3><pre><span class="cmt"># the last axis is the one that changes fastest in a C reshape</span>
+<span class="cmt"># keepdims=True so a reduced column still broadcasts against the rows</span>
+x = np.arange(<span class="num">6</span>).reshape(<span class="num">2</span>, <span class="num">3</span>)
+x.sum(axis=<span class="num">0</span>)
+x.sum(axis=<span class="num">1</span>, keepdims=<span class="kw">True</span>)
+x.T, x.ravel()</pre></div><div class="snip"><h3>Broadcasting</h3><pre><span class="cmt"># a (3,) vector lines up with the last axis</span>
+X = np.array([[<span class="num">1.0</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>], [<span class="num">5</span>, <span class="num">8</span>]])
+mu = X.mean(axis=<span class="num">0</span>)
+sd = X.std(axis=<span class="num">0</span>, ddof=<span class="num">1</span>)
+(X - mu) / sd</pre></div><div class="snip"><h3>Boolean masks</h3><pre>x = np.array([<span class="num">1</span>, -<span class="num">2</span>, <span class="num">3</span>, <span class="num">0</span>])
+x[x &gt; <span class="num">0</span>]
+x[np.array([<span class="kw">True</span>, <span class="kw">False</span>, <span class="kw">True</span>, <span class="kw">False</span>])]</pre></div><div class="snip"><h3>where</h3><pre>x = np.array([<span class="num">1</span>, -<span class="num">2</span>, <span class="num">3</span>, <span class="num">0</span>])
+np.where(x &gt; <span class="num">0</span>, x, <span class="num">0</span>)   <span class="cmt"># value if true, value if false</span>
+np.where(x &gt; <span class="num">0</span>)         <span class="cmt"># indices only, when you pass one argument</span></pre></div><div class="snip"><h3>argsort and argmax</h3><pre>x = np.array([<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">2</span>])
+np.argsort(x)           <span class="cmt"># indices that would sort ascending</span>
+np.argsort(-x)          <span class="cmt"># descending, for numbers</span>
+np.argmax(x), np.argmin(x)</pre></div><div class="snip"><h3>unique counts</h3><pre>vals, counts = np.unique(np.array([<span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">2</span>]), return_counts=<span class="kw">True</span>)
+vals, counts</pre></div><div class="snip"><h3>percentile</h3><pre>np.percentile(np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">100</span>]), [<span class="num">25</span>, <span class="num">50</span>, <span class="num">75</span>])
+np.quantile(np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]), <span class="num">0.5</span>)</pre></div><div class="snip"><h3>Generator and seed</h3><pre><span class="cmt"># seed a Generator; do not rely on the legacy global np.random.seed</span>
+rng = np.random.default_rng(<span class="num">0</span>)
+rng.normal(<span class="num">0</span>, <span class="num">1</span>, size=<span class="num">5</span>)
+rng.choice(<span class="num">5</span>, size=<span class="num">3</span>, replace=<span class="kw">False</span>)</pre></div><div class="snip"><h3>Vectorised distance</h3><pre>pts = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>]])
+cent = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">1</span>]])
+dist = ((pts[:, <span class="kw">None</span>, :] - cent[<span class="kw">None</span>, :, :]) ** <span class="num">2</span>).sum(axis=<span class="num">2</span>)
+dist.argmin(axis=<span class="num">1</span>)</pre></div><div class="snip"><h3>linalg</h3><pre>A = np.array([[<span class="num">1.0</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">5</span>]])
+b = np.array([<span class="num">1.0</span>, <span class="num">2</span>])
+np.linalg.solve(A, b)
+n = <span class="num">4</span>
+x = np.arange(n, dtype=float)
+y = <span class="num">1</span> + <span class="num">2</span> * x
+design = np.column_stack([np.ones(n), x])
+np.linalg.lstsq(design, y, rcond=<span class="kw">None</span>)[<span class="num">0</span>]  <span class="cmt"># intercept, slope</span></pre></div><div class="snip"><h3>mean and std</h3><pre><span class="cmt"># np.std default ddof=0 (population). pandas Series.std() default ddof=1 (sample)</span>
+x = np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>])
+np.mean(x)
+np.std(x)
+np.std(x, ddof=<span class="num">1</span>)
+float(pd.Series(x).std())</pre></div><h2>scikit-learn</h2><div class="snip"><h3>train_test_split</h3><pre><span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+df = pd.DataFrame({<span class="str">&quot;x&quot;</span>: range(<span class="num">20</span>), <span class="str">&quot;y&quot;</span>: [<span class="num">0</span>, <span class="num">1</span>] * <span class="num">10</span>})
+train, test = train_test_split(df, test_size=<span class="num">0.25</span>, random_state=<span class="num">0</span>, stratify=df[<span class="str">&quot;y&quot;</span>])</pre></div><div class="snip"><h3>Pipeline and ColumnTransformer</h3><pre><span class="kw">from</span> sklearn.compose <span class="kw">import</span> ColumnTransformer
+<span class="kw">from</span> sklearn.impute <span class="kw">import</span> SimpleImputer
+<span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> Pipeline
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> OneHotEncoder, StandardScaler
+num = Pipeline([(<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;median&quot;</span>)), (<span class="str">&quot;sc&quot;</span>, StandardScaler())])
+cat = Pipeline([
+    (<span class="str">&quot;imp&quot;</span>, SimpleImputer(strategy=<span class="str">&quot;most_frequent&quot;</span>)),
+    (<span class="str">&quot;oh&quot;</span>, OneHotEncoder(handle_unknown=<span class="str">&quot;ignore&quot;</span>, sparse_output=<span class="kw">False</span>)),
+])
+pre = ColumnTransformer([(<span class="str">&quot;num&quot;</span>, num, [<span class="str">&quot;age&quot;</span>]), (<span class="str">&quot;cat&quot;</span>, cat, [<span class="str">&quot;city&quot;</span>])])
+X = pd.DataFrame({
+    <span class="str">&quot;age&quot;</span>: [<span class="num">20.0</span>, np.nan, <span class="num">40.0</span>, <span class="num">50.0</span>],
+    <span class="str">&quot;city&quot;</span>: [<span class="str">&quot;a&quot;</span>, <span class="str">&quot;b&quot;</span>, np.nan, <span class="str">&quot;a&quot;</span>],
+})
+pre.fit_transform(X)</pre></div><div class="snip"><h3>StandardScaler</h3><pre><span class="cmt"># fit on train only; a zero-variance train column becomes 0</span>
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+train = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>, <span class="num">5</span>, <span class="num">5</span>]})
+test = pd.DataFrame({<span class="str">&quot;a&quot;</span>: [<span class="num">4.0</span>], <span class="str">&quot;b&quot;</span>: [<span class="num">5.0</span>]})
+scaler = StandardScaler().fit(train)
+train[list(train.columns)] = scaler.transform(train)
+test[list(test.columns)] = scaler.transform(test)</pre></div><div class="snip"><h3>Linear, Ridge, Lasso, logistic</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> Lasso, LinearRegression, LogisticRegression, Ridge
+X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">1</span>]])
+y = np.array([<span class="num">0.0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>])
+y_cls = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
+LinearRegression().fit(X, y).coef_
+Ridge(alpha=<span class="num">1.0</span>).fit(X, y).intercept_
+Lasso(alpha=<span class="num">0.01</span>, max_iter=<span class="num">5000</span>).fit(X, y).coef_
+<span class="cmt"># predict_proba[:, 1] is the positive score; predict() already cut at 0.5</span>
+LogisticRegression(max_iter=<span class="num">500</span>, class_weight=<span class="str">&quot;balanced&quot;</span>).fit(X, y_cls).predict_proba(X)[:, <span class="num">1</span>]</pre></div><div class="snip"><h3>Forests, boosting, k-means</h3><pre><span class="kw">from</span> sklearn.cluster <span class="kw">import</span> KMeans
+<span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> GradientBoostingClassifier, RandomForestClassifier
+X = np.array([[<span class="num">0.0</span>, <span class="num">0</span>], [<span class="num">0</span>, <span class="num">1</span>], [<span class="num">1</span>, <span class="num">0</span>], [<span class="num">1</span>, <span class="num">1</span>], [<span class="num">0.1</span>, <span class="num">0.2</span>], [<span class="num">0.8</span>, <span class="num">0.9</span>]])
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">1</span>])
+RandomForestClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>, class_weight=<span class="str">&quot;balanced&quot;</span>).fit(X, y).predict(X)
+GradientBoostingClassifier(n_estimators=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X, y).predict(X)
+KMeans(n_clusters=<span class="num">2</span>, n_init=<span class="num">10</span>, random_state=<span class="num">0</span>).fit(X).labels_</pre></div><div class="snip"><h3>Cross-validation and grid search</h3><pre><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LogisticRegression
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> GridSearchCV, KFold, StratifiedKFold, cross_val_score
+X = np.arange(<span class="num">8</span>, dtype=float).reshape(-<span class="num">1</span>, <span class="num">1</span>)
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
+est = LogisticRegression(max_iter=<span class="num">200</span>)
+cv = StratifiedKFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>)
+cross_val_score(est, X, y, cv=cv, scoring=<span class="str">&quot;accuracy&quot;</span>).mean()
+list(KFold(n_splits=<span class="num">4</span>, shuffle=<span class="kw">True</span>, random_state=<span class="num">0</span>).split(X))
+<span class="cmt"># best_score_ is the CV score, not a fresh holdout</span>
+GridSearchCV(est, {<span class="str">&quot;C&quot;</span>: [<span class="num">0.1</span>, <span class="num">1.0</span>]}, cv=<span class="num">4</span>, scoring=<span class="str">&quot;accuracy&quot;</span>).fit(X, y).best_params_</pre></div><div class="snip"><h3>Metrics</h3><pre><span class="kw">from</span> sklearn.metrics <span class="kw">import</span> (
+    accuracy_score, confusion_matrix, f1_score, mean_absolute_error,
+    mean_squared_error, precision_score, r2_score, recall_score,
+    roc_auc_score, root_mean_squared_error,
+)
+y = np.array([<span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>])
+pred = np.array([<span class="num">0</span>, <span class="num">1</span>, <span class="num">1</span>, <span class="num">1</span>])
+score = np.array([<span class="num">0.1</span>, <span class="num">0.4</span>, <span class="num">0.8</span>, <span class="num">0.9</span>])  <span class="cmt"># ranking score, not the 0/1 cut</span>
+accuracy_score(y, pred)
+precision_score(y, pred, zero_division=<span class="num">0</span>)
+recall_score(y, pred, zero_division=<span class="num">0</span>)
+f1_score(y, pred, zero_division=<span class="num">0</span>)
+roc_auc_score(y, score)  <span class="cmt"># pass predict_proba[:, 1], not predict()</span>
+confusion_matrix(y, pred)
+yt, yp = np.array([<span class="num">1.0</span>, <span class="num">2</span>, <span class="num">3</span>]), np.array([<span class="num">1.1</span>, <span class="num">1.8</span>, <span class="num">3.4</span>])
+mean_absolute_error(yt, yp)
+root_mean_squared_error(yt, yp)          <span class="cmt"># same as mean_squared_error(...) ** 0.5</span>
+mean_squared_error(yt, yp)
+r2_score(yt, yp)</pre></div><div class="snip"><h3>Leakage rules</h3><p class="fact">Fit the imputer, scaler, encoder, and any target mean on the training rows only. Transform the test with those fitted objects.
+A feature from after the decision (a later refund, a window that includes the future) will not exist when you score.
+A column that is a copy of the label, or a deterministic function of it, looks perfect offline and is useless live.
+A random row split does not fix a feature that already contains the label. For dated rows, split by time.
+A statistic computed on the whole table (a global target mean, a percentile fit on train+test) leaks the test into the train.</p></div><h2>Stats and probability</h2><div class="snip"><h3>Formulas</h3><pre><span class="cmt"># Bayes P(A|B) = P(B|A)P(A)/P(B). PPV = TP/(TP+FP) is that, with A = &quot;truly positive&quot;.</span>
+<span class="cmt"># Var = E[X^2] - (E[X])^2. SE = sigma/sqrt(n). A 95% margin is about 1.96*SE.</span>
+<span class="cmt"># Binomial C(n,k) p^k (1-p)^(n-k). Poisson P(0) = exp(-lambda).</span>
+<span class="cmt"># Geometric P(T=k) = (1-p)^(k-1) p, mean 1/p. Gini = 2*AUC - 1.</span>
+<span class="cmt"># WAPE = sum(|error|) / sum(|actual|). MAPE divides by each actual and breaks at 0.</span>
+<span class="cmt"># Adj R^2 = 1 - (1-R^2) * (n-1) / (n-p-1).</span>
+<span class="kw">from</span> math <span class="kw">import</span> comb, exp
+bayes = <span class="num">0.9</span> * <span class="num">0.02</span> / <span class="num">0.05</span>
+ev = <span class="num">0</span> * <span class="num">0.2</span> + <span class="num">1</span> * <span class="num">0.5</span> + <span class="num">2</span> * <span class="num">0.3</span>
+var = (<span class="num">0</span>**<span class="num">2</span> * <span class="num">0.2</span> + <span class="num">1</span>**<span class="num">2</span> * <span class="num">0.5</span> + <span class="num">2</span>**<span class="num">2</span> * <span class="num">0.3</span>) - ev**<span class="num">2</span>
+se = <span class="num">15</span> / (<span class="num">36</span> ** <span class="num">0.5</span>)
+binom = comb(<span class="num">8</span>, <span class="num">2</span>) * (<span class="num">0.25</span> ** <span class="num">2</span>) * (<span class="num">0.75</span> ** <span class="num">6</span>)
+pois0 = exp(-<span class="num">2</span>)
+geom = (<span class="num">0.8</span> ** <span class="num">3</span>) * <span class="num">0.2</span>  <span class="cmt"># P(T=4) when p=0.2</span></pre></div><div class="snip"><h3>Binomial, Poisson, normal</h3><pre><span class="kw">from</span> scipy <span class="kw">import</span> stats
+stats.binom.pmf(<span class="num">2</span>, n=<span class="num">8</span>, p=<span class="num">0.25</span>)
+stats.poisson.pmf(<span class="num">0</span>, mu=<span class="num">2</span>)
+stats.norm.ppf(<span class="num">0.975</span>)   <span class="cmt"># about 1.96, the two-sided 95% z</span>
+stats.norm.cdf(<span class="num">0</span>)</pre></div><div class="snip"><h3>CLT, standard error, interval</h3><pre><span class="cmt"># SE = sigma / sqrt(n). Large n: mean ± z * SE. z = norm.ppf(0.975) for 95%.</span>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+mean, sigma, n = <span class="num">250.0</span>, <span class="num">15.0</span>, <span class="num">36</span>
+se = sigma / np.sqrt(n)
+z = stats.norm.ppf(<span class="num">0.975</span>)
+(mean - z * se, mean + z * se)</pre></div><div class="snip"><h3>t-test, chi-square, two proportions</h3><pre><span class="cmt"># p is not the probability the null is true; it is the chance of a result</span>
+<span class="cmt"># at least this extreme if the null is true. It is not an effect size.</span>
+<span class="kw">from</span> scipy <span class="kw">import</span> stats
+stats.ttest_ind([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>], [<span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">6</span>], equal_var=<span class="kw">False</span>).pvalue
+stats.chisquare([<span class="num">12</span>, <span class="num">8</span>, <span class="num">10</span>, <span class="num">10</span>]).pvalue
+p1, n1, p2, n2 = <span class="num">0.40</span>, <span class="num">100</span>, <span class="num">0.30</span>, <span class="num">100</span>
+p = (p1 * n1 + p2 * n2) / (n1 + n2)
+z = (p1 - p2) / np.sqrt(p * (<span class="num">1</span> - p) * (<span class="num">1</span> / n1 + <span class="num">1</span> / n2))
+<span class="num">2</span> * stats.norm.sf(abs(z))</pre></div><div class="snip"><h3>A/B sample size</h3><pre><span class="cmt"># Rule of thumb, two-sided 5%, about 80% power, n per arm:</span>
+<span class="cmt"># 16 * p * (1-p) / delta**2. Fix the metric before you look.</span>
+p, delta = <span class="num">0.10</span>, <span class="num">0.02</span>
+n_per_arm = <span class="num">16</span> * p * (<span class="num">1</span> - p) / delta**<span class="num">2</span></pre></div><div class="snip"><h3>Correlation and causation</h3><p class="fact">Correlation is a symmetric association. It does not pick a direction.
+A cause needs a reason: randomisation, a discontinuity, or an assumption you can defend.
+Conditioning on a mediator (a variable on the path from the cause to the effect) removes part of the effect you wanted.
+Conditioning on a common effect can create a fake association. A control that is only a common cause is the one you want.</p></div><h2>ML theory</h2><div class="snip"><h3>Bias and variance</h3><p class="fact">High bias: train and test are both weak. The model is too rigid for the pattern.
+High variance: train is strong and test is weak. The model memorised the sample.
+More data mainly cuts variance. A richer model cuts bias. Regularisation, fewer features, and a shallower tree cut variance.</p></div><div class="snip"><h3>L1 and L2</h3><p class="fact">L2 (Ridge) shrinks coefficients toward 0 and keeps all of them. Correlated features share the weight.
+L1 (Lasso) can set coefficients to exactly 0, so the feature list gets shorter. Of two correlated features it tends to keep one.
+The penalty is on the size of the coefficient, so scale the features first or a large-unit column eats the whole penalty.</p></div><div class="snip"><h3>Which metric</h3><p class="fact">Equal cost, balanced classes: accuracy or F1.
+Rare positives and a review budget: precision at the top k, or recall at a fixed precision. Accuracy hides a majority classifier.
+A ranking score: ROC-AUC, or PR-AUC when positives are rare. Gini = 2*AUC - 1.
+Regression: MAE when outliers should not dominate, RMSE when large misses are expensive, R² against predicting the mean.
+MAPE explodes when an actual is 0. WAPE = sum(|error|) / sum(|actual|) stays defined while the denominator is not 0.</p></div><div class="snip"><h3>Precision and recall</h3><p class="fact">Precision = TP / (TP + FP): of the rows you flagged, how many were real.
+Recall = TP / (TP + FN): of the real positives, how many you flagged.
+Raising the threshold usually lifts precision and cuts recall. You pick the point from the cost, not from 0.5.
+class_weight=&#x27;balanced&#x27; (or a threshold that is not 0.5) when the rare class is the one that matters.</p></div><div class="snip"><h3>ROC and PR</h3><p class="fact">ROC plots the true positive rate against the false positive rate. A sea of true negatives makes the false positive rate look small.
+Precision-recall plots precision against recall and ignores the true negatives. Use it when positives are rare.
+AUC summarises the ranking. It is not the operating point you will ship; the threshold chooses that.</p></div><div class="snip"><h3>Tree vs linear</h3><p class="fact">Linear: readable coefficients, wants scaled numeric inputs, misses interactions unless you add them.
+A tree cuts thresholds and interactions on its own, ignores monotone rescaling, and predicts a leaf constant outside the training range.
+A forest averages unstable trees. Boosting fits residuals and overfits if the trees are deep or there are too many of them.</p></div><div class="snip"><h3>Overfitting signs</h3><p class="fact">Train score far above the validation score.
+A deep tree, tiny leaves, or a target encoding of a high-cardinality column with no smoothing.
+A feature that would not exist at the time of the decision, added because the offline number went up.
+The cure is a holdout you did not tune on, a simpler model, or more data — not another look at the test set.</p></div><div class="snip"><h3>Cross-validation</h3><p class="fact">k-fold averages k cuts. StratifiedKFold keeps the class rate in each fold.
+Shuffle only when the rows are exchangeable. Do not shuffle a time series; train on the past and test on the next window.
+The score you tuned on is optimistic. Quote a holdout that the search never saw.</p></div><div class="snip"><h3>When to scale</h3><p class="fact">Scale for linear and logistic regression, ridge and lasso, k-means, k-NN, PCA, and SVM.
+Trees, random forests, and gradient boosting do not need scaled inputs.
+Fit the scaler on the training fold only. A Pipeline does that per fold.</p></div><h2>SQL</h2><div class="snip"><h3>JOIN, GROUP BY, HAVING</h3><pre><span class="cmt">-- WHERE filters rows before the groups. HAVING filters groups.</span>
+<span class="cmt">-- COUNT(*) counts rows; SUM ignores nulls.</span>
+<span class="kw">SELECT</span> c.segment,
+       <span class="kw">ROUND</span>(<span class="kw">SUM</span>(o.amount), <span class="num">2</span>) <span class="kw">AS</span> revenue,
+       <span class="kw">COUNT</span>(*) <span class="kw">AS</span> orders
+<span class="kw">FROM</span> orders o
+<span class="kw">JOIN</span> customers c <span class="kw">ON</span> c.id = o.customer_id
+<span class="kw">WHERE</span> o.status = <span class="str">&#x27;paid&#x27;</span>
+<span class="kw">GROUP</span> <span class="kw">BY</span> c.segment
+<span class="kw">HAVING</span> <span class="kw">COUNT</span>(*) &gt;= <span class="num">2</span>
+<span class="kw">ORDER</span> <span class="kw">BY</span> c.segment;</pre></div><div class="snip"><h3>Window functions</h3><pre><span class="cmt">-- ROW_NUMBER never ties. RANK skips after a tie. DENSE_RANK does not skip.</span>
+<span class="cmt">-- LAG / LEAD are null at the edge. Filter a window in an outer query, not in WHERE.</span>
+<span class="cmt">-- ROWS is the frame you want for a running sum; RANGE also pulls in peer rows.</span>
+<span class="kw">SELECT</span> category, sku, revenue,
+       <span class="kw">ROW_NUMBER</span>() <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category
+         <span class="kw">ORDER</span> <span class="kw">BY</span> revenue <span class="kw">DESC</span>, sku
+       ) <span class="kw">AS</span> rn,
+       <span class="kw">RANK</span>() <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category
+         <span class="kw">ORDER</span> <span class="kw">BY</span> revenue <span class="kw">DESC</span>
+       ) <span class="kw">AS</span> rnk,
+       <span class="kw">DENSE_RANK</span>() <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category
+         <span class="kw">ORDER</span> <span class="kw">BY</span> revenue <span class="kw">DESC</span>
+       ) <span class="kw">AS</span> dr,
+       <span class="kw">LAG</span>(revenue) <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category <span class="kw">ORDER</span> <span class="kw">BY</span> month
+       ) <span class="kw">AS</span> prev,
+       <span class="kw">LEAD</span>(revenue) <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category <span class="kw">ORDER</span> <span class="kw">BY</span> month
+       ) <span class="kw">AS</span> nxt,
+       <span class="kw">SUM</span>(revenue) <span class="kw">OVER</span> (
+         <span class="kw">PARTITION</span> <span class="kw">BY</span> category <span class="kw">ORDER</span> <span class="kw">BY</span> month
+         <span class="kw">ROWS</span> <span class="kw">BETWEEN</span> <span class="kw">UNBOUNDED</span> <span class="kw">PRECEDING</span>
+                      <span class="kw">AND</span> <span class="kw">CURRENT</span> ROW
+       ) <span class="kw">AS</span> running
+<span class="kw">FROM</span> sales
+<span class="kw">ORDER</span> <span class="kw">BY</span> category, month;</pre></div><div class="snip"><h3>CTEs and CASE</h3><pre><span class="kw">WITH</span> paid <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> customer_id, amount,
+         <span class="kw">CASE</span> <span class="kw">WHEN</span> amount &gt;= <span class="num">50</span> <span class="kw">THEN</span> <span class="str">&#x27;big&#x27;</span> <span class="kw">ELSE</span> <span class="str">&#x27;small&#x27;</span> <span class="kw">END</span> <span class="kw">AS</span> band
+  <span class="kw">FROM</span> orders
+  <span class="kw">WHERE</span> status = <span class="str">&#x27;paid&#x27;</span>
+)
+<span class="kw">SELECT</span> band, <span class="kw">COUNT</span>(*) <span class="kw">AS</span> n, <span class="kw">SUM</span>(amount) <span class="kw">AS</span> revenue
+<span class="kw">FROM</span> paid
+<span class="kw">GROUP</span> <span class="kw">BY</span> band
+<span class="kw">ORDER</span> <span class="kw">BY</span> band;</pre></div><div class="snip"><h3>NULL and LEFT JOIN</h3><pre><span class="cmt">-- col = NULL is never true. Use IS NULL. NULL = NULL is not true.</span>
+<span class="cmt">-- A predicate on the right table in WHERE drops the unmatched left rows.</span>
+<span class="cmt">-- Put that predicate in ON. COUNT(col) skips nulls; COUNT(*) does not.</span>
+<span class="kw">SELECT</span> c.id,
+       <span class="kw">COALESCE</span>(<span class="kw">SUM</span>(o.amount), <span class="num">0</span>) <span class="kw">AS</span> revenue,
+       <span class="kw">COUNT</span>(o.id) <span class="kw">AS</span> paid_orders
+<span class="kw">FROM</span> customers c
+<span class="kw">LEFT</span> <span class="kw">JOIN</span> orders o
+  <span class="kw">ON</span> o.customer_id = c.id <span class="kw">AND</span> o.status = <span class="str">&#x27;paid&#x27;</span>
+<span class="kw">GROUP</span> <span class="kw">BY</span> c.id
+<span class="kw">ORDER</span> <span class="kw">BY</span> c.id;</pre></div><div class="snip"><h3>Dates</h3><pre><span class="kw">SELECT</span> strftime(<span class="str">&#x27;%Y-%m&#x27;</span>, ordered_on) <span class="kw">AS</span> ym,
+       date(ordered_on, <span class="str">&#x27;start of month&#x27;</span>) <span class="kw">AS</span> month_start,
+       date(ordered_on, <span class="str">&#x27;+1 month&#x27;</span>) <span class="kw">AS</span> next_month
+<span class="kw">FROM</span> orders
+<span class="kw">ORDER</span> <span class="kw">BY</span> ordered_on;</pre></div><h2>Test-day tactics</h2><div class="snip"><h3>Read the tests first</h3><p class="fact">The visible example is the contract: column names, order, types, and what a tie should do.
+Hidden tests follow that contract. Write the function signature the tests call, then make the example pass.</p></div><div class="snip"><h3>Print the frame</h3><p class="fact">Before a join: print(df.head()), df.shape, df.dtypes, list(df.columns).
+Print the row count before and after a merge. A sudden multiplication means a duplicated key.</p></div><div class="snip"><h3>Edges</h3><p class="fact">Empty frame, a column that is all missing, a tie, a duplicated key, a category that appears only on the test side, and a divide by zero.
+A one-row group makes a sample z-score NaN, because pandas std uses ddof=1.</p></div><div class="snip"><h3>Rounding</h3><p class="fact">Round the number you return, not the inputs along the way.
+Numeric answers are three decimals, accepted within 0.001.
+np.std is population (ddof=0). Series.std() and DataFrame.std() are sample (ddof=1).</p></div><div class="snip"><h3>Time box</h3><p class="fact">About 4 minutes for a numeric, 3 minutes for a multiple-choice item, 15 minutes for each coding task.
+A running partial that you can submit beats a blank cell. If a model is not there, ship the split and the metric.</p></div><h2>Senior cases</h2><div class="snip"><h3>Forecasting</h3><p class="fact">Name the decision and the grain first. The baseline is a seasonal naive.
+Score WAPE and bias, not MAPE alone. Stockouts censor demand. Validate with a rolling origin.
+Intermittent demand: a rate and a size, then a stock quantile.</p></div><div class="snip"><h3>Churn</h3><p class="fact">The decision is who to contact under a budget. Risk is not uplift.
+Split by time. Value times save rate, minus cost. Compare with calling the riskiest customers.
+Randomise before you trust a save rate.</p></div><div class="snip"><h3>Price and markdowns</h3><p class="fact">Name the decision variable and the constraints before the model. The objective is usually contribution.
+Sell-outs do not trace the demand curve. Pilot inside the move you are willing to keep.
+Markdowns are a small discrete set plus a salvage value.</p></div><div class="snip"><h3>System design</h3><p class="fact">A weekly list can be a batch. Use one feature query for training and for serving.
+On failure, republish the last good scores. Log features, version, score, decision, and outcome.
+A timeout falls back to rules. Shadow, then a slice, with a kill switch.</p></div></div></body></html>
