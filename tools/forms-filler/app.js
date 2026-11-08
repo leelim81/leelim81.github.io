@@ -204,6 +204,7 @@
   var formToken = 0;
   var takeToken = 0;
   var fillToken = 0;
+  var sampleToken = 0;
   var refSeq = 0;
   var userTouched = false;
 
@@ -1484,20 +1485,35 @@
   $('refInput').addEventListener('change', function () {
     takeFiles(snapshotFiles($('refInput')), 'ref', $('refInput'));
   });
+  function releaseRefs() {
+    var pending = state.refs.slice();
+    state.refs = [];
+    state.readEpoch = (state.readEpoch || 0) + 1;
+    state.proposals = [];
+    if (window.FormExtract && FormExtract.cancelAll) FormExtract.cancelAll();
+    else pending.forEach(stopRead);
+    refreshLabels();
+  }
+
   $('sampleBtn').addEventListener('click', async function () {
+    var token = ++sampleToken;
     userTouched = true;
     status('Opening the sample…', true);
     try {
       var form = new Uint8Array(await (await fetch('samples/visitor-form.pdf')).arrayBuffer());
       var ref = new Uint8Array(await (await fetch('samples/visitor-reference.pdf')).arrayBuffer());
       var card = new Uint8Array(await (await fetch('samples/id-card.png')).arrayBuffer());
-      state.refs = [];
+      if (token !== sampleToken) return;
+      releaseRefs();
       var applied = await setForm(form, 'visitor-form.pdf');
-      if (!applied) return;
-      await addRef(ref, 'visitor-reference.pdf', 'application/pdf');
-      await addRef(card, 'id-card.png', 'image/png');
+      if (!applied || token !== sampleToken) return;
+      addRef(ref, 'visitor-reference.pdf', 'application/pdf');
+      if (token !== sampleToken) return;
+      addRef(card, 'id-card.png', 'image/png');
+      if (token !== sampleToken) return;
       status('', false);
     } catch (err) {
+      if (token !== sampleToken) return;
       toast('The sample files could not be opened.');
       status('', false);
     }
