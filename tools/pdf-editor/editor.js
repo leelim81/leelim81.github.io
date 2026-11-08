@@ -486,6 +486,14 @@
     mirror.textContent = shown;
     if (!body) return;
     var caret = focused && document.activeElement === body ? flatCaret(body) : null;
+    if (focused && document.activeElement === body) {
+      var live = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+      var want = String(shown || '').replace(/\n$/, '');
+      if (live === want) {
+        el.dataset.painted = shown;
+        return;
+      }
+    }
     el.dataset.painting = '1';
     if (focused) {
       body.textContent = shown;

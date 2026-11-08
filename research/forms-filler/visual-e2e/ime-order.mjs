@@ -75,7 +75,7 @@ const host = await page.evaluate(() => {
     focus: document.activeElement.className
   };
 });
-check('editing-host undo does not consume annotation undo', host.inserted && host.afterInsert === 'Bea TwoQ' && host.afterUndo === 'Bea TwoQ' && host.count === 2 && host.undoDisabled === false && host.focus === 'ann-body', JSON.stringify(host));
+check('editing-host undo removes the inserted character and keeps the mark', host.inserted && host.afterInsert === 'Bea TwoQ' && host.afterUndo === 'Bea Two' && host.count === 2 && host.undoDisabled === false && host.focus === 'ann-body', JSON.stringify(host));
 const beforeKey = await page.locator('.ann-body').last().innerText();
 await page.keyboard.press('Control+z');
 const afterKey = await page.evaluate(() => ({
@@ -84,7 +84,8 @@ const afterKey = await page.evaluate(() => ({
   count: document.querySelectorAll('.ann').length,
   undoDisabled: document.getElementById('recoverUndo').disabled
 }));
-check('the browser Ctrl+Z chord does not consume annotation undo', afterKey.editing && afterKey.count === 2 && afterKey.undoDisabled === false && afterKey.text === beforeKey, JSON.stringify({ beforeKey, afterKey }));
+check('the browser Ctrl+Z chord removes one character and keeps the mark', beforeKey === 'Bea Two' && afterKey.editing && afterKey.count === 2 && afterKey.undoDisabled === false && afterKey.text === 'Bea Tw', JSON.stringify({ beforeKey, afterKey }));
+await page.keyboard.type('o');
 const split = await page.evaluate(() => {
   const marks = Array.from(document.querySelectorAll('.ann-body'));
   const second = marks[marks.length - 1];

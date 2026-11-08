@@ -1,0 +1,127 @@
+/** Browser keyboard undo restores typed characters. Annotation undo waits until Escape.
+ *  Viewport 390 by 700. This is not a phone. */
+import { readFileSync, writeFileSync } from 'fs';
+import { createRequire } from 'module';
+import { inflateSync } from 'zlib';
+import pkg from '/tmp/e2e/node_modules/playwright-core/index.js';
+const require = createRequire('/tmp/formgen/node_modules/pdf-lib/package.json');
+const { PDFDocument, StandardFonts } = require('pdf-lib');
+const { chromium } = pkg;
+const checks = [];
+function check(name, ok, detail) {
+  checks.push({ name, ok: !!ok, detail: detail == null ? '' : String(detail).slice(0, 500) });
+  console.log((ok ? 'PASS' : 'FAIL') + ' ' + name + (detail ? ' :: ' + String(detail).slice(0, 300) : ''));
+}
+function decode(buf) {
+  const raw = Buffer.from(buf).toString('latin1');
+  const out = [];
+  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let match;
+  while ((match = re.exec(raw))) {
+    const chunk = Buffer.from(match[1], 'latin1');
+    try { out.push(inflateSync(chunk)); } catch (err) { out.push(chunk); }
+  }
+  const body = Buffer.concat(out).toString('latin1');
+  return [...body.matchAll(/<([0-9A-Fa-f\s]+)>/g)].map((item) => Buffer.from(item[1].replace(/\s+/g, ''), 'hex').toString('utf8')).join(' | ');
+}
+function flat(value) { return String(value || '').replace(/\u00a0/g, ' ').replace(/\n$/, ''); }
+const doc = await PDFDocument.create();
+doc.addPage([612, 792]).drawText('Full name', { x: 72, y: 700, size: 12, font: await doc.embedFont(StandardFonts.Helvetica) });
+writeFileSync('/tmp/undo-blank.pdf', await doc.save());
+const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+const context = await browser.newContext({ viewport: { width: 390, height: 700 }, acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] });
+const page = await context.newPage();
+page.setDefaultTimeout(20000);
+await page.goto('http://127.0.0.1:8777/tools/pdf-editor/?undo=' + Date.now(), { waitUntil: 'domcontentloaded' });
+await page.evaluate(() => ['tools-forms-editor', 'tools-forms-profiles'].forEach((name) => indexedDB.deleteDatabase(name)));
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.evaluate(async () => {
+  const loaded = await FormProfiles.load();
+  const now = new Date().toISOString();
+  const vault = loaded.vault;
+  vault.profiles.push({ id: 'ada', name: 'Ada Lane', createdAt: now, updatedAt: now, facts: [] });
+  vault.profiles.push({ id: 'bea', name: 'Bea Shore', createdAt: now, updatedAt: now, facts: [] });
+  await FormProfiles.persist(vault);
+});
+await page.locator('#fileInput').setInputFiles('/tmp/undo-blank.pdf');
+await page.waitForFunction(() => document.querySelector('#pages .layer'));
+await page.locator('#assistToggle').click();
+await page.waitForFunction(() => document.getElementById('recoverPerson').options.length >= 2);
+await page.locator('#recoverPerson').selectOption({ label: 'Ada Lane' });
+await page.locator('#addText').click();
+await page.locator('.ann-body').click();
+await page.keyboard.type('Ada Secret');
+await page.keyboard.press('Escape');
+await page.locator('#recoverPerson').selectOption({ label: 'Bea Shore' });
+await page.waitForFunction(() => !Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)));
+await page.locator('#addText').click();
+await page.locator('.ann-body').click();
+await page.keyboard.type('Hello');
+await page.keyboard.press('Control+z');
+const undone = flat(await page.locator('.ann-body').innerText());
+const stillThere = await page.evaluate(() => ({ count: document.querySelectorAll('.ann').length, undo: document.getElementById('recoverUndo').disabled, ada: Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)) }));
+check('Ctrl+Z removes the last typed character and keeps the mark', undone === 'Hell' && stillThere.count === 1 && stillThere.undo === false && stillThere.ada === false, undone + ' ' + JSON.stringify(stillThere));
+await page.keyboard.press('Control+Shift+z');
+check('Ctrl+Shift+Z redoes the character', flat(await page.locator('.ann-body').innerText()) === 'Hello', flat(await page.locator('.ann-body').innerText()));
+await page.keyboard.press('Control+z');
+await page.keyboard.press('Control+y');
+check('Ctrl+Y redoes the character', flat(await page.locator('.ann-body').innerText()) === 'Hello', flat(await page.locator('.ann-body').innerText()));
+const beforeMeta = flat(await page.locator('.ann-body').innerText());
+await page.keyboard.press('Meta+z');
+const afterMeta = await page.evaluate(() => ({ text: document.querySelector('.ann-body').innerText.replace(/\u00a0/g, ' ').replace(/\n$/, ''), count: document.querySelectorAll('.ann').length }));
+check('Meta+Z on this Chrome does not remove the mark', afterMeta.count === 1 && afterMeta.text === beforeMeta, JSON.stringify(afterMeta));
+await page.keyboard.type('Z');
+await page.keyboard.press('ArrowLeft');
+await page.keyboard.type('X');
+check('a character typed before the caret is in place', flat(await page.locator('.ann-body').innerText()) === 'HelloXZ', flat(await page.locator('.ann-body').innerText()));
+await page.keyboard.press('Control+z');
+check('Ctrl+Z removes that inserted character and leaves the caret neighbors', flat(await page.locator('.ann-body').innerText()) === 'HelloZ', flat(await page.locator('.ann-body').innerText()));
+await page.keyboard.press('End');
+await page.keyboard.press('Shift+Enter');
+await page.keyboard.type('Next');
+const lined = flat(await page.locator('.ann-body').innerText());
+check('Shift+Enter keeps a second line', lined === 'HelloZ\nNext', JSON.stringify(lined));
+await page.keyboard.press('Control+z');
+check('Ctrl+Z removes the last character of the second line', flat(await page.locator('.ann-body').innerText()) === 'HelloZ\nNex', JSON.stringify(flat(await page.locator('.ann-body').innerText())));
+await page.evaluate(async () => { await navigator.clipboard.writeText('PasteMe'); });
+await page.keyboard.press('Control+v');
+const pasted = flat(await page.locator('.ann-body').innerText());
+check('Ctrl+V pastes into the mark', pasted === 'HelloZ\nNexPasteMe', JSON.stringify(pasted));
+await page.keyboard.press('Control+z');
+check('Ctrl+Z removes the paste', flat(await page.locator('.ann-body').innerText()) === 'HelloZ\nNex', JSON.stringify(flat(await page.locator('.ann-body').innerText())));
+await page.keyboard.type('Q');
+await page.evaluate(() => document.activeElement.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+const composing = await page.evaluate(() => document.activeElement.classList.contains('ann-body'));
+await page.keyboard.type('w');
+await page.evaluate(() => document.activeElement.dispatchEvent(new CompositionEvent('compositionend', { data: 'w', bubbles: true })));
+const composed = await page.evaluate(() => ({ editing: document.activeElement.classList.contains('ann-body'), text: document.querySelector('.ann-body').innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '') }));
+await page.keyboard.press('Control+z');
+const afterComposeUndo = flat(await page.locator('.ann-body').innerText());
+check('composition leaves the mark and Ctrl+Z removes the composed character', composing && composed.editing && composed.text === 'HelloZ\nNexQw' && afterComposeUndo === 'HelloZ\nNexQ', JSON.stringify({ composed, afterComposeUndo }));
+await page.keyboard.press('Escape');
+const left = await page.evaluate(() => ({ id: document.activeElement && document.activeElement.id, text: document.querySelector('.ann-body').innerText.replace(/\u00a0/g, ' ').replace(/\n$/, ''), ada: Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)) }));
+check('Escape keeps the edited text and does not reveal Ada', left.id === 'addText' && left.text === 'HelloZ\nNexQ' && left.ada === false, JSON.stringify(left));
+await page.locator('#downloadBtn').focus();
+await page.keyboard.press('Enter');
+await page.waitForFunction(() => document.querySelector('#sizeOptions button[data-level="100"]:not([disabled])'));
+await page.locator('#sizeOptions button[data-level="100"]').focus();
+const download = page.waitForEvent('download');
+await page.keyboard.press('Enter');
+await (await download).saveAs('/tmp/text-undo-out.pdf');
+const pdf = decode(readFileSync('/tmp/text-undo-out.pdf'));
+check('the export has the undone text and not Ada', pdf.includes('HelloZ') && pdf.includes('NexQ') && !pdf.includes('Ada Secret'), pdf.slice(0, 180));
+await page.keyboard.press('Escape');
+await page.keyboard.press('Control+z');
+await page.waitForTimeout(250);
+const cleared = await page.evaluate(() => Array.from(document.querySelectorAll('.ann-body')).map((node) => node.innerText));
+check('Ctrl+Z after Escape undoes the mark and does not reveal Ada', cleared.length === 0, cleared.join('|'));
+await page.locator('#recoverPerson').selectOption({ label: 'Ada Lane' });
+await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)));
+await page.waitForFunction(() => document.getElementById('saveState').textContent === 'Saved');
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Ada Secret/.test(node.innerText)));
+const back = await page.evaluate(() => Array.from(document.querySelectorAll('.ann-body')).map((node) => node.innerText.replace(/\u00a0/g, ' ')));
+check('reload returns Ada and not the undone Bea mark', back.some((text) => /Ada Secret/.test(text)) && !back.some((text) => /HelloZ/.test(text)), back.join('|'));
+console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
+await browser.close();
+if (checks.some((item) => !item.ok)) process.exit(1);
