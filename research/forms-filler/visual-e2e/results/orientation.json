@@ -1,0 +1,35 @@
+{
+  "checks": [
+    {
+      "name": "an upright tall sheet stays level and keeps all four edges",
+      "ok": true,
+      "detail": "{\"angle\":0,\"edgeDeg\":0,\"acc\":{\"red\":8995,\"blue\":10495,\"green\":84575,\"gold\":75752},\"box\":{\"red\":[19,0,577,18],\"blue\":[19,4437,577,4455],\"green\":[0,0,18,4455],\"gold\":[578,0,594,4455]},\"frame\":{\"angle\":0,\"inW\":247,\"inH\":1850,\"turnW\":247,\"turnH\":1850,\"crop\":{\"x\":0,\"y\":0,\"w\":247,\"h\":1850},\"outW\":247,\"outH\":1850,\"sourceW\":400,\"sourceH\":3000}}"
+    },
+    {
+      "name": "a saved tilt is kept instead of being straightened",
+      "ok": true,
+      "detail": "{\"file\":{\"deg\":-2.9990734955014786,\"n\":156},\"exported\":{\"deg\":-3.0081979821613594,\"n\":100},\"delta\":0.009124486659880748,\"bands\":[[6,35],[115,145],[224,254]],\"frame\":{\"angle\":0,\"inW\":934,\"inH\":688,\"turnW\":934,\"turnH\":688,\"crop\":{\"x\":31,\"y\":154,\"w\":871,\"h\":382},\"outW\":871,\"outH\":382,\"sourceW\":934,\"sourceH\":688},\"fields\":0}"
+    },
+    {
+      "name": "a page with no lines is not rotated or cropped away",
+      "ok": true,
+      "detail": "{\"angle\":0,\"inW\":500,\"inH\":400,\"turnW\":500,\"turnH\":400,\"crop\":{\"x\":0,\"y\":0,\"w\":500,\"h\":400},\"outW\":500,\"outH\":400,\"sourceW\":500,\"sourceH\":400}"
+    },
+    {
+      "name": "a placement on the unrotated sheet exports within 1.5pt of the click",
+      "ok": true,
+      "detail": "{\"placed\":{\"text\":\"Ada Page\",\"x\":0.3,\"y\":0.4},\"exported\":{\"x\":179.50000682630036,\"y\":273.70001365280126,\"w\":595,\"h\":476},\"expected\":{\"x\":179.5,\"y\":273.7},\"exportErr\":0.000015264251020815487}"
+    },
+    {
+      "name": "switching person cancels an armed placement",
+      "ok": true,
+      "detail": "The person changed, so the placement was cancelled."
+    },
+    {
+      "name": "replacing the photo replaces its frame",
+      "ok": true,
+      "detail": "{\"first\":{\"angle\":0,\"inW\":934,\"inH\":688,\"turnW\":934,\"turnH\":688,\"crop\":{\"x\":31,\"y\":154,\"w\":871,\"h\":382},\"outW\":871,\"outH\":382,\"sourceW\":934,\"sourceH\":688},\"second\":{\"angle\":0,\"inW\":500,\"inH\":400,\"turnW\":500,\"turnH\":400,\"crop\":{\"x\":0,\"y\":0,\"w\":500,\"h\":400},\"outW\":500,\"outH\":400,\"sourceW\":500,\"sourceH\":400}}"
+    }
+  ],
+  "failed": 0
+}

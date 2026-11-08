@@ -6,9 +6,9 @@
       "detail": "{\"back\":{\"x\":40.84896580629065,\"y\":31.30931939087838},\"errX\":0.65103419370935,\"errY\":0.1906806091216211}"
     },
     {
-      "name": "P5 is scored through the 0.3 degree turn instead of left blank",
+      "name": "P5 is scored on the unrotated sheet and still misses",
       "ok": true,
-      "detail": "{\"id\":\"census-held\",\"denominator\":3,\"suggestions\":2,\"angle\":0.3,\"geometry\":0,\"label\":0}"
+      "detail": "{\"id\":\"census-held\",\"denominator\":3,\"suggestions\":2,\"angle\":0,\"geometry\":0,\"label\":0}"
     },
     {
       "name": "a person change cancels the armed photo placement",
@@ -74,7 +74,7 @@
       "id": "census-held",
       "denominator": 3,
       "suggestions": 2,
-      "angle": 0.3,
+      "angle": 0,
       "geometry": 0,
       "label": 0
     },

@@ -2,7 +2,8 @@
    Pixels are top-left, y down. A positive angle is the canvas clockwise
    turn used by the photo reader. The crop is applied after that turn.
    sourceW and sourceH, when present, are the oriented image pixels before
-   the working-size reduction. This does not detect lines and does not change a threshold. */
+   the working-size reduction. A photo sheet’s angle is 0: the line score is
+   not painted into those pixels. This does not detect lines and does not change a threshold. */
 (function (root, factory) {
   var api = factory();
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -158,7 +158,7 @@ if (!gold) {
   }
   report.natural = natural;
   const p5 = natural.find((item) => item.id === 'census-held' && item.denominator === 3);
-  check('P5 is scored through the 0.3 degree turn instead of left blank', !!p5 && typeof p5.geometry === 'number', JSON.stringify(p5));
+  check('P5 is scored on the unrotated sheet and still misses', !!p5 && p5.angle === 0 && p5.geometry === 0 && p5.label === 0, JSON.stringify(p5));
   writeFileSync('/tmp/ff-natural-work/frame-score-public.json', JSON.stringify(natural, null, 2));
 }
 

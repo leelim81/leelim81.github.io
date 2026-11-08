@@ -141,7 +141,7 @@ const tall = await page.evaluate(async (list) => {
   return result.frame;
 }, tallBytes);
 const tallAspect = tall && Math.abs((tall.sourceW / tall.sourceH) - (tall.inW / tall.inH)) < 0.01;
-check('a tall photo keeps its aspect and its height stays within the measured sheet', !!tall && tall.sourceW === 400 && tall.sourceH === 3000 && tall.inH <= 1850 && tall.inH > 1500 && tallAspect, JSON.stringify(tall));
+check('a tall photo keeps its aspect, its height bound, and its original orientation', !!tall && tall.sourceW === 400 && tall.sourceH === 3000 && tall.inH <= 1850 && tall.inH > 1500 && tallAspect && tall.angle === 0, JSON.stringify(tall));
 
 await seed();
 await page.setInputFiles('#formInput', join(tmp, 'small-sheet.jpg'));

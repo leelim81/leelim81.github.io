@@ -3,12 +3,12 @@
     {
       "name": "a scaled mark maps back to its source pixel within 4px",
       "ok": true,
-      "detail": "{\"markErr\":0.7572589657193054,\"sourceCenter\":[818.8235294117648,619.1596638655462,818.8235294117648,619.1596638655462],\"frame\":{\"angle\":0,\"inW\":1500,\"inH\":1125,\"turnW\":1500,\"turnH\":1125,\"crop\":{\"x\":0,\"y\":0,\"w\":1500,\"h\":1125},\"outW\":1500,\"outH\":1125,\"sourceW\":2400,\"sourceH\":1800},\"ms\":1805,\"red\":437}"
+      "detail": "{\"markErr\":0.7572589657193054,\"sourceCenter\":[818.8235294117648,619.1596638655462,818.8235294117648,619.1596638655462],\"frame\":{\"angle\":0,\"inW\":1500,\"inH\":1125,\"turnW\":1500,\"turnH\":1125,\"crop\":{\"x\":0,\"y\":0,\"w\":1500,\"h\":1125},\"outW\":1500,\"outH\":1125,\"sourceW\":2400,\"sourceH\":1800},\"ms\":1188,\"red\":437}"
     },
     {
-      "name": "a tall photo keeps its aspect and its height stays within the measured sheet",
+      "name": "a tall photo keeps its aspect, its height bound, and its original orientation",
       "ok": true,
-      "detail": "{\"angle\":-1.6999999999999993,\"inW\":247,\"inH\":1850,\"turnW\":302,\"turnH\":1857,\"crop\":{\"x\":0,\"y\":0,\"w\":302,\"h\":1857},\"outW\":302,\"outH\":1857,\"sourceW\":400,\"sourceH\":3000}"
+      "detail": "{\"angle\":0,\"inW\":247,\"inH\":1850,\"turnW\":247,\"turnH\":1850,\"crop\":{\"x\":0,\"y\":0,\"w\":247,\"h\":1850},\"outW\":247,\"outH\":1850,\"sourceW\":400,\"sourceH\":3000}"
     },
     {
       "name": "a corrupt image clears the previous form instead of leaving it placeable",
@@ -18,7 +18,7 @@
     {
       "name": "an oversized header is refused before a giant decode",
       "ok": true,
-      "detail": "{\"overMs\":5,\"overStatus\":\"This image is 40000×40000. This reader stops at 4842×5964 pixels or an edge of 32768 and did not decode it.\"}"
+      "detail": "{\"overMs\":8,\"overStatus\":\"This image is 40000×40000. This reader stops at 4842×5964 pixels or an edge of 32768 and did not decode it.\"}"
     },
     {
       "name": "an oversized PNG header is refused the same way",
@@ -28,12 +28,12 @@
     {
       "name": "a PNG records its own pixel size on the sheet frame",
       "ok": true,
-      "detail": "{\"angle\":0.09999999999999998,\"inW\":480,\"inH\":240,\"turnW\":480,\"turnH\":241,\"crop\":{\"x\":19,\"y\":73,\"w\":409,\"h\":43},\"outW\":409,\"outH\":43,\"sourceW\":480,\"sourceH\":240}"
+      "detail": "{\"angle\":0,\"inW\":480,\"inH\":240,\"turnW\":480,\"turnH\":240,\"crop\":{\"x\":19,\"y\":73,\"w\":409,\"h\":43},\"outW\":409,\"outH\":43,\"sourceW\":480,\"sourceH\":240}"
     },
     {
       "name": "EXIF orientation 6 is the wide sheet and the frame stores oriented pixels",
       "ok": true,
-      "detail": "{\"exifAspect\":9.581539327423666,\"exifFrame\":{\"angle\":-0.10000000000000014,\"inW\":480,\"inH\":240,\"turnW\":480,\"turnH\":241,\"crop\":{\"x\":16,\"y\":73,\"w\":412,\"h\":43},\"outW\":412,\"outH\":43,\"sourceW\":480,\"sourceH\":240}}"
+      "detail": "{\"exifAspect\":9.511943008800111,\"exifFrame\":{\"angle\":0,\"inW\":480,\"inH\":240,\"turnW\":480,\"turnH\":240,\"crop\":{\"x\":19,\"y\":73,\"w\":409,\"h\":43},\"outW\":409,\"outH\":43,\"sourceW\":480,\"sourceH\":240}}"
     },
     {
       "name": "a native PDF keeps its original text and widget",
@@ -58,41 +58,41 @@
     {
       "name": "Surrey opens as a reduced sheet and reports the original size",
       "ok": true,
-      "detail": "{\"surreyMs\":3015,\"surreyStatus\":\"No lines were found. Use Place a missing line to put a value where you want it. Nothing was written. The photo is 4842×5964 and was reduced to 1500×1848 before a small straighten. The sheet is that image.\",\"surreyFrame\":{\"angle\":-0.10000000000000014,\"inW\":1500,\"inH\":1848,\"turnW\":1503,\"turnH\":1851,\"crop\":{\"x\":0,\"y\":0,\"w\":1503,\"h\":1851},\"outW\":1503,\"outH\":1851,\"sourceW\":4842,\"sourceH\":5964},\"heap\":28458026}"
+      "detail": "{\"surreyMs\":1867,\"surreyStatus\":\"No lines were found. Use Place a missing line to put a value where you want it. Nothing was written. The photo is 4842×5964 and was reduced to 1500×1848. The sheet is that image.\",\"surreyFrame\":{\"angle\":0,\"inW\":1500,\"inH\":1848,\"turnW\":1500,\"turnH\":1848,\"crop\":{\"x\":0,\"y\":0,\"w\":1500,\"h\":1848},\"outW\":1500,\"outH\":1848,\"sourceW\":4842,\"sourceH\":5964},\"heap\":17323948}"
     },
     {
       "name": "the fictional Surrey placement exports on the click, within 1.5pt",
       "ok": true,
-      "detail": "{\"placed\":{\"text\":\"Ada Page\",\"x\":0.4,\"y\":0.29999400000000004},\"exported\":{\"x\":239.0000034131502,\"y\":501.0396897493232,\"w\":595,\"h\":732.7644710578843},\"expected\":{\"x\":239,\"y\":501.03952632734536},\"exportErr\":0.0001634576166387217}"
+      "detail": "{\"placed\":{\"text\":\"Ada Page\",\"x\":0.4,\"y\":0.29999400000000004},\"exported\":{\"x\":239.0000034131502,\"y\":501.2325463307865,\"w\":595,\"h\":733.04},\"expected\":{\"x\":239,\"y\":501.23239823999995},\"exportErr\":0.00014813011391258507}"
     },
     {
       "name": "the click maps through the recorded frame and back within 2 sheet pixels",
       "ok": true,
-      "detail": "{\"back\":[1937.9180786949462,1786.3830266238976,1937.9180786949462,1786.3830266238976],\"again\":[601.2,555.288894],\"roundErr\":0}"
+      "detail": "{\"back\":[1936.8000000000002,1789.1642160000004,1936.8000000000002,1789.1642160000004],\"again\":[600,554.3889120000001],\"roundErr\":0}"
     }
   ],
   "limits": [],
   "surrey": {
-    "ms": 3015,
-    "status": "No lines were found. Use Place a missing line to put a value where you want it. Nothing was written. The photo is 4842×5964 and was reduced to 1500×1848 before a small straighten. The sheet is that image.",
+    "ms": 1867,
+    "status": "No lines were found. Use Place a missing line to put a value where you want it. Nothing was written. The photo is 4842×5964 and was reduced to 1500×1848. The sheet is that image.",
     "frame": {
-      "angle": -0.10000000000000014,
+      "angle": 0,
       "inW": 1500,
       "inH": 1848,
-      "turnW": 1503,
-      "turnH": 1851,
+      "turnW": 1500,
+      "turnH": 1848,
       "crop": {
         "x": 0,
         "y": 0,
-        "w": 1503,
-        "h": 1851
+        "w": 1500,
+        "h": 1848
       },
-      "outW": 1503,
-      "outH": 1851,
+      "outW": 1500,
+      "outH": 1848,
       "sourceW": 4842,
       "sourceH": 5964
     },
-    "jsHeap": 28458026
+    "jsHeap": 17323948
   },
   "failed": 0
 }

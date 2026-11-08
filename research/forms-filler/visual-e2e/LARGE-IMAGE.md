@@ -11,7 +11,7 @@ Chrome headless, one image at a time. `performance.memory.usedJSHeapSize` is the
 | Surrey JPEG, 3,714,161 bytes, SHA-256 `688174810ea3abd4dcb65c4f5c2af0c297c246ff2f3e3d682aa768c04996d03a` | 4842×5964. An RGBA buffer of those pixels is 115,510,752 bytes. |
 | `createImageBitmap` of that file | 4842×5964 in 490 ms. The page then held the full bitmap. |
 | Same call asked to resize to 1500×1848 | Returned 1500×1848. An RGBA buffer of that bitmap is 11,088,000 bytes. |
-| Current `readImage` | 3725 ms, 0 fields, working sheet 1500×1848, then a −0.1° straighten to 1503×1851. The returned frame had no original pixel size. |
+| Current `readImage`, before the orientation change | 3725 ms, 0 fields, working sheet 1500×1848, then a −0.1° straighten to 1503×1851. The returned frame had no original pixel size. The tall upright sheet in that same pass was turned −1.7°. That turn is no longer applied. See `ORIENTATION.md`. |
 | Flat JPEG, long edge 8192, 16384, and 32768 | Each resized at decode. 32768 is the longest edge that completed. |
 | Canvas element 20000×20 | The element accepted that size. That is not an image-decode limit. |
 

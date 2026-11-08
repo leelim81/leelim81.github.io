@@ -784,16 +784,19 @@
     return out;
   }
 
+  /* The photo the user sees keeps the orientation createImageBitmap already
+     normalized from EXIF. The line-angle search is not painted into that
+     sheet: an upright page was being turned by a weak score, and the export
+     then matched the turned pixels. PDF scans still consult the score and
+     refuse to turn a sideways page. */
   async function uprightSheet(canvas) {
-    var angle = await bestLineAngle(canvas);
-    var turned = angle ? rotateCanvas(canvas, angle) : canvas;
-    var cropped = cropToPage(turned);
+    var cropped = cropToPage(canvas);
     cropped._ffFrame = {
-      angle: angle || 0,
+      angle: 0,
       inW: canvas.width,
       inH: canvas.height,
-      turnW: turned.width,
-      turnH: turned.height
+      turnW: canvas.width,
+      turnH: canvas.height
     };
     return cropped;
   }

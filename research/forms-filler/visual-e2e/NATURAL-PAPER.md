@@ -61,6 +61,8 @@ A 0.3° round trip of a dot was checked in the browser before the pages were sco
 
 P5’s two suggestions are in the distribution paragraph, below the three gold lines. Their kinds are other, so they are not autofill. The inverse of 0.3° moves a point by only a few pixels, which is not enough to reach y 678–845. The raw wording of those suggestions stays out of this file. Combined geometry on the 13 targets is 0 / 13. Thresholds were not changed. This is the same three files, not a new audit.
 
+A later change stopped painting that line-score turn into the photo sheet. The same three files were scored again with the sheet angle at 0. Geometry is still 0/13, and the food-order glyph still misses the frozen name box by 1 source pixel. See `ORIENTATION.md`.
+
 ## What changed
 
 A photo that produces no lines now keeps the status “No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.” The disabled fill button no longer says it opens the editor. Place a missing line opens the PDF sheet the reader built when the upload itself is not a PDF. An upload that already is a PDF still opens that original.
