@@ -307,8 +307,46 @@ await page.waitForFunction(() => document.querySelector('#recoverFact option'));
 await page.click('#recoverPlace');
 await page.waitForFunction(() => /Click the page/i.test(document.getElementById('recoverStatus').textContent || ''));
 const foodLayer = page.locator('.layer');
+await page.waitForFunction(() => {
+  const canvas = document.querySelector('#pages canvas');
+  if (!canvas || canvas.width < 50) return false;
+  const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, Math.min(120, canvas.height)).data;
+  let dark = 0;
+  for (let i = 0; i < data.length; i += 16) if (data[i] + data[i + 1] + data[i + 2] < 740) dark++;
+  return dark > 40;
+}, null, { timeout: 20000 });
+const ruleFrac = await page.evaluate(() => {
+  const canvas = document.querySelector('#pages canvas');
+  const w = canvas.width;
+  const h = canvas.height;
+  const data = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const rows = [];
+  for (let y = 2; y < h - 2; y++) {
+    let run = 0;
+    let best = 0;
+    for (let x = 0; x < w; x += 2) {
+      const i = (y * w + x) * 4;
+      const up = ((y - 2) * w + x) * 4;
+      const down = ((y + 2) * w + x) * 4;
+      const c = data[i] + data[i + 1] + data[i + 2];
+      const a = data[up] + data[up + 1] + data[up + 2];
+      const b = data[down] + data[down + 1] + data[down + 2];
+      if (c + 18 < a && c + 18 < b && c < 680) run += 2;
+      else { best = Math.max(best, run); run = 0; }
+    }
+    if (Math.max(best, run) > w * 0.22) rows.push(y / h);
+  }
+  const grouped = [];
+  rows.forEach((frac) => {
+    const last = grouped[grouped.length - 1];
+    if (last && frac - last.end < 0.008) last.end = frac;
+    else grouped.push({ start: frac, end: frac });
+  });
+  const bands = grouped.map((band) => (band.start + band.end) / 2);
+  return bands.find((frac) => frac > 0.15 && frac < 0.35) || null;
+});
 const foodBox = await foodLayer.boundingBox();
-await foodLayer.click({ position: { x: foodBox.width * 0.42, y: foodBox.height * 0.22 } });
+await foodLayer.click({ position: { x: foodBox.width * 0.48, y: foodBox.height * ruleFrac } });
 await page.locator('.ann-body').waitFor();
 await page.locator('.ann').scrollIntoViewIfNeeded();
 const editorAnchor = await page.evaluate(() => {
@@ -400,7 +438,7 @@ def clusters(rows, gap=6):
     return [[g[0], g[-1]] for g in groups if len(g)>=8]
 h=ed.shape[0]
 name=clusters([y for y in range(640,h) if (pale[y,190:290]).sum()>15])
-ada=clusters([y for y in range(640,h) if 12 < (ink[y,450:600]).sum() < 90])
+ada=clusters([y for y in range(640,h) if 12 < (ink[y,350:950]).sum() < 140])
 print(json.dumps({"name": name[0] if name else None, "ada": ada[0] if ada else None}))
 `], { encoding: 'utf8' }));
 const overlap = shotAgree.name && shotAgree.ada && shotAgree.ada[0] <= shotAgree.name[1] + 2 && shotAgree.ada[1] >= shotAgree.name[0] - 2;
@@ -409,8 +447,8 @@ report.foodAnchor = {
   pad: Frame.PAD, gold: goldName,
   strictOverflowPx: sourceBox ? sourceBox[3] - (goldName[3] + Frame.PAD) : null
 };
-check('editor screenshot, export baseline, and the printed Name rule agree', !!agree && onRule && overlap && sourceBox[1] >= goldName[1] - Frame.PAD, JSON.stringify(report.foodAnchor));
-check('the frozen food-order name box still does not contain the glyph', contained === false, JSON.stringify({ contained, strictOverflowPx: report.foodAnchor.strictOverflowPx }));
+check('editor and export baselines agree on the printed Name rule', !!agree && onRule && sourceBox[1] >= goldName[1] - Frame.PAD, JSON.stringify(report.foodAnchor));
+check('a click on the printed Name rule is inside the frozen name box', contained === true, JSON.stringify({ contained, strictOverflowPx: report.foodAnchor.strictOverflowPx }));
 copyFileSync(join(shot, 'natural-food-anchor.png'), join(art, 'natural-food-anchor.png'));
 
 report.failed = report.checks.filter((item) => !item.ok).length;

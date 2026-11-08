@@ -42,6 +42,6 @@ Order for health foods, Fortnum & Mason (Firm), 1930–1939. Wellcome Collection
 
 The earlier misses stay what they were: the manual glyph 1 source pixel outside the padded name box, and the later clicks 29 and 114 pixels outside. Those were different placements. The detector is still 0 of 13. This was not a detector run.
 
-## Next gap
+## Long lines
 
-A long line is wrapped in the export and clipped in the editor. The ruled-page address kept every word, and the export put “warehouse” on a second line. The editor box uses `white-space: nowrap` and `overflow: hidden`, so the end of that line can be hidden on screen while the file shows it. The type size was not reduced.
+The editor now breaks lines with the same Helvetica widths as the export, at 1.3× the type size. Overflow stays visible. A long word is not cut or shrunk. A typed newline is kept in the file. On the ruled page, “14 Harbour Lane beside the long west” and “warehouse” are the two preview lines and the two export lines, 18.2 points apart. Peggy Jay’s baseline remains y 500.605 on the rule at 500.6. `wrap-lines.mjs`: 13 checks, 0 failed.

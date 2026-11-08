@@ -150,16 +150,28 @@ body { overflow: hidden; }
 .ann { position: absolute; touch-action: none; }
 .ann.selected { outline: 1.5px solid #2c4bd6; outline-offset: 1px; }
 .ann-body { width: 100%; height: 100%; }
-.ann.text .ann-body, .ann.date .ann-body {
-  display: flex;
-  align-items: flex-start;
+.ann.text .ann-body, .ann.date .ann-body,
+.ann-mirror {
+  display: block;
   font-family: Helvetica, Arial, sans-serif;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
+  line-height: 1.3;
+  margin-top: -0.15em;
+  white-space: pre-wrap;
+  overflow: visible;
   cursor: text;
   min-height: 0;
 }
+.ann-mirror {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  white-space: pre;
+  pointer-events: none;
+  cursor: text;
+}
+.ann-body:not(:focus) { color: transparent; caret-color: transparent; }
+.ann-body:focus ~ .ann-mirror { visibility: hidden; }
 .ann.text .ann-body:empty::before { content: "Type here"; color: #9a9186; }
 .ann.whiteout { background: #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08); }
 .ann.highlight { background: rgba(255, 214, 40, 0.48); mix-blend-mode: multiply; }

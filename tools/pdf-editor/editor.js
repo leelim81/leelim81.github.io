@@ -253,7 +253,7 @@
       if (body.contentEditable !== 'plaintext-only') body.contentEditable = 'true';
       body.spellcheck = false;
       body.textContent = ann.text || '';
-      body.addEventListener('input', function () {
+      function readBody() {
         ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
         if (window.FormProfiles && ann.type === 'text' && ann.factKey && ann.profileId && ann.text !== ann.seedText) {
           FormProfiles.load().then(function (loaded) {
@@ -270,8 +270,14 @@
         }
         fitTextHeight(el, ann);
         scheduleSave();
-      });
-      el.append(grip, body);
+      }
+      body.addEventListener('input', readBody);
+      body.addEventListener('keyup', readBody);
+      var mirror = document.createElement('div');
+      mirror.className = 'ann-mirror';
+      mirror.setAttribute('aria-hidden', 'true');
+      el.append(grip, body, mirror);
+      paintWrap(el, ann);
     } else if (ann.dataUrl) {
       var img = document.createElement('img');
       img.src = ann.dataUrl;
@@ -321,14 +327,42 @@
     return el;
   }
 
+  var wrapFontPromise = null;
+  function wrapFont() {
+    if (!wrapFontPromise && window.PDFLib) {
+      wrapFontPromise = PDFLib.PDFDocument.create().then(function (doc) {
+        return doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      });
+    }
+    return wrapFontPromise;
+  }
+  function paintWrap(el, ann) {
+    var mirror = el.querySelector('.ann-mirror');
+    var ready = wrapFont();
+    if (!mirror || !ready || !ann) return Promise.resolve();
+    var size = ann.fontSize || 16;
+    var maxW = Math.max(8, (el.clientWidth / (state.zoom || 1)) - 2);
+    return ready.then(function (font) {
+      var lines = wrapText(ann.text || '', font, size, maxW);
+      mirror.textContent = lines.join('\n');
+      return lines;
+    }).catch(function () {});
+  }
   function fitTextHeight(el, ann) {
     var body = el.querySelector('.ann-body');
+    var mirror = el.querySelector('.ann-mirror');
     if (!body || !el.parentElement) return;
     var pageH = el.parentElement.clientHeight || 1;
-    el.style.height = 'auto';
-    var px = Math.max(body.scrollHeight, (ann.fontSize || 16) * state.zoom * 1.3);
-    ann.h = clamp(px / pageH, 0.03, 0.95);
-    el.style.height = (ann.h * 100) + '%';
+    function apply(node) {
+      el.style.height = 'auto';
+      node.style.height = 'auto';
+      var px = Math.max(node.scrollHeight, (ann.fontSize || 16) * state.zoom * 1.3);
+      ann.h = clamp(px / pageH, 0.03, 0.95);
+      el.style.height = (ann.h * 100) + '%';
+      node.style.height = '';
+    }
+    if (!mirror) { apply(body); return; }
+    paintWrap(el, ann).then(function () { if (el.parentElement) apply(mirror); });
   }
 
   function startMove(e, el, ann) {
@@ -722,7 +756,6 @@
       var sunk = size * 0.85;
       var lineH = size * 1.3;
       lines.forEach(function (line) {
-        if (sunk > height + size) return;
         var shift = sunk - size * 0.85;
         if (line) {
           page.drawText(line, {
@@ -742,7 +775,17 @@
     }
   }
 
+  function syncLiveText() {
+    document.querySelectorAll('.ann[data-id]').forEach(function (el) {
+      var body = el.querySelector('.ann-body');
+      var ann = findAnn(el.dataset.id);
+      if (!body || !ann || (ann.type !== 'text' && ann.type !== 'date')) return;
+      ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+    });
+  }
+
   async function flatten() {
+    syncLiveText();
     var samePages = state.pages.length > 0 && state.pages.every(function (rec, index) {
       return rec.srcIndex === index && !rec.rotation;
     });
