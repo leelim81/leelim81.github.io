@@ -48,5 +48,28 @@
       });
     });
   }
-  global.DeskDB = { get: get, set: set, putAll: putAll, clear: clear };
+  function update(name, key, mutate) {
+    return open(name).then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction('kv', 'readwrite');
+        var store = tx.objectStore('kv');
+        var result = { ok: false, reason: 'cancelled' };
+        var req = store.get(key);
+        req.onsuccess = function () {
+          try {
+            var decision = mutate(req.result);
+            result = decision || { ok: false, reason: 'cancelled' };
+            if (result.write) store.put(result.value, key);
+          } catch (err) {
+            reject(err);
+            try { tx.abort(); } catch (ignore) {}
+          }
+        };
+        tx.oncomplete = function () { resolve(result); };
+        tx.onerror = function () { reject(tx.error); };
+        tx.onabort = function () { if (tx.error) reject(tx.error); };
+      });
+    });
+  }
+  global.DeskDB = { get: get, set: set, putAll: putAll, clear: clear, update: update };
 })(window);

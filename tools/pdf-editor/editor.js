@@ -2035,11 +2035,20 @@
           return;
         }
         if (again.vault.profiles.length >= 30) { recoverSay('Too many people are stored.'); return; }
-        again.vault.profiles.push({ id: uid(), name: name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
-        if (!recoverOpen(token)) return;
-        var saved = await FormProfiles.persist(again.vault);
-        if (token !== recoverCommit) return;
-        if (!saved.ok) { recoverSay('That person was not saved.'); return; }
+        var saved = await FormProfiles.persist(null, function (current) {
+          if (!recoverOpen(token) || ($('recoverPersonName').value || '').trim().slice(0, 80) !== name) return { ok: false, reason: 'cancelled' };
+          if (current.profiles.some(function (profile) { return profile.name === name; })) return { ok: false, reason: 'exists' };
+          if (current.profiles.length >= 30) return { ok: false, reason: 'full' };
+          var next = FormProfiles.migrate(JSON.parse(JSON.stringify(current)));
+          next.profiles.push({ id: uid(), name: name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
+          if (!recoverOpen(token)) return { ok: false, reason: 'cancelled' };
+          return { ok: true, vault: next };
+        });
+        if (saved.reason === 'exists') { recoverSay(name + ' is already saved. Nothing new was added.'); refreshRecover(); return; }
+        if (saved.reason === 'full') { recoverSay('Too many people are stored.'); return; }
+        if (!saved.ok && saved.reason === 'cancelled') { recoverSay('That person was not added.'); return; }
+        if (!saved.ok) { if (token === recoverCommit) recoverSay('That person was not saved.'); return; }
+        if (token !== recoverCommit) { recoverSay(name + ' was saved.'); refreshRecover(); return; }
         $('recoverPersonName').value = '';
         refreshRecover();
       } catch (err) {
@@ -2085,14 +2094,28 @@
           refreshRecover();
           return;
         }
-        var noted = FormProfiles.confirmFact(again.vault, personId, key, value);
-        if (!noted.ok || !recoverOpen(token) || $('recoverPerson').value !== personId) {
-          recoverSay('That value was not saved.');
+        var saved = await FormProfiles.persist(null, function (current) {
+          if (!recoverOpen(token) || $('recoverPerson').value !== personId || (($('recoverFactKey') && $('recoverFactKey').value) || 'name') !== key) return { ok: false, reason: 'cancelled' };
+          var profile = current.profiles.filter(function (item) { return item.id === personId; })[0];
+          if (!profile) return { ok: false, reason: 'deleted' };
+          var existing = (profile.facts || []).filter(function (item) { return item.key === key && item.status === 'confirmed' && item.value; })[0];
+          if (existing && existing.value !== value) return { ok: false, reason: 'conflict' };
+          if (existing && existing.value === value) return { ok: true, unchanged: true };
+          var noted = FormProfiles.confirmFact(current, personId, key, value);
+          if (!noted.ok || !recoverOpen(token) || $('recoverPerson').value !== personId) return { ok: false, reason: noted.ok ? 'cancelled' : (noted.reason || 'rejected') };
+          return { ok: true, vault: noted.vault };
+        });
+        if (saved.reason === 'unchanged') {
+          $('recoverFactValue').value = '';
+          recoverSay('That value is already confirmed.');
+          refreshRecover();
           return;
         }
-        var saved = await FormProfiles.persist(noted.vault);
-        if (token !== recoverCommit) return;
-        if (!saved.ok) { recoverSay('That value was not saved.'); return; }
+        if (saved.reason === 'conflict') { recoverSay('A confirmed ' + key + ' is already saved for this person. Nothing was replaced.'); return; }
+        if (saved.reason === 'deleted') { recoverSay('That person is no longer saved. Nothing was confirmed.'); refreshRecover(); return; }
+        if (saved.reason === 'cancelled') { recoverSay('That save was cancelled because the person or kind changed. Nothing was confirmed.'); return; }
+        if (!saved.ok) { if (token === recoverCommit) recoverSay('That value was not saved.'); return; }
+        if (token !== recoverCommit) { recoverSay('That value was saved.'); refreshRecover(); return; }
         $('recoverFactValue').value = '';
         refreshRecover();
       } catch (err) {
