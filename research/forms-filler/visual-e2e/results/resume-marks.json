@@ -1,0 +1,66 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "two marks are on the page",
+      "ok": true,
+      "detail": "[{\"text\":\"Ada Lane\",\"left\":\"28%\",\"top\":\"34.4969%\"},{\"text\":\"Ada Lane\",\"left\":\"58%\",\"top\":\"60.4974%\"}]"
+    },
+    {
+      "name": "undo and reload keep the remaining mark only",
+      "ok": true,
+      "detail": "[{\"text\":\"Ada Lane\",\"left\":\"28%\",\"top\":\"34.4969%\"}]"
+    },
+    {
+      "name": "the second mark can be placed again",
+      "ok": true,
+      "detail": "[{\"text\":\"Ada Lane\",\"left\":\"28%\",\"top\":\"34.4969%\"},{\"text\":\"Ada Lane\",\"left\":\"58%\",\"top\":\"60.4974%\"}]"
+    },
+    {
+      "name": "the same button brings the same marks back",
+      "ok": true,
+      "detail": "[{\"text\":\"Ada Lane\",\"left\":\"28%\",\"top\":\"34.4969%\"},{\"text\":\"Ada Lane\",\"left\":\"58%\",\"top\":\"60.4974%\"}]"
+    },
+    {
+      "name": "the return says these are the same marks",
+      "ok": true,
+      "detail": "Returned to the same page and the same marks. Choose the person and the confirmed value, then place it on the page."
+    },
+    {
+      "name": "the returned export still contains the placed name",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the same person keeps an unassociated note",
+      "ok": true,
+      "detail": "Ada Lane|Ada Lane|Manual note"
+    },
+    {
+      "name": "a different person does not receive the earlier marks",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "the return says the other person was left off",
+      "ok": true,
+      "detail": "Returned to this file. The other person’s marks were left off. Bea Shore has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed."
+    },
+    {
+      "name": "a different file does not bring the marks back",
+      "ok": true,
+      "detail": "This file or crop changed, so earlier marks were not brought back. Choose the person and the confirmed value, then place it on the page. []"
+    },
+    {
+      "name": "start over removes the marks",
+      "ok": true,
+      "detail": "Choose the person and the confirmed value, then place it on the page."
+    },
+    {
+      "name": "a failed store does not open the editor or claim success",
+      "ok": true,
+      "detail": "This browser could not store the form, so the editor was not opened. Nothing was written."
+    }
+  ]
+}

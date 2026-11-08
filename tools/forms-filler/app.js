@@ -612,17 +612,101 @@
     return hex;
   }
 
+  var openingEditor = false;
+
+  function sha256Hex(bytes) {
+    return crypto.subtle.digest('SHA-256', bytes).then(function (digest) {
+      var view = new Uint8Array(digest);
+      var hex = '';
+      for (var i = 0; i < view.length; i++) hex += (view[i] < 16 ? '0' : '') + view[i].toString(16);
+      return hex;
+    });
+  }
+
+  function editorClearedAt() {
+    try { return Number(localStorage.getItem('ff-editor-cleared') || 0); } catch (err) { return 0; }
+  }
+
+  function readHandoff() {
+    try {
+      var raw = sessionStorage.getItem('ff-editor-handoff');
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.pages || !parsed.pages.length) return null;
+      if ((parsed.editedAt || 0) <= editorClearedAt()) return null;
+      return parsed;
+    } catch (err) { return null; }
+  }
+
+  function sameEditorFile(stored, pdfSha, sourceSha, sheet) {
+    if (!stored || !stored.pages || !stored.pages.length) return false;
+    if ((stored.editedAt || 0) <= editorClearedAt()) return false;
+    if (sourceSha) {
+      if (stored.sourceSha256 !== sourceSha || !stored.sheet || !sheet || !window.FormMaps) return false;
+      return FormMaps.matchesSheet(stored.sheet, sheet);
+    }
+    return !!(pdfSha && stored.pdfSha256 === pdfSha);
+  }
+
+  async function currentResumePerson() {
+    var pick = $('profilePick');
+    if (pick && pick.value) return pick.value;
+    if (!window.FormProfiles) return '';
+    try {
+      var loaded = await FormProfiles.load();
+      if (loaded.ok && loaded.vault && loaded.vault.profiles && loaded.vault.profiles.length === 1) return loaded.vault.profiles[0].id;
+    } catch (err) {}
+    return '';
+  }
+
+  function resumePages(stored, pageCount, personId) {
+    if (!stored || !stored.pages || stored.pages.length !== pageCount) return null;
+    for (var i = 0; i < pageCount; i++) {
+      if (!stored.pages[i] || stored.pages[i].srcIndex !== i) return null;
+    }
+    var storedPerson = stored.resumeProfileId || '';
+    var changed = !!(personId && storedPerson && personId !== storedPerson);
+    var keepPerson = changed ? personId : (personId || storedPerson);
+    var dropped = 0;
+    var kept = 0;
+    var pages = stored.pages.map(function (page) {
+      var annotations = (page.annotations || []).filter(function (ann) {
+        if (!ann) return false;
+        if (!ann.profileId) {
+          if (changed) { dropped += 1; return false; }
+          kept += 1;
+          return true;
+        }
+        if (keepPerson && ann.profileId === keepPerson) { kept += 1; return true; }
+        dropped += 1;
+        return false;
+      });
+      return {
+        id: page.id || Math.random().toString(36).slice(2, 10),
+        srcIndex: page.srcIndex,
+        rotation: page.rotation || 0,
+        annotations: annotations
+      };
+    });
+    return { pages: pages, dropped: dropped, kept: kept, changed: changed };
+  }
+
   async function openRecovery() {
+    if (openingEditor) return;
     var bytes = pdfBytesForEditor();
     if (!bytes) {
       toast('Choose a form first.');
       return;
     }
+    openingEditor = true;
+    if ($('placeMissing')) $('placeMissing').disabled = true;
     status('Opening the editor so you can place a saved value…', true);
     var probe;
     try {
       probe = await PDFLib.PDFDocument.load(bytes.slice(0));
     } catch (err) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = false;
       status('That file could not be opened for placement. Nothing was written.', false);
       toast('That file could not be opened for placement.');
       return;
@@ -633,14 +717,78 @@
     }
     var kept = await persistDraft();
     if (!kept.ok || kept.skipped) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
       status(kept.ok ? 'The form was cleared before it could be opened.' : 'This browser could not store the form, so the editor was not opened. Nothing was written.', false);
       toast('The editor was not opened.');
       return;
     }
-    await DeskDB.putAll(EDITOR_DB, [
-      { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: state.formName || 'form.pdf', zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', recover: true, sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
-    ]);
+    var pdfSha = '';
+    var sourceSha = '';
+    try {
+      pdfSha = await sha256Hex(bytes);
+      sourceSha = await sourceIdentity();
+    } catch (err) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
+    var sheet = sheetStamp();
+    var personId = await currentResumePerson();
+    var stored = null;
+    var storedPdf = null;
+    try {
+      stored = await DeskDB.get(EDITOR_DB, 'session');
+      storedPdf = await DeskDB.get(EDITOR_DB, 'pdf');
+    } catch (err) { stored = null; }
+    if (stored && !stored.pdfSha256 && storedPdf) {
+      try { stored.pdfSha256 = await sha256Hex(storedPdf instanceof Uint8Array ? storedPdf : new Uint8Array(storedPdf)); } catch (err) {}
+    }
+    var handoff = readHandoff();
+    var best = null;
+    [stored, handoff].forEach(function (candidate) {
+      if (!sameEditorFile(candidate, pdfSha, sourceSha, sheet)) return;
+      if (!best || (candidate.editedAt || 0) >= (best.editedAt || 0)) best = candidate;
+    });
+    var resumed = best ? resumePages(best, pages.length, personId) : null;
+    var note = '';
+    if (best && !resumed) note = 'The page list changed, so earlier marks were not brought back.';
+    else if (!best && (stored || handoff || storedPdf)) note = 'This file or crop changed, so earlier marks were not brought back.';
+    else if (resumed && resumed.changed && resumed.dropped) note = 'Returned to this file. The other person’s marks were left off.';
+    else if (resumed && resumed.kept) note = 'Returned to the same page and the same marks.';
+    if (resumed) pages = resumed.pages;
+    var resumePerson = personId || '';
+    if (best && (!resumed || !resumed.changed) && !resumePerson) resumePerson = best.resumeProfileId || '';
+    var session = {
+      fileName: state.formName || 'form.pdf',
+      zoom: 1,
+      fit: true,
+      current: 0,
+      pages: pages,
+      epoch: Date.now(),
+      source: 'forms',
+      recover: true,
+      sourceSha256: sourceSha,
+      pdfSha256: pdfSha,
+      sheet: sheet,
+      resumeProfileId: resumePerson,
+      editedAt: Date.now(),
+      resumeNote: note
+    };
+    try {
+      await DeskDB.putAll(EDITOR_DB, [
+        { key: 'pdf', value: bytes },
+        { key: 'session', value: session }
+      ]);
+    } catch (err) {
+      openingEditor = false;
+      if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
     location.href = '../pdf-editor/?desk=forms';
   }
 
@@ -845,10 +993,20 @@
       refreshLabels();
       return;
     }
-    await DeskDB.putAll(EDITOR_DB, [
-      { key: 'pdf', value: bytes },
-      { key: 'session', value: { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), sheet: sheetStamp() } }
-    ]);
+    var editorSession;
+    try {
+      editorSession = { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), pdfSha256: await sha256Hex(bytes), sheet: sheetStamp(), editedAt: Date.now() };
+      await DeskDB.putAll(EDITOR_DB, [
+        { key: 'pdf', value: bytes },
+        { key: 'session', value: editorSession }
+      ]);
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      state.running = false;
+      refreshLabels();
+      return;
+    }
     try { if (window.ToolsUsage) await ToolsUsage.recordUse('forms-filler'); } catch (err) {}
     state.running = false;
     refreshLabels();
@@ -916,6 +1074,14 @@
     return enqueueDraft(function () {
       return DeskDB.clear(DB).then(function () { return { ok: true }; });
     }).catch(function (err) {
+      return { ok: false, reason: draftReason(err) };
+    });
+  }
+  function discardEditor() {
+    var clearedAt = Date.now();
+    try { localStorage.setItem('ff-editor-cleared', String(clearedAt)); } catch (err) {}
+    try { sessionStorage.removeItem('ff-editor-handoff'); } catch (err) {}
+    return DeskDB.clear(EDITOR_DB).then(function () { return { ok: true }; }).catch(function (err) {
       return { ok: false, reason: draftReason(err) };
     });
   }
@@ -1100,8 +1266,8 @@
   $('clearBtn').addEventListener('click', function () {
     resetDesk();
     status('Clearing the stored form…', true);
-    discardDraft().then(function (result) {
-      if (result && !result.ok) status('Start over could not finish clearing the stored form.', false);
+    Promise.all([discardDraft(), discardEditor()]).then(function (results) {
+      if (results.some(function (result) { return result && !result.ok; })) status('Start over could not finish clearing the stored form.', false);
       else status('Started over. Nothing is stored from that form.', false);
     });
   });
