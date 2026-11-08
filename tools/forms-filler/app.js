@@ -120,12 +120,9 @@
   function showGpu(status) {
     state.gpu = status;
     var warn = $('gpuWarn');
-    if (status.ok) {
+    if (warn) {
       warn.hidden = true;
       warn.textContent = '';
-    } else {
-      warn.hidden = false;
-      warn.textContent = 'This browser has no WebGPU, so the private model cannot run. Open this page in Chrome or Edge on a computer or phone that has WebGPU. Nothing is sent to a server.';
     }
     refreshLabels();
     paintModel();
