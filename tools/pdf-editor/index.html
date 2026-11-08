@@ -33,7 +33,16 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <button id="mapToggle" type="button" class="tool" aria-expanded="false" aria-controls="mapBox">Blank map</button>
   </div>
   <div id="recoverBar" class="recover" hidden>
-    <p id="recoverNote">Place a confirmed saved value on a line the reader missed. This is your placement, not an automatic fill.</p>
+    <p id="recoverNote">Place a confirmed saved value on a line the reader missed. This is your placement, not an automatic fill. Text on the toolbar types on the page without saving a person.</p>
+    <div id="recoverCreate" hidden>
+      <label>New person <input id="recoverPersonName" type="text" maxlength="80" autocomplete="off"></label>
+      <button id="recoverAddPerson" type="button" class="tool">Add person</button>
+      <div id="recoverFactCreate" hidden>
+        <label>Kind <select id="recoverFactKey"></select></label>
+        <label>Confirmed value <input id="recoverFactValue" type="text" maxlength="400" autocomplete="off"></label>
+        <button id="recoverAddFact" type="button" class="tool">Save confirmed value</button>
+      </div>
+    </div>
     <label>Person <select id="recoverPerson"></select></label>
     <label>Role <select id="recoverRole">
       <option value="applicant">Applicant</option>

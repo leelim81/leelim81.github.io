@@ -679,6 +679,7 @@
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     state.sourceSha256 = session && session.sourceSha256 ? session.sourceSha256 : '';
     state.sheet = session && session.sheet ? session.sheet : null;
+    state.wantRecover = !!(session && session.recover);
     closed = false;
     showWorkspace();
     if (session && session.recover) {
@@ -1732,9 +1733,14 @@
     }
     var loaded = await FormProfiles.load();
     var profiles = loaded.ok ? loaded.vault.profiles : [];
+    var personLabel = $('recoverPerson') && $('recoverPerson').closest('label');
+    if (personLabel) personLabel.hidden = !profiles.length;
     if (!profiles.length) {
-      recoverSay('No one is saved yet. Confirm a value in Forms Filler, then come back. Nothing unconfirmed is offered here.');
+      showRecoverCreate('person');
+      recoverSay('No one is saved yet. Add a person and a confirmed value, then place it. Text on the toolbar types on the page without saving a person.');
       $('recoverPlace').disabled = true;
+      if (state.wantRecover && $('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', true);
+      if ($('recoverPersonName') && !$('recoverBar').hidden) $('recoverPersonName').focus();
       return;
     }
     profiles.forEach(function (profile) {
@@ -1756,9 +1762,23 @@
       fact.appendChild(opt);
     });
     $('recoverPlace').disabled = !facts.length;
-    if (!facts.length) recoverSay(chosen.name + ' has no confirmed value to place. Unconfirmed reads stay unconfirmed.');
-    else if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+    if (!facts.length) {
+      showRecoverCreate('fact');
+      recoverSay(chosen.name + ' has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed.');
+    } else {
+      showRecoverCreate('off');
+      if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+    }
     refreshMaps();
+  }
+  function showRecoverCreate(mode) {
+    var box = $('recoverCreate');
+    if (!box) return;
+    box.hidden = mode === 'off';
+    var personLabel = $('recoverPersonName') && $('recoverPersonName').closest('label');
+    if (personLabel) personLabel.hidden = mode !== 'person';
+    if ($('recoverAddPerson')) $('recoverAddPerson').hidden = mode !== 'person';
+    if ($('recoverFactCreate')) $('recoverFactCreate').hidden = mode !== 'fact';
   }
   async function placeRecovered(rec, x, y) {
     var fact = selectedRecoverFact();
@@ -1963,6 +1983,40 @@
     });
     $('recoverUndo').disabled = true;
     $('recoverUndo').addEventListener('click', undoRecover);
+    var factKey = $('recoverFactKey');
+    if (factKey && window.FormProfiles && FormProfiles.CANON) {
+      FormProfiles.CANON.forEach(function (name) {
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        factKey.appendChild(opt);
+      });
+    }
+    if ($('recoverAddPerson')) $('recoverAddPerson').addEventListener('click', async function () {
+      var name = ($('recoverPersonName').value || '').trim().slice(0, 80);
+      if (!name) { recoverSay('Type a name for the person first.'); $('recoverPersonName').focus(); return; }
+      var loaded = await FormProfiles.load();
+      if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
+      if (loaded.vault.profiles.length >= 30) { recoverSay('Too many people are stored.'); return; }
+      loaded.vault.profiles.push({ id: uid(), name: name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
+      var saved = await FormProfiles.persist(loaded.vault);
+      if (!saved.ok) { recoverSay('That person was not saved.'); return; }
+      $('recoverPersonName').value = '';
+      refreshRecover();
+    });
+    if ($('recoverAddFact')) $('recoverAddFact').addEventListener('click', async function () {
+      var value = ($('recoverFactValue').value || '').trim().slice(0, 400);
+      if (!value) { recoverSay('Type the value to confirm.'); $('recoverFactValue').focus(); return; }
+      var loaded = await FormProfiles.load();
+      if (!loaded.ok) { recoverSay('Saved values are not available in this browser.'); return; }
+      var person = $('recoverPerson');
+      var noted = FormProfiles.confirmFact(loaded.vault, person.value, $('recoverFactKey').value || 'name', value);
+      if (!noted.ok) { recoverSay('That value was not saved.'); return; }
+      var saved = await FormProfiles.persist(noted.vault);
+      if (!saved.ok) { recoverSay('That value was not saved.'); return; }
+      $('recoverFactValue').value = '';
+      refreshRecover();
+    });
     $('assistToggle').addEventListener('click', function () {
       setPanel('recoverBar', 'assistToggle', $('recoverBar').hidden);
     });
