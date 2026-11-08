@@ -2,6 +2,8 @@
 
 This is a feature-by-feature reading of the current branch. It is not a claim that every form on the web can be filled, and it is not a speed claim. Scan autofill stays off. Nothing here was merged.
 
+The rerun above sits on commit `98424a3a5590e7acdf7d51693868ba4eecf1d137`. This note is the commit on top of that.
+
 Proposed order, not performed: pull request 12, then 13, then 14.
 
 ## What is supported
