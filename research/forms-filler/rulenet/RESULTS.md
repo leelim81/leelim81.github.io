@@ -16,6 +16,8 @@ Bytes:
 | `rulenet.f32.bin` | 84,932 | Run |
 | float16 file (not shipped, not run) | 42,466 | never |
 
+42,466 bytes is only that untested float16 cast. The executed candidate is float32: forward 9,249 + postprocess 9,502 + metadata 3,056 + weights 84,932 = 106,739 bytes. The heap figures below are `usedJSHeapSize` samples after the call returned. They are not a peak and they are not a phone measurement.
+
 The forward pass stores and accumulates float32. For the 983×1600 food-order working image the fast pass allocates 58,076,800 bytes of float workspace, plus 6,291,200 bytes of input and 6,291,200 bytes of probability output. Chrome’s heap sample is separate and is not process RSS.
 
 ## Equivalence
