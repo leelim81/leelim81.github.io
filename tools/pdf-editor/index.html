@@ -28,6 +28,10 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
   </header>
   <p class="privacy">Your files never leave this device. Opening, editing, and exporting all happen in this browser.</p>
 
+  <div id="assistBar" class="assist" hidden>
+    <button id="assistToggle" type="button" class="tool" aria-expanded="false" aria-controls="recoverBar">Place a saved value</button>
+    <button id="mapToggle" type="button" class="tool" aria-expanded="false" aria-controls="mapBox">Blank map</button>
+  </div>
   <div id="recoverBar" class="recover" hidden>
     <p id="recoverNote">Place a confirmed saved value on a line the reader missed. This is your placement, not an automatic fill.</p>
     <label>Person <select id="recoverPerson"></select></label>
@@ -42,7 +46,8 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
     <button id="recoverCancel" type="button" class="tool">Cancel</button>
     <button id="recoverUndo" type="button" class="tool">Undo</button>
     <p id="recoverStatus" role="status"></p>
-    <div id="mapBox" class="map-box">
+  </div>
+  <div id="mapBox" class="map-box" hidden>
       <p>A blank map remembers places for one role on one exact file. It does not keep names, values, or the file name. It stays in this browser until you delete it or clear this site’s data. It is not an automatic fill. Use the blank original, not a filled copy.</p>
       <label>Map label <input id="mapName" type="text" maxlength="40" placeholder="Blank map" autocomplete="off"></label>
       <button id="mapSave" type="button" class="tool">Save map</button>
@@ -52,7 +57,6 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
       <button id="mapDelete" type="button" class="tool">Delete map</button>
       <button id="mapClear" type="button" class="tool">Clear maps</button>
       <p id="mapPreviewText" role="status"></p>
-    </div>
   </div>
   <div class="toolbar" id="toolbar" hidden>
     <button id="addText" type="button" class="tool tool-strong">Text</button>

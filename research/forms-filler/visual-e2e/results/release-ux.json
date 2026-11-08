@@ -1,0 +1,44 @@
+{
+  "checks": [
+    {
+      "name": "ordinary open keeps place and map closed and leaves Text and Download",
+      "ok": true,
+      "detail": "{\"place\":true,\"map\":true,\"expanded\":\"false\",\"text\":true,\"download\":true,\"pageBox\":1296}"
+    },
+    {
+      "name": "a narrow editor does not clip the assist buttons",
+      "ok": true,
+      "detail": "{\"scroll\":false,\"assist\":390}"
+    },
+    {
+      "name": "Place a saved value opens the controls and focuses one",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "arming a placement is explicit",
+      "ok": true,
+      "detail": "Click the page where Ada’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "name": "Escape closes placement and returns to the button",
+      "ok": true,
+      "detail": "Click the page where Ada’s email should go. Cancel if this is the wrong person. / {\"hidden\":true,\"focus\":\"assistToggle\"}"
+    },
+    {
+      "name": "a click after Escape does not place a value",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Blank map opens without hiding Text",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload starts with the panels closed",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

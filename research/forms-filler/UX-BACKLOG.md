@@ -1,3 +1,3 @@
-# First-user backlog
+# Editor controls
 
-The editor’s recovery bar, map controls, and the existing tool row sit on top of each other. On the map screenshot they take a large share of the window before the page is visible. A later pass should tuck recovery and maps behind one disclosure, the way Saved values already starts closed. This note does not change the editor.
+Place a saved value and Blank map are separate buttons. Both start closed on an ordinary open and on reload. Place a missing line opens the place controls once. Escape closes the open panel. Closing the place panel cancels an armed placement. Text, Sign, and Download stay on the toolbar. The panels scroll inside a limited height so the page keeps a visible area.

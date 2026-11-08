@@ -30,8 +30,8 @@ await page.screenshot({ path: join(shot, 'recover-collapsed.png') });
 const href = await page.locator('#extensionZip').getAttribute('href');
 const zipUrl = new URL(href, page.url()).href;
 const zip = Buffer.from(await (await fetch(zipUrl)).arrayBuffer());
-const disk = readFileSync(join(root, '../../../tools/forms-filler/extension/forms-filler-profiles-0.1.1.zip'));
-check('download is the 0.1.1 zip byte for byte', href.endsWith('forms-filler-profiles-0.1.1.zip') && zip.equals(disk), createHash('sha256').update(zip).digest('hex'));
+const disk = readFileSync(join(root, '../../../tools/forms-filler/extension/forms-filler-profiles-0.1.2.zip'));
+check('download is the 0.1.2 zip byte for byte', href.endsWith('forms-filler-profiles-0.1.2.zip') && zip.equals(disk), createHash('sha256').update(zip).digest('hex'));
 
 await page.evaluate(async () => {
   await FormProfiles.clearAll();
@@ -158,6 +158,9 @@ const exported = await page.evaluate(async (bytes) => {
 check('export draws Ada on the page and not Bea', exported.pages === 1 && exported.hit && exported.hit.x >= 0 && exported.hit.x <= exported.w && exported.hit.y >= 0 && exported.hit.y <= exported.h && !exported.bea, JSON.stringify(exported));
 
 await page.setViewportSize({ width: 390, height: 844 });
+if (await page.locator('#downloadModal').isVisible().catch(() => false)) await page.click('#dlClose');
+if (await page.locator('#recoverBar').isHidden()) await page.click('#assistToggle');
+await page.locator('#recoverBar').waitFor({ state: 'visible' });
 await page.screenshot({ path: join(shot, 'recover-mobile.png'), fullPage: true });
 const barBox = await page.locator('#recoverBar').boundingBox();
 check('the placement bar fits a narrow viewport', !!barBox && barBox.width <= 390, JSON.stringify(barBox));
@@ -239,6 +242,7 @@ check('a cropped page refuses placement', /cropped/i.test(cropStatus), cropStatu
 
 await page.evaluate(async () => { await FormProfiles.clearAll(); });
 await page.reload();
+if (await page.locator('#recoverBar').isHidden()) await page.click('#assistToggle');
 await page.locator('#recoverStatus').waitFor();
 const empty = await page.locator('#recoverStatus').innerText();
 check('no saved person is explained and placement stays off', /no one is saved/i.test(empty) && await page.locator('#recoverPlace').isDisabled(), empty);
@@ -246,7 +250,7 @@ check('no saved person is explained and placement stays off', /no one is saved/i
 report.comparison = 'Placing the saved email did not type its characters. Typing it into the existing Text tool would be one click plus one key for each character. These are scripted action counts, not a measured human-time difference, and not a claim that a person is faster.';
 report.limits.push('Steps counted here are scripted browser actions, not observed human time.');
 report.limits.push('Current Chrome stable and phones were not used.');
-report.limits.push('The extension source was not changed. The 0.1.1 gesture result remains profiles-gesture-e2e-0.1.1.json.');
+report.limits.push('The current extension package is 0.1.2. The 0.1.1 gesture file remains the earlier record.');
 writeFileSync(join(root, 'results/recover-e2.json'), JSON.stringify(report, null, 2) + '\n');
 await browser.close();
 const failed = report.checks.filter((item) => !item.ok);

@@ -19,6 +19,19 @@ function check(name, ok, detail) {
   console.log((ok ? 'ok ' : 'FAIL ') + name + (detail ? ' ' + detail : ''));
 }
 function step() { report.scriptedSteps += 1; }
+async function openRecover(p) {
+  await p.locator('#assistToggle').waitFor();
+  const opened = await p.locator('#recoverBar').waitFor({ state: 'visible', timeout: 1000 }).then(() => true).catch(() => false);
+  if (!opened) {
+    await p.click('#assistToggle');
+    await p.locator('#recoverBar').waitFor({ state: 'visible' });
+  }
+}
+async function openMaps(p) {
+  await p.locator('#mapToggle').waitFor();
+  if (await p.locator('#mapToggle').getAttribute('aria-expanded') !== 'true') await p.click('#mapToggle');
+  await p.locator('#mapBox').waitFor({ state: 'visible' });
+}
 
 const dir = join(root, 'results');
 async function blank(path, mark) {
@@ -107,6 +120,7 @@ await page.click('#recoverPlace');
 step();
 await page.locator('.layer').nth(0).click({ position: { x: 60, y: 140 } });
 step();
+await openMaps(page);
 await page.click('#mapSave');
 step();
 await page.locator('#recoverStatus', { hasText: 'does not keep the person' }).waitFor();
@@ -116,6 +130,7 @@ check('the stored map has no person, value, source, or filename', leaked.length 
 await page.screenshot({ path: join(shot, 'template-saved.png') });
 
 await page.reload();
+await openMaps(page);
 await page.locator('#mapPick option', { hasText: 'Blank map' }).waitFor({ state: 'attached' });
 check('the map is still listed after reload', true);
 
@@ -125,6 +140,8 @@ step();
 await page.waitForFunction(() => !document.getElementById('placeMissing').disabled, null, { timeout: 20000 });
 await page.click('#placeMissing');
 step();
+await openRecover(page);
+await openMaps(page);
 await page.locator('#mapPick option', { hasText: 'Blank map' }).waitFor({ state: 'attached' });
 await page.selectOption('#recoverPerson', 'SENTINEL_PROFILE_BEA');
 step();
@@ -189,23 +206,28 @@ step();
 await page.waitForFunction(() => !document.getElementById('placeMissing').disabled, null, { timeout: 20000 });
 await page.click('#placeMissing');
 step();
+await openMaps(page);
 await page.locator('#mapPick').waitFor();
 const other = await page.locator('#mapPick').innerText();
 check('a different blank has no map', /no map/i.test(other), other);
 await page.setInputFiles('#fileInput', join(dir, 'blank-a-changed.pdf'));
 step();
+await openMaps(page);
 await page.locator('#mapPick').waitFor();
 const changedPick = await page.locator('#mapPick').innerText();
 check('a revised file does not match the saved map', /no map/i.test(changedPick), changedPick);
 
 await page.setInputFiles('#fileInput', join(dir, 'blank-a.pdf'));
 step();
+await openRecover(page);
+await openMaps(page);
 await page.locator('#mapPick option', { hasText: 'Blank map' }).waitFor({ state: 'attached' });
 await page.selectOption('#recoverRole', 'applicant');
 await page.selectOption('#recoverPerson', 'SENTINEL_PROFILE_ADA');
 await page.selectOption('#recoverFact', { label: 'email: SENTINEL_ADA_EMAIL' });
 await page.click('#recoverPlace');
 step();
+if (await page.locator('#mapToggle').getAttribute('aria-expanded') === 'true') await page.click('#mapToggle');
 await page.locator('.layer').first().click({ position: { x: 40, y: 180 } });
 step();
 await page.selectOption('#recoverRole', 'patient');
@@ -213,6 +235,7 @@ await page.click('#recoverPlace');
 step();
 await page.locator('.layer').first().click({ position: { x: 40, y: 240 } });
 step();
+await openMaps(page);
 await page.click('#mapSave');
 step();
 const mixed = await page.locator('#recoverStatus').innerText();

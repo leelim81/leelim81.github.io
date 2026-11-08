@@ -170,7 +170,9 @@
     $('status').hidden = true;
     $('downloadBtn').hidden = true;
     $('startOver').hidden = true;
+    if ($('assistBar')) $('assistBar').hidden = true;
     if ($('recoverBar')) $('recoverBar').hidden = true;
+    if ($('mapBox')) $('mapBox').hidden = true;
     $('pages').innerHTML = '';
     var name = $('fileName');
     if (name) name.textContent = '';
@@ -525,6 +527,15 @@
     state.epoch = session && session.epoch ? session.epoch : Date.now();
     closed = false;
     showWorkspace();
+    if (session && session.recover) {
+      var assistKey = 'ff-assist-' + (session.epoch || '');
+      var seen = false;
+      try { seen = !!sessionStorage.getItem(assistKey); } catch (err) { seen = false; }
+      if (!seen) {
+        try { sessionStorage.setItem(assistKey, '1'); } catch (err) {}
+        setPanel('recoverBar', 'assistToggle', true);
+      }
+    }
     if (!session || session.fit) await fitWidth(false);
     await renderAll();
     if (state.pages[state.current] && state.pages[state.current].el) {
@@ -1223,10 +1234,22 @@
     state.recoverArmed = false;
     recoverSay('Applied ' + placed + ' place(s) for ' + profile.name + ' as ' + map.role + '. ' + skipped + ' left blank. This is not an automatic fill. Apply again replaces these places. Undo restores the previous lines.');
   }
+  function setPanel(barId, toggleId, open) {
+    var bar = $(barId);
+    var toggle = $(toggleId);
+    if (!bar || !toggle) return;
+    var was = !bar.hidden;
+    bar.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && !was) {
+      var focus = bar.querySelector('select, input, button');
+      if (focus) focus.focus();
+    }
+    if (!open && was) toggle.focus();
+    if (!open && barId === 'recoverBar') disarmRecover('Placement was cancelled.');
+  }
   async function refreshRecover() {
-    var bar = $('recoverBar');
-    if (!bar) return;
-    bar.hidden = !state.pdfBytes;
+    if ($('assistBar')) $('assistBar').hidden = !state.pdfBytes;
     var person = $('recoverPerson');
     var fact = $('recoverFact');
     var previous = person.value;
@@ -1451,6 +1474,18 @@
     });
     $('recoverUndo').disabled = true;
     $('recoverUndo').addEventListener('click', undoRecover);
+    $('assistToggle').addEventListener('click', function () {
+      setPanel('recoverBar', 'assistToggle', $('recoverBar').hidden);
+    });
+    $('mapToggle').addEventListener('click', function () {
+      var open = $('mapBox').hidden;
+      $('mapBox').hidden = !open;
+      $('mapToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        var focus = $('mapBox').querySelector('input, select, button');
+        if (focus) focus.focus();
+      } else $('mapToggle').focus();
+    });
     $('fontSize').addEventListener('input', function () {
       var ann = findAnn(state.selectedId);
       if (!ann) return;
@@ -1579,6 +1614,14 @@
         $('sigModal').hidden = true;
         $('downloadModal').hidden = true;
         select(null);
+        var inAssist = e.target.closest && e.target.closest('#recoverBar, #mapBox');
+        if (inAssist || state.recoverArmed) {
+          if ($('recoverBar') && !$('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', false);
+          if ($('mapBox') && !$('mapBox').hidden) {
+            $('mapBox').hidden = true;
+            $('mapToggle').setAttribute('aria-expanded', 'false');
+          }
+        }
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && !typing) {
         e.preventDefault();

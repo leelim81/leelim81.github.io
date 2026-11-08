@@ -1,0 +1,200 @@
+{
+  "browser": "Playwright Chromium 131.0.6778.33",
+  "gesture": "Ctrl+Shift+Y, the shortcut Chromium assigned from manifest commands._execute_action on a fresh profile. The toolbar icon is not shown until that activation. This is the Activate the extension command, not a host-permission grant.",
+  "checks": [
+    {
+      "name": "shortcut opens the extension popup",
+      "ok": true,
+      "detail": "chrome-extension://kcbdefnoabjdcnajjaloaclghcelllgg/popup.html"
+    },
+    {
+      "name": "popup import stores the profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "popup says Fill copies checked values into the website now",
+      "ok": true,
+      "detail": "Saved on this browser only. Not synced to an account. On a shared computer, clear the profile when you are done. Fill copies the checked values into the open page. That website can read them at once. Fill does not press "
+    },
+    {
+      "name": "preview names the empty fields and protects the filled email",
+      "ok": true,
+      "detail": "Full name ← Ada Example\nEmail ← ada@example.com\nPhone ← 80000000\nCity has no saved value.\nNote has no saved value.\npassword left alone (secret).\notp left alone (secret).\nemail left alone (secret).\nReadonly left alone (readonly).\nDisabled le"
+    },
+    {
+      "name": "preview says the site receives the checked values",
+      "ok": true,
+      "detail": "Check the list, then fill. Fill copies those values into this website now. Nothing is submitted."
+    },
+    {
+      "name": "popup fill wrote empty fields through activeTab",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Example\",\"email\":\"ada@example.com\",\"phone\":\"80000000\",\"filled\":\"already@example.com\",\"password\":\"\",\"otp\":\"\",\"hidden\":\"\",\"readonly\":\"keep-me\",\"disabled\":\"\",\"shadow\":\"\",\"submitted\":\"no\"}"
+    },
+    {
+      "name": "excluded and nonempty fields stayed put and nothing submitted",
+      "ok": true,
+      "detail": "{\"name\":\"Ada Example\",\"email\":\"ada@example.com\",\"phone\":\"80000000\",\"filled\":\"already@example.com\",\"password\":\"\",\"otp\":\"\",\"hidden\":\"\",\"readonly\":\"keep-me\",\"disabled\":\"\",\"shadow\":\"\",\"submitted\":\"no\"}"
+    },
+    {
+      "name": "other profile was not written",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "explicit nonempty override replaces only that field",
+      "ok": true,
+      "detail": "{\"filled\":\"ada@example.com\",\"submitted\":\"no\"}"
+    },
+    {
+      "name": "after Fill the popup says the site can read the values and the page was not submitted",
+      "ok": true,
+      "detail": "Wrote 1 field(s) into this page. The site can read them now. The page was not submitted. 3 field(s) were left because the page changed or cleared them. Look again for those."
+    },
+    {
+      "name": "saved values start collapsed and the extension download is visible",
+      "ok": true,
+      "detail": "{\"hidden\":true,\"expanded\":\"false\",\"help\":\"Install the browser extension\",\"zip\":\"extension/forms-filler-profiles-0.1.2.zip\"}"
+    },
+    {
+      "name": "Saved values button opens the panel and moves focus into it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Escape closes Saved values and returns focus to the button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an empty store says no one is saved yet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "export with nothing confirmed explains the next step",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a broken import file is rejected",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the extension link stays on this site path",
+      "ok": true,
+      "detail": "http://127.0.0.1:8765/tools/forms-filler/extension/forms-filler-profiles-0.1.2.zip"
+    },
+    {
+      "name": "the linked zip is extension 0.1.2 with no host permission",
+      "ok": true,
+      "detail": "{\"missing\":[],\"version\":\"0.1.2\",\"permissions\":[\"storage\",\"activeTab\",\"scripting\"],\"host\":null,\"sha256\":\"0fe86e4845f8733037c7520df9f93582caae888e6d2af08a1c32ea1e55191080\"}"
+    },
+    {
+      "name": "the page says Fill writes values into the website immediately",
+      "ok": true,
+      "detail": "Install the browser extension\n\nDesktop Chrome or Chromium only. Not a phone install, not a one-click install, and not a Chrome Web Store listing. Version 0.1.2. The zip is the unpacked extension. Nothing in it is uploaded.\n\nDownload the ext"
+    },
+    {
+      "name": "shipped zip matches the extension source and the install note",
+      "ok": true,
+      "detail": "match"
+    },
+    {
+      "name": "reload keeps Saved values collapsed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "raster upload stored a person from OCR",
+      "ok": true,
+      "detail": "review list visible"
+    },
+    {
+      "name": "OCR ingest created Cora Example",
+      "ok": true,
+      "detail": "Cora Example"
+    },
+    {
+      "name": "finishing a read does not open Saved values",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Cora email is confirmed and differs from a later OCR read",
+      "ok": true,
+      "detail": "user cora.fixed@example.com"
+    },
+    {
+      "name": "reload after a correction still starts collapsed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "corrected email survives reload",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "removing the reference does not delete the profile",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "re-extract does not clobber the correction",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ambiguous reference stays unfiled and Cora remains",
+      "ok": true,
+      "detail": "pending conflict:Cora Example,conflict:cora.other@example.com,conflict:Bea Example,conflict:bea@example.com"
+    },
+    {
+      "name": "export contains the confirmed correction and custom key",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "export omits unconfirmed patient facts",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete removes that saved value",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Close hides Saved values",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "shortcut opens the popup again for the export import",
+      "ok": true,
+      "detail": "chrome-extension://kcbdefnoabjdcnajjaloaclghcelllgg/popup.html"
+    },
+    {
+      "name": "extension imported the OCR export",
+      "ok": true,
+      "detail": "Cora Example"
+    },
+    {
+      "name": "removing the extension copy leaves the site profile",
+      "ok": true,
+      "detail": "1 1"
+    }
+  ],
+  "limits": [
+    "Google Chrome stable ignores --load-extension. This run used Chromium.",
+    "The unpinned extension is not in the puzzle menu on this Chromium build. The assigned Activate shortcut opens the same popup as the toolbar button and is what granted activeTab.",
+    "Shadow DOM and cross-origin frames are not filled.",
+    "Chromium toggles the extension popup. A shortcut while it is already open closes it; the next press opens it. A DevTools connection that started before the popup does not list that popup. The reopen check attaches again after the shortcut. This Chromium is 131.0.6778.33, not current Chrome stable. Chrome stable ignores --load-extension; a person loads the unzipped folder from the Extensions page.",
+    "Human confirmation time was not measured.",
+    "The export click started a browser download, and saveAs could not copy its temp file: download.saveAs: ENOENT: no such file or directory, copyfile '/tmp/playwright-artifacts-KN8n0L/9cf09810-8d89-48e8-a938-e7639ecdc694' -> '/workspace/research/forms-filler/visual-e2e/results/cora-export.json'"
+  ],
+  "extension": "0.1.2"
+}

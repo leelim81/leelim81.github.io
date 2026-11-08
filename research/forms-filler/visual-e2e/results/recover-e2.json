@@ -8,9 +8,9 @@
       "detail": ""
     },
     {
-      "name": "download is the 0.1.1 zip byte for byte",
+      "name": "download is the 0.1.2 zip byte for byte",
       "ok": true,
-      "detail": "09cee1247b6f86d3c96b3f383e7ae9f8d4da73bd64f467a9425f88af29468964"
+      "detail": "0fe86e4845f8733037c7520df9f93582caae888e6d2af08a1c32ea1e55191080"
     },
     {
       "name": "profile panel stayed closed after seeding",
@@ -65,7 +65,7 @@
     {
       "name": "editing the placed text updates only Ada and keeps Bea",
       "ok": true,
-      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T02:04:33.524Z\"},\"bea\":\"bea.recover@example.com\"}"
+      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T02:39:45.556Z\"},\"bea\":\"bea.recover@example.com\"}"
     },
     {
       "name": "the placed line is still there after reload",
@@ -75,12 +75,12 @@
     {
       "name": "export draws Ada on the page and not Bea",
       "ok": true,
-      "detail": "{\"pages\":1,\"w\":595,\"h\":824.3818580833943,\"hit\":{\"str\":\"ada.recover@example.com!\",\"x\":258.2368421052632,\"y\":700.6424579513986},\"bea\":false}"
+      "detail": "{\"pages\":1,\"w\":595,\"h\":824.3818580833943,\"hit\":{\"str\":\"ada.recover@example.com!\",\"x\":258.2368421052632,\"y\":700.6438573441462},\"bea\":false}"
     },
     {
       "name": "the placement bar fits a narrow viewport",
       "ok": true,
-      "detail": "{\"x\":0,\"y\":275.484375,\"width\":390,\"height\":296.9375}"
+      "detail": "{\"x\":0,\"y\":320.484375,\"width\":390,\"height\":185.671875}"
     },
     {
       "name": "a rotated page refuses placement",
@@ -127,7 +127,7 @@
     "The narrow screenshot is a viewport, not a phone.",
     "Steps counted here are scripted browser actions, not observed human time.",
     "Current Chrome stable and phones were not used.",
-    "The extension source was not changed. The 0.1.1 gesture result remains profiles-gesture-e2e-0.1.1.json."
+    "The current extension package is 0.1.2. The 0.1.1 gesture file remains the earlier record."
   ],
   "comparison": "Placing the saved email did not type its characters. Typing it into the existing Text tool would be one click plus one key for each character. These are scripted action counts, not a measured human-time difference, and not a claim that a person is faster."
 }

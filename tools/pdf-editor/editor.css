@@ -29,15 +29,21 @@
 
 body { overflow: hidden; }
 .app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
-.recover {
+.assist, .recover, .map-box {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
   background: var(--paper);
 }
+.recover, .map-box { max-height: 22vh; overflow: auto; }
+.stage { min-height: 220px; }
+.assist { padding-top: 4px; padding-bottom: 4px; }
+.recover select, .recover input, .map-box select, .map-box input { max-width: 100%; }
 .recover p { margin: 0; flex: 1 1 16em; }
 .map-box { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .map-box p { flex: 1 1 100%; }

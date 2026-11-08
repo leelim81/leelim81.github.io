@@ -105,7 +105,7 @@
     {
       "name": "the map controls fit a narrow viewport",
       "ok": true,
-      "detail": "{\"x\":12,\"y\":623.421875,\"width\":366,\"height\":303.125}"
+      "detail": "{\"x\":0,\"y\":390.6875,\"width\":390,\"height\":149.546875}"
     }
   ],
   "limits": [
