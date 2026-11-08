@@ -1,0 +1,894 @@
+{
+  "browser": "Chrome headless",
+  "hypothesis": "Explicit CropBox, rotation, and UserUnit handling can place a user-chosen value where it was clicked, without changing scan detection.",
+  "baseline": {
+    "commit": "084b4fa",
+    "rot90": "refused: rotated in the file",
+    "rot180": "refused: rotated in the file",
+    "rot270": "refused: rotated in the file",
+    "crop": "refused: cropped",
+    "userUnit2": "refused: scale other than 1",
+    "plain": "armed for a click",
+    "rot45": "refused: rotated in the file"
+  },
+  "checks": [
+    {
+      "name": "gold ledger matches pdf.js for rot0",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for rot90",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for rot180",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for rot270",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for crop",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for mediaOff",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches pdf.js for unit2",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "gold ledger matches an editor quarter-turn on an upright page",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "rot0 opens with placement and maps closed and Text visible",
+      "ok": true,
+      "detail": "{\"recover\":true,\"map\":true,\"text\":true}"
+    },
+    {
+      "name": "rot0 nudge and arrow undo back to the click",
+      "ok": true,
+      "detail": "{\"before\":{\"x\":0.1875,\"y\":0.0729115,\"w\":0.42,\"h\":0.0455,\"fontSize\":14,\"text\":\"Ada90\"},\"after\":{\"x\":0.1875,\"y\":0.0729115,\"w\":0.42,\"h\":0.0455,\"fontSize\":14,\"text\":\"Ada90\"}}"
+    },
+    {
+      "name": "rot0 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171882185008,\"expected\":{\"x\":38.5,\"y\":358.9354,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":84},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":38.5,\"y\":358.9354187011719}]}"
+    },
+    {
+      "name": "rot90 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171867974153,\"expected\":{\"x\":41.0646,\"y\":38.5,\"rotate\":90,\"right\":{\"x\":0,\"y\":1},\"down\":{\"x\":1,\"y\":0},\"width\":168},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":41.06458129882813,\"y\":38.5}]}"
+    },
+    {
+      "name": "rot180 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.0000967483792042244,\"expected\":{\"x\":166.3914,\"y\":37.26052000000001,\"rotate\":180,\"right\":{\"x\":-1,\"y\":0},\"down\":{\"x\":0,\"y\":1},\"width\":84},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":166.3913043478261,\"y\":37.26050547724184}]}"
+    },
+    {
+      "name": "rot270 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171882185008,\"expected\":{\"x\":158.9354,\"y\":361.5,\"rotate\":-90,\"right\":{\"x\":0,\"y\":-1},\"down\":{\"x\":-1,\"y\":0},\"width\":168},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":158.93541870117187,\"y\":361.5}]}"
+    },
+    {
+      "name": "crop export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171882185008,\"expected\":{\"x\":58.5,\"y\":198.9354,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":63},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":58.5,\"y\":198.93541870117187}]}"
+    },
+    {
+      "name": "mediaOff export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171882185008,\"expected\":{\"x\":53.5,\"y\":383.9354,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":84},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":53.5,\"y\":383.9354187011719}]}"
+    },
+    {
+      "name": "unit2 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171882185008,\"expected\":{\"x\":38.5,\"y\":358.9354,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":84},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":38.5,\"y\":358.9354187011719}]}"
+    },
+    {
+      "name": "editor90 export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000018701171867974153,\"expected\":{\"x\":41.0646,\"y\":38.5,\"rotate\":90,\"right\":{\"x\":0,\"y\":1},\"down\":{\"x\":1,\"y\":0},\"width\":168},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":41.06458129882813,\"y\":38.5}]}"
+    },
+    {
+      "name": "a 45 degree page stays refused",
+      "ok": true,
+      "detail": "This page’s rotation is not a quarter turn. A saved value is not placed on it."
+    },
+    {
+      "name": "the refused 45 degree page gained no line",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a zero page scale stays refused",
+      "ok": true,
+      "detail": "This reader could not read a usable page scale, so a saved value is not placed."
+    },
+    {
+      "name": "the refused scale page gained no line",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a whiteout on a 90 degree page covers its box",
+      "ok": true,
+      "detail": "{\"dark\":0,\"seen\":2112,\"view\":[400,200]}"
+    },
+    {
+      "name": "a rotated page with a widget can take a placed value",
+      "ok": true,
+      "detail": "Click the page where Ada Recover’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "name": "the rotated widget page still has its widget and the placed value",
+      "ok": true,
+      "detail": "{\"widgets\":1,\"n\":1}"
+    },
+    {
+      "name": "changing page cancels an armed placement",
+      "ok": true,
+      "detail": "Placement was cancelled because the page changed."
+    },
+    {
+      "name": "the other page gained nothing from the cancelled click",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "changing person cancels an armed placement",
+      "ok": true,
+      "detail": "The person changed, so the placement was cancelled."
+    },
+    {
+      "name": "the cancelled person click added nothing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the value exports on page 2 only, at the clicked point",
+      "ok": true,
+      "detail": "{\"dist\":0.000005489207483501718,\"found\":[{\"page\":2,\"str\":\"Ada90\",\"x\":202.33333333333331,\"y\":28.564581298828124}],\"expected\":{\"x\":202.333328,\"y\":28.56458,\"rotate\":180,\"right\":{\"x\":-1,\"y\":0},\"down\":{\"x\":0,\"y\":1},\"width\":92.39999999999999}}"
+    },
+    {
+      "name": "the map keeps geometry and not the typed value or person",
+      "ok": true,
+      "detail": "{\"ok\":true,\"vault\":{\"schema\":1,\"maps\":[{\"id\":\"oawfz0huoum7\",\"name\":\"Quarter map\",\"fileSha256\":\"237c6df56e0c9662a939ded1d54e934d3125195339387ec83bfcdaaea4a9f737\",\"role\":\"applicant\",\"createdAt\":\"2026-11-08T09:01:53.445Z\",\"updatedAt\":\"2026-11-08T09:01:53.445Z\",\"pages\":[{\"width\":200,\"height\":400,\"slots\":[{\"key\":\"email\",\"role\":\"applicant\",\"x\":0.07291666666666667,\"y\":0.08332290649414062,\"w\":0.42,\"h\":0.09100000000000001,\"fontSize\":14}],\"rotation\":90,\"userUnit\":1,\"cropX\":0,\"cropY\":0,\"cropWidth\":200,\"cro"
+    },
+    {
+      "name": "an editor turn still blocks a map",
+      "ok": true,
+      "detail": "Pages were rotated or reordered in the editor. Open the exact blank original."
+    },
+    {
+      "name": "the same rotated file applies the map once",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a quarter-turn map does not match an upright frame of the same size",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "fresh letter geometry matches the frozen transform",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "freshLetter export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.0003217629505182692,\"expected\":{\"x\":511.471492,\"y\":674.6319,\"rotate\":-90,\"right\":{\"x\":0,\"y\":-1},\"down\":{\"x\":-1,\"y\":0},\"width\":294},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":511.4715133682969,\"y\":674.6315789473684}]}"
+    },
+    {
+      "name": "Moss turned page matches the frozen transform",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "Moss crop page matches the frozen transform",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "mossTurned export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.000208866460369567,\"expected\":{\"x\":74.98309,\"y\":95.62914283548142,\"rotate\":90,\"right\":{\"x\":0,\"y\":1},\"down\":{\"x\":1,\"y\":0},\"width\":352.39878695981804},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":74.98288459198783,\"y\":95.62910498383944}]}"
+    },
+    {
+      "name": "mossCrop export redraws Ada90 on the clicked page",
+      "ok": true,
+      "detail": "{\"dist\":0.0001333488544629478,\"expected\":{\"x\":72.6668,\"y\":484.76875,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":168},\"hit\":[{\"page\":1,\"str\":\"Ada90\",\"x\":72.66666666666667,\"y\":484.7687520345052}]}"
+    },
+    {
+      "name": "device pixel ratio 2 still exports the clicked fraction",
+      "ok": true,
+      "detail": "{\"dist\":0.00015832070500958122,\"ratio\":2}"
+    },
+    {
+      "name": "scan still gives a rotated raster no line positions",
+      "ok": true,
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
+    },
+    {
+      "name": "scan still gives an offset crop no line positions",
+      "ok": true,
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
+    },
+    {
+      "name": "scan still gives a non-unit scale no line positions",
+      "ok": true,
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
+    },
+    {
+      "name": "an upright unit page is not scan-blocked",
+      "ok": true,
+      "detail": "{\"n\":0,\"block\":\"\",\"route\":\"empty\"}"
+    }
+  ],
+  "limits": [
+    "Gold pages are 200 by 400 synthetic sheets. The fresh sheet is letter size with a crop, a 270 degree turn, and UserUnit 1.5. Moss pages are the existing synthetic rasters.",
+    "Position is the text origin versus the frozen transform, within 0.8 user units, on these pages only.",
+    "No phone was used. Current Chrome stable load-unpacked was not this script."
+  ],
+  "hashes": {
+    "rot0": "aca942777c6b908d729d33ce15ef7c2ed22e8452a5b05517ddb81bc6f2b2905b",
+    "rot90": "237c6df56e0c9662a939ded1d54e934d3125195339387ec83bfcdaaea4a9f737",
+    "rot180": "46cedd348eccf55c2f1b439db3aeff0520c5380a9b8c9d1d9b79fc8c38a0bc35",
+    "rot270": "7c7bcfaf62dc3042126e470b230d32065208164cd01819588725a294c995d0cc",
+    "crop": "a1096e23a0a95438406ef9b047439be5886227944c15a83ea54c52e49c8fbaa0",
+    "mediaOff": "44234e76f888762e63a00b1d53b9e152fe7279b09389c0bd9e8b4f75a67bc0a5",
+    "unit2": "ac891e53bf499b6179f444698ea186ec784a649d1ccdee5b6ee3dec2c418c491",
+    "rot45": "763e31e36e66ca15deb7888b99129d10efd5616516702cfbdc1f42828753af75",
+    "unit0": "74d905f9e3ab9fa48a8000018b42dc3a37d0efad2b2f9ba77d5bfb9749436c75",
+    "white90": "43ae6c054f44443ba6b34f57890b490b67408ccc317c455cab7aaa83911c1d17",
+    "widget90": "f780a760338ef57109f58722cd5991adeb242222bf19f986ece85bad00b52876",
+    "twoPage": "d6c60d46113e675e7b63b364920b844817640cb0f88f791a522f6a978ffc5e39",
+    "freshLetter": "d70372f828837736efc1524ffd046a95cfebe5e3353e06387ba838d204826fc9",
+    "mossTurned": "8f4f681f36e0cab9c6f65464f86f489c009991a7e11bbc4f206b720b1b7ef0f8",
+    "mossCrop": "de18b128da74b84def291fbd68b45a03189b97506bef86bf65c2085711026c63"
+  },
+  "raw": [
+    {
+      "kind": "ledger",
+      "name": "rot0",
+      "row": {
+        "misses": [],
+        "shown": 0,
+        "userUnit": 1,
+        "rotation": 0
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "rot90",
+      "row": {
+        "misses": [],
+        "shown": 90,
+        "userUnit": 1,
+        "rotation": 90
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "rot180",
+      "row": {
+        "misses": [],
+        "shown": 180,
+        "userUnit": 1,
+        "rotation": 180
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "rot270",
+      "row": {
+        "misses": [],
+        "shown": 270,
+        "userUnit": 1,
+        "rotation": 270
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "crop",
+      "row": {
+        "misses": [],
+        "shown": 0,
+        "userUnit": 1,
+        "rotation": 0
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "mediaOff",
+      "row": {
+        "misses": [],
+        "shown": 0,
+        "userUnit": 1,
+        "rotation": 0
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "unit2",
+      "row": {
+        "misses": [],
+        "shown": 0,
+        "userUnit": 2,
+        "rotation": 0
+      }
+    },
+    {
+      "kind": "ledger",
+      "name": "editor+90",
+      "row": {
+        "misses": [],
+        "shown": 90,
+        "userUnit": 1,
+        "rotation": 90
+      }
+    },
+    {
+      "kind": "export",
+      "name": "rot0",
+      "ann": {
+        "x": 0.1875,
+        "y": 0.0729115,
+        "w": 0.42,
+        "h": 0.0455,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 0,
+        "origin": {
+          "x": 38.5,
+          "y": 358.9354,
+          "rotate": 0,
+          "right": {
+            "x": 1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": -1
+          },
+          "width": 84
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 38.5,
+            "y": 358.9354187011719
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171882185008
+    },
+    {
+      "kind": "export",
+      "name": "rot90",
+      "ann": {
+        "x": 0.09375,
+        "y": 0.145823,
+        "w": 0.42,
+        "h": 0.091,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 90,
+        "origin": {
+          "x": 41.0646,
+          "y": 38.5,
+          "rotate": 90,
+          "right": {
+            "x": 0,
+            "y": 1
+          },
+          "down": {
+            "x": 1,
+            "y": 0
+          },
+          "width": 168
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 41.06458129882813,
+            "y": 38.5
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171867974153
+    },
+    {
+      "kind": "export",
+      "name": "rot180",
+      "ann": {
+        "x": 0.16304300000000002,
+        "y": 0.06340130000000001,
+        "w": 0.42,
+        "h": 0.0455,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 180,
+        "origin": {
+          "x": 166.3914,
+          "y": 37.26052000000001,
+          "rotate": 180,
+          "right": {
+            "x": -1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": 1
+          },
+          "width": 84
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 166.3913043478261,
+            "y": 37.26050547724184
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.0000967483792042244
+    },
+    {
+      "kind": "export",
+      "name": "rot270",
+      "ann": {
+        "x": 0.09375,
+        "y": 0.145823,
+        "w": 0.42,
+        "h": 0.091,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 270,
+        "origin": {
+          "x": 158.9354,
+          "y": 361.5,
+          "rotate": -90,
+          "right": {
+            "x": 0,
+            "y": -1
+          },
+          "down": {
+            "x": -1,
+            "y": 0
+          },
+          "width": 168
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 158.93541870117187,
+            "y": 361.5
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171882185008
+    },
+    {
+      "kind": "export",
+      "name": "crop",
+      "ann": {
+        "x": 0.25,
+        "y": 0.145823,
+        "w": 0.42,
+        "h": 0.091,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 0,
+        "origin": {
+          "x": 58.5,
+          "y": 198.9354,
+          "rotate": 0,
+          "right": {
+            "x": 1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": -1
+          },
+          "width": 63
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 58.5,
+            "y": 198.93541870117187
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171882185008
+    },
+    {
+      "kind": "export",
+      "name": "mediaOff",
+      "ann": {
+        "x": 0.1875,
+        "y": 0.0729115,
+        "w": 0.42,
+        "h": 0.0455,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 0,
+        "origin": {
+          "x": 53.5,
+          "y": 383.9354,
+          "rotate": 0,
+          "right": {
+            "x": 1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": -1
+          },
+          "width": 84
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 53.5,
+            "y": 383.9354187011719
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171882185008
+    },
+    {
+      "kind": "export",
+      "name": "unit2",
+      "ann": {
+        "x": 0.1875,
+        "y": 0.0729115,
+        "w": 0.42,
+        "h": 0.0455,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 0,
+        "origin": {
+          "x": 38.5,
+          "y": 358.9354,
+          "rotate": 0,
+          "right": {
+            "x": 1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": -1
+          },
+          "width": 84
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 38.5,
+            "y": 358.9354187011719
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171882185008
+    },
+    {
+      "kind": "export",
+      "name": "editor90",
+      "ann": {
+        "x": 0.09375,
+        "y": 0.145823,
+        "w": 0.42,
+        "h": 0.091,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 90,
+        "origin": {
+          "x": 41.0646,
+          "y": 38.5,
+          "rotate": 90,
+          "right": {
+            "x": 0,
+            "y": 1
+          },
+          "down": {
+            "x": 1,
+            "y": 0
+          },
+          "width": 168
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 41.06458129882813,
+            "y": 38.5
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000018701171867974153
+    },
+    {
+      "kind": "whiteout",
+      "white": {
+        "dark": 0,
+        "seen": 2112,
+        "view": [
+          400,
+          200
+        ]
+      }
+    },
+    {
+      "kind": "fresh-ledger",
+      "row": {
+        "misses": [],
+        "shown": 270,
+        "userUnit": 1.5,
+        "rotation": 270
+      }
+    },
+    {
+      "kind": "export",
+      "name": "freshLetter",
+      "ann": {
+        "x": 0.103383,
+        "y": 0.0974602,
+        "w": 0.42,
+        "h": 0.033695499999999996,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 270,
+        "origin": {
+          "x": 511.471492,
+          "y": 674.6319,
+          "rotate": -90,
+          "right": {
+            "x": 0,
+            "y": -1
+          },
+          "down": {
+            "x": -1,
+            "y": 0
+          },
+          "width": 294
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 511.4715133682969,
+            "y": 674.6315789473684
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.0003217629505182692
+    },
+    {
+      "kind": "moss-ledger",
+      "turned": {
+        "misses": [],
+        "shown": 90,
+        "userUnit": 1,
+        "rotation": 90
+      },
+      "crop": {
+        "misses": [],
+        "shown": 0,
+        "userUnit": 1,
+        "rotation": 0
+      }
+    },
+    {
+      "kind": "export",
+      "name": "mossTurned",
+      "ann": {
+        "x": 0.112782,
+        "y": 0.106022,
+        "w": 0.42,
+        "h": 0.030569000000000002,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 90,
+        "origin": {
+          "x": 74.98309,
+          "y": 95.62914283548142,
+          "rotate": 90,
+          "right": {
+            "x": 0,
+            "y": 1
+          },
+          "down": {
+            "x": 1,
+            "y": 0
+          },
+          "width": 352.39878695981804
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 74.98288459198783,
+            "y": 95.62910498383944
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.000208866460369567
+    },
+    {
+      "kind": "export",
+      "name": "mossCrop",
+      "ann": {
+        "x": 0.10416700000000001,
+        "y": 0.0666625,
+        "w": 0.42,
+        "h": 0.0364,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "expected": {
+        "frameOk": true,
+        "rotation": 0,
+        "origin": {
+          "x": 72.6668,
+          "y": 484.76875,
+          "rotate": 0,
+          "right": {
+            "x": 1,
+            "y": 0
+          },
+          "down": {
+            "x": 0,
+            "y": -1
+          },
+          "width": 168
+        }
+      },
+      "hit": {
+        "pages": 1,
+        "found": [
+          {
+            "page": 1,
+            "str": "Ada90",
+            "x": 72.66666666666667,
+            "y": 484.7687520345052
+          }
+        ],
+        "widgets": 0
+      },
+      "dist": 0.0001333488544629478
+    },
+    {
+      "kind": "dpr",
+      "ratio": 2,
+      "ann": {
+        "x": 0.10416700000000001,
+        "y": 0.12499,
+        "w": 0.42,
+        "h": 0.091,
+        "fontSize": 14,
+        "text": "Ada90"
+      },
+      "dist": 0.00015832070500958122,
+      "status": "Click the page where Ada Recover’s email should go. Cancel if this is the wrong person."
+    },
+    {
+      "kind": "scan",
+      "scan": {
+        "turned": {
+          "n": 0,
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
+          "route": "raster-blocked"
+        },
+        "cropped": {
+          "n": 0,
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
+          "route": "raster-blocked"
+        },
+        "scaled": {
+          "n": 0,
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
+          "route": "raster-blocked"
+        },
+        "plain": {
+          "n": 0,
+          "block": "",
+          "route": "empty"
+        }
+      }
+    }
+  ],
+  "pdfjsVersion": "3.11.174",
+  "failed": 0
+}

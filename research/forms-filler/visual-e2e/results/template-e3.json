@@ -1,0 +1,118 @@
+{
+  "browser": "Chrome headless",
+  "scriptedSteps": 36,
+  "checks": [
+    {
+      "name": "saved values start collapsed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "seeding does not open saved values",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "switching page cancels an armed placement",
+      "ok": true,
+      "detail": "Placement was cancelled because the page changed."
+    },
+    {
+      "name": "the other page does not receive the cancelled placement",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the stored map has no person, value, source, or filename",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "name": "the map is still listed after reload",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "preview names Bea’s ready places and skips the unconfirmed phone",
+      "ok": true,
+      "detail": "Preview only, nothing written. Role applicant. 2 place(s), 1 left blank. Page 1 applicant email would be placed. Page 1 applicant phone has no confirmed value. Page 2 applicant name would be placed."
+    },
+    {
+      "name": "apply writes only Bea on the reviewed places",
+      "ok": true,
+      "detail": "SENTINEL_BEA_EMAIL | SENTINEL_BEA_NAME"
+    },
+    {
+      "name": "applying again replaces instead of doubling",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "undo restores the previous apply",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "page 1 has Bea’s email and page 2 has Bea’s name",
+      "ok": true,
+      "detail": "[\"SENTINEL_BEA_EMAIL\",\"SENTINEL_BEA_NAME\"]"
+    },
+    {
+      "name": "the export does not contain Ada or the unconfirmed phone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "native widgets are still in the export",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "name": "reordered pages are not applied",
+      "ok": true,
+      "detail": "Pages were rotated or reordered in the editor. Open the exact blank original."
+    },
+    {
+      "name": "a different blank has no map",
+      "ok": true,
+      "detail": "No map for this exact file"
+    },
+    {
+      "name": "a revised file does not match the saved map",
+      "ok": true,
+      "detail": "No map for this exact file"
+    },
+    {
+      "name": "two roles are not saved as one map",
+      "ok": true,
+      "detail": "A map remembers one role. Applicant and patient places together were not saved."
+    },
+    {
+      "name": "a full browser store reports quota and does not claim success",
+      "ok": true,
+      "detail": "quota"
+    },
+    {
+      "name": "a bad map version and a hostile map are not kept",
+      "ok": true,
+      "detail": "{\"version\":\"version\",\"kept\":false}"
+    },
+    {
+      "name": "deleting a map keeps the people",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "the map controls fit a narrow viewport",
+      "ok": true,
+      "detail": "{\"x\":0,\"y\":390.6875,\"width\":390,\"height\":149.546875}"
+    }
+  ],
+  "limits": [
+    "The narrow screenshot is a viewport, not a phone.",
+    "Scripted steps are not a measured human time and not a speed claim.",
+    "Setup placed three lines by hand. Reuse was Preview plus Apply on the same blank, without placing those lines again. A revised file is a new valid PDF, not a corrupted byte, because a broken file would not open.",
+    "Current Chrome stable was not used. Scan autofill was not enabled."
+  ],
+  "scriptedStepsNote": 36
+}

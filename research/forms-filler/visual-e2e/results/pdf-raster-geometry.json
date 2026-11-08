@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "a turned dot comes back within 2px, including the opposite sign and the grown canvas",
+      "ok": true,
+      "detail": "[{\"angle\":4,\"outW\":208,\"outH\":134,\"grown\":true,\"errX\":0.5296994328656197,\"errY\":0.32751870809459405,\"forward\":{\"x\":46.2388511967343,\"y\":32.887690067557756,\"outW\":208,\"outH\":134}},{\"angle\":-4,\"outW\":208,\"outH\":134,\"grown\":true,\"errX\":0.28659995111688374,\"errY\":0.5047333219292369,\"forward\":{\"x\":42.05346277208679,\"y\":41.25846691685278,\"outW\":208,\"outH\":134}}]"
+    },
+    {
+      "name": "a level upright scan keeps the original file, does not turn, and the email spot is nearer the email rule than the name rule",
+      "ok": true,
+      "detail": "{\"route\":\"raster\",\"deskew\":0,\"levelCenter\":{\"x\":220.21714285714285,\"y\":572.6999999999999},\"emailRule\":{\"x\":306,\"y\":540.8228571428572},\"nameRule\":{\"x\":306,\"y\":427.68}}"
+    },
+    {
+      "name": "page 1 is turned the other way from a +5 degree raster, and its spot contains that tilted rule within 8pt",
+      "ok": true,
+      "detail": "{\"angles\":[{\"page\":0,\"angle\":0,\"srcW\":1000,\"srcH\":1400,\"turnW\":1000,\"turnH\":1400},{\"page\":1,\"angle\":-5.100000000000001,\"srcW\":1118,\"srcH\":1482,\"turnW\":1245,\"turnH\":1576}],\"tiltedRule\":{\"x\":290.65593507170024,\"y\":498.0129213557434,\"outW\":559,\"outH\":741},\"page1\":{\"label\":\"Email\",\"page\":1,\"transport\":\"viewport-review\",\"detectAngle\":-5.100000000000001,\"rect\":{\"x\":86.00251275196112,\"y\":531.3916406105016,\"width\":448.11270125223615,\"height\":13.363148479427549},\"pw\":595,\"ph\":788.7209302325581}}"
+    },
+    {
+      "name": "a -5 degree raster is mapped back onto the original page within 8pt, and the file is not replaced",
+      "ok": true,
+      "detail": "{\"route\":\"raster-review\",\"deskew\":5.099999999999998,\"negHit\":true,\"negativeRule\":{\"x\":268.34406492829976,\"y\":498.0129213557434,\"outW\":559,\"outH\":741},\"field\":{\"label\":\"Email\",\"page\":0,\"transport\":\"viewport-review\",\"detectAngle\":5.099999999999998,\"rect\":{\"x\":60.89976736172517,\"y\":531.2237776968989,\"width\":448.11270125223615,\"height\":13.363148479427549},\"pw\":595,\"ph\":788.7209302325581}}"
+    },
+    {
+      "name": "UserUnit, an offset crop, and a quarter turn keep the ledger path and the original file",
+      "ok": true,
+      "detail": "{\"unit2\":{\"route\":\"raster-review\",\"n\":2},\"offset\":{\"route\":\"raster-review\",\"n\":2},\"sideways\":{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\"}}"
+    },
+    {
+      "name": "reference text does not autofill a tilted scan spot, and the other person is not chosen",
+      "ok": true,
+      "detail": "{\"decisions\":[{\"kind\":\"email\",\"decision\":\"abstain\",\"value\":\"\"},{\"kind\":\"name\",\"decision\":\"abstain\",\"value\":\"\"}],\"scan\":[\"Email\",\"Name\"]}"
+    },
+    {
+      "name": "the reference value is offered for review and is not written before it is checked",
+      "ok": true,
+      "detail": "2"
+    },
+    {
+      "name": "the original page text remains, the unchecked name is absent, and the checked glyph is on the known tilted rule",
+      "ok": true,
+      "detail": "{\"opened\":{\"status\":\"2 scan estimates. Nothing is written until you check a value.\",\"review\":true},\"formulaErr\":0.00042365067346551905,\"boxHoldsRule\":true,\"ann\":{\"text\":\"ada.gold@example.com\",\"x\":0.102353,\"y\":0.309532,\"w\":0.7531310000000001,\"h\":0.0169428,\"fontSize\":10.2},\"glyph\":{\"x\":58.21507555496533,\"y\":502.9671289622966},\"negativeRule\":{\"x\":268.34406492829976,\"y\":498.0129213557434,\"outW\":559,\"outH\":741},\"text\":\"ORIG-NEG  ada.gold@example.com\"}"
+    }
+  ],
+  "limits": [],
+  "failed": 0
+}

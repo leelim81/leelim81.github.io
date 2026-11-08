@@ -1,0 +1,480 @@
+{
+  "gates": {
+    "transport": "quarter-turn rotation, finite CropBox, UserUnit in (0, 75000] matching this pdf.js",
+    "refuseWithoutDetector": [
+      "rotation other than 0/90/180/270",
+      "UserUnit missing, non-positive, or not matching the reader",
+      "crop width or height not positive"
+    ],
+    "abstainInsteadOfTurning": "bestLineAngle other than 0, or no detector spot on the unturned viewport",
+    "autofill": "off for transported spots; ocrAutofill and line thresholds are not edited",
+    "uprightPath": "rotation 0, crop equal to media, UserUnit 1 stays on the existing raster path"
+  },
+  "baseline": {
+    "parent": "dc1fdcb",
+    "rot90ms": 254,
+    "cropms": 245,
+    "unit2ms": 246,
+    "rot45ms": 244,
+    "unit0ms": 2378,
+    "unit0note": "UserUnit 0 was not refused. pdf.js reported 1, so the detector ran and returned 2 spots.",
+    "uprightms": 2445,
+    "uprightLabels": [
+      "Email",
+      "Name"
+    ]
+  },
+  "checks": [
+    {
+      "name": "upright unit page stays on the existing raster path",
+      "ok": true,
+      "detail": "{\"route\":\"raster\",\"labels\":[\"Email\",\"Name\"],\"ms\":2385}"
+    },
+    {
+      "name": "UserUnit 2 transports the same Email and Name spots for review",
+      "ok": true,
+      "detail": "{\"route\":\"raster-review\",\"labels\":[\"Email\",\"Name\"],\"ms\":1919,\"block\":\"\"}"
+    },
+    {
+      "name": "an offset crop transports the same spots for review",
+      "ok": true,
+      "detail": "{\"route\":\"raster-review\",\"labels\":[\"Email\",\"Name\"],\"ms\":1893,\"block\":\"\"}"
+    },
+    {
+      "name": "a view-upright 90 degree page transports the spots or abstains without turning",
+      "ok": true,
+      "detail": "{\"route\":\"raster-review\",\"labels\":[\"Email\",\"Name\"],\"ms\":1884,\"block\":\"\"}"
+    },
+    {
+      "name": "a sideways page is not turned and gains no scan spot",
+      "ok": true,
+      "detail": "{\"ms\":1513,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"transport\":{\"ok\":false,\"looked\":true,\"fields\":[],\"abstain\":[{\"page\":0,\"reason\":\"no-detector-position\"}],\"pages\":[{\"rotation\":90,\"userUnit\":1,\"crop\":{\"x\":0,\"y\":0,\"width\":612,\"height\":792}}],\"ms\":1269}}"
+    },
+    {
+      "name": "a 45 degree page stays refused before a detector look",
+      "ok": true,
+      "detail": "{\"ms\":357,\"block\":\"This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.\"}"
+    },
+    {
+      "name": "a non-positive UserUnit stays refused before a detector look",
+      "ok": true,
+      "detail": "{\"ms\":356,\"block\":\"This scan is on a page scale other than 1. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.\"}"
+    },
+    {
+      "name": "a native widget is unchanged and not a scan estimate",
+      "ok": true,
+      "detail": "{\"route\":\"acro\",\"n\":1}"
+    },
+    {
+      "name": "two people on an unspecified line abstain instead of confirming the wrong person",
+      "ok": true,
+      "detail": "[{\"kind\":\"email\",\"decision\":\"abstain\",\"value\":\"\",\"reason\":\"no_source\"},{\"kind\":\"name\",\"decision\":\"abstain\",\"value\":\"\",\"reason\":\"no_source\"}]"
+    },
+    {
+      "name": "the destination preview names the label, the binding, the estimate, and that value and person are open",
+      "ok": true,
+      "detail": "Scan estimates\n\nThese spots come from the scan. The value and the person are not chosen. Nothing is written until you check a review. A line on the wrong label is not a match.\n\nLabel read: Email\nBinding: email.\nLocation: scan estimate on page 1. Not a form widget.\nValue: not chosen. Person: not confirmed.\nLabel read: Name\nBinding: name.\nLocation: scan estimate on page 1. Not a form widget.\nValue: not chosen. Person: not confirmed."
+    },
+    {
+      "name": "saved values stay collapsed while the estimates are shown",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "review shows an unconfirmed value, the person, the label binding, and the location",
+      "ok": true,
+      "detail": "2 values are not written until you check them.\n\nValue not confirmed: email ada.gold@example.com\nPerson on the paper: applicant. Not confirmed until you check this.\nLabel binding: Email as email.\nLocation: scan estimate on page 1. Unchecked lines are not written.\nSource: Email: ada.gold@example.com\nValue not confirmed: name Ada Gold\nPerson on the paper: applicant. Not confirmed until you check this.\nLabel binding: Name as name.\nLocation: scan estimate on page 1. Unchecked lines are not written.\nSource: Name: Ada Gold\nUse checked values\nLeave them blank"
+    },
+    {
+      "name": "only the checked email is carried, and the extra panels stay closed",
+      "ok": true,
+      "detail": "{\"n\":1,\"text\":[\"ada.gold@example.com\"],\"recover\":true,\"map\":true,\"textTool\":true,\"ann\":[{\"x\":0.294118,\"y\":0.220491,\"w\":0.522876,\"h\":0.0155844,\"fontSize\":10.2}]}"
+    },
+    {
+      "name": "the stored fraction matches the ledger corner, not a raw pixel used as a PDF point",
+      "ok": true,
+      "detail": "{\"frameOk\":true,\"userUnit\":2,\"rotation\":0,\"crop\":{\"x\":0,\"y\":0,\"width\":612,\"height\":792},\"origin\":{\"x\":181.000216,\"y\":608.701128,\"rotate\":0,\"right\":{\"x\":1,\"y\":0},\"down\":{\"x\":0,\"y\":-1},\"width\":320.000112},\"cornerDx\":0,\"cornerDy\":0}"
+    },
+    {
+      "name": "the exported email sits on the email line in user units and not on the name line",
+      "ok": true,
+      "detail": "{\"dx\":0.0002159999999946649,\"dy\":0.0003005714286246075,\"nearerEmail\":true,\"other\":false}"
+    },
+    {
+      "name": "the new layout was looked at once and is not claimed beyond its raw labels",
+      "ok": true,
+      "detail": "{\"phone\":true,\"city\":false,\"otherLabels\":[],\"abstained\":false,\"ms\":2700}"
+    }
+  ],
+  "cases": [
+    {
+      "name": "upright",
+      "ms": 2385,
+      "route": "raster",
+      "block": "",
+      "n": 2,
+      "transport": null,
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "untrusted": false,
+          "transport": "",
+          "page": 0,
+          "x": 175,
+          "y": 588.2222222222222,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        },
+        {
+          "label": "Name",
+          "kind": "name",
+          "untrusted": false,
+          "transport": "",
+          "page": 0,
+          "x": 175,
+          "y": 491,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        }
+      ]
+    },
+    {
+      "name": "unit2",
+      "ms": 1919,
+      "route": "raster-review",
+      "block": "",
+      "n": 2,
+      "transport": {
+        "looked": true,
+        "ms": 1675,
+        "abstain": [],
+        "pages": [
+          {
+            "rotation": 0,
+            "userUnit": 2,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 612,
+              "height": 792
+            }
+          }
+        ],
+        "count": 2
+      },
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 588.2222222222222,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        },
+        {
+          "label": "Name",
+          "kind": "name",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 491,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        }
+      ]
+    },
+    {
+      "name": "offset",
+      "ms": 1893,
+      "route": "raster-review",
+      "block": "",
+      "n": 2,
+      "transport": {
+        "looked": true,
+        "ms": 1649,
+        "abstain": [],
+        "pages": [
+          {
+            "rotation": 0,
+            "userUnit": 1,
+            "crop": {
+              "x": 36,
+              "y": 44,
+              "width": 612,
+              "height": 792
+            }
+          }
+        ],
+        "count": 2
+      },
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 588.2222222222222,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        },
+        {
+          "label": "Name",
+          "kind": "name",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 491,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        }
+      ]
+    },
+    {
+      "name": "rot90",
+      "ms": 1884,
+      "route": "raster-review",
+      "block": "",
+      "n": 2,
+      "transport": {
+        "looked": true,
+        "ms": 1641,
+        "abstain": [],
+        "pages": [
+          {
+            "rotation": 90,
+            "userUnit": 1,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 792,
+              "height": 612
+            }
+          }
+        ],
+        "count": 2
+      },
+      "fields": [
+        {
+          "label": "Email",
+          "kind": "email",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 588.2222222222222,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        },
+        {
+          "label": "Name",
+          "kind": "name",
+          "untrusted": false,
+          "transport": "viewport-review",
+          "page": 0,
+          "x": 175,
+          "y": 491,
+          "w": 311.1111111111111,
+          "h": 12,
+          "pw": 595,
+          "ph": 770
+        }
+      ]
+    },
+    {
+      "name": "sideways",
+      "ms": 1513,
+      "route": "raster-blocked",
+      "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
+      "n": 0,
+      "transport": {
+        "ok": false,
+        "looked": true,
+        "fields": [],
+        "abstain": [
+          {
+            "page": 0,
+            "reason": "no-detector-position"
+          }
+        ],
+        "pages": [
+          {
+            "rotation": 90,
+            "userUnit": 1,
+            "crop": {
+              "x": 0,
+              "y": 0,
+              "width": 612,
+              "height": 792
+            }
+          }
+        ],
+        "ms": 1269
+      },
+      "fields": []
+    },
+    {
+      "name": "rot45",
+      "ms": 357,
+      "route": "raster-blocked",
+      "block": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "n": 0,
+      "transport": {
+        "ok": false,
+        "reason": "rotation",
+        "looked": false,
+        "fields": [],
+        "abstain": [],
+        "ms": 114
+      },
+      "fields": []
+    },
+    {
+      "name": "unit0",
+      "ms": 356,
+      "route": "raster-blocked",
+      "block": "This scan is on a page scale other than 1. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "n": 0,
+      "transport": {
+        "ok": false,
+        "reason": "scale",
+        "looked": false,
+        "fields": [],
+        "abstain": [],
+        "ms": 115
+      },
+      "fields": []
+    },
+    {
+      "name": "widget",
+      "ms": 117,
+      "route": "acro",
+      "block": "",
+      "n": 1,
+      "transport": null,
+      "fields": [
+        {
+          "label": "Office email",
+          "kind": "email",
+          "untrusted": false,
+          "transport": "",
+          "page": 0,
+          "x": 71.5,
+          "y": 699.5,
+          "w": 181,
+          "h": 19
+        }
+      ]
+    },
+    {
+      "name": "two-person",
+      "people": [
+        {
+          "kind": "email",
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source"
+        },
+        {
+          "kind": "name",
+          "decision": "abstain",
+          "value": "",
+          "reason": "no_source"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "The new layout did not bind both Phone and City. Raw labels: Phone. No threshold was changed.",
+    "Latency figures are script wall clocks for these pages. They are not a reliability rate.",
+    "No phone was used. Chrome 156 Load unpacked was not clicked again."
+  ],
+  "hashes": {
+    "upright": "f30b5101e11e3f0b37273b0db14ac809e432dda4ea0559f1a5f4b10ba06f3b7a",
+    "unit2": "d31c2ae7112af7b53387ee2188fb378326bbb01354f8a05ef5b8495278ccf909",
+    "offset": "679f1661a094bccbab3d0aa1840c25e8836d0064dce2fa48eb3924e148ab514f",
+    "rot90": "c547737815b2a7040abcfad3d64541451409f1f5a2de0d6b999efe540e988136",
+    "sideways": "e2a65af628355ea81dd0944c264bc1203ac5ec5dbf6f9fb57ed8fb99a47b75cb",
+    "rot45": "1f235f0f59d59158d6aa11833c7439ddc0c461f6b715fcac149b66dbc07bef8d",
+    "unit0": "0bab7e28c57f5625d09c5fa5d9f0d49c43fe30aec897ced7903c874eae55fdfb",
+    "fresh": "98608c5c36af3a11e4ad86452ac7889e3d7595d82a8ce52735788c88170901b0",
+    "widget": "2918633653bcb41aa30548b04e6d6bd9a40c7341e31a1ced5cc4da9f747a67d4",
+    "reference": "08d396914f2ae5002bc126f99895d42fe82d75de40a3c24f08df9f7a42d5667f"
+  },
+  "export": {
+    "dx": 0.0002159999999946649,
+    "dy": 0.0003005714286246075,
+    "nearerEmail": true,
+    "other": false
+  },
+  "fresh": {
+    "name": "fresh",
+    "ms": 2700,
+    "route": "raster-review",
+    "block": "",
+    "n": 1,
+    "transport": {
+      "looked": true,
+      "ms": 2434,
+      "abstain": [],
+      "pages": [
+        {
+          "rotation": 0,
+          "userUnit": 1,
+          "crop": {
+            "x": 36,
+            "y": 44,
+            "width": 612,
+            "height": 792
+          }
+        }
+      ],
+      "count": 1
+    },
+    "fields": [
+      {
+        "label": "Phone",
+        "kind": "phone",
+        "untrusted": false,
+        "transport": "viewport-review",
+        "page": 0,
+        "x": 46.666666666666664,
+        "y": 370.44444444444446,
+        "w": 241.90833333333333,
+        "h": 12,
+        "pw": 595,
+        "ph": 770
+      }
+    ]
+  },
+  "freshVerdict": {
+    "phone": true,
+    "city": false,
+    "otherLabels": [],
+    "abstained": false,
+    "ms": 2700
+  },
+  "pdfjsVersion": "3.11.174",
+  "failed": 0
+}

@@ -1,0 +1,172 @@
+{
+  "stage": "scan-families",
+  "seed": 20261160,
+  "looked": {
+    "scan-dev": false,
+    "scan-cal": true,
+    "scan-audit": true
+  },
+  "note": "Development may be read while improving detection. Calibration and audit stay unread until the detector and gates are frozen.",
+  "gates": "ocrAutofill remains false. Do not edit thresholds.js from these pages.",
+  "families": {
+    "scan-dev": {
+      "street": "ALDER BEND",
+      "people": {
+        "a": {
+          "name": "Willa Grove",
+          "other": "Hugo Grove"
+        },
+        "b": {
+          "name": "Hugo Grove",
+          "other": "Willa Grove"
+        }
+      },
+      "postal": 551100
+    },
+    "scan-cal": {
+      "street": "COVE REACH",
+      "people": {
+        "a": {
+          "name": "Ida Fenn",
+          "other": "Jules Fenn"
+        },
+        "b": {
+          "name": "Jules Fenn",
+          "other": "Ida Fenn"
+        }
+      },
+      "postal": 552200
+    },
+    "scan-audit": {
+      "street": "SLOE WALK",
+      "people": {
+        "a": {
+          "name": "Yara Bent",
+          "other": "Amos Bent"
+        },
+        "b": {
+          "name": "Amos Bent",
+          "other": "Yara Bent"
+        }
+      },
+      "postal": 553300
+    }
+  },
+  "files": {
+    "fixtures/scan-dev/grove-beside.form.pdf": {
+      "bytes": 1274706,
+      "sha256": "96168e4190e2c9f40528f6a5797d4ce10e79c0bbda099c7d8be9382b857ec4f6"
+    },
+    "fixtures/scan-dev/grove-beside.reference.pdf": {
+      "bytes": 1268562,
+      "sha256": "ac1c35820e698f56653bcaa0008a31e72ac39513cf0f513700209a34f392a322"
+    },
+    "fixtures/scan-dev/grove-boxes.form.pdf": {
+      "bytes": 1283961,
+      "sha256": "4d49aacdc5b5936af1902408b69215890cfd05fe5ed25f140b2ba7612e8ea0aa"
+    },
+    "fixtures/scan-dev/grove-boxes.reference.pdf": {
+      "bytes": 1281040,
+      "sha256": "75f16330be314d941a188e27751916d35dcdae04bb8eae1750482c619dcc86a2"
+    },
+    "fixtures/scan-dev/grove-columns.form.pdf": {
+      "bytes": 1257199,
+      "sha256": "b7740cc3ea6565bde6391f9557a13c084214496efeef689bb247d858c88adfe4"
+    },
+    "fixtures/scan-dev/grove-columns.reference.pdf": {
+      "bytes": 1280582,
+      "sha256": "95a88c16b7c6dcbe09abc4d9027b30bd86159e7ff9649d676343ba2fa7e465d0"
+    },
+    "fixtures/scan-dev/grove-narrow.form.pdf": {
+      "bytes": 1273546,
+      "sha256": "4129a6dc1ebcad4b0890b6c0165c43ac19af00bb881618e064dfa25e1bb2d673"
+    },
+    "fixtures/scan-dev/grove-narrow.reference.pdf": {
+      "bytes": 1263699,
+      "sha256": "55bec628519a8f879868fbb06080e42f392ce080b868f6f556676838450b7c3b"
+    },
+    "fixtures/scan-dev/grove-native.form.pdf": {
+      "bytes": 2766,
+      "sha256": "b9c41c88bcad0cf7bc86217d719b5a4b3269a1e363962ecf3bec56f40f1686ef"
+    },
+    "fixtures/scan-dev/grove-native.reference.pdf": {
+      "bytes": 1216,
+      "sha256": "7a0d3e3f8178f96df661211e3be498bd2af656a6ec2faee1f50feaa6f17666cb"
+    },
+    "fixtures/scan-dev/grove-serif.form.pdf": {
+      "bytes": 1454388,
+      "sha256": "56a5964a41e9f8653b441eb6e131f43405b52aa5eeae5eca3d21bdc205f37603"
+    },
+    "fixtures/scan-dev/grove-serif.reference.pdf": {
+      "bytes": 1306614,
+      "sha256": "b6e487ce63fe8d1d5dd34c820dc0427543d271f0c82b5bf6c19e0a65f54d21fd"
+    },
+    "fixtures/scan-dev/grove-table.form.pdf": {
+      "bytes": 1219502,
+      "sha256": "03fa8d23a982da22784da24bd5ab2784139109e50269905702a3189dc2c78a46"
+    },
+    "fixtures/scan-dev/grove-table.reference.pdf": {
+      "bytes": 1256336,
+      "sha256": "2eb1ed385d35a548526f4749b5a156e4d779031a6a45719194ea6d84e1f9d749"
+    },
+    "fixtures/scan-dev/grove-vector.form.pdf": {
+      "bytes": 1049,
+      "sha256": "9021304684ec26160375f90f51c9f5fbffc2d6eadfd04d591e8f777350532d55"
+    },
+    "fixtures/scan-dev/grove-vector.reference.pdf": {
+      "bytes": 1133,
+      "sha256": "4adcab7861491522cb7ce64c35fe8d82450c912ea2a98281f53c03ab7c1002a1"
+    },
+    "gold/scan-dev.jsonl": {
+      "bytes": 8818,
+      "sha256": "6b21cf6bdaa047705211868a2afd4923dc094c077b65651fa7683497c1ebd176"
+    },
+    "fixtures/scan-cal/fenn-ladder.form.pdf": {
+      "bytes": 1327314,
+      "sha256": "06ed20ef307829bbef1ea68cba67e3fb6fa69fe8e9de126cb04442bdef91323d"
+    },
+    "fixtures/scan-cal/fenn-ladder.reference.pdf": {
+      "bytes": 1305318,
+      "sha256": "3e735f6f559f0f405de85386a82270ceb39768e81d054b95db6674a8a70c6f39"
+    },
+    "fixtures/scan-cal/fenn-row.form.pdf": {
+      "bytes": 1265632,
+      "sha256": "839b7d083eeef40254541172bfb82f13344f068630d62383f15ca32455902d9c"
+    },
+    "fixtures/scan-cal/fenn-row.reference.pdf": {
+      "bytes": 1271758,
+      "sha256": "5614d7faa09766410ebeddbd33bc3d6c17e88a52dc4e2e1d002fcf87cf93c92d"
+    },
+    "gold/scan-cal.jsonl": {
+      "bytes": 2101,
+      "sha256": "4e732385de7cc9f9f4974a9cb3e9618cabd6d23079986ae037118bc36b21ad61"
+    },
+    "fixtures/scan-audit/bent-above.form.pdf": {
+      "bytes": 1270419,
+      "sha256": "7202107c8c1778fb3723a514a0c0fb49e6dc230324dd48e4ebbd0cad5f3a573c"
+    },
+    "fixtures/scan-audit/bent-above.reference.pdf": {
+      "bytes": 1282732,
+      "sha256": "3bcbf1f75314e8b85a8b0a52f5a548839bc89945f92ac56adbb1b02d13219e16"
+    },
+    "fixtures/scan-audit/bent-margin.form.pdf": {
+      "bytes": 1396297,
+      "sha256": "3b5e507d55dafff2de3ef14994a8062355d5bf8aec99a84bc8180e8e2b2b5550"
+    },
+    "fixtures/scan-audit/bent-margin.reference.pdf": {
+      "bytes": 1296351,
+      "sha256": "50476f6703a1954b062481053529f043b9111c313589ec2d8bb859a2553dae2d"
+    },
+    "gold/scan-audit.jsonl": {
+      "bytes": 2619,
+      "sha256": "0c58a0c05c53ac1aad9bb586f0fbe6cdd71492f98d50b32ed55812d4bde73620"
+    }
+  },
+  "codeHashes": {
+    "tools/forms-filler/fields.js": "837410d8e149abb8266422a5588e3c6d92da85a50f8ed6eaef671b5ad4417dcb",
+    "tools/forms-filler/evidence.js": "8cde7e1a6e605f299bcbed43f28b155b63de4c29f0cf6de4966baacf292444f4",
+    "tools/forms-filler/select.js": "5ef7579ab591b133f37a33783108ea7e45414e2f96261e87a9982868d611721e",
+    "tools/forms-filler/thresholds.js": "613044bf6e5331fe907aaddb3f0bfbb034f8a24e976e6ae160c2ff6e5c0eb270"
+  },
+  "codeNote": "Frozen before the single calibration and audit look. Deskew stays at zero unless a long rule scores better than upright. Thin strokes of at least 80px with paper on both sides are extra candidates."
+}

@@ -12,7 +12,13 @@
 #failBox p { margin: 0 0 10px; }
 .review { border: 1px solid var(--line); background: var(--paper-2); padding: 12px 14px; margin: 14px 0; }
 .review-list { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.review-list li { display: flex; gap: 8px; align-items: flex-start; }
+.review-list li { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.review-list li.scan-estimate { flex-direction: column; align-items: stretch; gap: 2px; }
+.review-list input[type="text"] { flex: 1 1 12em; min-width: 0; max-width: 100%; }
+#profileBox:focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+#profileToggle, #extensionZip { min-height: 44px; }
+.install-steps { margin: 8px 0 8px 1.2em; padding: 0; }
+.install-steps li { margin: 6px 0; }
 .review-list label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
 .review-quote { color: var(--muted); font-size: 13px; }
 .model-state { margin: 0 0 14px; font-size: 14px; line-height: 1.45; }
@@ -34,5 +40,5 @@
   .drops { grid-template-columns: 1fr; }
   .summary li { grid-template-columns: 1fr; gap: 2px; }
   .row { flex-direction: column; align-items: stretch; }
-  .btn-main, #fillBtn { width: 100%; }
+  .btn-main, #fillBtn, #profileToggle, #extensionZip { width: 100%; text-align: center; }
 }

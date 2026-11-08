@@ -1,0 +1,243 @@
+{
+  "research_date_sgt": "2026-11-08",
+  "status": "Proposal only; no implementation or experiments executed",
+  "gate_numbers": "Engineering proposals, not user-fixed budgets or proven guarantees",
+  "experiments": [
+    {
+      "id": "E1",
+      "priority": 1,
+      "name": "Coordinate/export invariants and gold reconciliation",
+      "baseline": "Current renderer/editor/export; no OCR change",
+      "effort_estimate_engineering_days": [
+        2,
+        4
+      ],
+      "model_bytes_added": 0,
+      "inputs": [
+        "Lawful blank forms and owned exact-gold geometric fixtures",
+        "CropBox/MediaBox offsets, userUnit, 0/90/180/270 PDF rotations, zoom/DPR",
+        "Crop, deskew, perspective, above-label, far-margin, mixed native/raster"
+      ],
+      "metrics": [
+        "coordinate round-trip numeric error",
+        "export-render anchor displacement in PDF points",
+        "wrong page/rotation count",
+        "versioned eligible-field denominator"
+      ],
+      "proposed_go": [
+        "All enumerated invariant fixtures pass agreed numeric tolerance",
+        "Export-render anchors within1 PDF point, zero wrong-page/rotation",
+        "Reconcile earlier32 vs current34 positives with annotation changelog before comparative precision/recall"
+      ],
+      "stop": [
+        "Unexplained placement drift",
+        "Relabeling correct values as correct placements without target overlap"
+      ],
+      "source_ids": [
+        "S04",
+        "S05",
+        "S06",
+        "S07"
+      ]
+    },
+    {
+      "id": "E2",
+      "priority": 2,
+      "name": "Assisted completion and missing-field recovery",
+      "baseline": "Existing manual Edit+Sign",
+      "effort_estimate_engineering_days": [
+        3,
+        7
+      ],
+      "effort_excludes": "Study recruitment/execution and integration surprises",
+      "model_bytes_added": 0,
+      "design": [
+        "Paired counterbalanced matched tasks on lawful template-disjoint blanks",
+        "Fictional person profiles only",
+        "First-use and repeat tasks; mouse, keyboard, actual touch devices",
+        "Independent final rendered-document inspection"
+      ],
+      "metrics": [
+        "completion rate",
+        "paired median completion time",
+        "residual wrong fills",
+        "manual actions/corrections",
+        "missing-field recovery",
+        "person/source provenance visibility"
+      ],
+      "proposed_go": [
+        "At least25% lower paired median completion time",
+        "Completion rate not lower; residual wrong fills not higher",
+        "Every missed field manually recoverable; undo and skip available"
+      ],
+      "stop": [
+        "Time gain trades for missed/wrong fields",
+        "Correct source text but wrong placement counted successful"
+      ],
+      "source_ids": [
+        "S01",
+        "S02",
+        "S03"
+      ]
+    },
+    {
+      "id": "E3",
+      "priority": 3,
+      "name": "Private reviewed template maps and fail-closed registration",
+      "baseline": "Repeated manual placement",
+      "effort_estimate_engineering_days": [
+        3,
+        6
+      ],
+      "model_bytes_added": 0,
+      "phases": [
+        "Exact blank-file hash map reuse",
+        "Questionnaire view for mapped fields",
+        "Manual corner registration or verified anchor alignment only after exact-map validation"
+      ],
+      "metrics": [
+        "Authoring/setup time",
+        "repeat completion time",
+        "placement actions",
+        "break-even reuse count",
+        "changed-template rejection",
+        "cross-person carryover"
+      ],
+      "proposed_go": [
+        "Repeat tasks faster including declared amortized setup",
+        "At least50% fewer placement actions on repeats",
+        "All seeded revision/page/role drift traps rejected",
+        "No previous-person values persisted in blank map or carried over"
+      ],
+      "stop": [
+        "Wrong revision accepted",
+        "Template identity or homography used to bypass person/source authority"
+      ],
+      "source_ids": [
+        "S01",
+        "S08",
+        "S09"
+      ]
+    },
+    {
+      "id": "E4",
+      "priority": 4,
+      "name": "Optional tiny blank-field detector",
+      "baseline": "Current spatial field candidates; same source-value/person/review layers",
+      "effort_estimate_engineering_days": [
+        2,
+        5
+      ],
+      "effort_excludes": "Real annotation and full-device testing",
+      "candidate": "nutrientdocs/form-field-v1-nano",
+      "revision": "7cbc1ecd55d59f6315a1415dddc59c3c8b115f05",
+      "model_file": "model.onnx",
+      "model_bytes_added": 3728816,
+      "full_payload_bytes": null,
+      "peak_ram_bytes": null,
+      "runtime": "Proposed fp32 ORT Web WASM; exact graph not validated",
+      "prerequisites": [
+        "Checkpoint/code notices and training provenance limitations recorded",
+        "Actual graph/browser smoke test",
+        "Pinned matching JS/WASM assets",
+        "Full cold-network and actual phone resource measurements; ceilings preregistered from target devices"
+      ],
+      "metrics": [
+        "one-to-one target-field precision/recall at IoU>=.5",
+        "per-layout family and tiny-choice recall",
+        "rendered placement/value containment",
+        "end-to-end person/value correctness",
+        "human task time",
+        "full payload and memory methodology"
+      ],
+      "proposed_go": [
+        "At least+10 percentage-point target-field recall at precision>=.95 on frozen family-disjoint scans",
+        "No automatic identity filling authorized",
+        "Placement/export and human-time benefits also pass",
+        "Target-device resource ceiling passes"
+      ],
+      "stop": [
+        "Unsupported operators or no material layout/time gain",
+        "Cost judged only from model file size",
+        "Vendor benchmark treated as app release evidence"
+      ],
+      "source_ids": [
+        "S10",
+        "S11",
+        "S12",
+        "S13",
+        "S14"
+      ]
+    },
+    {
+      "id": "E5",
+      "priority": 5,
+      "name": "Semantic extension adapters and disclosure contract",
+      "baseline": "Current activeTab preview/fill/no-submit",
+      "effort_estimate_engineering_days": [
+        3,
+        5
+      ],
+      "model_bytes_added": 0,
+      "fixtures": [
+        "Standard autocomplete/label/fieldset",
+        "Opaque section identifiers plus conflicting literal role names",
+        "Multiple people and repeated scopes",
+        "React controlled inputs/rerender",
+        "DOM mutations/stale mapping",
+        "Permitted frames and inaccessible frames",
+        "Open and closed shadow roots",
+        "Autosave-on-input controlled synthetic fixture"
+      ],
+      "metrics": [
+        "correct readback after render",
+        "visible abstention",
+        "submits",
+        "unselected facts exposed",
+        "permission changes",
+        "disclosure comprehension"
+      ],
+      "proposed_go": [
+        "All seeded boundary cases correctly filled/read back or visibly abstained",
+        "Zero submits and no unselected facts exposed",
+        "Autosave fixture establishes Fill disclosure distinct from Submit",
+        "No permission expansion"
+      ],
+      "stop": [
+        "Private framework internals universal hack",
+        "Silent cross-origin/broad-host expansion",
+        "Claim no-submit guarantees no-transmission"
+      ],
+      "source_ids": [
+        "S25",
+        "S26",
+        "S27",
+        "S28",
+        "S29",
+        "S30",
+        "S31"
+      ]
+    }
+  ],
+  "shared_protocol": {
+    "rights": "Per-item clearance and redistribution conditions; fictional profiles only; no FUNSD/XFUND product use",
+    "split_unit": "Issuer/template/generator family incl variants and capture versions",
+    "gold": "Independently reviewed target polygons/labels/source spans/role edges; explicit page coordinate systems and annotation versions",
+    "audit": "Freeze hashes, no retuning on audit; reconcile denominator before A/B",
+    "device_matrix": [
+      "Actual constrained Android",
+      "Supported iPhone/Safari",
+      "Desktop"
+    ],
+    "runtime_metrics": [
+      "Cold unique network transfer and cached startup",
+      "p50/p95 latency",
+      "Peak browser/process/GPU memory when observable, with measurement method",
+      "Cancellation/UI responsiveness",
+      "Repeated20-page processing",
+      "Offline and storage failure"
+    ],
+    "resource_ceiling": "Set before candidate adoption from actual target devices; no invented global numeric download budget",
+    "launch_scope": "Supported native automation plus assisted scans and reviewed reusable maps; not universal scan autofill"
+  }
+}

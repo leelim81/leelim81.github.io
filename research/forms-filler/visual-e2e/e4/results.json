@@ -1,0 +1,377 @@
+{
+  "looked": true,
+  "nForms": 4,
+  "nGold": 17,
+  "baseline": {
+    "tp": 0,
+    "fp": 9,
+    "fn": 17,
+    "nGold": 17,
+    "nDet": 9,
+    "precision": 0,
+    "recall": 0
+  },
+  "candidate": {
+    "tp": 4,
+    "fp": 4,
+    "fn": 13,
+    "nGold": 17,
+    "nDet": 8,
+    "precision": 0.5,
+    "recall": 0.23529411764705882
+  },
+  "passAccuracyGate": false,
+  "decision": "reject",
+  "reason": "Accuracy gate failed on the preregistered 0.3 / 0.6 settings. Not adopted. Thresholds were not refit.",
+  "productRequests": [],
+  "coldRequests": [
+    {
+      "url": "ort.min.js",
+      "status": 200,
+      "bytes": 540716
+    },
+    {
+      "url": "ort-wasm-simd.wasm",
+      "status": 200,
+      "bytes": 10595041
+    },
+    {
+      "url": "form-field-v1-nano-fp32.onnx",
+      "status": 200,
+      "bytes": 3728816
+    }
+  ],
+  "coldBytes": 14864573,
+  "wholeBrowserRssKb": 1997884,
+  "rssNote": "Sum of Chrome process RSS in KB while the page was open. This is not model RAM.",
+  "nodeRssKb": 86852,
+  "rows": [
+    {
+      "id": "pell-ticket",
+      "layout": "ticket",
+      "ms": 150.29999999701977,
+      "baseline": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 3
+      },
+      "candidate": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 0
+      },
+      "classes": [
+        {
+          "name": "text",
+          "baseline": {
+            "tp": 0,
+            "fp": 3,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 3
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 0
+          }
+        },
+        {
+          "name": "choice",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        },
+        {
+          "name": "signature",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "pell-rail",
+      "layout": "rail",
+      "ms": 115.59999999403954,
+      "baseline": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 3
+      },
+      "candidate": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 3
+      },
+      "classes": [
+        {
+          "name": "text",
+          "baseline": {
+            "tp": 0,
+            "fp": 3,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 3
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 3,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 3
+          }
+        },
+        {
+          "name": "choice",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        },
+        {
+          "name": "signature",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "pell-pair",
+      "layout": "pair",
+      "ms": 114.90000000596046,
+      "baseline": {
+        "tp": 0,
+        "fp": 3,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 3
+      },
+      "candidate": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 4,
+        "wrongCls": 0,
+        "nGold": 4,
+        "nDet": 0
+      },
+      "classes": [
+        {
+          "name": "text",
+          "baseline": {
+            "tp": 0,
+            "fp": 3,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 3
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 4,
+            "wrongCls": 0,
+            "nGold": 4,
+            "nDet": 0
+          }
+        },
+        {
+          "name": "choice",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        },
+        {
+          "name": "signature",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 0,
+            "nDet": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "pell-marks",
+      "layout": "marks",
+      "ms": 114.20000000298023,
+      "baseline": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 5,
+        "wrongCls": 0,
+        "nGold": 5,
+        "nDet": 0
+      },
+      "candidate": {
+        "tp": 4,
+        "fp": 1,
+        "fn": 1,
+        "wrongCls": 0,
+        "nGold": 5,
+        "nDet": 5
+      },
+      "classes": [
+        {
+          "name": "text",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "wrongCls": 0,
+            "nGold": 1,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 1,
+            "fp": 1,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 1,
+            "nDet": 2
+          }
+        },
+        {
+          "name": "choice",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "wrongCls": 0,
+            "nGold": 3,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "wrongCls": 0,
+            "nGold": 3,
+            "nDet": 3
+          }
+        },
+        {
+          "name": "signature",
+          "baseline": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "wrongCls": 0,
+            "nGold": 1,
+            "nDet": 0
+          },
+          "candidate": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 1,
+            "wrongCls": 0,
+            "nGold": 1,
+            "nDet": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "pell-turned",
+      "expect": "guard",
+      "block": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+      "route": "raster-blocked",
+      "boxes": 0
+    }
+  ]
+}

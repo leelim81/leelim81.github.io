@@ -1,0 +1,93 @@
+{
+  "passed": 13,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "preview keeps the long address and wraps it",
+      "ok": true,
+      "detail": "[{\"text\":\"Peggy Jay\",\"shown\":\"Peggy Jay\",\"lines\":1,\"overflow\":\"visible\",\"fontSize\":\"14\"},{\"text\":\"14 Harbour Lane beside the long west warehouse\",\"shown\":\"14 Harbour Lane beside the long west\\nwarehouse\",\"lines\":2,\"overflow\":\"visible\",\"fontSize\":\"14\"},{\"text\":\"SupercalifragilisticexpialidociousToken\",\"shown\":\"SupercalifragilisticexpialidociousToken\",\"lines\":1,\"overflow\":\"visible\",\"fontSize\":\"14\"}]"
+    },
+    {
+      "name": "a long word stays whole and is not hidden",
+      "ok": true,
+      "detail": "{\"text\":\"SupercalifragilisticexpialidociousToken\",\"shown\":\"SupercalifragilisticexpialidociousToken\",\"lines\":1,\"overflow\":\"visible\",\"fontSize\":\"14\"}"
+    },
+    {
+      "name": "type size stays 14",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a typed newline is kept",
+      "ok": true,
+      "detail": "\"14 Harbour Lane beside the long west \\nUnit 2warehouse\""
+    },
+    {
+      "name": "the name baseline is still on the rule",
+      "ok": true,
+      "detail": "{\"str\":\"Peggy Jay\",\"y\":500.6046923227499,\"h\":14}"
+    },
+    {
+      "name": "export wraps the address and keeps the newline",
+      "ok": true,
+      "detail": "[{\"str\":\"14 Harbour Lane beside the long west\",\"y\":356.40467622327634,\"h\":14},{\"str\":\"Unit 2warehouse\",\"y\":338.20467622327635,\"h\":14}]"
+    },
+    {
+      "name": "export keeps the long word",
+      "ok": true,
+      "detail": "{\"str\":\"SupercalifragilisticexpialidociousToken\",\"y\":237.6050483551587,\"h\":14}"
+    },
+    {
+      "name": "wrapped lines are 1.3 times the type size apart",
+      "ok": true,
+      "detail": "18.19999999999999"
+    },
+    {
+      "name": "zoom does not move a stored box",
+      "ok": true,
+      "detail": "35.2898% -> 35.2898%"
+    },
+    {
+      "name": "the size control changes the type and does not drop the text",
+      "ok": true,
+      "detail": "18"
+    },
+    {
+      "name": "undo removes the last change",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a map can be saved from these places",
+      "ok": true,
+      "detail": "Saved Wrap map for this exact file, role applicant. It does not keep the person or the values."
+    },
+    {
+      "name": "reload keeps the placed words",
+      "ok": true,
+      "detail": "Peggy Jay | 14 Harbour Lane beside the long west warehouse"
+    }
+  ],
+  "pdf": [
+    {
+      "str": "Peggy Jay",
+      "y": 500.6046923227499,
+      "h": 14
+    },
+    {
+      "str": "14 Harbour Lane beside the long west",
+      "y": 356.40467622327634,
+      "h": 14
+    },
+    {
+      "str": "Unit 2warehouse",
+      "y": 338.20467622327635,
+      "h": 14
+    },
+    {
+      "str": "SupercalifragilisticexpialidociousToken",
+      "y": 237.6050483551587,
+      "h": 14
+    }
+  ]
+}

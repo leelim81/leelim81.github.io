@@ -6,7 +6,9 @@ The 12/4/6 JSONL split is a seed smoke suite for the pipeline. It is not a gold 
 
 [ARCHITECTURE.md](ARCHITECTURE.md) is a research proposal for a native-PDF and spatial-OCR pipeline, with an evidence graph and oracle diagnostics. It is not a measured app comparison and it is not what the page runs. The source list is [architecture/sources.json](architecture/sources.json).
 
-[PROFILES.md](PROFILES.md) is the on-browser profile store and the unpacked extension. Confirmed values export as JSON. The extension does not read the site database.
+[PROFILES.md](PROFILES.md) is the on-browser profile store and the unpacked extension. Confirmed values export as JSON. The extension does not read the site database. Fill copies the checked values into the open website immediately. That site can read them. Fill does not press submit.
+
+[usability-path/PROVENANCE.md](usability-path/PROVENANCE.md) stores the 8 November 2026 research handoff. It is a proposal, not a measured result. The placement check from that proposal is [visual-e2e/SCAN-LEDGER.md](visual-e2e/SCAN-LEDGER.md). The optional nano detector measurement is [visual-e2e/e4/README.md](visual-e2e/e4/README.md). It was not adopted.
 
 [local-ocr-2026-11-07/MEMO.md](local-ocr-2026-11-07/MEMO.md) is a 7 November 2026 source memo: an optional PP-OCRv6 tiny browser challenger (model archives 6,318,080 bytes, runtime much larger, mobile memory unknown), three proposed experiments, and 35 public sources. It is not a measured result and it does not change the live OCR.
 

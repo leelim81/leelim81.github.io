@@ -151,7 +151,7 @@
     return result && result.data && result.data.text ? result.data.text : '';
   }
 
-  async function wordBoxes(source, psm) {
+  async function wordBoxes(source, psm, opts) {
     var worker = await ocrWorker();
     if (psm) {
       try { await worker.setParameters({ tessedit_pageseg_mode: String(psm) }); } catch (err) {}
@@ -173,8 +173,9 @@
       clearTimeout(timer);
     }
     var words = result && result.data && result.data.words ? result.data.words : [];
+    var minConfidence = opts && opts.minConfidence != null ? opts.minConfidence : 35;
     return words.filter(function (word) {
-      return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= 35);
+      return word && word.text && String(word.text).trim() && (word.confidence == null || word.confidence >= minConfidence);
     });
   }
 

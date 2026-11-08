@@ -188,7 +188,24 @@
           pending = null;
         }
       }
-      pages.push({ page: p - 1, width: view.width, height: view.height, texts: texts, lines: lines, squares: squares, glyphs: texts.length });
+      var images = 0;
+      for (var imgStep = 0; imgStep < op.fnArray.length; imgStep++) {
+        var imgFn = op.fnArray[imgStep];
+        if (imgFn === OPS.paintImageXObject || imgFn === OPS.paintInlineImageXObject || imgFn === OPS.paintImageMaskXObject) images++;
+      }
+      var chars = 0;
+      texts.forEach(function (text) { chars += String(text.str || '').replace(/\s/g, '').length; });
+      pages.push({
+        page: p - 1,
+        width: view.width,
+        height: view.height,
+        texts: texts,
+        lines: lines,
+        squares: squares,
+        glyphs: texts.length,
+        images: images,
+        chars: chars
+      });
     }
     return pages;
   }
@@ -205,21 +222,132 @@
   async function readFlat(bytes, progress) {
     var pages = await geometryFromPdf(bytes, progress);
     var glyphs = pages.reduce(function (sum, page) { return sum + (page.glyphs || 0); }, 0);
+    var chars = pages.reduce(function (sum, page) { return sum + (page.chars || 0); }, 0);
+    var images = pages.reduce(function (sum, page) { return sum + (page.images || 0); }, 0);
     var fields = layoutPages(pages);
-    if (fields.length >= 4 && glyphs >= 12) return fields;
+    if (chars >= 40 || glyphs >= 12) return { fields: fields, route: 'text' };
+    if (!images) return { fields: [], route: 'empty' };
     say(progress, 'Reading the scan…');
     var raster = await readRasterPdf(bytes, progress);
-    if (raster.fields.length > fields.length) return { fields: raster.fields, bytes: raster.sheet && raster.sheet.bytes, deskewDeg: raster.sheet && raster.sheet.deskewDeg };
-    return fields;
+    return {
+      fields: raster.fields,
+      bytes: raster.sheet && raster.sheet.bytes,
+      deskewDeg: raster.deskewDeg || (raster.sheet && raster.sheet.deskewDeg) || 0,
+      route: raster.placementBlock ? 'raster-blocked' : (raster.reviewTransport && raster.reviewTransport.looked ? 'raster-review' : 'raster'),
+      placementBlock: raster.placementBlock || '',
+      reviewTransport: raster.reviewTransport || null
+    };
   }
 
-  function canvasFromBitmap(bmp, maxW) {
-    var scale = bmp.width > maxW ? maxW / bmp.width : 1;
+  /* Working sheet. Width 1500 is the cap already used for photos.
+     Height 1850 is one pixel past the 1848-tall sheet measured for the
+     4842×5964 Surrey JPEG after that width cap, so that sheet is unchanged
+     and a narrower, taller photo cannot exceed it. */
+  var MAX_WORKING_WIDTH = 1500;
+  var MAX_WORKING_HEIGHT = 1850;
+  /* Largest source this browser resized on request: a flat JPEG 32768 wide.
+     Largest real photograph that completed: 4842×5964. A header above either
+     limit is refused before createImageBitmap. */
+  var MAX_SOURCE_EDGE = 32768;
+  var MAX_SOURCE_PIXELS = 4842 * 5964;
+
+  function canvasFromBitmap(bmp, maxW, maxH) {
+    var scale = 1;
+    var limitW = maxW || bmp.width;
+    var limitH = maxH || bmp.height;
+    if (bmp.width > limitW) scale = limitW / bmp.width;
+    if (bmp.height * scale > limitH) scale = limitH / bmp.height;
     var canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bmp.width * scale));
     canvas.height = Math.max(1, Math.round(bmp.height * scale));
     canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
     return canvas;
+  }
+
+  function u16be(bytes, i) {
+    return (bytes[i] << 8) | bytes[i + 1];
+  }
+
+  function exifOrientation(bytes, start, length) {
+    if (length < 16) return 0;
+    if (bytes[start] !== 0x45 || bytes[start + 1] !== 0x78 || bytes[start + 2] !== 0x69 || bytes[start + 3] !== 0x66) return 0;
+    var tiff = start + 6;
+    if (tiff + 8 > bytes.length) return 0;
+    var le = bytes[tiff] === 0x49 && bytes[tiff + 1] === 0x49;
+    var be = bytes[tiff] === 0x4d && bytes[tiff + 1] === 0x4d;
+    if (!le && !be) return 0;
+    function u16(o) {
+      return le ? (bytes[o] | (bytes[o + 1] << 8)) : ((bytes[o] << 8) | bytes[o + 1]);
+    }
+    function u32(o) {
+      return le
+        ? ((bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0)
+        : ((bytes[o] * 16777216) + ((bytes[o + 1] << 16) | (bytes[o + 2] << 8) | bytes[o + 3])) >>> 0;
+    }
+    if (u16(tiff + 2) !== 42) return 0;
+    var ifd = tiff + u32(tiff + 4);
+    if (ifd + 2 > bytes.length) return 0;
+    var count = u16(ifd);
+    for (var n = 0; n < count && n < 64; n++) {
+      var entry = ifd + 2 + n * 12;
+      if (entry + 10 > bytes.length) break;
+      if (u16(entry) === 0x0112) {
+        var value = u16(entry + 8);
+        return value >= 1 && value <= 8 ? value : 0;
+      }
+    }
+    return 0;
+  }
+
+  function jpegHeader(bytes) {
+    if (!bytes || bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+    var i = 2;
+    var orientation = 1;
+    var width = 0;
+    var height = 0;
+    while (i + 3 < bytes.length) {
+      if (bytes[i] !== 0xff) break;
+      var marker = bytes[i + 1];
+      if (marker === 0xff) { i++; continue; }
+      if (marker === 0xd9 || marker === 0xda) break;
+      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
+      var len = u16be(bytes, i + 2);
+      if (len < 2 || i + 2 + len > bytes.length) break;
+      if (marker === 0xe1) {
+        var found = exifOrientation(bytes, i + 4, len - 2);
+        if (found) orientation = found;
+      }
+      var sof = (marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7)
+        || (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf);
+      if (sof && len >= 7) {
+        height = u16be(bytes, i + 5);
+        width = u16be(bytes, i + 7);
+      }
+      i += 2 + len;
+    }
+    if (!width || !height) return null;
+    return { width: width, height: height, orientation: orientation };
+  }
+
+  function pngHeader(bytes) {
+    if (!bytes || bytes.length < 24) return null;
+    var sig = [137, 80, 78, 71, 13, 10, 26, 10];
+    for (var s = 0; s < 8; s++) if (bytes[s] !== sig[s]) return null;
+    if (bytes[12] !== 73 || bytes[13] !== 72 || bytes[14] !== 68 || bytes[15] !== 82) return null;
+    var width = bytes[16] * 16777216 + (bytes[17] << 16) + (bytes[18] << 8) + bytes[19];
+    var height = bytes[20] * 16777216 + (bytes[21] << 16) + (bytes[22] << 8) + bytes[23];
+    if (!width || !height) return null;
+    return { width: width, height: height, orientation: 1 };
+  }
+
+  function imageHeader(bytes) {
+    return jpegHeader(bytes) || pngHeader(bytes);
+  }
+
+  function orientedPixels(header) {
+    var turn = header.orientation || 1;
+    if (turn >= 5 && turn <= 8) return { width: header.height, height: header.width };
+    return { width: header.width, height: header.height };
   }
 
   async function inkMask(canvas) {
@@ -403,6 +531,46 @@
     return mergeCellRows(found).filter(function (line) { return line.w >= minW; });
   }
 
+  /* Thin blank rules. A real underline on these scans is about 170px of dark
+     ink with paper on both sides. Boxed edges on the intake sheets are thicker
+     and do not pass. 80px is the stroke length, not a fraction of the page. */
+  function strokeRules(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var w = canvas.width;
+    var h = canvas.height;
+    var data = ctx.getImageData(0, 0, w, h).data;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    var found = [];
+    for (var y = 4; y < h - 4; y++) {
+      var start = -1;
+      var last = -1;
+      var dark = 0;
+      for (var x = 0; x <= w; x++) {
+        var on = false;
+        if (x < w) {
+          var c = lum(x, y);
+          on = c < 160 && lum(x, y - 3) - c > 40 && lum(x, y + 3) - c > 40;
+        }
+        if (on) {
+          if (start < 0) start = x;
+          last = x;
+          dark++;
+        } else if (start >= 0) {
+          var width = last - start + 1;
+          if (width >= 80 && dark / width > 0.5) found.push({ x: start, y: h - y, w: width });
+          start = -1;
+          last = -1;
+          dark = 0;
+        }
+      }
+    }
+    return mergeCellRows(found).filter(function (line) { return line.w >= 80; });
+  }
+
+
   function mergeCellRows(lines) {
     var sorted = lines.slice().sort(function (a, b) {
       if (Math.abs(a.y - b.y) > 3) return b.y - a.y;
@@ -447,9 +615,11 @@
     return out;
   }
 
-  async function wordsOn(canvas) {
+  async function wordsOn(canvas, minConfidence) {
+    if (canvas && canvas._ffWordOverride && minConfidence == null) return canvas._ffWordOverride;
     if (!global.FormExtract || !FormExtract.wordBoxes) return [];
-    var words = await FormExtract.wordBoxes(canvas, 11);
+    var opts = minConfidence == null ? undefined : { minConfidence: minConfidence };
+    var words = await FormExtract.wordBoxes(canvas, 11, opts);
     var h = canvas.height;
     return (words || []).map(function (word) {
       var box = word.bbox || {};
@@ -546,9 +716,10 @@
 
   async function bestLineAngle(canvas) {
     var small = shrinkCanvas(canvas, 480);
+    var uprightScore = await longRuleScore(small);
     async function scan(from, to, step) {
-      var best = from;
-      var bestScore = -1;
+      var best = 0;
+      var bestScore = uprightScore;
       for (var deg = from; deg <= to + 0.0001; deg += step) {
         await pause();
         var turned = Math.abs(deg) < 0.02 ? small : rotateCanvas(small, deg);
@@ -561,6 +732,7 @@
       return best;
     }
     var coarse = await scan(-6, 6, 0.5);
+    if (!coarse) return 0;
     return scan(coarse - 0.4, coarse + 0.4, 0.1);
   }
 
@@ -591,7 +763,10 @@
         if (y > maxY) maxY = y;
       }
     }
-    if (maxX <= minX || maxY <= minY) return canvas;
+    if (maxX <= minX || maxY <= minY) {
+      canvas._ffCrop = { x: 0, y: 0, w: w, h: h };
+      return canvas;
+    }
     var pad = 8;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
@@ -599,18 +774,33 @@
     maxY = Math.min(h - 1, maxY + pad);
     var cw = maxX - minX;
     var ch = maxY - minY;
-    if (cw > w * 0.98 && ch > h * 0.98) return canvas;
+    if (cw > w * 0.98 && ch > h * 0.98) {
+      canvas._ffCrop = { x: 0, y: 0, w: w, h: h };
+      return canvas;
+    }
     var out = document.createElement('canvas');
     out.width = cw;
     out.height = ch;
     out.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+    out._ffCrop = { x: minX, y: minY, w: cw, h: ch };
     return out;
   }
 
+  /* The photo the user sees keeps the orientation createImageBitmap already
+     normalized from EXIF. The line-angle search is not painted into that
+     sheet: an upright page was being turned by a weak score, and the export
+     then matched the turned pixels. PDF scans still consult the score and
+     refuse to turn a sideways page. */
   async function uprightSheet(canvas) {
-    var angle = await bestLineAngle(canvas);
-    var turned = angle ? rotateCanvas(canvas, angle) : canvas;
-    return cropToPage(turned);
+    var cropped = cropToPage(canvas);
+    cropped._ffFrame = {
+      angle: 0,
+      inW: canvas.width,
+      inH: canvas.height,
+      turnW: canvas.width,
+      turnH: canvas.height
+    };
+    return cropped;
   }
 
   function joinPhrases(items) {
@@ -706,7 +896,7 @@
       squares: geo.squares
     }, scale);
     var primary = FormSpots.layout(page);
-    var rules = underlineRules(source);
+    var rules = underlineRules(source).concat(strokeRules(source));
     if (!rules.length || !global.FormEvidence) return primary;
     rules.forEach(function (line) {
       var x = line.x * scale;
@@ -720,10 +910,21 @@
       if (occupied) return;
       var candidates = [];
       texts.forEach(function (text) {
-        var dy = text.y - line.y;
-        if (dy < 8 || dy > 80) return;
-        if (text.x > line.x + line.w || text.x + text.w < line.x) return;
-        candidates.push({ text: text, dy: dy });
+        var vertical = text.y - line.y;
+        var overlaps = text.x < line.x + line.w && text.x + text.w > line.x - 8;
+        var above = overlaps && vertical >= 6 && vertical <= 80;
+        var below = overlaps && vertical <= -4 && vertical >= -36;
+        var gap = line.x - (text.x + text.w);
+        var beside = gap >= -8 && gap <= 48 && Math.abs(vertical) <= 18;
+        if (!above && !below && !beside) return;
+        var dist = Math.abs(vertical);
+        var nearer = rules.some(function (other) {
+          if (other === line) return false;
+          var otherOverlap = text.x < other.x + other.w && text.x + text.w > other.x - 8;
+          return otherOverlap && Math.abs(text.y - other.y) + 3 < dist;
+        });
+        if (nearer) return;
+        candidates.push({ text: text, dy: dist, above: vertical > 0 });
       });
       var known = [];
       candidates.forEach(function (item) {
@@ -772,11 +973,80 @@
     return primary;
   }
 
-  async function readRasterPdf(bytes, progress) {
+  /* The guarded scan still refuses rotation, an offset crop, and any page
+     scale other than 1. A non-positive or unreadable file UserUnit is refused
+     here even when the reader reports 1. Review transport, below, may carry
+     an unchanged detector result only after that refusal, and only when the
+     ledger accepts the page. It does not change line thresholds. */
+  async function scanFrame(bytes) {
+    var doc = await PDFLib.PDFDocument.load(copy(bytes));
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var reasons = [];
+    var limit = Math.min(doc.getPageCount(), pdf.numPages, 2);
+    for (var i = 0; i < limit; i++) {
+      var libPage = doc.getPages()[i];
+      var media = libPage.getMediaBox();
+      var crop = libPage.getCropBox();
+      var angle = ((libPage.getRotation().angle % 360) + 360) % 360;
+      if (angle) reasons.push('rotation');
+      if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) reasons.push('crop');
+      var jsPage = await pdf.getPage(i + 1);
+      var fileUnit = global.FormCoords && FormCoords.fileUserUnit ? FormCoords.fileUserUnit(libPage) : null;
+      if (fileUnit == null || !(fileUnit > 0) || fileUnit > 75000) reasons.push('scale');
+      else if (typeof jsPage.userUnit !== 'number' || Math.abs(jsPage.userUnit - fileUnit) > 0.001) reasons.push('scale-unread');
+      else if (Math.abs(fileUnit - 1) > 0.001) reasons.push('scale');
+    }
+    var unique = [];
+    reasons.forEach(function (reason) { if (unique.indexOf(reason) < 0) unique.push(reason); });
+    var bits = [];
+    if (unique.indexOf('rotation') >= 0) bits.push('rotated');
+    if (unique.indexOf('crop') >= 0) bits.push('cropped');
+    if (unique.indexOf('scale') >= 0) bits.push('on a page scale other than 1');
+    if (unique.indexOf('scale-unread') >= 0) bits.push('missing a readable page scale');
+    return {
+      blocked: unique.length > 0,
+      reasons: unique,
+      message: unique.length
+        ? 'This scan is ' + bits.join(' and ') + '. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.'
+        : ''
+    };
+  }
+
+  async function transportFrame(bytes) {
+    if (!global.FormCoords) return { ok: false, reason: 'ledger-missing' };
+    var doc = await PDFLib.PDFDocument.load(copy(bytes));
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var limit = Math.min(doc.getPageCount(), pdf.numPages, 2);
+    var pages = [];
+    for (var i = 0; i < limit; i++) {
+      var frame = FormCoords.frameOf(doc.getPages()[i], await pdf.getPage(i + 1), 0);
+      if (!frame.ok) return { ok: false, reason: (frame.reasons && frame.reasons[0]) || 'frame' };
+      pages.push({
+        rotation: frame.rotation,
+        userUnit: frame.userUnit,
+        crop: { x: frame.crop.x, y: frame.crop.y, width: frame.crop.width, height: frame.crop.height }
+      });
+    }
+    return { ok: true, pages: pages };
+  }
+
+  function fallbackMessage(frame, review) {
+    if (review && review.looked && !review.fields.length) {
+      var sideways = (review.abstain || []).some(function (item) { return item.reason === 'sideways-in-view'; });
+      if (sideways) return 'This scan is sideways in the view. It was not turned to force a reading. Place the values yourself.';
+      return 'This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.';
+    }
+    return frame.message;
+  }
+
+  async function readRasterReview(bytes, progress) {
+    var started = Date.now();
+    var allowed = await transportFrame(bytes);
+    if (!allowed.ok) return { ok: false, reason: allowed.reason, looked: false, fields: [], abstain: [], ms: Date.now() - started };
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
+    var abstain = [];
     var limit = Math.min(pdf.numPages, 2);
-    var sheet = null;
     for (var p = 1; p <= limit; p++) {
       say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
       var page = await pdf.getPage(p);
@@ -786,33 +1056,166 @@
       canvas.height = Math.ceil(view.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
       var angle = await bestLineAngle(canvas);
-      var turned = angle ? rotateCanvas(canvas, angle) : canvas;
-      var found = await fieldsOnSheet(turned, progress);
+      if (angle) {
+        abstain.push({ page: p - 1, reason: 'sideways-in-view', angle: angle });
+        continue;
+      }
+      var found = await fieldsOnSheet(canvas, progress);
       var pageW = 595;
-      var pageH = turned.height * (pageW / turned.width);
+      var pageH = canvas.height * (pageW / canvas.width);
+      if (!found.length) {
+        abstain.push({ page: p - 1, reason: 'no-detector-position' });
+        continue;
+      }
       found.forEach(function (field) {
         field.page = p - 1;
         field.pageWidth = pageW;
         field.pageHeight = pageH;
+        field.transport = 'viewport-review';
+        field.viewWidth = canvas.width;
+        field.viewHeight = canvas.height;
         if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
         fields.push(field);
       });
-      if (p === 1) {
-        var blob = await new Promise(function (resolve) { turned.toBlob(resolve, 'image/jpeg', 0.92); });
-        var jpeg = new Uint8Array(await blob.arrayBuffer());
-        var doc = await PDFLib.PDFDocument.create();
-        var image = await doc.embedJpg(jpeg);
-        var sheetPage = doc.addPage([pageW, pageH]);
-        sheetPage.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
-        sheet = {
-          bytes: new Uint8Array(await doc.save()),
-          deskewDeg: angle,
-          pageWidth: pageW,
-          pageHeight: pageH
+    }
+    return {
+      ok: fields.length > 0,
+      looked: true,
+      fields: fields,
+      abstain: abstain,
+      pages: allowed.pages,
+      ms: Date.now() - started
+    };
+  }
+
+  /* A field found on a turned copy is stated in that copy's page space, y up.
+     The editor opens the original PDF, so the rect has to come back through
+     the same rotation, including the grown canvas. A rect that does not land
+     on the original page is dropped. The original file is not replaced. */
+  function unturnField(field, srcW, srcH, turnW, turnH, angle) {
+    if (!global.FormFrame || !field.rect) return null;
+    var rect = field.rect;
+    var pageW = field.pageWidth || 595;
+    var pageH = field.pageHeight || (turnH * (pageW / turnW));
+    var frame = { angle: angle, inW: srcW, inH: srcH, turnW: turnW, turnH: turnH };
+    function corner(x, yUp) {
+      var tx = x / pageW * turnW;
+      var ty = turnH - (yUp / pageH * turnH);
+      return FormFrame.turnToInput(tx, ty, frame);
+    }
+    var pts = [
+      corner(rect.x, rect.y),
+      corner(rect.x + rect.width, rect.y),
+      corner(rect.x, rect.y + rect.height),
+      corner(rect.x + rect.width, rect.y + rect.height)
+    ];
+    var minX = Math.min.apply(null, pts.map(function (p) { return p.x; }));
+    var maxX = Math.max.apply(null, pts.map(function (p) { return p.x; }));
+    var minY = Math.min.apply(null, pts.map(function (p) { return p.y; }));
+    var maxY = Math.max.apply(null, pts.map(function (p) { return p.y; }));
+    var pad = 8;
+    if (maxX < -pad || minX > srcW + pad || maxY < -pad || minY > srcH + pad) return null;
+    var origW = 595;
+    var origH = srcH * (origW / srcW);
+    var cx = (minX + maxX) / 2;
+    var cy = (minY + maxY) / 2;
+    var w = rect.width / pageW * turnW / srcW * origW;
+    var h = rect.height / pageH * turnH / srcH * origH;
+    var yUp = (srcH - cy) / srcH * origH;
+    return {
+      rect: {
+        x: cx / srcW * origW - w / 2,
+        y: yUp - h / 2,
+        width: w,
+        height: h
+      },
+      pageWidth: origW,
+      pageHeight: origH
+    };
+  }
+
+  async function readRasterPdf(bytes, progress) {
+    var frame = await scanFrame(bytes);
+    if (frame.blocked) {
+      var review = await readRasterReview(bytes, progress);
+      if (!review || !review.fields.length) {
+        return {
+          fields: [],
+          sheet: null,
+          placementBlock: fallbackMessage(frame, review),
+          frame: frame,
+          reviewTransport: review
         };
       }
+      return {
+        fields: review.fields,
+        sheet: null,
+        deskewDeg: 0,
+        placementBlock: '',
+        frame: { blocked: false, reasons: [], transported: true },
+        reviewTransport: {
+          looked: true,
+          ms: review.ms,
+          abstain: review.abstain,
+          pages: review.pages,
+          count: review.fields.length
+        }
+      };
     }
-    return { fields: fields, sheet: sheet };
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var fields = [];
+    var limit = Math.min(pdf.numPages, 2);
+    var angles = [];
+    for (var p = 1; p <= limit; p++) {
+      say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
+      var page = await pdf.getPage(p);
+      var view = page.getViewport({ scale: 2 });
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(view.width);
+      canvas.height = Math.ceil(view.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
+      var angle = await bestLineAngle(canvas) || 0;
+      var turned = angle ? rotateCanvas(canvas, angle) : canvas;
+      angles.push({ page: p - 1, angle: angle, srcW: canvas.width, srcH: canvas.height, turnW: turned.width, turnH: turned.height });
+      var found = await fieldsOnSheet(turned, progress);
+      var pageW = 595;
+      var pageH = canvas.height * (pageW / canvas.width);
+      found.forEach(function (field) {
+        if (angle) {
+          var mapped = unturnField(field, canvas.width, canvas.height, turned.width, turned.height, angle);
+          if (!mapped) return;
+          field.rect = mapped.rect;
+          field.pageWidth = mapped.pageWidth;
+          field.pageHeight = mapped.pageHeight;
+          field.transport = 'viewport-review';
+          field.detectAngle = angle;
+        } else {
+          field.pageWidth = pageW;
+          field.pageHeight = pageH;
+        }
+        field.page = p - 1;
+        if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
+        fields.push(field);
+      });
+    }
+    var tilted = angles.filter(function (item) { return item.angle; });
+    if (tilted.length && !fields.length) {
+      return {
+        fields: [],
+        sheet: null,
+        deskewDeg: angles[0] ? angles[0].angle : 0,
+        placementBlock: '',
+        frame: { blocked: false, reasons: [], userUnitRead: true },
+        reviewTransport: null
+      };
+    }
+    return {
+      fields: fields,
+      sheet: null,
+      deskewDeg: angles[0] ? angles[0].angle : 0,
+      frame: { blocked: false, reasons: [], userUnitRead: true },
+      reviewTransport: tilted.length ? { looked: true, angles: angles, count: fields.length, abstain: [] } : null
+    };
   }
 
   function opaqueLabel(label) {
@@ -844,11 +1247,12 @@
     function clipLabel(str) {
       var cut = String(str || '').replace(/\s+/g, ' ').trim().split('.')[0];
       var parts = cut.split(/\s+/).filter(Boolean);
+      if (/^\d+[a-z]?$/i.test(parts[0] || '')) parts = parts.slice(1);
       if (parts.length > 8) parts = parts.slice(0, 6);
       var s = parts.join(' ').replace(/[:,\s]+$/, '');
       if (s.length < 3 || s.length > 72) return '';
-      if (!/^[A-Z]/.test(s)) return '';
-      if (/^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
+      if (!/^[A-Za-z]/.test(s)) return '';
+      if (parts.length < 6 && /^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
       return s;
     }
     fields.forEach(function (field) {
@@ -859,7 +1263,7 @@
       texts.forEach(function (text) {
         var clipped = clipLabel(text.str);
         if (!clipped) return;
-        var fieldish = /name|address|city|state|zip|tin|ssn|ein|account|exempt|business|requester|street|postal|phone|email/i.test(clipped);
+        var fieldish = /name|address|city|state|zip|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
         if (field.type === 'text' && !fieldish) return;
         var above = text.y - (field.rect.y + (field.rect.height || 10));
         var gap = field.rect.x - (text.x + text.w);
@@ -881,22 +1285,67 @@
     var fields = readAcro(doc);
     if (fields.length) {
       try { await labelAcro(bytes, fields); } catch (err) {}
-      return { kind: 'acro', fields: fields };
+      return { kind: 'acro', route: 'acro', fields: fields };
     }
     say(progress, 'Finding the blank lines…');
     var flat = await readFlat(bytes, progress);
-    if (flat && flat.fields) return { kind: 'flat', fields: flat.fields, bytes: flat.bytes || null, deskewDeg: flat.deskewDeg || 0 };
-    return { kind: 'flat', fields: flat || [] };
+    if (flat && (flat.fields || flat.placementBlock)) {
+      return {
+        kind: 'flat',
+        route: flat.route || 'text',
+        fields: flat.fields || [],
+        bytes: flat.bytes || null,
+        deskewDeg: flat.deskewDeg || 0,
+        placementBlock: flat.placementBlock || '',
+        reviewTransport: flat.reviewTransport || null
+      };
+    }
+    return { kind: 'flat', route: flat && flat.route || 'empty', fields: [], placementBlock: '' };
   }
 
-  async function readImage(bytes, mime, progress) {
+  async function readImage(bytes, mime, progress, alive) {
+    var current = typeof alive === 'function' ? alive : function () { return true; };
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    if (oriented && (oriented.width > MAX_SOURCE_EDGE || oriented.height > MAX_SOURCE_EDGE || oriented.width * oriented.height > MAX_SOURCE_PIXELS)) {
+      throw new Error('This image is ' + oriented.width + '×' + oriented.height + '. This reader stops at 4842×5964 pixels or an edge of 32768 and did not decode it.');
+    }
     say(progress, 'Reading the photo…');
-    var bmp = await createImageBitmap(new Blob([copy(bytes)], { type: mime || 'image/jpeg' }));
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = null;
+    try {
+      bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    } catch (err) {
+      throw new Error('That image could not be opened. Nothing was kept from it.');
+    }
+    if (!current()) {
+      if (bmp && bmp.close) bmp.close();
+      return null;
+    }
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
     say(progress, 'Straightening the photo…');
-    var canvas = await uprightSheet(canvasFromBitmap(bmp, 1500));
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
     if (bmp.close) bmp.close();
+    bmp = null;
+    if (!current()) return null;
     var fields = await fieldsOnSheet(canvas, progress);
+    if (!current()) return null;
+    var frame = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    var crop = canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height };
     var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });
+    if (!blob || !current()) return null;
     var jpeg = new Uint8Array(await blob.arrayBuffer());
     var doc = await PDFLib.PDFDocument.create();
     var image = await doc.embedJpg(jpeg);
@@ -904,7 +1353,24 @@
     var pageH = canvas.height * (pageW / canvas.width);
     var page = doc.addPage([pageW, pageH]);
     page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
-    return { kind: 'flat', fields: fields, bytes: new Uint8Array(await doc.save()) };
+    if (!current()) return null;
+    return {
+      kind: 'flat',
+      fields: fields,
+      bytes: new Uint8Array(await doc.save()),
+      frame: {
+        angle: frame.angle,
+        inW: frame.inW,
+        inH: frame.inH,
+        turnW: frame.turnW,
+        turnH: frame.turnH,
+        crop: crop,
+        outW: canvas.width,
+        outH: canvas.height,
+        sourceW: sourceW,
+        sourceH: sourceH
+      }
+    };
   }
 
   function truthy(value) {
@@ -951,5 +1417,390 @@
     return new Uint8Array(await doc.save());
   }
 
-  global.FormFields = { read: read, readImage: readImage, fill: fill };
+  function sourceToSheet(x, y, frame) {
+    var sx = frame.sourceW / frame.inW;
+    var sy = frame.sourceH / frame.inH;
+    var sheetX = x / sx - frame.crop.x;
+    var sheetY = y / sy - frame.crop.y;
+    if (frame.angle) {
+      var back = { x: sheetX, y: sheetY };
+      return back;
+    }
+    return { x: sheetX, y: sheetY };
+  }
+
+  function sampleBand(canvas, frame, rect) {
+    var a = sourceToSheet(rect[0], rect[1], frame);
+    var b = sourceToSheet(rect[2], rect[3], frame);
+    var x0 = Math.max(0, Math.floor(Math.min(a.x, b.x)));
+    var x1 = Math.min(canvas.width - 1, Math.ceil(Math.max(a.x, b.x)));
+    var y0 = Math.max(3, Math.floor(Math.min(a.y, b.y)));
+    var y1 = Math.min(canvas.height - 4, Math.ceil(Math.max(a.y, b.y)));
+    var onSheet = x1 > x0 && y1 > y0;
+    if (!onSheet) return { onSheet: false, n: 0 };
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    var w = canvas.width;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    var deltas = [];
+    var greens = [];
+    var mask = 0;
+    var yStart = Math.max(3, y1 - 5);
+    var bestRow = { y: y1, mask: 0, delta: null };
+    var rowLo = Math.max(3, y1 - 8);
+    var rowHi = Math.min(canvas.height - 4, y1 + 8);
+    for (var y = rowLo; y <= rowHi; y++) {
+      var rowMask = 0;
+      var rowDelta = [];
+      var inBand = y >= yStart && y <= y1;
+      for (var x = x0; x <= x1; x += 2) {
+        var i = (y * w + x) * 4;
+        var c = lum(x, y);
+        var delta = Math.min(lum(x, y - 3) - c, lum(x, y + 3) - c);
+        if (inBand) {
+          deltas.push(delta);
+          greens.push(data[i + 1] - Math.max(data[i], data[i + 2]));
+          if (c + 8 < lum(x, y - 4) && c + 8 < lum(x, y + 4)) mask++;
+        }
+        if (c + 8 < lum(x, y - 4) && c + 8 < lum(x, y + 4)) rowMask++;
+        rowDelta.push(delta);
+      }
+      if (rowMask > bestRow.mask) {
+        rowDelta.sort(function (p, q) { return p - q; });
+        bestRow = {
+          y: y,
+          mask: rowMask,
+          delta: rowDelta.length ? rowDelta[Math.floor(rowDelta.length * 0.9)] : null
+        };
+      }
+    }
+    deltas.sort(function (p, q) { return p - q; });
+    greens.sort(function (p, q) { return p - q; });
+    function pick(list, p) {
+      if (!list.length) return null;
+      return list[Math.min(list.length - 1, Math.floor(list.length * p))];
+    }
+    var strong = 0;
+    deltas.forEach(function (d) { if (d > 30) strong++; });
+    return {
+      onSheet: true,
+      n: deltas.length,
+      mask: mask,
+      deltaMedian: pick(deltas, 0.5),
+      deltaP90: pick(deltas, 0.9),
+      strong30: strong,
+      greenMedian: pick(greens, 0.5),
+      bestRow: bestRow
+    };
+  }
+
+  /* Research only. Not used by read or readImage.
+     Frozen crop: up to 8 ink-mask lines of at least 80px, longest first.
+     Each crop is 28px above that line and 8px below, at most 420px wide,
+     copied 1:1 from the working sheet. PSM 7. Confidence stays 35.
+     Stop at 8s or 250000 crop pixels. */
+  async function lineLocalOcr(canvas) {
+    var h = canvas.height;
+    var geo = await rasterGeometry(canvas);
+    var lines = geo.lines.filter(function (line) { return line.w >= 80; });
+    lines.sort(function (a, b) { return b.w - a.w; });
+    if (lines.length > 8) lines = lines.slice(0, 8);
+    var words = [];
+    var started = Date.now();
+    var pixels = 0;
+    var crops = 0;
+    for (var i = 0; i < lines.length; i++) {
+      if (Date.now() - started > 8000) break;
+      var line = lines[i];
+      var yLine = h - line.y;
+      var y0 = Math.max(0, Math.round(yLine - 28));
+      var y1 = Math.min(h, Math.round(yLine + 8));
+      var x0 = Math.max(0, Math.round(line.x - 4));
+      var x1 = Math.min(canvas.width, Math.round(Math.min(line.x + line.w, line.x + 420) + 4));
+      var cw = Math.max(1, x1 - x0);
+      var ch = Math.max(1, y1 - y0);
+      if (cw * ch > 480 * 48) cw = Math.min(cw, 480);
+      pixels += cw * ch;
+      if (pixels > 250000) break;
+      var crop = document.createElement('canvas');
+      crop.width = cw;
+      crop.height = ch;
+      crop.getContext('2d').drawImage(canvas, x0, y0, cw, ch, 0, 0, cw, ch);
+      var found = global.FormExtract ? await FormExtract.wordBoxes(crop, 7) : [];
+      crops++;
+      found.forEach(function (word) {
+        var box = word.bbox || {};
+        var yb = y0 + (box.y1 || box.y0 || 0);
+        words.push({
+          x: x0 + (box.x0 || 0),
+          y: h - yb,
+          w: Math.max(4, (box.x1 || 0) - (box.x0 || 0)),
+          h: Math.max(6, (box.y1 || 0) - (box.y0 || 0)),
+          str: word.text || ''
+        });
+      });
+    }
+    return { words: words, crops: crops, pixels: pixels, ms: Date.now() - started, lines: lines.length };
+  }
+
+  async function openSheet(bytes, mime) {
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
+    if (bmp.close) bmp.close();
+    var base = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    return {
+      canvas: canvas,
+      frame: {
+        angle: base.angle || 0,
+        inW: base.inW, inH: base.inH, turnW: base.turnW, turnH: base.turnH,
+        crop: canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height },
+        outW: canvas.width, outH: canvas.height, sourceW: sourceW, sourceH: sourceH
+      }
+    };
+  }
+
+  async function candidateReport(bytes, mime) {
+    var t0 = Date.now();
+    var opened = await openSheet(bytes, mime);
+    var local = await lineLocalOcr(opened.canvas);
+    opened.canvas._ffWordOverride = local.words;
+    var fields = [];
+    try {
+      fields = await fieldsOnSheet(opened.canvas);
+    } finally {
+      opened.canvas._ffWordOverride = null;
+    }
+    return {
+      ms: Date.now() - t0,
+      ocrMs: local.ms,
+      crops: local.crops,
+      pixels: local.pixels,
+      lines: local.lines,
+      words: local.words.map(function (word) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind({ label: word.str }) : 'other',
+          x: Math.round(word.x),
+          y: Math.round(opened.canvas.height - (word.y + word.h)),
+          w: Math.round(word.w),
+          h: Math.round(word.h)
+        };
+      }),
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          labelKind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      }),
+      frame: opened.frame,
+      heap: typeof performance !== 'undefined' && performance.memory ? performance.memory.usedJSHeapSize : null
+    };
+  }
+
+  async function stageReport(bytes, mime, bands) {
+    var t0 = Date.now();
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
+    if (bmp.close) bmp.close();
+    var frame = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    frame = {
+      angle: frame.angle || 0,
+      inW: frame.inW, inH: frame.inH, turnW: frame.turnW, turnH: frame.turnH,
+      crop: canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height },
+      outW: canvas.width, outH: canvas.height, sourceW: sourceW, sourceH: sourceH
+    };
+    var h = canvas.height;
+    var tLines = Date.now();
+    var plain = await rasterGeometry(canvas);
+    var contrasted = await rasterGeometry(await stretchContrast(canvas));
+    var under = underlineRules(canvas);
+    var strokes = strokeRules(canvas);
+    var tOcr = Date.now();
+    var words = await wordsOn(canvas);
+    var unfiltered = await wordsOn(canvas, 0);
+    var contrastWords = await wordsOn(await stretchContrast(canvas));
+    var ink = document.createElement('canvas');
+    ink.width = canvas.width;
+    ink.height = canvas.height;
+    var inkCtx = ink.getContext('2d', { willReadFrequently: true });
+    inkCtx.drawImage(canvas, 0, 0);
+    var inkImage = inkCtx.getImageData(0, 0, ink.width, ink.height);
+    var inkData = inkImage.data;
+    for (var p = 0; p < inkData.length; p += 4) {
+      var excess = inkData[p + 1] - Math.max(inkData[p], inkData[p + 2]);
+      var luma = 0.3 * inkData[p] + 0.59 * inkData[p + 1] + 0.11 * inkData[p + 2];
+      var dark = excess > 6 && luma < 210;
+      inkData[p] = inkData[p + 1] = inkData[p + 2] = dark ? 20 : 245;
+    }
+    inkCtx.putImageData(inkImage, 0, 0);
+    var inkWords = await wordsOn(ink);
+    var tFields = Date.now();
+    var fields = await fieldsOnSheet(canvas);
+    function tops(list) {
+      return list.map(function (line) {
+        return { x: Math.round(line.x), y: Math.round(h - line.y), w: Math.round(line.w) };
+      });
+    }
+    function wordBoxesOf(list) {
+      var known = 0;
+      var boxes = list.map(function (word) {
+        var kind = global.FormEvidence ? FormEvidence.fieldKind({ label: word.str }) : 'other';
+        if (kind && kind !== 'other') known++;
+        return {
+          x: Math.round(word.x),
+          y: Math.round(h - (word.y + word.h)),
+          w: Math.round(word.w),
+          h: Math.round(word.h),
+          kind: kind || 'other'
+        };
+      });
+      return { known: known, boxes: boxes };
+    }
+    var rawWords = wordBoxesOf(words);
+    var stretched = wordBoxesOf(contrastWords);
+    var inkBoxed = wordBoxesOf(inkWords);
+    return {
+      ms: { open: tLines - t0, lines: tOcr - tLines, ocr: tFields - tOcr, fields: Date.now() - tFields },
+      frame: frame,
+      counts: {
+        plainLines: plain.lines.length,
+        contrastLines: contrasted.lines.length,
+        underlines: under.length,
+        strokes: strokes.length,
+        wordsUnfiltered: unfiltered.length,
+        words: words.length,
+        wordsKnownKind: rawWords.known,
+        contrastWords: contrastWords.length,
+        contrastKnownKind: stretched.known,
+        inkWords: inkWords.length,
+        inkKnownKind: inkBoxed.known,
+        fields: fields.length
+      },
+      lines: { plain: tops(plain.lines), contrast: tops(contrasted.lines), under: tops(under), stroke: tops(strokes) },
+      words: rawWords.boxes,
+      contrastWordBoxes: stretched.boxes,
+      inkWordBoxes: inkBoxed.boxes,
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      }),
+      bands: (bands || []).map(function (rect) { return sampleBand(canvas, frame, rect); })
+    };
+  }
+
+  /* Research only. The same eight ink-mask crops as lineLocalOcr, without OCR
+     and without a native decode. read and readImage do not call this. */
+  async function lineCropReport(bytes, mime) {
+    var opened = await openSheet(bytes, mime);
+    var h = opened.canvas.height;
+    var geo = await rasterGeometry(opened.canvas);
+    var lines = geo.lines.filter(function (line) { return line.w >= 80; });
+    lines.sort(function (a, b) { return b.w - a.w; });
+    if (lines.length > 8) lines = lines.slice(0, 8);
+    var crops = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var yLine = h - line.y;
+      var y0 = Math.max(0, Math.round(yLine - 28));
+      var y1 = Math.min(h, Math.round(yLine + 8));
+      var x0 = Math.max(0, Math.round(line.x - 4));
+      var x1 = Math.min(opened.canvas.width, Math.round(Math.min(line.x + line.w, line.x + 420) + 4));
+      var cw = Math.max(1, x1 - x0);
+      var ch = Math.max(1, y1 - y0);
+      if (cw * ch > 480 * 48) cw = Math.min(cw, 480);
+      crops.push({
+        x: x0,
+        y: y0,
+        w: cw,
+        h: ch,
+        line: { x: line.x, y: line.y, w: line.w }
+      });
+    }
+    return { frame: opened.frame, sheetW: opened.canvas.width, sheetH: h, crops: crops };
+  }
+
+  /* Research only. Places fields with the existing linker and an injected word
+     list. Not a read path. */
+  async function fieldsFromWords(bytes, mime, words) {
+    var opened = await openSheet(bytes, mime);
+    opened.canvas._ffWordOverride = words || [];
+    var fields = [];
+    try {
+      fields = await fieldsOnSheet(opened.canvas);
+    } finally {
+      opened.canvas._ffWordOverride = null;
+    }
+    return {
+      frame: opened.frame,
+      fields: fields.map(function (field) {
+        return {
+          kind: global.FormEvidence ? FormEvidence.fieldKind(field) : 'other',
+          label: field.label || '',
+          x: field.rect ? field.rect.x : null,
+          y: field.rect ? field.rect.y : null,
+          w: field.rect ? field.rect.width : null,
+          h: field.rect ? field.rect.height : null,
+          pw: field.pageWidth,
+          ph: field.pageHeight
+        };
+      })
+    };
+  }
+
+  global.FormFields = {
+    read: read,
+    readImage: readImage,
+    fill: fill,
+    stageReport: stageReport,
+    candidateReport: candidateReport,
+    lineCropReport: lineCropReport,
+    fieldsFromWords: fieldsFromWords
+  };
 })(window);

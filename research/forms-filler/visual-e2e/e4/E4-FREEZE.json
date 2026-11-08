@@ -1,0 +1,46 @@
+{
+  "stage": "e4-nano",
+  "looked": true,
+  "family": "pell",
+  "street": "none; labels only",
+  "people": "Pell labels only, no filled values",
+  "gate": {
+    "score": 0.3,
+    "nms": 0.6,
+    "iou": 0.5,
+    "source": "Model card conf 0.3 and NMS 0.6. Not fit on this family.",
+    "match": "One-to-one greedy IoU. A true positive also needs the same class. Signature is manual and checked state is not scored.",
+    "go": "On the detect rows only, candidate recall must be at least baseline recall plus 0.10 and candidate precision at least 0.95. Otherwise reject. This cycle cannot adopt the model: placement, export, and a phone were not in the gate.",
+    "resource": "Record cold request bytes and whole-browser RSS. RSS is not model RAM. No phone, so no phone adoption."
+  },
+  "files": {
+    "fixtures/pell-marks.pdf": {
+      "bytes": 15703,
+      "sha256": "3f93636e3290118a69e8d9d43480e933fdb37522c4ea980666675e8213c0a233"
+    },
+    "fixtures/pell-pair.pdf": {
+      "bytes": 9154,
+      "sha256": "3d39513bd8f8d8e26bb34cd259e27723230f0c70e45e73e9e03bdc39970a059e"
+    },
+    "fixtures/pell-rail.pdf": {
+      "bytes": 10460,
+      "sha256": "5b49a13014dd92ef4d3ef4c682c0236afee720110515e02cf5bef40aa72418dd"
+    },
+    "fixtures/pell-ticket.pdf": {
+      "bytes": 11655,
+      "sha256": "2d47d52d6101781731a8d35b4fec194dc4ca69216eb04e87c4fe102814df64e9"
+    },
+    "fixtures/pell-turned.pdf": {
+      "bytes": 11659,
+      "sha256": "417815896bb78289b9c0b5854268e140f1e9680f4862ed5f74ececad4252844f"
+    },
+    "gold.jsonl": {
+      "bytes": 1337,
+      "sha256": "cd41051f3b9359189fb93935e87f9d36fae4cd78a946a6321d87cc5853b17bee"
+    }
+  },
+  "codeHashes": {
+    "tools/forms-filler/fields.js": "830eccc2a4dafb45361d6cf117d8d4f6cab053c806d2e314c91406a0ab793f21",
+    "research/forms-filler/visual-e2e/e4/harness.html": "4dd473c7fc88fda581769e7a204e0180d99c648a2c8b3a2c463453a953fc5167"
+  }
+}

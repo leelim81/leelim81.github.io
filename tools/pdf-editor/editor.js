@@ -1,7 +1,6 @@
 /* Edit and Sign PDF. The original file lives in IndexedDB; marks live beside it. */
 (function () {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('../forms-filler/vendor/pdf/pdf.worker.min.js', location.href).href;
 
   function currentDesk() {
     try {
@@ -32,11 +31,18 @@
     activeStroke: null,
     activePointer: null,
     drawing: false,
-    epoch: 0
+    epoch: 0,
+    recoverArmed: false,
+    undo: [],
+    sourceSha256: ''
   };
   var closed = false;
 
   function $(id) { return document.getElementById(id); }
+  function recoverSay(text) {
+    var el = $('recoverStatus');
+    if (el) el.textContent = text || '';
+  }
   function uid() { return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
   function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
   function toast(msg) { if (window.ToolsUI) ToolsUI.toast(msg); }
@@ -129,6 +135,8 @@
         current: state.current,
         epoch: state.epoch,
         source: desk,
+        sourceSha256: state.sourceSha256 || '',
+        sheet: state.sheet || null,
         pages: state.pages.map(function (p) {
           return {
             id: p.id,
@@ -139,13 +147,17 @@
         })
       };
       await idbSave(new Uint8Array(state.pdfBytes), session);
-      if (gen !== saveGen) return;
+      if (gen !== saveGen) return true;
       var el = $('saveState');
       el.dataset.gen = String(Number(el.dataset.gen || 0) + 1);
       setSaveStatus('Saved');
+      return true;
     } catch (err) {
-      setSaveStatus('Not saved');
-      toast('Could not save in this browser.');
+      if (gen === saveGen) {
+        setSaveStatus('Not saved');
+        toast('Could not save in this browser.');
+      }
+      return false;
     }
   }
   window.addEventListener('pagehide', function () { if (state.pdfBytes) saveNow(); });
@@ -155,6 +167,7 @@
     $('toolbar').hidden = false;
     $('status').hidden = false;
     $('downloadBtn').hidden = false;
+    refreshRecover();
     $('startOver').hidden = false;
     $('fileName').textContent = state.fileName || '';
   }
@@ -164,6 +177,9 @@
     $('status').hidden = true;
     $('downloadBtn').hidden = true;
     $('startOver').hidden = true;
+    if ($('assistBar')) $('assistBar').hidden = true;
+    if ($('recoverBar')) $('recoverBar').hidden = true;
+    if ($('mapBox')) $('mapBox').hidden = true;
     $('pages').innerHTML = '';
     var name = $('fileName');
     if (name) name.textContent = '';
@@ -220,7 +236,13 @@
     el.dataset.type = ann.type;
     place(el, ann);
 
-    if (ann.type === 'text' || ann.type === 'date') {
+      if (ann.type === 'text' || ann.type === 'date') {
+      if (ann.manual) {
+        var note = document.createElement('p');
+        note.className = 'ann-note';
+        note.textContent = (ann.personName || 'Saved person') + ' · ' + (ann.factKey || 'value') + ' · placed by you';
+        el.appendChild(note);
+      }
       var grip = document.createElement('button');
       grip.type = 'button';
       grip.className = 'grip';
@@ -231,7 +253,7 @@
       if (body.contentEditable !== 'plaintext-only') body.contentEditable = 'true';
       body.spellcheck = false;
       body.textContent = ann.text || '';
-      body.addEventListener('input', function () {
+      function readBody() {
         ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
         if (window.FormProfiles && ann.type === 'text' && ann.factKey && ann.profileId && ann.text !== ann.seedText) {
           FormProfiles.load().then(function (loaded) {
@@ -248,8 +270,14 @@
         }
         fitTextHeight(el, ann);
         scheduleSave();
-      });
-      el.append(grip, body);
+      }
+      body.addEventListener('input', readBody);
+      body.addEventListener('keyup', readBody);
+      var mirror = document.createElement('div');
+      mirror.className = 'ann-mirror';
+      mirror.setAttribute('aria-hidden', 'true');
+      el.append(grip, body, mirror);
+      paintWrap(el, ann);
     } else if (ann.dataUrl) {
       var img = document.createElement('img');
       img.src = ann.dataUrl;
@@ -299,14 +327,42 @@
     return el;
   }
 
+  var wrapFontPromise = null;
+  function wrapFont() {
+    if (!wrapFontPromise && window.PDFLib) {
+      wrapFontPromise = PDFLib.PDFDocument.create().then(function (doc) {
+        return doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      });
+    }
+    return wrapFontPromise;
+  }
+  function paintWrap(el, ann) {
+    var mirror = el.querySelector('.ann-mirror');
+    var ready = wrapFont();
+    if (!mirror || !ready || !ann) return Promise.resolve();
+    var size = ann.fontSize || 16;
+    var maxW = Math.max(8, (el.clientWidth / (state.zoom || 1)) - 2);
+    return ready.then(function (font) {
+      var lines = wrapText(ann.text || '', font, size, maxW);
+      mirror.textContent = lines.join('\n');
+      return lines;
+    }).catch(function () {});
+  }
   function fitTextHeight(el, ann) {
     var body = el.querySelector('.ann-body');
+    var mirror = el.querySelector('.ann-mirror');
     if (!body || !el.parentElement) return;
     var pageH = el.parentElement.clientHeight || 1;
-    el.style.height = 'auto';
-    var px = Math.max(body.scrollHeight, (ann.fontSize || 16) * state.zoom * 1.3);
-    ann.h = clamp(px / pageH, 0.03, 0.95);
-    el.style.height = (ann.h * 100) + '%';
+    function apply(node) {
+      el.style.height = 'auto';
+      node.style.height = 'auto';
+      var px = Math.max(node.scrollHeight, (ann.fontSize || 16) * state.zoom * 1.3);
+      ann.h = clamp(px / pageH, 0.03, 0.95);
+      el.style.height = (ann.h * 100) + '%';
+      node.style.height = '';
+    }
+    if (!mirror) { apply(body); return; }
+    paintWrap(el, ann).then(function () { if (el.parentElement) apply(mirror); });
   }
 
   function startMove(e, el, ann) {
@@ -366,6 +422,7 @@
   }
 
   function removeAnn(id) {
+    pushUndo();
     state.pages.forEach(function (p) {
       p.annotations = p.annotations.filter(function (a) { return a.id !== id; });
     });
@@ -375,13 +432,14 @@
     saveNow();
   }
 
-  function addAnn(partial) {
-    var rec = currentPage();
+  function addAnn(partial, rec) {
+    rec = rec || currentPage();
     if (!rec) return null;
     var ann = Object.assign({
       id: uid(), type: 'text', x: 0.15, y: 0.15, w: 0.4, h: 0.08,
       text: '', fontSize: 18, color: '#1a1612'
     }, partial);
+    if (!partial || !partial.skipUndo) pushUndo();
     rec.annotations.push(ann);
     var el = drawOne(rec, ann);
     select(ann.id);
@@ -401,7 +459,9 @@
       var best = entries.filter(function (e) { return e.isIntersecting; })
         .sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; })[0];
       if (!best) return;
-      state.current = Number(best.target.dataset.index);
+      var index = Number(best.target.dataset.index);
+      if (index !== state.current) disarmRecover('Placement was cancelled because the page changed.');
+      state.current = index;
       updatePageLabel();
     }, { root: $('stage'), threshold: [0.45, 0.7] });
     document.querySelectorAll('.page').forEach(function (p) { pageObserver.observe(p); });
@@ -444,9 +504,17 @@
       rec.el = wrap;
       rec.canvas = canvas;
       rec.layer = layer;
-      layer.addEventListener('pointerdown', function (e) {
-        if (e.target === layer) select(null);
-      });
+      (function (pageRec, pageLayer) {
+        pageLayer.addEventListener('pointerdown', function (e) {
+          if (e.target !== pageLayer) return;
+          if (state.recoverArmed) {
+            var rect = pageLayer.getBoundingClientRect();
+            placeRecovered(pageRec, (e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+            return;
+          }
+          select(null);
+        });
+      })(rec, layer);
       rec.annotations.forEach(function (ann) { drawOne(rec, ann); });
       await renderCanvas(rec);
     }
@@ -495,9 +563,22 @@
       state.zoom = 1;
     }
     state.selectedId = null;
+    state.recoverArmed = false;
+    state.undo = [];
     state.epoch = session && session.epoch ? session.epoch : Date.now();
+    state.sourceSha256 = session && session.sourceSha256 ? session.sourceSha256 : '';
+    state.sheet = session && session.sheet ? session.sheet : null;
     closed = false;
     showWorkspace();
+    if (session && session.recover) {
+      var assistKey = 'ff-assist-' + (session.epoch || '');
+      var seen = false;
+      try { seen = !!sessionStorage.getItem(assistKey); } catch (err) { seen = false; }
+      if (!seen) {
+        try { sessionStorage.setItem(assistKey, '1'); } catch (err) {}
+        setPanel('recoverBar', 'assistToggle', true);
+      }
+    }
     if (!session || session.fit) await fitWidth(false);
     await renderAll();
     if (state.pages[state.current] && state.pages[state.current].el) {
@@ -527,6 +608,7 @@
   async function rotatePage() {
     var rec = currentPage();
     if (!rec) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     rec.rotation = ((rec.rotation || 0) + 90) % 360;
     rec.annotations.forEach(rotCW);
     await renderAll();
@@ -538,6 +620,7 @@
       return;
     }
     if (!confirm('Remove this page from the document?')) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     state.pages.splice(state.current, 1);
     state.current = Math.min(state.current, state.pages.length - 1);
     await renderAll();
@@ -547,6 +630,7 @@
     var i = state.current;
     var j = i + dir;
     if (j < 0 || j >= state.pages.length) return;
+    disarmRecover('Placement was cancelled because the page changed.');
     var item = state.pages.splice(i, 1)[0];
     state.pages.splice(j, 0, item);
     state.current = j;
@@ -559,6 +643,7 @@
     if (!state.pages.length) return;
     var next = clamp(state.current + delta, 0, state.pages.length - 1);
     state.current = next;
+    disarmRecover('Placement was cancelled because the page changed.');
     state.pages[next].el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     updatePageLabel();
   }
@@ -610,38 +695,52 @@
     return lines;
   }
 
-  async function drawAnn(out, page, font, ann, pw, ph) {
-    var x = ann.x * pw;
-    var y = ph - (ann.y + ann.h) * ph;
-    var w = Math.max(1, ann.w * pw);
-    var h = Math.max(1, ann.h * ph);
+  function placedFrame(page) {
+    if (!window.FormCoords) return null;
+    var rotation = FormCoords.normRotation(page.getRotation().angle || 0);
+    if (rotation == null) return null;
+    var crop = page.getCropBox();
+    if (!crop || !(crop.width > 0) || !(crop.height > 0)) return null;
+    return { crop: crop, rotation: rotation };
+  }
+
+  async function drawAnn(out, page, font, ann) {
+    var frame = placedFrame(page);
+    if (!frame) return;
+    var box = FormCoords.boxOf(ann, frame.crop, frame.rotation);
+    var width = Math.max(1, box.width);
+    var height = Math.max(1, box.height);
+    var spin = PDFLib.degrees(box.rotate);
     if (ann.type === 'whiteout') {
-      page.drawRectangle({ x: x, y: y, width: w, height: h, color: PDFLib.rgb(1, 1, 1) });
+      page.drawRectangle({ x: box.x, y: box.y, width: width, height: height, color: PDFLib.rgb(1, 1, 1), rotate: spin });
     } else if (ann.type === 'highlight') {
       page.drawRectangle({
-        x: x, y: y, width: w, height: h,
+        x: box.x, y: box.y, width: width, height: height,
         color: PDFLib.rgb(1, 0.9, 0.2),
         opacity: 0.45,
-        blendMode: PDFLib.BlendMode.Multiply
+        blendMode: PDFLib.BlendMode.Multiply,
+        rotate: spin
       });
     } else if (ann.type === 'rect') {
-      page.drawRectangle({ x: x, y: y, width: w, height: h, borderColor: hexToRgb(ann.color), borderWidth: 1.6 });
+      page.drawRectangle({ x: box.x, y: box.y, width: width, height: height, borderColor: hexToRgb(ann.color), borderWidth: 1.6, rotate: spin });
     } else if (ann.type === 'ellipse') {
+      var center = FormCoords.fractionToPdf(ann.x + ann.w / 2, ann.y + ann.h / 2, frame.crop, frame.rotation);
       page.drawEllipse({
-        x: x + w / 2, y: y + h / 2,
-        xScale: Math.max(1, w / 2), yScale: Math.max(1, h / 2),
-        borderColor: hexToRgb(ann.color), borderWidth: 1.6
+        x: center.x, y: center.y,
+        xScale: Math.max(1, box.width / 2), yScale: Math.max(1, box.height / 2),
+        borderColor: hexToRgb(ann.color), borderWidth: 1.6,
+        rotate: spin
       });
     } else if (ann.type === 'text' || ann.type === 'date') {
       if (!ann.text) return;
       var size = ann.fontSize || 16;
-      var lines = wrapText(ann.text, font, size, Math.max(8, w - 2));
+      var lines = wrapText(ann.text, font, size, Math.max(8, box.width - 2));
       var ok = lines.every(function (line) { return !line || canEncode(font, line); });
       if (!ok) {
         var scale = 3;
         var canvas = document.createElement('canvas');
-        canvas.width = Math.max(2, Math.floor(w * scale));
-        canvas.height = Math.max(2, Math.floor(h * scale));
+        canvas.width = Math.max(2, Math.floor(width * scale));
+        canvas.height = Math.max(2, Math.floor(height * scale));
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = ann.color || '#1a1612';
         ctx.font = (size * scale) + 'px Helvetica, Arial, sans-serif';
@@ -650,23 +749,59 @@
           ctx.fillText(line, 2, i * size * scale * 1.3);
         });
         var img = await out.embedPng(await canvasToPng(canvas));
-        page.drawImage(img, { x: x, y: y, width: w, height: h });
+        page.drawImage(img, { x: box.x, y: box.y, width: width, height: height, rotate: spin });
         return;
       }
-      var baseline = y + h - size * 0.85;
+      var origin = FormCoords.textOrigin(ann, frame.crop, frame.rotation, size);
+      var sunk = size * 0.85;
       var lineH = size * 1.3;
       lines.forEach(function (line) {
-        if (baseline < y - size) return;
-        if (line) page.drawText(line, { x: x + 1, y: baseline, size: size, font: font, color: hexToRgb(ann.color) });
-        baseline -= lineH;
+        var shift = sunk - size * 0.85;
+        if (line) {
+          page.drawText(line, {
+            x: origin.x + origin.down.x * shift,
+            y: origin.y + origin.down.y * shift,
+            size: size,
+            font: font,
+            color: hexToRgb(ann.color),
+            rotate: PDFLib.degrees(origin.rotate)
+          });
+        }
+        sunk += lineH;
       });
     } else if (ann.dataUrl) {
       var embedded = await embedDataUrl(out, ann.dataUrl);
-      page.drawImage(embedded, { x: x, y: y, width: w, height: h });
+      page.drawImage(embedded, { x: box.x, y: box.y, width: width, height: height, rotate: spin });
     }
   }
 
+  function syncLiveText() {
+    document.querySelectorAll('.ann[data-id]').forEach(function (el) {
+      var body = el.querySelector('.ann-body');
+      var ann = findAnn(el.dataset.id);
+      if (!body || !ann || (ann.type !== 'text' && ann.type !== 'date')) return;
+      ann.text = body.innerText.replace(/\u00a0/g, ' ').replace(/\n$/, '');
+    });
+  }
+
   async function flatten() {
+    syncLiveText();
+    var samePages = state.pages.length > 0 && state.pages.every(function (rec, index) {
+      return rec.srcIndex === index && !rec.rotation;
+    });
+    if (samePages) {
+      var kept = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+      if (kept.getPageCount() === state.pages.length) {
+        var keptFont = await kept.embedFont(PDFLib.StandardFonts.Helvetica);
+        for (var k = 0; k < state.pages.length; k++) {
+          var keptPage = kept.getPages()[k];
+          for (var ak = 0; ak < state.pages[k].annotations.length; ak++) {
+            await drawAnn(kept, keptPage, keptFont, state.pages[k].annotations[ak]);
+          }
+        }
+        return kept.save();
+      }
+    }
     var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
     var out = await PDFLib.PDFDocument.create();
     var font = await out.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -676,9 +811,8 @@
       var total = ((copied.getRotation().angle || 0) + (rec.rotation || 0)) % 360;
       copied.setRotation(PDFLib.degrees(total));
       out.addPage(copied);
-      var size = copied.getSize();
       for (var a = 0; a < rec.annotations.length; a++) {
-        await drawAnn(out, copied, font, rec.annotations[a], size.width, size.height);
+        await drawAnn(out, copied, font, rec.annotations[a]);
       }
     }
     return out.save();
@@ -923,6 +1057,391 @@
     closeSig();
   }
 
+  function snapshotPages() {
+    return state.pages.map(function (page) {
+      return { id: page.id, annotations: page.annotations.map(function (ann) { return Object.assign({}, ann); }) };
+    });
+  }
+  function pushUndo() {
+    state.undo.push(snapshotPages());
+    if (state.undo.length > 30) state.undo.shift();
+    if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
+  }
+  function redrawAnnotations() {
+    state.pages.forEach(function (rec) {
+      if (!rec.layer) return;
+      rec.layer.innerHTML = '';
+      rec.annotations.forEach(function (ann) { drawOne(rec, ann); });
+    });
+  }
+  function undoRecover() {
+    var snap = state.undo.pop();
+    if (!snap) return;
+    snap.forEach(function (page) {
+      var rec = state.pages.filter(function (item) { return item.id === page.id; })[0];
+      if (rec) rec.annotations = page.annotations;
+    });
+    state.recoverArmed = false;
+    redrawAnnotations();
+    select(null);
+    if ($('recoverUndo')) $('recoverUndo').disabled = !state.undo.length;
+    recoverSay('Undid the last placement change.');
+    saveNow();
+  }
+  function disarmRecover(message) {
+    var was = state.recoverArmed;
+    state.recoverArmed = false;
+    if (was && message) recoverSay(message);
+  }
+  async function frameAllowsPlace() {
+    var rec = currentPage();
+    if (!rec || !state.pdfBytes || !state.doc) return { ok: false, reason: 'Open a page first.' };
+    if (!window.FormCoords) return { ok: false, reason: 'The page scale tools did not load, so a saved value is not placed.' };
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
+    var lib = src.getPages()[rec.srcIndex];
+    if (!lib) return { ok: false, reason: 'That page could not be read.' };
+    var pdfPage = await state.doc.getPage(rec.srcIndex + 1);
+    var frame = FormCoords.frameOf(lib, pdfPage, rec.rotation || 0);
+    if (!frame.ok) {
+      if (frame.reasons.indexOf('rotation') >= 0) return { ok: false, reason: 'This page’s rotation is not a quarter turn. A saved value is not placed on it.' };
+      if (frame.reasons.indexOf('scale') >= 0) return { ok: false, reason: 'This reader could not read a usable page scale, so a saved value is not placed.' };
+      return { ok: false, reason: 'This page’s crop could not be read, so a saved value is not placed.' };
+    }
+    return { ok: true, frame: frame };
+  }
+  function selectedRecoverFact() {
+    var person = $('recoverPerson');
+    var fact = $('recoverFact');
+    if (!person || !fact || !fact.value) return null;
+    var option = fact.options[fact.selectedIndex];
+    if (!option) return null;
+    return {
+      profileId: person.value,
+      personName: person.options[person.selectedIndex] ? person.options[person.selectedIndex].textContent : '',
+      key: option.dataset.key || '',
+      label: option.dataset.label || option.dataset.key || '',
+      value: option.dataset.value || '',
+      role: $('recoverRole') ? $('recoverRole').value : 'applicant'
+    };
+  }
+  async function fileSha() {
+    if (state.sourceSha256) return state.sourceSha256;
+    var digest = await crypto.subtle.digest('SHA-256', state.pdfBytes);
+    return Array.from(new Uint8Array(digest)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
+  async function pagesSupported() {
+    if (!state.pdfBytes || !state.doc || !state.pages.length) return { ok: false, reason: 'Open a page first.' };
+    if (!window.FormCoords) return { ok: false, reason: 'The page scale tools did not load, so a map is not saved or applied.' };
+    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0));
+    if (src.getPageCount() !== state.pages.length) return { ok: false, reason: 'Pages were removed. A map needs the original pages in their original order.' };
+    var frames = [];
+    for (var i = 0; i < state.pages.length; i++) {
+      var rec = state.pages[i];
+      if (rec.srcIndex !== i || rec.rotation) return { ok: false, reason: 'Pages were rotated or reordered in the editor. Open the exact blank original.' };
+      var lib = src.getPages()[i];
+      var pdfPage = await state.doc.getPage(i + 1);
+      var frame = FormCoords.frameOf(lib, pdfPage, 0);
+      if (!frame.ok) {
+        if (frame.reasons.indexOf('rotation') >= 0) return { ok: false, reason: 'This page’s rotation is not a quarter turn. A map is not saved or applied on it.' };
+        if (frame.reasons.indexOf('scale') >= 0) return { ok: false, reason: 'This file’s page scale could not be read, so a map is not saved or applied.' };
+        return { ok: false, reason: 'This page’s crop could not be read, so a map is not saved or applied.' };
+      }
+      frames.push(frame);
+    }
+    return { ok: true, doc: src, frames: frames };
+  }
+  function manualSlots() {
+    var roles = {};
+    var people = {};
+    var pages = state.pages.map(function () { return []; });
+    state.pages.forEach(function (rec, index) {
+      rec.annotations.forEach(function (ann) {
+        if (!ann.manual || ann.type !== 'text' || !ann.factKey) return;
+        roles[ann.role || 'applicant'] = true;
+        if (ann.profileId) people[ann.profileId] = true;
+        pages[index].push({
+          key: ann.factKey,
+          role: ann.role || 'applicant',
+          x: ann.x, y: ann.y, w: ann.w, h: ann.h,
+          fontSize: ann.fontSize || 14
+        });
+      });
+    });
+    return { roles: Object.keys(roles), people: Object.keys(people), pages: pages, count: pages.reduce(function (n, list) { return n + list.length; }, 0) };
+  }
+  async function refreshMaps() {
+    var pick = $('mapPick');
+    if (!pick || !window.FormMaps || !state.pdfBytes) return;
+    var loaded = await FormMaps.load();
+    var sha = await fileSha();
+    state.mapSha = sha;
+    state.mapVault = loaded.vault;
+    var previous = pick.value;
+    pick.textContent = '';
+    var maps = (loaded.vault.maps || []).filter(function (map) { return map.fileSha256 === sha; });
+    if (!maps.length) {
+      var empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = 'No map for this exact file';
+      pick.appendChild(empty);
+      return;
+    }
+    maps.forEach(function (map) {
+      var opt = document.createElement('option');
+      opt.value = map.id;
+      opt.textContent = map.name + ' · ' + map.role;
+      pick.appendChild(opt);
+    });
+    if (previous && maps.some(function (map) { return map.id === previous; })) pick.value = previous;
+  }
+  function chosenMap() {
+    var id = $('mapPick') && $('mapPick').value;
+    var maps = (state.mapVault && state.mapVault.maps) || [];
+    return maps.filter(function (map) { return map.id === id; })[0] || null;
+  }
+  async function saveCurrentMap() {
+    if (!window.FormMaps) return;
+    var support = await pagesSupported();
+    if (!support.ok) { recoverSay(support.reason); return; }
+    var found = manualSlots();
+    if (!found.count) { recoverSay('Place at least one confirmed value before saving a map. The map stores the place, not the words.'); return; }
+    if (found.people.length !== 1) { recoverSay('A map remembers places for one person at a time. Places for more than one person were not saved.'); return; }
+    if (found.roles.length !== 1) { recoverSay('A map remembers one role. Applicant and patient places together were not saved.'); return; }
+    var loaded = await FormMaps.load();
+    if (!loaded.ok && loaded.reason !== 'version') { recoverSay('Maps could not be read (' + loaded.reason + '). Nothing was saved.'); return; }
+    if (state.sourceSha256 && (!state.sheet || !window.FormMaps.matchesSheet(state.sheet, state.sheet))) {
+      recoverSay('This photo’s sheet could not be checked, so the map was not saved.');
+      return;
+    }
+    var label = ($('mapName').value || '').trim();
+    var draft = {
+      name: label || ('Blank map ' + ((loaded.vault.maps || []).length + 1)),
+      fileSha256: await fileSha(),
+      sheet: state.sourceSha256 ? state.sheet : null,
+      pages: support.frames.map(function (frame, index) {
+        return {
+          width: frame.media.width,
+          height: frame.media.height,
+          rotation: frame.rotation,
+          userUnit: frame.userUnit,
+          cropX: frame.crop.x,
+          cropY: frame.crop.y,
+          cropWidth: frame.crop.width,
+          cropHeight: frame.crop.height,
+          slots: found.pages[index] || []
+        };
+      })
+    };
+    var saved = FormMaps.saveMap(loaded.ok ? loaded.vault : FormMaps.empty(), draft);
+    if (!saved.ok) { recoverSay('The map was not saved (' + saved.reason + ').'); return; }
+    var stored = await FormMaps.persist(saved.vault);
+    if (!stored.ok) { recoverSay('The map stayed unsaved (' + stored.reason + ').'); return; }
+    $('mapName').value = '';
+    await refreshMaps();
+    recoverSay('Saved ' + saved.map.name + ' for this exact file, role ' + saved.map.role + '. It does not keep the person or the values.');
+  }
+  async function previewMap() {
+    var map = chosenMap();
+    var box = $('mapPreviewText');
+    if (!map) { if (box) box.textContent = 'No map for this exact file.'; return; }
+    var support = await pagesSupported();
+    if (!support.ok) { if (box) box.textContent = support.reason; return; }
+    if (map.fileSha256 !== await fileSha()) { if (box) box.textContent = 'This is not the same file. Open the exact blank original.'; return; }
+    if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
+      var refused = 'This photo opened onto a different sheet. The map was not used.';
+      if (box) box.textContent = refused;
+      recoverSay(refused);
+      return;
+    }
+    var person = $('recoverPerson');
+    var fact = selectedRecoverFact();
+    var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
+    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
+    var lines = [];
+    var ready = 0;
+    var skipped = 0;
+    map.pages.forEach(function (page, index) {
+      var frame = support.frames[index];
+      if (!window.FormMaps.matchesFrame(page, frame)) {
+        lines.push('Page ' + (index + 1) + ' does not match this map.');
+        skipped += page.slots.length;
+        return;
+      }
+      page.slots.forEach(function (slot) {
+        var have = profile && (profile.facts || []).filter(function (item) { return item.key === slot.key && item.status === 'confirmed' && item.value; })[0];
+        if (!have) { skipped += 1; lines.push('Page ' + (index + 1) + ' ' + slot.role + ' ' + slot.key + ' has no confirmed value.'); return; }
+        ready += 1;
+        lines.push('Page ' + (index + 1) + ' ' + slot.role + ' ' + slot.key + ' would be placed.');
+      });
+    });
+    var text = 'Preview only, nothing written. Role ' + map.role + '. ' + ready + ' place(s), ' + skipped + ' left blank. ' + lines.join(' ');
+    if (box) box.textContent = text;
+    recoverSay(text);
+  }
+  async function applyMap() {
+    var map = chosenMap();
+    if (!map) { recoverSay('Choose a map for this exact file.'); return; }
+    var support = await pagesSupported();
+    if (!support.ok) { recoverSay(support.reason); return; }
+    if (map.fileSha256 !== await fileSha()) { recoverSay('This is not the same file the map was saved from. Open the exact blank original. A changed copy is not used.'); return; }
+    if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
+      recoverSay('This photo opened onto a different sheet. The map was not used.');
+      return;
+    }
+    if (state.pages.some(function (rec, index) { return rec.srcIndex !== index || rec.rotation; })) {
+      recoverSay('Pages were rotated or reordered. The map was not applied.');
+      return;
+    }
+    var person = $('recoverPerson');
+    var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
+    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
+    if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
+    pushUndo();
+    state.pages.forEach(function (rec) {
+      rec.annotations = rec.annotations.filter(function (ann) { return ann.mapId !== map.id; });
+    });
+    var placed = 0;
+    var skipped = 0;
+    map.pages.forEach(function (page, index) {
+      if (!window.FormMaps.matchesFrame(page, support.frames[index])) { skipped += page.slots.length; return; }
+      page.slots.forEach(function (slot) {
+        var have = (profile.facts || []).filter(function (item) { return item.key === slot.key && item.status === 'confirmed' && item.value; })[0];
+        if (!have) { skipped += 1; return; }
+        addAnn({
+          type: 'text',
+          text: have.value,
+          x: slot.x, y: slot.y, w: slot.w, h: slot.h,
+          fontSize: slot.fontSize,
+          color: '#1a1612',
+          manual: true,
+          mapId: map.id,
+          factKey: slot.key,
+          role: slot.role,
+          profileId: profile.id,
+          personName: profile.name,
+          seedText: have.value,
+          skipUndo: true
+        }, state.pages[index]);
+        placed += 1;
+      });
+    });
+    redrawAnnotations();
+    state.recoverArmed = false;
+    recoverSay('Applied ' + placed + ' place(s) for ' + profile.name + ' as ' + map.role + '. ' + skipped + ' left blank. This is not an automatic fill. Apply again replaces these places. Undo restores the previous lines.');
+  }
+  function setPanel(barId, toggleId, open) {
+    var bar = $(barId);
+    var toggle = $(toggleId);
+    if (!bar || !toggle) return;
+    var was = !bar.hidden;
+    bar.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && !was) {
+      var focus = bar.querySelector('select, input, button');
+      if (focus) focus.focus();
+    }
+    if (!open && was) toggle.focus();
+    if (!open && barId === 'recoverBar') disarmRecover('Placement was cancelled.');
+  }
+  async function refreshRecover() {
+    if ($('assistBar')) $('assistBar').hidden = !state.pdfBytes;
+    var person = $('recoverPerson');
+    var fact = $('recoverFact');
+    var previous = person.value;
+    person.textContent = '';
+    fact.textContent = '';
+    if (!window.FormProfiles) {
+      recoverSay('Saved values are not available in this browser.');
+      $('recoverPlace').disabled = true;
+      return;
+    }
+    var loaded = await FormProfiles.load();
+    var profiles = loaded.ok ? loaded.vault.profiles : [];
+    if (!profiles.length) {
+      recoverSay('No one is saved yet. Confirm a value in Forms Filler, then come back. Nothing unconfirmed is offered here.');
+      $('recoverPlace').disabled = true;
+      return;
+    }
+    profiles.forEach(function (profile) {
+      var opt = document.createElement('option');
+      opt.value = profile.id;
+      opt.textContent = profile.name;
+      person.appendChild(opt);
+    });
+    if (previous && profiles.some(function (profile) { return profile.id === previous; })) person.value = previous;
+    var chosen = profiles.filter(function (profile) { return profile.id === person.value; })[0] || profiles[0];
+    var facts = (chosen.facts || []).filter(function (item) { return item.status === 'confirmed' && item.value; });
+    facts.forEach(function (item) {
+      var opt = document.createElement('option');
+      opt.value = item.id;
+      opt.dataset.key = item.key;
+      opt.dataset.label = item.label || item.key;
+      opt.dataset.value = item.value;
+      opt.textContent = (item.label || item.key) + ': ' + item.value;
+      fact.appendChild(opt);
+    });
+    $('recoverPlace').disabled = !facts.length;
+    if (!facts.length) recoverSay(chosen.name + ' has no confirmed value to place. Unconfirmed reads stay unconfirmed.');
+    else if (!state.recoverArmed) recoverSay('Choose the person and the confirmed value, then place it on the page.');
+    refreshMaps();
+  }
+  async function placeRecovered(rec, x, y) {
+    var fact = selectedRecoverFact();
+    if (!state.recoverArmed || !fact || !fact.value) {
+      disarmRecover('That placement was cancelled.');
+      return;
+    }
+    state.current = state.pages.indexOf(rec);
+    var width = 0.42;
+    var height = 0.05;
+    var fontSize = 14;
+    var frame = await frameAllowsPlace();
+    if (!frame.ok) {
+      disarmRecover(frame.reason);
+      return;
+    }
+    var view = window.FormCoords.viewSize(frame.frame.crop, frame.frame.rotation);
+    var wanted = FormCoords.topForBaseline(y, fontSize, view.height);
+    var top = clamp(wanted, 0, 1 - height);
+    var onClick = Math.abs(top - wanted) < 1e-4;
+    var el = addAnn({
+      type: 'text',
+      text: fact.value,
+      x: clamp(x, 0, 1 - width),
+      y: top,
+      w: width,
+      h: height,
+      fontSize: 14,
+      color: '#1a1612',
+      manual: true,
+      role: fact.role || 'applicant',
+      factKey: fact.key,
+      profileId: fact.profileId,
+      personName: fact.personName,
+      seedText: fact.value
+    }, rec);
+    state.recoverArmed = false;
+    var saved = await saveNow();
+    if (!saved) {
+      recoverSay('The mark is on the page, but this browser could not store it. Back or reload will lose it.');
+      return;
+    }
+    recoverSay(onClick
+      ? 'Placed ' + fact.personName + '’s ' + fact.label + '. The baseline sits on the click. It is not an automatic fill.'
+      : 'Placed ' + fact.personName + '’s ' + fact.label + ' on the page. The baseline could not sit on that click without leaving the page. Nudge it or choose another size.');
+    if (el) fitTextHeight(el, findAnn(el.dataset.id));
+  }
+  function nudgeSelected(dx, dy) {
+    var ann = findAnn(state.selectedId);
+    if (!ann) return;
+    pushUndo();
+    ann.x = clamp(ann.x + dx, 0, 1 - ann.w);
+    ann.y = clamp(ann.y + dy, 0, 1 - ann.h);
+    var el = document.querySelector('.ann[data-id="' + CSS.escape(ann.id) + '"]');
+    if (el) place(el, ann);
+    saveNow();
+  }
+
   function wire() {
     function pick() { $('fileInput').click(); }
     function closeDrawer() {
@@ -1012,6 +1531,73 @@
     $('zoomIn').addEventListener('click', function () { setZoom(state.zoom * 1.15); });
     $('fitWidth').addEventListener('click', function () { fitWidth(true); });
     $('deleteAnn').addEventListener('click', function () { if (state.selectedId) removeAnn(state.selectedId); });
+    [['nudgeLeft', -0.02, 0], ['nudgeRight', 0.02, 0], ['nudgeUp', 0, -0.02], ['nudgeDown', 0, 0.02]].forEach(function (spec) {
+      $(spec[0]).addEventListener('click', function () { nudgeSelected(spec[1], spec[2]); });
+    });
+    $('recoverPerson').addEventListener('change', function () {
+      disarmRecover('The person changed, so the placement was cancelled.');
+      refreshRecover();
+    });
+    $('recoverFact').addEventListener('change', function () {
+      disarmRecover('The value changed, so the placement was cancelled.');
+    });
+    $('recoverRole').addEventListener('change', function () {
+      disarmRecover('The role changed, so the placement was cancelled.');
+    });
+    $('mapSave').addEventListener('click', saveCurrentMap);
+    $('mapPreview').addEventListener('click', previewMap);
+    $('mapApply').addEventListener('click', applyMap);
+    $('mapDelete').addEventListener('click', async function () {
+      var map = chosenMap();
+      if (!map || !window.FormMaps) return;
+      var loaded = await FormMaps.load();
+      var next = FormMaps.deleteMap(loaded.vault, map.id);
+      var stored = await FormMaps.persist(next.vault);
+      if (!stored.ok) { recoverSay('The map was not deleted (' + stored.reason + ').'); return; }
+      await refreshMaps();
+      recoverSay('Deleted that blank map from this browser.');
+    });
+    $('mapClear').addEventListener('click', async function () {
+      if (!window.FormMaps) return;
+      if (!confirm('Clear every blank map stored in this browser? Saved people and values stay.')) return;
+      var cleared = await FormMaps.clearAll();
+      if (!cleared.ok) { recoverSay('Maps were not cleared (' + cleared.reason + ').'); return; }
+      await refreshMaps();
+      recoverSay('Cleared every blank map in this browser. People and values were kept.');
+    });
+    $('recoverPlace').addEventListener('click', async function () {
+      var fact = selectedRecoverFact();
+      if (!fact) {
+        recoverSay('Choose a confirmed value first.');
+        return;
+      }
+      var frame = await frameAllowsPlace();
+      if (!frame.ok) {
+        state.recoverArmed = false;
+        recoverSay(frame.reason);
+        return;
+      }
+      state.recoverArmed = true;
+      recoverSay('Click the page where ' + fact.personName + '’s ' + fact.label + ' should sit. The baseline goes on that click. Cancel if this is the wrong person.');
+    });
+    $('recoverCancel').addEventListener('click', function () {
+      state.recoverArmed = false;
+      recoverSay('Placement cancelled. Nothing was added.');
+    });
+    $('recoverUndo').disabled = true;
+    $('recoverUndo').addEventListener('click', undoRecover);
+    $('assistToggle').addEventListener('click', function () {
+      setPanel('recoverBar', 'assistToggle', $('recoverBar').hidden);
+    });
+    $('mapToggle').addEventListener('click', function () {
+      var open = $('mapBox').hidden;
+      $('mapBox').hidden = !open;
+      $('mapToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        var focus = $('mapBox').querySelector('input, select, button');
+        if (focus) focus.focus();
+      } else $('mapToggle').focus();
+    });
     $('fontSize').addEventListener('input', function () {
       var ann = findAnn(state.selectedId);
       if (!ann) return;
@@ -1140,10 +1726,30 @@
         $('sigModal').hidden = true;
         $('downloadModal').hidden = true;
         select(null);
+        var inAssist = e.target.closest && e.target.closest('#recoverBar, #mapBox');
+        if (inAssist || state.recoverArmed) {
+          if ($('recoverBar') && !$('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', false);
+          if ($('mapBox') && !$('mapBox').hidden) {
+            $('mapBox').hidden = true;
+            $('mapToggle').setAttribute('aria-expanded', 'false');
+          }
+        }
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedId && !typing) {
         e.preventDefault();
         removeAnn(state.selectedId);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !typing) {
+        e.preventDefault();
+        undoRecover();
+      }
+      if (!typing && state.selectedId && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) >= 0) {
+        e.preventDefault();
+        var step = e.shiftKey ? 0.05 : 0.02;
+        if (e.key === 'ArrowLeft') nudgeSelected(-step, 0);
+        if (e.key === 'ArrowRight') nudgeSelected(step, 0);
+        if (e.key === 'ArrowUp') nudgeSelected(0, -step);
+        if (e.key === 'ArrowDown') nudgeSelected(0, step);
       }
       if (typing || !state.pdfBytes) return;
       if (e.key === '+' || e.key === '=') setZoom(state.zoom * 1.1);

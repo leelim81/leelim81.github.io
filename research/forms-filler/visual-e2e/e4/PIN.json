@@ -1,0 +1,35 @@
+{
+  "model": {
+    "repo": "nutrientdocs/form-field-v1-nano",
+    "revision": "7cbc1ecd55d59f6315a1415dddc59c3c8b115f05",
+    "file": "model.onnx",
+    "license": "Apache-2.0",
+    "role": "blank destination detector only"
+  },
+  "runtime": {
+    "package": "onnxruntime-web",
+    "version": "1.18.0",
+    "license": "MIT",
+    "build": "ort.min.js plus ort-wasm-simd.wasm, one thread"
+  },
+  "files": [
+    {
+      "name": "form-field-v1-nano-fp32.onnx",
+      "bytes": 3728816,
+      "sha256": "d7ab44396154af79409c9f8a4fded6c9aa907ae6d283fbe5d2b533d3b7314ec1",
+      "url": "https://huggingface.co/nutrientdocs/form-field-v1-nano/resolve/7cbc1ecd55d59f6315a1415dddc59c3c8b115f05/model.onnx"
+    },
+    {
+      "name": "ort.min.js",
+      "bytes": 540716,
+      "sha256": "74945866728300a05746a37387ac48863a8be5cdc3760304b47d0136d7d0dc5b",
+      "url": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"
+    },
+    {
+      "name": "ort-wasm-simd.wasm",
+      "bytes": 10595041,
+      "sha256": "f533b5f21790563d7556c611c3835ac65848ee326da2689aac54ed7d9cc8c6a4",
+      "url": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort-wasm-simd.wasm"
+    }
+  ]
+}

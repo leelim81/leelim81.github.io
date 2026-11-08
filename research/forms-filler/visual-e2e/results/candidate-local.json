@@ -1,0 +1,62 @@
+{
+  "adopt": false,
+  "upright": [
+    "Email",
+    "Name"
+  ],
+  "summary": [
+    {
+      "id": "food-order",
+      "ms": 1493,
+      "ocrMs": 1003,
+      "crops": 8,
+      "pixels": 123264,
+      "lines": 8,
+      "wordKinds": {},
+      "fields": 0,
+      "correct": 0,
+      "wrongBox": 0,
+      "falseFields": 0,
+      "fieldKinds": [],
+      "publicFields": [],
+      "heap": 36319182
+    },
+    {
+      "id": "census-3",
+      "ms": 738,
+      "ocrMs": 350,
+      "crops": 8,
+      "pixels": 122688,
+      "lines": 8,
+      "wordKinds": {
+        "other": 40,
+        "name": 1
+      },
+      "fields": 1,
+      "correct": 0,
+      "wrongBox": 1,
+      "falseFields": 1,
+      "fieldKinds": [
+        "name"
+      ],
+      "heap": 30379129
+    },
+    {
+      "id": "census-2",
+      "ms": 574,
+      "ocrMs": 276,
+      "crops": 8,
+      "pixels": 123264,
+      "lines": 8,
+      "wordKinds": {
+        "other": 4
+      },
+      "fields": 0,
+      "correct": 0,
+      "wrongBox": 0,
+      "falseFields": 0,
+      "fieldKinds": [],
+      "heap": 40937316
+    }
+  ]
+}
