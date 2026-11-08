@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Score scan-dev only. Calibration and audit are refused. */
+import { createHash } from 'crypto';
 import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -13,7 +14,23 @@ const { fieldKind } = require('../../../tools/forms-filler/evidence.js');
 const { chromium } = pkg;
 const root = dirname(fileURLToPath(import.meta.url));
 const split = process.argv[2] || 'scan-dev';
-if (split !== 'scan-dev') throw new Error('Refusing ' + split + '. It stays unread until the freeze.');
+const once = process.argv.includes('--once');
+if (!/^scan-(dev|cal|audit)$/.test(split)) throw new Error('Unknown split');
+if (split !== 'scan-dev' && !once) throw new Error('Refusing ' + split + '. Pass --once after the detector is frozen.');
+const freezePath = join(root, 'SCAN-FREEZE.json');
+const freeze = JSON.parse(readFileSync(freezePath, 'utf8'));
+if (once) {
+  if (freeze.looked[split]) throw new Error(split + ' was already looked at');
+  Object.entries(freeze.files).forEach(([rel, meta]) => {
+    if (!rel.includes(split)) return;
+    const sha = createHash('sha256').update(readFileSync(join(root, rel))).digest('hex');
+    if (sha !== meta.sha256) throw new Error('Hash moved: ' + rel);
+  });
+  Object.entries(freeze.codeHashes).forEach(([rel, sha]) => {
+    const got = createHash('sha256').update(readFileSync(join(root, '../../..', rel))).digest('hex');
+    if (got !== sha) throw new Error('Code hash moved: ' + rel);
+  });
+}
 
 const gold = readFileSync(join(root, 'gold', split + '.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
 const gate = {
@@ -137,6 +154,10 @@ const summary = {
   }, { answerable: 0, correct: 0, wrong: 0, review: 0, reviewCorrect: 0, abstain: 0 }),
   rows
 };
-const tag = process.argv[3] || 'score';
+const tag = process.argv.slice(3).find((arg) => !arg.startsWith('--')) || (once ? 'once' : 'score');
 writeFileSync(join(root, 'results', split + '-' + tag + '.json'), JSON.stringify(summary, null, 2) + '\n');
+if (once) {
+  freeze.looked[split] = true;
+  writeFileSync(freezePath, JSON.stringify(freeze, null, 2) + '\n');
+}
 console.log(JSON.stringify({ detection: summary.detection, fill: summary.fill }, null, 2));

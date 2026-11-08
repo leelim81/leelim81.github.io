@@ -1,0 +1,406 @@
+{
+  "split": "scan-dev",
+  "ms": 63395,
+  "detection": {
+    "tp": 27,
+    "fp": 2,
+    "fn": 7,
+    "precision": 0.9310344827586207,
+    "recall": 0.7941176470588235,
+    "labelExact": 25
+  },
+  "fill": {
+    "answerable": 30,
+    "correct": 6,
+    "wrong": 0,
+    "review": 19,
+    "reviewCorrect": 19,
+    "abstain": 5
+  },
+  "rows": [
+    {
+      "id": "grove-narrow",
+      "ms": 10463,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 5,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "Grove applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant NRIC",
+          "detected": "Grove applicant NRIC",
+          "kind": "nric",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant birth date",
+          "detected": "Grove applicant birth date",
+          "kind": "dob",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "Grove applicant phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 5,
+      "correct": 0,
+      "wrong": 0,
+      "review": 4,
+      "reviewCorrect": 4,
+      "abstain": 1,
+      "text": "Applicant\nFull name: Willa Grove\nNRIC: T8800013C\nDate of birth: 04/02/1991\nPhone: +65 81100017\nEmail:\nAddress: 21 ALDER BEND 551101"
+    },
+    {
+      "id": "grove-columns",
+      "ms": 10237,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 5,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "Grove applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove patient name",
+          "detected": "Grove patient name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "Grove applicant phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove patient phone",
+          "detected": "Grove patient phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 3,
+      "correct": 0,
+      "wrong": 0,
+      "review": 3,
+      "reviewCorrect": 3,
+      "abstain": 0,
+      "text": "Spouse\nFull name: Hugo Grove\nPhone: +65 81999900\nApplicant\nFull name: Willa Grove\nNRIC:\nDate of birth: 05/03/1992\nPhone: +65 81100034\nEmail: willa.grove2@example.com\nAddress: 22 ALDER BEND 551102"
+    },
+    {
+      "id": "grove-table",
+      "ms": 9998,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 3,
+      "pairs": [
+        {
+          "gold": "Grove name",
+          "detected": "Grove name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove phone",
+          "detected": "Grove phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove email",
+          "detected": "Grove email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        }
+      ],
+      "answerable": 3,
+      "correct": 0,
+      "wrong": 0,
+      "review": 3,
+      "reviewCorrect": 3,
+      "abstain": 0,
+      "text": "Applicant\nFull name: Hugo Grove\nNRIC: T8800039G\nDate of birth: 06/04/1993\nPhone: +65 81100051\nEmail: hugo.grove3@example.com\nAddress: 23 ALDER BEND 551103"
+    },
+    {
+      "id": "grove-beside",
+      "ms": 10274,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 3,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": false
+        },
+        {
+          "gold": "Grove applicant NRIC",
+          "detected": "",
+          "kind": "nric"
+        },
+        {
+          "gold": "Grove applicant birth date",
+          "detected": "Grove applicant birth",
+          "kind": "dob",
+          "sameKind": true,
+          "sameLabel": false
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "",
+          "kind": "phone"
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 5,
+      "correct": 0,
+      "wrong": 0,
+      "review": 3,
+      "reviewCorrect": 3,
+      "abstain": 2,
+      "text": "Applicant\nFull name: Hugo Grove\nNRIC: S8800052H\nDate of birth: 07/05/1994\nPhone: +65 81100068\nEmail: hugo.grove4@example.com\nAddress: 24 ALDER BEND 551104"
+    },
+    {
+      "id": "grove-boxes",
+      "ms": 10562,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 5,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "Grove applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant NRIC",
+          "detected": "Grove applicant NRIC",
+          "kind": "nric",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant birth date",
+          "detected": "Grove applicant birth date",
+          "kind": "dob",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "Grove applicant phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 5,
+      "correct": 0,
+      "wrong": 0,
+      "review": 5,
+      "reviewCorrect": 5,
+      "abstain": 0,
+      "text": "Patient\nFull name: Hugo Grove\nDate of birth: 05/05/1975\nApplicant\nFull name: Willa Grove\nNRIC: T8800065F\nDate of birth: 08/06/1995\nPhone: +65 81100085\nEmail: willa.grove5@example.com\nAddress: 25 ALDER BEND 551105"
+    },
+    {
+      "id": "grove-serif",
+      "ms": 11003,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 1,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "",
+          "kind": "name"
+        },
+        {
+          "gold": "Grove applicant NRIC",
+          "detected": "",
+          "kind": "nric"
+        },
+        {
+          "gold": "Grove applicant birth date",
+          "detected": "",
+          "kind": "dob"
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "",
+          "kind": "phone"
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "",
+          "kind": "email"
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 3,
+      "correct": 0,
+      "wrong": 0,
+      "review": 1,
+      "reviewCorrect": 1,
+      "abstain": 2,
+      "text": "Applicant\nFull name: Hugo Grove\nApplicant\nFull name: Willa Grove\nNRIC: S8800078A\nDate of birth: 09/07/1996\nPhone: +65 81100102\nEmail: hugo.grove6@example.com\nAddress: 26 ALDER BEND 551106"
+    },
+    {
+      "id": "grove-native",
+      "ms": 387,
+      "kind": "acro",
+      "channel": "text-layer",
+      "detected": 4,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "Grove applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant phone",
+          "detected": "Grove applicant phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "Badge tint",
+          "kind": "other",
+          "sameKind": true,
+          "sameLabel": true
+        }
+      ],
+      "answerable": 3,
+      "correct": 3,
+      "wrong": 0,
+      "review": 0,
+      "reviewCorrect": 0,
+      "abstain": 0,
+      "text": "Patient\nFull name: Hugo Grove\nDate of birth: 05/05/1975\nApplicant\nFull name: Willa Grove\nNRIC: T8800091E\nDate of birth: 10/08/1997\nPhone: +65 81100119\nEmail: willa.grove7@example.com\nAddress: 27 ALDER BEND 551107"
+    },
+    {
+      "id": "grove-vector",
+      "ms": 385,
+      "kind": "flat",
+      "channel": "text-layer",
+      "detected": 3,
+      "pairs": [
+        {
+          "gold": "Grove applicant name",
+          "detected": "Grove applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant NRIC",
+          "detected": "Grove applicant NRIC",
+          "kind": "nric",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Grove applicant email",
+          "detected": "Grove applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        }
+      ],
+      "answerable": 3,
+      "correct": 3,
+      "wrong": 0,
+      "review": 0,
+      "reviewCorrect": 0,
+      "abstain": 0,
+      "text": "Applicant\nFull name: Hugo Grove\nNRIC: S8800104D\nDate of birth: 11/01/1998\nPhone: +65 81100136\nEmail: hugo.grove8@example.com\nAddress: 28 ALDER BEND 551108"
+    }
+  ]
+}

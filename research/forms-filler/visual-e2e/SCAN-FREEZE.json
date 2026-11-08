@@ -3,8 +3,8 @@
   "seed": 20261160,
   "looked": {
     "scan-dev": false,
-    "scan-cal": false,
-    "scan-audit": false
+    "scan-cal": true,
+    "scan-audit": true
   },
   "note": "Development may be read while improving detection. Calibration and audit stay unread until the detector and gates are frozen.",
   "gates": "ocrAutofill remains false. Do not edit thresholds.js from these pages.",
@@ -163,10 +163,10 @@
     }
   },
   "codeHashes": {
-    "tools/forms-filler/fields.js": "655f21efbe01dc9a8ce3e80af1597e34c246eeffde7c65f135b412bb7a774255",
+    "tools/forms-filler/fields.js": "837410d8e149abb8266422a5588e3c6d92da85a50f8ed6eaef671b5ad4417dcb",
     "tools/forms-filler/evidence.js": "8cde7e1a6e605f299bcbed43f28b155b63de4c29f0cf6de4966baacf292444f4",
     "tools/forms-filler/select.js": "5ef7579ab591b133f37a33783108ea7e45414e2f96261e87a9982868d611721e",
     "tools/forms-filler/thresholds.js": "613044bf6e5331fe907aaddb3f0bfbb034f8a24e976e6ae160c2ff6e5c0eb270"
   },
-  "codeNote": "Hashes updated after the routing change. Calibration and audit PDFs were not opened in a scorer."
+  "codeNote": "Frozen before the single calibration and audit look. Deskew stays at zero unless a long rule scores better than upright. Thin strokes of at least 80px with paper on both sides are extra candidates."
 }

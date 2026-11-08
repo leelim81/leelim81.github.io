@@ -1,0 +1,109 @@
+{
+  "split": "scan-cal",
+  "ms": 20905,
+  "detection": {
+    "tp": 5,
+    "fp": 0,
+    "fn": 3,
+    "precision": 1,
+    "recall": 0.625,
+    "labelExact": 5
+  },
+  "fill": {
+    "answerable": 8,
+    "correct": 0,
+    "wrong": 0,
+    "review": 5,
+    "reviewCorrect": 5,
+    "abstain": 3
+  },
+  "rows": [
+    {
+      "id": "fenn-row",
+      "ms": 10398,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 0,
+      "pairs": [
+        {
+          "gold": "Fenn name",
+          "detected": "",
+          "kind": "name"
+        },
+        {
+          "gold": "Fenn phone",
+          "detected": "",
+          "kind": "phone"
+        },
+        {
+          "gold": "Fenn email",
+          "detected": "",
+          "kind": "email"
+        }
+      ],
+      "answerable": 3,
+      "correct": 0,
+      "wrong": 0,
+      "review": 0,
+      "reviewCorrect": 0,
+      "abstain": 3,
+      "text": "Applicant\nFull name: Ida Fenn\nNRIC: T8800143A\nDate of birth: 14/04/1992\nPhone: +65 81100187\nEmail: ida.fenn11@example.com\nAddress: 31 COVE REACH 552211"
+    },
+    {
+      "id": "fenn-ladder",
+      "ms": 10429,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 5,
+      "pairs": [
+        {
+          "gold": "Fenn applicant name",
+          "detected": "Fenn applicant name",
+          "kind": "name",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Fenn applicant NRIC",
+          "detected": "Fenn applicant NRIC",
+          "kind": "nric",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Fenn applicant birth date",
+          "detected": "Fenn applicant birth date",
+          "kind": "dob",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Fenn applicant phone",
+          "detected": "Fenn applicant phone",
+          "kind": "phone",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Fenn applicant email",
+          "detected": "Fenn applicant email",
+          "kind": "email",
+          "sameKind": true,
+          "sameLabel": true
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 5,
+      "correct": 0,
+      "wrong": 0,
+      "review": 5,
+      "reviewCorrect": 5,
+      "abstain": 0,
+      "text": "Patient\nFull name: Ida Fenn\nDate of birth: 05/05/1975\nApplicant\nFull name: Jules Fenn\nNRIC: S8800156G\nDate of birth: 15/05/1993\nPhone: +65 81100204\nEmail: jules.fenn12@example.com\nAddress: 32 COVE REACH 552212"
+    }
+  ]
+}

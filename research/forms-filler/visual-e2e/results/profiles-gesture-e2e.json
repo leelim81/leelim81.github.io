@@ -93,6 +93,6 @@
     "The unpinned extension is not in the puzzle menu on this Chromium build. The assigned Activate shortcut opens the same popup as the toolbar button and is what granted activeTab.",
     "Shadow DOM and cross-origin frames are not filled.",
     "Human confirmation time was not measured.",
-    "The export click started a browser download, and saveAs could not copy its temp file: download.saveAs: ENOENT: no such file or directory, copyfile '/tmp/playwright-artifacts-4L15YR/4f66e35a-3586-4154-873b-66519ed66cd1' -> '/workspace/research/forms-filler/visual-e2e/results/cora-export.json'"
+    "The export click started a browser download, and saveAs could not copy its temp file: download.saveAs: ENOENT: no such file or directory, copyfile '/tmp/playwright-artifacts-8Tde2e/c9943517-f5a0-409b-a05f-22a5daa97453' -> '/workspace/research/forms-filler/visual-e2e/results/cora-export.json'"
   ]
 }

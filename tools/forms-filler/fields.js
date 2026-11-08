@@ -427,6 +427,45 @@
     return mergeCellRows(found).filter(function (line) { return line.w >= minW; });
   }
 
+  /* Thin blank rules. A real underline on these scans is about 170px of dark
+     ink with paper on both sides. Boxed edges on the intake sheets are thicker
+     and do not pass. 80px is the stroke length, not a fraction of the page. */
+  function strokeRules(canvas) {
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    var w = canvas.width;
+    var h = canvas.height;
+    var data = ctx.getImageData(0, 0, w, h).data;
+    function lum(x, y) {
+      var i = (y * w + x) * 4;
+      return 0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2];
+    }
+    var found = [];
+    for (var y = 4; y < h - 4; y++) {
+      var start = -1;
+      var last = -1;
+      var dark = 0;
+      for (var x = 0; x <= w; x++) {
+        var on = false;
+        if (x < w) {
+          var c = lum(x, y);
+          on = c < 160 && lum(x, y - 3) - c > 40 && lum(x, y + 3) - c > 40;
+        }
+        if (on) {
+          if (start < 0) start = x;
+          last = x;
+          dark++;
+        } else if (start >= 0) {
+          var width = last - start + 1;
+          if (width >= 80 && dark / width > 0.5) found.push({ x: start, y: h - y, w: width });
+          start = -1;
+          last = -1;
+          dark = 0;
+        }
+      }
+    }
+    return mergeCellRows(found).filter(function (line) { return line.w >= 80; });
+  }
+
 
   function mergeCellRows(lines) {
     var sorted = lines.slice().sort(function (a, b) {
@@ -571,9 +610,10 @@
 
   async function bestLineAngle(canvas) {
     var small = shrinkCanvas(canvas, 480);
+    var uprightScore = await longRuleScore(small);
     async function scan(from, to, step) {
-      var best = from;
-      var bestScore = -1;
+      var best = 0;
+      var bestScore = uprightScore;
       for (var deg = from; deg <= to + 0.0001; deg += step) {
         await pause();
         var turned = Math.abs(deg) < 0.02 ? small : rotateCanvas(small, deg);
@@ -586,6 +626,7 @@
       return best;
     }
     var coarse = await scan(-6, 6, 0.5);
+    if (!coarse) return 0;
     return scan(coarse - 0.4, coarse + 0.4, 0.1);
   }
 
@@ -731,7 +772,7 @@
       squares: geo.squares
     }, scale);
     var primary = FormSpots.layout(page);
-    var rules = underlineRules(source);
+    var rules = underlineRules(source).concat(strokeRules(source));
     if (!rules.length || !global.FormEvidence) return primary;
     rules.forEach(function (line) {
       var x = line.x * scale;
@@ -750,6 +791,14 @@
         if (text.x > line.x + line.w || text.x + text.w < line.x) return;
         candidates.push({ text: text, dy: dy });
       });
+      if (!candidates.length) {
+        texts.forEach(function (text) {
+          var dy = Math.abs(text.y - line.y);
+          var gap = line.x - (text.x + text.w);
+          if (dy > 18 || gap < -8 || gap > 48) return;
+          candidates.push({ text: text, dy: dy });
+        });
+      }
       var known = [];
       candidates.forEach(function (item) {
         var itemKind = FormEvidence.fieldKind({ label: item.text.str });

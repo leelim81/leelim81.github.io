@@ -1,0 +1,20 @@
+{
+  "browser": "Google Chrome 156 headless",
+  "report": [
+    {
+      "name": "native upload sees 4 widgets",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "patient-first native saves Willa Grove",
+      "ok": true,
+      "detail": "Willa Grove"
+    },
+    {
+      "name": "Hugo Grove is not the saved person",
+      "ok": true,
+      "detail": "patient:Hugo Grove,patient:05/05/1975"
+    }
+  ]
+}

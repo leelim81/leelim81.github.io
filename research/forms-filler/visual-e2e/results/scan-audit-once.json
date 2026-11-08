@@ -1,0 +1,124 @@
+{
+  "split": "scan-audit",
+  "ms": 21483,
+  "detection": {
+    "tp": 0,
+    "fp": 5,
+    "fn": 6,
+    "precision": 0,
+    "recall": 0,
+    "labelExact": 0
+  },
+  "fill": {
+    "answerable": 8,
+    "correct": 0,
+    "wrong": 0,
+    "review": 5,
+    "reviewCorrect": 5,
+    "abstain": 3
+  },
+  "rows": [
+    {
+      "id": "bent-margin",
+      "ms": 11078,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 0,
+      "pairs": [
+        {
+          "gold": "Bent applicant name",
+          "detected": "",
+          "kind": "name"
+        },
+        {
+          "gold": "Bent applicant NRIC",
+          "detected": "",
+          "kind": "nric"
+        },
+        {
+          "gold": "Bent applicant birth date",
+          "detected": "",
+          "kind": "dob"
+        },
+        {
+          "gold": "Bent applicant phone",
+          "detected": "",
+          "kind": "phone"
+        },
+        {
+          "gold": "Bent applicant email",
+          "detected": "",
+          "kind": "email"
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "",
+          "kind": "other"
+        }
+      ],
+      "answerable": 3,
+      "correct": 0,
+      "wrong": 0,
+      "review": 0,
+      "reviewCorrect": 0,
+      "abstain": 3,
+      "text": "Applicant\nFull name: Yara Bent\nApplicant\nFull name: Amos Bent\nNRIC: T8800273Z\nDate of birth: 24/06/1993\nPhone: +65 81100357\nEmail: yara.bent21@example.com\nAddress: 41 SLOE WALK 553321"
+    },
+    {
+      "id": "bent-above",
+      "ms": 10332,
+      "kind": "flat",
+      "channel": "ocr",
+      "detected": 5,
+      "pairs": [
+        {
+          "gold": "Bent applicant name",
+          "detected": "",
+          "kind": "name"
+        },
+        {
+          "gold": "Bent applicant NRIC",
+          "detected": "Bent applicant name",
+          "kind": "nric",
+          "sameKind": false,
+          "sameLabel": false
+        },
+        {
+          "gold": "Bent applicant birth date",
+          "detected": "Bent applicant NRIC",
+          "kind": "dob",
+          "sameKind": false,
+          "sameLabel": false
+        },
+        {
+          "gold": "Bent applicant phone",
+          "detected": "Bent applicant birth date",
+          "kind": "phone",
+          "sameKind": false,
+          "sameLabel": false
+        },
+        {
+          "gold": "Bent applicant email",
+          "detected": "Bent applicant phone",
+          "kind": "email",
+          "sameKind": false,
+          "sameLabel": false
+        },
+        {
+          "gold": "Badge tint",
+          "detected": "Bent applicant email",
+          "kind": "other",
+          "sameKind": false,
+          "sameLabel": false
+        }
+      ],
+      "answerable": 5,
+      "correct": 0,
+      "wrong": 0,
+      "review": 5,
+      "reviewCorrect": 5,
+      "abstain": 0,
+      "text": "Spouse\nFull name: Yara Bent\nPhone: +65 81999900\nApplicant\nFull name: Amos Bent\nNRIC: S8800286E\nDate of birth: 25/07/1994\nPhone: +65 81100374\nEmail: amos.bent22@example.com\nAddress: 42 SLOE WALK 553322"
+    }
+  ]
+}

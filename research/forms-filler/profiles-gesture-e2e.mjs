@@ -209,7 +209,11 @@ check('re-extract does not clobber the correction', vault.profiles.some((p) => p
 
 await filler.setInputFiles('#refInput', join(root, 'visual-e2e/fixtures/feature-e2e/cora.ambiguous.pdf'));
 await filler.waitForFunction(() => FormDesk.refs().every((r) => r.status && r.status !== 'reading'), null, { timeout: 40000 });
-await filler.click('#fillBtn');
+if (await filler.locator('#fillBtn').isDisabled()) {
+  await filler.setInputFiles('#formInput', join(root, 'visual-e2e/fixtures/feature-e2e/cora.form.pdf'));
+  await filler.waitForFunction(() => window.FormDesk && FormDesk.fields().length > 0, null, { timeout: 40000 });
+}
+await filler.locator('#fillBtn').click({ timeout: 90000 });
 await filler.waitForTimeout(2000);
 if (await filler.locator('#reviewSkip').isVisible().catch(() => false)) await filler.click('#reviewSkip');
 await filler.goto('http://127.0.0.1:8765/tools/forms-filler/');
