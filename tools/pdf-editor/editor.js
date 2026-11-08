@@ -602,7 +602,7 @@
       id: uid(), type: 'text', x: 0.15, y: 0.15, w: 0.4, h: 0.08,
       text: '', fontSize: 18, color: '#1a1612'
     }, partial);
-    if ((ann.type === 'text' || ann.type === 'date') && !ann.profileId && !ann.originProfileId) {
+    if (!ann.profileId && !ann.originProfileId) {
       ann.originProfileId = ($('recoverPerson') && $('recoverPerson').value) || '';
     }
     if (!partial || !partial.skipUndo) pushUndo();

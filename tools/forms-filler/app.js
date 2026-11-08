@@ -687,6 +687,16 @@
       color: typeof ann.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ann.color) ? ann.color : '#1a1612'
     };
     if (!unit(copy.x) || !unit(copy.y) || !unit(copy.w) || !unit(copy.h)) return null;
+    if (ann.type === 'image' || ann.type === 'signature') {
+      var payload = typeof ann.dataUrl === 'string' ? ann.dataUrl : '';
+      var raster = /^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+$/.test(payload) && payload.length <= 1500000;
+      if (!raster) return null;
+      copy.dataUrl = payload;
+      var aspect = Number(ann.pixelAspect);
+      if (!(aspect > 0) || aspect > 100 || !isFinite(aspect)) return null;
+      copy.pixelAspect = aspect;
+      copy.text = '';
+    }
     if (ann.profileId) copy.profileId = ann.profileId.slice(0, 80);
     if (ann.originProfileId) copy.originProfileId = ann.originProfileId.slice(0, 80);
     if (typeof ann.factKey === 'string') copy.factKey = ann.factKey.slice(0, 40);
@@ -767,12 +777,27 @@
     }
     openingEditor = true;
     var opened = false;
+    var intentBytes = bytes.slice(0);
+    var intentSheet = sheetStamp();
+    var intentPick = $('profilePick') && $('profilePick').value || '';
+    var intentClear = clearGeneration();
+    var intentToken = formToken;
+    var intentSource = state.sourceBytes && state.sourceBytes.length ? state.sourceBytes.slice(0) : null;
     try {
     if ($('placeMissing')) $('placeMissing').disabled = true;
     status('Opening the editor so you can place a saved value…', true);
+    var seenGen = 0;
+    try {
+      var prior = await DeskDB.get(EDITOR_DB, 'session');
+      seenGen = prior && (prior.generation || prior.epoch) || 0;
+    } catch (err) {
+      status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
     var probe;
     try {
-      probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+      probe = await PDFLib.PDFDocument.load(intentBytes.slice(0));
     } catch (err) {
       openingEditor = false;
       if ($('placeMissing')) $('placeMissing').disabled = false;
@@ -795,8 +820,8 @@
     var pdfSha = '';
     var sourceSha = '';
     try {
-      pdfSha = await sha256Hex(bytes);
-      sourceSha = await sourceIdentity();
+      pdfSha = await sha256Hex(intentBytes);
+      sourceSha = (!intentSource || intentSource.length < 4 || (intentSource[0] === 0x25 && intentSource[1] === 0x50 && intentSource[2] === 0x44 && intentSource[3] === 0x46)) ? '' : await sha256Hex(intentSource);
     } catch (err) {
       openingEditor = false;
       if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
@@ -804,8 +829,8 @@
       toast('The editor was not opened.');
       return;
     }
-    var sheet = sheetStamp();
-    var personId = await currentResumePerson();
+    var sheet = intentSheet;
+    var personId = intentPick;
     var stored = null;
     var storedPdf = null;
     try {
@@ -846,18 +871,38 @@
       recover: true,
       sourceSha256: sourceSha,
       pdfSha256: pdfSha,
-      sheet: sheet,
-      resumeProfileId: personId || '',
+      sheet: intentSheet,
+      resumeProfileId: intentPick || '',
       editedAt: generation,
       resumeNote: note
     };
+    var committed;
     try {
-      await DeskDB.putAll(EDITOR_DB, [
-        { key: 'pdf', value: bytes },
-        { key: 'session', value: session }
-      ]);
+      committed = await DeskDB.change(EDITOR_DB, ['session'], function (found, put) {
+        if (clearGeneration() !== intentClear) return { ok: false, reason: 'cleared' };
+        if (formToken !== intentToken) return { ok: false, reason: 'file' };
+        var pick = $('profilePick') && $('profilePick').value || '';
+        if (pick !== intentPick) return { ok: false, reason: 'person' };
+        if (JSON.stringify(sheetStamp() || null) !== JSON.stringify(intentSheet || null)) return { ok: false, reason: 'sheet' };
+        var existing = found.session;
+        var nowGen = existing && (existing.generation || existing.epoch) || 0;
+        if (nowGen !== seenGen) return { ok: false, reason: 'newer' };
+        put('pdf', intentBytes);
+        put('session', session);
+        return { ok: true };
+      });
     } catch (err) {
       status('This browser could not store the form, so the editor was not opened. Nothing was written.', false);
+      toast('The editor was not opened.');
+      return;
+    }
+    if (!committed || !committed.ok) {
+      var why = committed && committed.reason;
+      var refused = why === 'cleared' ? 'Start over finished before the editor opened. Nothing was written.'
+        : why === 'person' ? 'The person changed before the editor opened. Nothing was written.'
+        : why === 'newer' ? 'A newer editor session is already stored. Nothing was replaced.'
+        : 'The form changed before the editor opened. Nothing was written.';
+      status(refused, false);
       toast('The editor was not opened.');
       return;
     }

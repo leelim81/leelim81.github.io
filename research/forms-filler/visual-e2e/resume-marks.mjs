@@ -202,14 +202,10 @@ check('start over removes the marks', cleared.length === 0 && !/same marks/.test
 await page.goBack();
 await page.waitForURL(/forms-filler/);
 await page.evaluate(() => {
-  const real = DeskDB.putAll.bind(DeskDB);
-  DeskDB.putAll = function (name, entries) {
-    if (name === 'tools-forms-editor') {
-      const err = new Error('quota');
-      err.name = 'QuotaExceededError';
-      return Promise.reject(err);
-    }
-    return real(name, entries);
+  DeskDB.change = function () {
+    const err = new Error('quota');
+    err.name = 'QuotaExceededError';
+    return Promise.reject(err);
   };
 });
 await page.click('#placeMissing');
