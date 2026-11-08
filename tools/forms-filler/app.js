@@ -200,9 +200,37 @@
   }
 
   var formToken = 0;
+  var takeToken = 0;
   var fillToken = 0;
   var refSeq = 0;
   var userTouched = false;
+
+  function imageSentence(frame) {
+    if (!frame || !frame.sourceW || !frame.sourceH) return '';
+    var reduced = frame.sourceW !== frame.inW || frame.sourceH !== frame.inH;
+    var turned = Math.abs(frame.angle || 0) >= 0.05;
+    if (!reduced && !turned) return '';
+    var text = 'The photo is ' + frame.sourceW + '×' + frame.sourceH;
+    if (reduced) text += ' and was reduced to ' + frame.inW + '×' + frame.inH;
+    if (turned) text += ' before a small straighten';
+    return text + '. The sheet is that image.';
+  }
+
+  function retireForm() {
+    state.formBytes = null;
+    state.formName = '';
+    state.fields = [];
+    state.sourceBytes = null;
+    state.placementBlocked = '';
+    state.scanReview = null;
+    state.imageFrame = null;
+    state.imageNote = '';
+    state.kind = '';
+    state.proposals = [];
+    if ($('scanReview')) $('scanReview').hidden = true;
+    refreshLabels();
+    scheduleSave();
+  }
 
   function isImageName(name, mime) {
     if (mime && mime.indexOf('image/') === 0) return true;
@@ -225,15 +253,17 @@
   async function setForm(bytes, name, mime) {
     var token = ++formToken;
     fillToken++;
+    retireForm();
     var image = isImageName(name, mime);
+    function alive() { return token === formToken; }
     function progress(msg) {
-      if (token !== formToken) return;
+      if (!alive()) return;
       status(msg, true);
     }
     var read;
     try {
       read = await withTimeout(
-        image ? FormFields.readImage(bytes, mime || 'image/jpeg', progress) : FormFields.read(bytes, progress),
+        image ? FormFields.readImage(bytes, mime || 'image/jpeg', progress, alive) : FormFields.read(bytes, progress),
         45000,
         'Reading the form took too long. Start over and choose it again.'
       );
@@ -241,7 +271,7 @@
       if (token === formToken) formToken++;
       throw err;
     }
-    if (token !== formToken) return false;
+    if (!alive() || !read) return false;
     state.sourceBytes = bytes;
     state.formBytes = read.bytes || bytes;
     state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
@@ -250,14 +280,17 @@
     state.kind = read.kind;
     state.placementBlocked = read.placementBlock || '';
     state.scanReview = read.reviewTransport || null;
+    state.imageFrame = image ? (read.frame || null) : null;
+    state.imageNote = imageSentence(state.imageFrame);
     paintScanReview();
+    var tail = state.imageNote ? ' ' + state.imageNote : '';
     if (state.placementBlocked) {
-      status(state.placementBlocked, false);
+      status(state.placementBlocked + tail, false);
       toast(state.placementBlocked);
     } else if (state.fields.some(function (field) { return field.transport === 'viewport-review'; })) {
-      status(state.fields.length + ' scan estimates. Nothing is written until you check a value.', false);
+      status(state.fields.length + ' scan estimates. Nothing is written until you check a value.' + tail, false);
     } else if (!state.fields.length) {
-      status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.', false);
+      status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.' + tail, false);
     }
     refreshLabels();
     scheduleSave();
@@ -774,7 +807,6 @@
     saveTimer = setTimeout(saveNow, 300);
   }
   function saveNow() {
-    if (!state.formBytes && !state.refs.length) return;
     DeskDB.set(DB, 'draft', {
       formName: state.formName,
       formBytes: state.formBytes,
@@ -792,9 +824,11 @@
   }
 
   function takeFiles(files, kind, input) {
+    var mine = ++takeToken;
     return (async function () {
       userTouched = true;
       if (!files.length) {
+        if (mine !== takeToken) return;
         toast('No file was selected.');
         status('No file was selected.', false);
         if (input) input.value = '';
@@ -802,6 +836,7 @@
       }
       var loaded = [];
       for (var n = 0; n < files.length; n++) {
+        if (mine !== takeToken) return;
         var file = files[n];
         status('Reading ' + file.name + '…', true);
         var buf = await withTimeout(
@@ -809,20 +844,25 @@
           15000,
           'Could not read ' + (file.name || 'that file') + '. Choose it again.'
         );
+        if (mine !== takeToken) return;
         loaded.push({ name: file.name, type: file.type || '', bytes: new Uint8Array(buf) });
       }
       if (input) input.value = '';
       var added = 0;
       for (var i = 0; i < loaded.length; i++) {
+        if (mine !== takeToken) return;
         var item = loaded[i];
         if (kind === 'form') {
           var applied = await setForm(item.bytes, item.name, item.type);
-          if (!applied) return;
+          if (!applied || mine !== takeToken) return;
         } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
-      if (kind === 'form' && !state.placementBlocked && state.fields.length && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) status('Form ready.', false);
-      else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
+      if (mine !== takeToken) return;
+      if (kind === 'form' && !state.placementBlocked && state.fields.length && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) {
+        status('Form ready.' + (state.imageNote ? ' ' + state.imageNote : ''), false);
+      } else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
+      if (mine !== takeToken) return;
       if (input) input.value = '';
       state.running = false;
       $('formDrop').disabled = false;
@@ -836,7 +876,9 @@
 
   function resetDesk() {
     formToken++;
+    takeToken++;
     fillToken++;
+    clearTimeout(saveTimer);
     userTouched = true;
     state.modelNote = '';
     state.handedOff = false;
@@ -852,6 +894,8 @@
     state.scanReview = null;
     if ($('scanReview')) $('scanReview').hidden = true;
     state.kind = '';
+    state.imageFrame = null;
+    state.imageNote = '';
     state.refs = [];
     state.proposals = [];
     $('formInput').value = '';
@@ -960,6 +1004,7 @@
         boxHidden: $('modelBox').hidden
       };
     },
+    imageFrame: function () { return state.imageFrame || null; },
     refs: function () {
       return state.refs.map(function (ref) {
         return { name: ref.name, status: ref.status, preview: ref.preview };

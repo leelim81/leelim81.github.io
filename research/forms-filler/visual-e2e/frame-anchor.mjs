@@ -410,6 +410,7 @@ report.foodAnchor = {
   strictOverflowPx: sourceBox ? sourceBox[3] - (goldName[3] + Frame.PAD) : null
 };
 check('editor screenshot, export baseline, and the printed Name rule agree', !!agree && onRule && overlap && sourceBox[1] >= goldName[1] - Frame.PAD, JSON.stringify(report.foodAnchor));
+check('the frozen food-order name box still does not contain the glyph', contained === false, JSON.stringify({ contained, strictOverflowPx: report.foodAnchor.strictOverflowPx }));
 copyFileSync(join(shot, 'natural-food-anchor.png'), join(art, 'natural-food-anchor.png'));
 
 report.failed = report.checks.filter((item) => !item.ok).length;

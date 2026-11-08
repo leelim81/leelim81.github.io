@@ -239,13 +239,115 @@
     };
   }
 
-  function canvasFromBitmap(bmp, maxW) {
-    var scale = bmp.width > maxW ? maxW / bmp.width : 1;
+  /* Working sheet. Width 1500 is the cap already used for photos.
+     Height 1850 is one pixel past the 1848-tall sheet measured for the
+     4842×5964 Surrey JPEG after that width cap, so that sheet is unchanged
+     and a narrower, taller photo cannot exceed it. */
+  var MAX_WORKING_WIDTH = 1500;
+  var MAX_WORKING_HEIGHT = 1850;
+  /* Largest source this browser resized on request: a flat JPEG 32768 wide.
+     Largest real photograph that completed: 4842×5964. A header above either
+     limit is refused before createImageBitmap. */
+  var MAX_SOURCE_EDGE = 32768;
+  var MAX_SOURCE_PIXELS = 4842 * 5964;
+
+  function canvasFromBitmap(bmp, maxW, maxH) {
+    var scale = 1;
+    var limitW = maxW || bmp.width;
+    var limitH = maxH || bmp.height;
+    if (bmp.width > limitW) scale = limitW / bmp.width;
+    if (bmp.height * scale > limitH) scale = limitH / bmp.height;
     var canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(bmp.width * scale));
     canvas.height = Math.max(1, Math.round(bmp.height * scale));
     canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
     return canvas;
+  }
+
+  function u16be(bytes, i) {
+    return (bytes[i] << 8) | bytes[i + 1];
+  }
+
+  function exifOrientation(bytes, start, length) {
+    if (length < 16) return 0;
+    if (bytes[start] !== 0x45 || bytes[start + 1] !== 0x78 || bytes[start + 2] !== 0x69 || bytes[start + 3] !== 0x66) return 0;
+    var tiff = start + 6;
+    if (tiff + 8 > bytes.length) return 0;
+    var le = bytes[tiff] === 0x49 && bytes[tiff + 1] === 0x49;
+    var be = bytes[tiff] === 0x4d && bytes[tiff + 1] === 0x4d;
+    if (!le && !be) return 0;
+    function u16(o) {
+      return le ? (bytes[o] | (bytes[o + 1] << 8)) : ((bytes[o] << 8) | bytes[o + 1]);
+    }
+    function u32(o) {
+      return le
+        ? ((bytes[o] | (bytes[o + 1] << 8) | (bytes[o + 2] << 16) | (bytes[o + 3] << 24)) >>> 0)
+        : ((bytes[o] * 16777216) + ((bytes[o + 1] << 16) | (bytes[o + 2] << 8) | bytes[o + 3])) >>> 0;
+    }
+    if (u16(tiff + 2) !== 42) return 0;
+    var ifd = tiff + u32(tiff + 4);
+    if (ifd + 2 > bytes.length) return 0;
+    var count = u16(ifd);
+    for (var n = 0; n < count && n < 64; n++) {
+      var entry = ifd + 2 + n * 12;
+      if (entry + 10 > bytes.length) break;
+      if (u16(entry) === 0x0112) {
+        var value = u16(entry + 8);
+        return value >= 1 && value <= 8 ? value : 0;
+      }
+    }
+    return 0;
+  }
+
+  function jpegHeader(bytes) {
+    if (!bytes || bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+    var i = 2;
+    var orientation = 1;
+    var width = 0;
+    var height = 0;
+    while (i + 3 < bytes.length) {
+      if (bytes[i] !== 0xff) break;
+      var marker = bytes[i + 1];
+      if (marker === 0xff) { i++; continue; }
+      if (marker === 0xd9 || marker === 0xda) break;
+      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
+      var len = u16be(bytes, i + 2);
+      if (len < 2 || i + 2 + len > bytes.length) break;
+      if (marker === 0xe1) {
+        var found = exifOrientation(bytes, i + 4, len - 2);
+        if (found) orientation = found;
+      }
+      var sof = (marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7)
+        || (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf);
+      if (sof && len >= 7) {
+        height = u16be(bytes, i + 5);
+        width = u16be(bytes, i + 7);
+      }
+      i += 2 + len;
+    }
+    if (!width || !height) return null;
+    return { width: width, height: height, orientation: orientation };
+  }
+
+  function pngHeader(bytes) {
+    if (!bytes || bytes.length < 24) return null;
+    var sig = [137, 80, 78, 71, 13, 10, 26, 10];
+    for (var s = 0; s < 8; s++) if (bytes[s] !== sig[s]) return null;
+    if (bytes[12] !== 73 || bytes[13] !== 72 || bytes[14] !== 68 || bytes[15] !== 82) return null;
+    var width = bytes[16] * 16777216 + (bytes[17] << 16) + (bytes[18] << 8) + bytes[19];
+    var height = bytes[20] * 16777216 + (bytes[21] << 16) + (bytes[22] << 8) + bytes[23];
+    if (!width || !height) return null;
+    return { width: width, height: height, orientation: 1 };
+  }
+
+  function imageHeader(bytes) {
+    return jpegHeader(bytes) || pngHeader(bytes);
+  }
+
+  function orientedPixels(header) {
+    var turn = header.orientation || 1;
+    if (turn >= 5 && turn <= 8) return { width: header.height, height: header.width };
+    return { width: header.width, height: header.height };
   }
 
   async function inkMask(canvas) {
@@ -1136,16 +1238,49 @@
     return { kind: 'flat', route: flat && flat.route || 'empty', fields: [], placementBlock: '' };
   }
 
-  async function readImage(bytes, mime, progress) {
+  async function readImage(bytes, mime, progress, alive) {
+    var current = typeof alive === 'function' ? alive : function () { return true; };
+    var data = copy(bytes);
+    var header = imageHeader(data);
+    var oriented = header ? orientedPixels(header) : null;
+    if (oriented && (oriented.width > MAX_SOURCE_EDGE || oriented.height > MAX_SOURCE_EDGE || oriented.width * oriented.height > MAX_SOURCE_PIXELS)) {
+      throw new Error('This image is ' + oriented.width + '×' + oriented.height + '. This reader stops at 4842×5964 pixels or an edge of 32768 and did not decode it.');
+    }
     say(progress, 'Reading the photo…');
-    var bmp = await createImageBitmap(new Blob([copy(bytes)], { type: mime || 'image/jpeg' }));
+    var options = { imageOrientation: 'from-image' };
+    if (oriented) {
+      var prescale = 1;
+      if (oriented.width > MAX_WORKING_WIDTH) prescale = MAX_WORKING_WIDTH / oriented.width;
+      if (oriented.height * prescale > MAX_WORKING_HEIGHT) prescale = MAX_WORKING_HEIGHT / oriented.height;
+      if (prescale < 1) {
+        options.resizeWidth = Math.max(1, Math.round(oriented.width * prescale));
+        options.resizeHeight = Math.max(1, Math.round(oriented.height * prescale));
+        options.resizeQuality = 'high';
+      }
+    }
+    var bmp = null;
+    try {
+      bmp = await createImageBitmap(new Blob([data], { type: mime || 'image/jpeg' }), options);
+    } catch (err) {
+      throw new Error('That image could not be opened. Nothing was kept from it.');
+    }
+    if (!current()) {
+      if (bmp && bmp.close) bmp.close();
+      return null;
+    }
+    var sourceW = oriented ? oriented.width : bmp.width;
+    var sourceH = oriented ? oriented.height : bmp.height;
     say(progress, 'Straightening the photo…');
-    var canvas = await uprightSheet(canvasFromBitmap(bmp, 1500));
+    var canvas = await uprightSheet(canvasFromBitmap(bmp, MAX_WORKING_WIDTH, MAX_WORKING_HEIGHT));
     if (bmp.close) bmp.close();
+    bmp = null;
+    if (!current()) return null;
     var fields = await fieldsOnSheet(canvas, progress);
+    if (!current()) return null;
     var frame = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
     var crop = canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height };
     var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });
+    if (!blob || !current()) return null;
     var jpeg = new Uint8Array(await blob.arrayBuffer());
     var doc = await PDFLib.PDFDocument.create();
     var image = await doc.embedJpg(jpeg);
@@ -1153,6 +1288,7 @@
     var pageH = canvas.height * (pageW / canvas.width);
     var page = doc.addPage([pageW, pageH]);
     page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
+    if (!current()) return null;
     return {
       kind: 'flat',
       fields: fields,
@@ -1165,7 +1301,9 @@
         turnH: frame.turnH,
         crop: crop,
         outW: canvas.width,
-        outH: canvas.height
+        outH: canvas.height,
+        sourceW: sourceW,
+        sourceH: sourceH
       }
     };
   }

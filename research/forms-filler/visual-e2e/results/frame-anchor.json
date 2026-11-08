@@ -54,6 +54,11 @@
       "name": "editor screenshot, export baseline, and the printed Name rule agree",
       "ok": true,
       "detail": "{\"sourceBox\":[1404,1311,1776,1371],\"contained\":false,\"onRule\":true,\"ruleStroke\":[1365,1383],\"editorAnchor\":{\"top\":0.2188644202706288,\"bottom\":0.234713009640046},\"exportBottom\":0.2319553754771458,\"agree\":true,\"shotAgree\":{\"name\":[701,714],\"ada\":[697,714]},\"overlap\":true,\"pad\":8,\"gold\":[820,1295,3040,1362],\"strictOverflowPx\":1}"
+    },
+    {
+      "name": "the frozen food-order name box still does not contain the glyph",
+      "ok": true,
+      "detail": "{\"contained\":false,\"strictOverflowPx\":1}"
     }
   ],
   "natural": [
@@ -96,7 +101,9 @@
       "h": 1516
     },
     "outW": 913,
-    "outH": 1516
+    "outH": 1516,
+    "sourceW": 983,
+    "sourceH": 1600
   },
   "exifAspect": 3.5826800652391224,
   "foodAnchor": {

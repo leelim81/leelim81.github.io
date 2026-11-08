@@ -1,7 +1,8 @@
 /* Source image, deskew, crop, sheet, and export, in one direction.
    Pixels are top-left, y down. A positive angle is the canvas clockwise
    turn used by the photo reader. The crop is applied after that turn.
-   This does not detect lines and does not change a threshold. */
+   sourceW and sourceH, when present, are the oriented image pixels before
+   the working-size reduction. This does not detect lines and does not change a threshold. */
 (function (root, factory) {
   var api = factory();
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -23,8 +24,8 @@
 
   function sheetBoxToSource(box, frame, scaleX, scaleY) {
     var crop = frame.crop || { x: 0, y: 0 };
-    var sx = scaleX == null ? 1 : scaleX;
-    var sy = scaleY == null ? sx : scaleY;
+    var sx = scaleX == null ? (frame.sourceW && frame.inW ? frame.sourceW / frame.inW : 1) : scaleX;
+    var sy = scaleY == null ? (frame.sourceH && frame.inH ? frame.sourceH / frame.inH : sx) : scaleY;
     var corners = [
       [box[0], box[1]],
       [box[2], box[1]],
