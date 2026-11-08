@@ -111,7 +111,7 @@
     renderRefs();
     var ready = !!(state.formBytes && !state.running && ((state.fields.length && (flat || state.refs.length)) || state.placementBlocked));
     $('fillBtn').disabled = !ready;
-    $('fillBtn').textContent = state.placementBlocked || (flat && !state.refs.length) ? 'Open in the editor' : 'Fill from the papers';
+    $('fillBtn').textContent = state.placementBlocked || (flat && state.fields.length && !state.refs.length) ? 'Open in the editor' : 'Fill from the papers';
     if ($('placeMissing')) $('placeMissing').disabled = !(state.sourceBytes || state.formBytes);
   }
 
@@ -256,7 +256,9 @@
       toast(state.placementBlocked);
     } else if (state.fields.some(function (field) { return field.transport === 'viewport-review'; })) {
       status(state.fields.length + ' scan estimates. Nothing is written until you check a value.', false);
-    } else if (!state.fields.length) toast('No fields or blank lines were found in that PDF.');
+    } else if (!state.fields.length) {
+      status('No lines were found. Use Place a missing line to put a value where you want it. Nothing was written.', false);
+    }
     refreshLabels();
     scheduleSave();
     return true;
@@ -530,14 +532,28 @@
     });
   }
 
+  function pdfBytesForEditor() {
+    var source = state.sourceBytes;
+    var form = state.formBytes;
+    if (source && source.length > 4 && source[0] === 0x25 && source[1] === 0x50 && source[2] === 0x44 && source[3] === 0x46) return source;
+    return form || source;
+  }
+
   async function openRecovery() {
-    var bytes = state.sourceBytes || state.formBytes;
+    var bytes = pdfBytesForEditor();
     if (!bytes) {
       toast('Choose a form first.');
       return;
     }
     status('Opening the editor so you can place a saved value…', true);
-    var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+    var probe;
+    try {
+      probe = await PDFLib.PDFDocument.load(bytes.slice(0));
+    } catch (err) {
+      status('That file could not be opened for placement. Nothing was written.', false);
+      toast('That file could not be opened for placement.');
+      return;
+    }
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {
       pages.push({ id: Math.random().toString(36).slice(2, 10), srcIndex: i, rotation: 0, annotations: [] });
@@ -804,7 +820,7 @@
           if (!applied) return;
         } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
-      if (kind === 'form' && !state.placementBlocked && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) status('Form ready.', false);
+      if (kind === 'form' && !state.placementBlocked && state.fields.length && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) status('Form ready.', false);
       else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
       if (input) input.value = '';

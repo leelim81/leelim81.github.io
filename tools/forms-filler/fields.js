@@ -659,7 +659,10 @@
         if (y > maxY) maxY = y;
       }
     }
-    if (maxX <= minX || maxY <= minY) return canvas;
+    if (maxX <= minX || maxY <= minY) {
+      canvas._ffCrop = { x: 0, y: 0, w: w, h: h };
+      return canvas;
+    }
     var pad = 8;
     minX = Math.max(0, minX - pad);
     minY = Math.max(0, minY - pad);
@@ -667,18 +670,30 @@
     maxY = Math.min(h - 1, maxY + pad);
     var cw = maxX - minX;
     var ch = maxY - minY;
-    if (cw > w * 0.98 && ch > h * 0.98) return canvas;
+    if (cw > w * 0.98 && ch > h * 0.98) {
+      canvas._ffCrop = { x: 0, y: 0, w: w, h: h };
+      return canvas;
+    }
     var out = document.createElement('canvas');
     out.width = cw;
     out.height = ch;
     out.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+    out._ffCrop = { x: minX, y: minY, w: cw, h: ch };
     return out;
   }
 
   async function uprightSheet(canvas) {
     var angle = await bestLineAngle(canvas);
     var turned = angle ? rotateCanvas(canvas, angle) : canvas;
-    return cropToPage(turned);
+    var cropped = cropToPage(turned);
+    cropped._ffFrame = {
+      angle: angle || 0,
+      inW: canvas.width,
+      inH: canvas.height,
+      turnW: turned.width,
+      turnH: turned.height
+    };
+    return cropped;
   }
 
   function joinPhrases(items) {
@@ -1128,6 +1143,8 @@
     var canvas = await uprightSheet(canvasFromBitmap(bmp, 1500));
     if (bmp.close) bmp.close();
     var fields = await fieldsOnSheet(canvas, progress);
+    var frame = canvas._ffFrame || { angle: 0, inW: canvas.width, inH: canvas.height, turnW: canvas.width, turnH: canvas.height };
+    var crop = canvas._ffCrop || { x: 0, y: 0, w: canvas.width, h: canvas.height };
     var blob = await new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', 0.9); });
     var jpeg = new Uint8Array(await blob.arrayBuffer());
     var doc = await PDFLib.PDFDocument.create();
@@ -1136,7 +1153,21 @@
     var pageH = canvas.height * (pageW / canvas.width);
     var page = doc.addPage([pageW, pageH]);
     page.drawImage(image, { x: 0, y: 0, width: pageW, height: pageH });
-    return { kind: 'flat', fields: fields, bytes: new Uint8Array(await doc.save()) };
+    return {
+      kind: 'flat',
+      fields: fields,
+      bytes: new Uint8Array(await doc.save()),
+      frame: {
+        angle: frame.angle,
+        inW: frame.inW,
+        inH: frame.inH,
+        turnW: frame.turnW,
+        turnH: frame.turnH,
+        crop: crop,
+        outW: canvas.width,
+        outH: canvas.height
+      }
+    };
   }
 
   function truthy(value) {
