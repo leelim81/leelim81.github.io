@@ -249,9 +249,13 @@
     state.fields = read.fields;
     state.kind = read.kind;
     state.placementBlocked = read.placementBlock || '';
+    state.scanReview = read.reviewTransport || null;
+    paintScanReview();
     if (state.placementBlocked) {
       status(state.placementBlocked, false);
       toast(state.placementBlocked);
+    } else if (state.fields.some(function (field) { return field.transport === 'viewport-review'; })) {
+      status(state.fields.length + ' scan estimates. Nothing is written until you check a value.', false);
     } else if (!state.fields.length) toast('No fields or blank lines were found in that PDF.');
     refreshLabels();
     scheduleSave();
@@ -474,14 +478,37 @@
       var boxIn = document.createElement('input');
       boxIn.type = 'checkbox';
       boxIn.value = row.fieldId;
+      var field = null;
+      for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
       var text = document.createElement('span');
-      text.textContent = (row.kind || 'field') + ': ' + row.value;
-      var quote = document.createElement('span');
-      quote.className = 'review-quote';
-      quote.textContent = row.quote ? ' Source: ' + row.quote : '';
-      label.appendChild(boxIn);
-      label.appendChild(text);
-      label.appendChild(quote);
+      var person = row.candidates && row.candidates[0] ? row.candidates[0].role : '';
+      if (field && field.transport === 'viewport-review') {
+        li.className = 'scan-estimate';
+        text.textContent = 'Value not confirmed: ' + (row.kind || 'field') + ' ' + row.value;
+        label.appendChild(boxIn);
+        label.appendChild(text);
+        li.appendChild(label);
+        function note(copy) {
+          var span = document.createElement('span');
+          span.className = 'review-quote';
+          span.textContent = copy;
+          li.appendChild(span);
+        }
+        note('Person on the paper: ' + (person || 'not named') + '. Not confirmed until you check this.');
+        note('Label binding: ' + (field.label || 'unlabeled') + ' as ' + (row.kind || 'unknown') + '.');
+        note('Location: scan estimate on page ' + ((field.page || 0) + 1) + '. Unchecked lines are not written.');
+        if (row.quote) note('Source: ' + row.quote);
+        list.appendChild(li);
+        return;
+      } else {
+        text.textContent = (row.kind || 'field') + ': ' + row.value;
+        var quote = document.createElement('span');
+        quote.className = 'review-quote';
+        quote.textContent = row.quote ? ' Source: ' + row.quote : '';
+        label.appendChild(boxIn);
+        label.appendChild(text);
+        label.appendChild(quote);
+      }
       li.appendChild(label);
       list.appendChild(li);
     });
@@ -559,6 +586,14 @@
       var frozen = window.FormThresholds || { autofill: {} };
       var channel = state.refs.some(function (ref) { return ref.channel === 'ocr'; }) ? 'ocr' : 'text-layer';
       var decisions = window.FormSelect ? FormSelect.decideAll(state.fields, notesAll, frozen, { channel: channel }) : [];
+      decisions.forEach(function (row) {
+        var field = null;
+        for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
+        if (field && field.transport === 'viewport-review' && row.decision === 'autofill') {
+          row.decision = 'review';
+          row.reason = 'scan_location_unconfirmed';
+        }
+      });
       function proposalsFrom(confirmed) {
         var allow = {};
         (confirmed || []).forEach(function (id) { allow[id] = true; });
@@ -627,6 +662,37 @@
     }
   }
 
+  function paintScanReview() {
+    var box = $('scanReview');
+    if (!box) return;
+    var list = $('scanReviewList');
+    var fields = (state.fields || []).filter(function (field) { return field.transport === 'viewport-review'; });
+    if (!fields.length || state.placementBlocked) {
+      box.hidden = true;
+      if (list) list.textContent = '';
+      return;
+    }
+    box.hidden = false;
+    $('scanReviewLead').textContent = 'These spots come from the scan. The value and the person are not chosen. Nothing is written until you check a review. A line on the wrong label is not a match.';
+    list.textContent = '';
+    fields.forEach(function (field) {
+      var kind = window.FormEvidence ? FormEvidence.fieldKind(field) : '';
+      var li = document.createElement('li');
+      li.className = 'scan-estimate';
+      function line(text) {
+        var span = document.createElement('span');
+        span.className = 'review-quote';
+        span.textContent = text;
+        li.appendChild(span);
+      }
+      line('Label read: ' + (field.label || 'unlabeled'));
+      line('Binding: ' + (kind && kind !== 'other' ? kind : 'not a known field') + '.');
+      line('Location: scan estimate on page ' + ((field.page || 0) + 1) + '. Not a form widget.');
+      line('Value: not chosen. Person: not confirmed.');
+      list.appendChild(li);
+    });
+  }
+
   function reviewNote(fields) {
     var labels = window.FormFacts && FormFacts.reviewLabels ? FormFacts.reviewLabels(fields) : [];
     if (!labels.length) return '';
@@ -659,7 +725,13 @@
         field.profileId = state.profileId || '';
       });
     }
-    var boxes = state.kind === 'flat' && window.FormSpots ? FormSpots.annotations(state.fields, values) : {};
+    var carried = state.fields.filter(function (field) {
+      if (field.transport !== 'viewport-review') return true;
+      var row = null;
+      for (var r = 0; r < state.proposals.length; r++) if (state.proposals[r].id === field.id) row = state.proposals[r];
+      return !!(row && row.value);
+    });
+    var boxes = state.kind === 'flat' && window.FormSpots ? FormSpots.annotations(carried, values) : {};
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {
       pages.push({
@@ -732,7 +804,7 @@
           if (!applied) return;
         } else if (addRef(item.bytes, item.name, item.type)) added++;
       }
-      if (kind === 'form' && !state.placementBlocked) status('Form ready.', false);
+      if (kind === 'form' && !state.placementBlocked && !(state.fields || []).some(function (field) { return field.transport === 'viewport-review'; })) status('Form ready.', false);
       else if (added) status(added + ' reference file' + (added === 1 ? '' : 's') + ' added.', false);
     })().catch(function (err) {
       if (input) input.value = '';
@@ -761,6 +833,8 @@
     state.fields = [];
     state.sourceBytes = null;
     state.placementBlocked = '';
+    state.scanReview = null;
+    if ($('scanReview')) $('scanReview').hidden = true;
     state.kind = '';
     state.refs = [];
     state.proposals = [];

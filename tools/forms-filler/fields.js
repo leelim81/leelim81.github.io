@@ -233,8 +233,9 @@
       fields: raster.fields,
       bytes: raster.sheet && raster.sheet.bytes,
       deskewDeg: raster.sheet && raster.sheet.deskewDeg,
-      route: raster.placementBlock ? 'raster-blocked' : 'raster',
-      placementBlock: raster.placementBlock || ''
+      route: raster.placementBlock ? 'raster-blocked' : (raster.reviewTransport && raster.reviewTransport.looked ? 'raster-review' : 'raster'),
+      placementBlock: raster.placementBlock || '',
+      reviewTransport: raster.reviewTransport || null
     };
   }
 
@@ -850,9 +851,11 @@
     return primary;
   }
 
-  /* Scan suggestions stay closed for rotation, an offset crop, and a
-     non-unit or unreadable UserUnit. Manual placement uses pdf-editor/coords.js
-     and does not relax this gate. */
+  /* The guarded scan still refuses rotation, an offset crop, and any page
+     scale other than 1. A non-positive or unreadable file UserUnit is refused
+     here even when the reader reports 1. Review transport, below, may carry
+     an unchanged detector result only after that refusal, and only when the
+     ledger accepts the page. It does not change line thresholds. */
   async function scanFrame(bytes) {
     var doc = await PDFLib.PDFDocument.load(copy(bytes));
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
@@ -866,8 +869,10 @@
       if (angle) reasons.push('rotation');
       if (Math.abs(crop.x - media.x) > 0.5 || Math.abs(crop.y - media.y) > 0.5 || Math.abs(crop.width - media.width) > 0.5 || Math.abs(crop.height - media.height) > 0.5) reasons.push('crop');
       var jsPage = await pdf.getPage(i + 1);
-      if (typeof jsPage.userUnit !== 'number') reasons.push('scale-unread');
-      else if (Math.abs(jsPage.userUnit - 1) > 0.001) reasons.push('scale');
+      var fileUnit = global.FormCoords && FormCoords.fileUserUnit ? FormCoords.fileUserUnit(libPage) : null;
+      if (fileUnit == null || !(fileUnit > 0) || fileUnit > 75000) reasons.push('scale');
+      else if (typeof jsPage.userUnit !== 'number' || Math.abs(jsPage.userUnit - fileUnit) > 0.001) reasons.push('scale-unread');
+      else if (Math.abs(fileUnit - 1) > 0.001) reasons.push('scale');
     }
     var unique = [];
     reasons.forEach(function (reason) { if (unique.indexOf(reason) < 0) unique.push(reason); });
@@ -885,9 +890,110 @@
     };
   }
 
+  async function transportFrame(bytes) {
+    if (!global.FormCoords) return { ok: false, reason: 'ledger-missing' };
+    var doc = await PDFLib.PDFDocument.load(copy(bytes));
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var limit = Math.min(doc.getPageCount(), pdf.numPages, 2);
+    var pages = [];
+    for (var i = 0; i < limit; i++) {
+      var frame = FormCoords.frameOf(doc.getPages()[i], await pdf.getPage(i + 1), 0);
+      if (!frame.ok) return { ok: false, reason: (frame.reasons && frame.reasons[0]) || 'frame' };
+      pages.push({
+        rotation: frame.rotation,
+        userUnit: frame.userUnit,
+        crop: { x: frame.crop.x, y: frame.crop.y, width: frame.crop.width, height: frame.crop.height }
+      });
+    }
+    return { ok: true, pages: pages };
+  }
+
+  function fallbackMessage(frame, review) {
+    if (review && review.looked && !review.fields.length) {
+      var sideways = (review.abstain || []).some(function (item) { return item.reason === 'sideways-in-view'; });
+      if (sideways) return 'This scan is sideways in the view. It was not turned to force a reading. Place the values yourself.';
+      return 'This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.';
+    }
+    return frame.message;
+  }
+
+  async function readRasterReview(bytes, progress) {
+    var started = Date.now();
+    var allowed = await transportFrame(bytes);
+    if (!allowed.ok) return { ok: false, reason: allowed.reason, looked: false, fields: [], abstain: [], ms: Date.now() - started };
+    var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
+    var fields = [];
+    var abstain = [];
+    var limit = Math.min(pdf.numPages, 2);
+    for (var p = 1; p <= limit; p++) {
+      say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
+      var page = await pdf.getPage(p);
+      var view = page.getViewport({ scale: 2 });
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(view.width);
+      canvas.height = Math.ceil(view.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: view }).promise;
+      var angle = await bestLineAngle(canvas);
+      if (angle) {
+        abstain.push({ page: p - 1, reason: 'sideways-in-view', angle: angle });
+        continue;
+      }
+      var found = await fieldsOnSheet(canvas, progress);
+      var pageW = 595;
+      var pageH = canvas.height * (pageW / canvas.width);
+      if (!found.length) {
+        abstain.push({ page: p - 1, reason: 'no-detector-position' });
+        continue;
+      }
+      found.forEach(function (field) {
+        field.page = p - 1;
+        field.pageWidth = pageW;
+        field.pageHeight = pageH;
+        field.transport = 'viewport-review';
+        field.viewWidth = canvas.width;
+        field.viewHeight = canvas.height;
+        if (field.pageWidth > field.pageHeight * 1.2) field.untrusted = true;
+        fields.push(field);
+      });
+    }
+    return {
+      ok: fields.length > 0,
+      looked: true,
+      fields: fields,
+      abstain: abstain,
+      pages: allowed.pages,
+      ms: Date.now() - started
+    };
+  }
+
   async function readRasterPdf(bytes, progress) {
     var frame = await scanFrame(bytes);
-    if (frame.blocked) return { fields: [], sheet: null, placementBlock: frame.message, frame: frame };
+    if (frame.blocked) {
+      var review = await readRasterReview(bytes, progress);
+      if (!review || !review.fields.length) {
+        return {
+          fields: [],
+          sheet: null,
+          placementBlock: fallbackMessage(frame, review),
+          frame: frame,
+          reviewTransport: review
+        };
+      }
+      return {
+        fields: review.fields,
+        sheet: null,
+        deskewDeg: 0,
+        placementBlock: '',
+        frame: { blocked: false, reasons: [], transported: true },
+        reviewTransport: {
+          looked: true,
+          ms: review.ms,
+          abstain: review.abstain,
+          pages: review.pages,
+          count: review.fields.length
+        }
+      };
+    }
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
@@ -1008,7 +1114,8 @@
         fields: flat.fields || [],
         bytes: flat.bytes || null,
         deskewDeg: flat.deskewDeg || 0,
-        placementBlock: flat.placementBlock || ''
+        placementBlock: flat.placementBlock || '',
+        reviewTransport: flat.reviewTransport || null
       };
     }
     return { kind: 'flat', route: flat && flat.route || 'empty', fields: [], placementBlock: '' };

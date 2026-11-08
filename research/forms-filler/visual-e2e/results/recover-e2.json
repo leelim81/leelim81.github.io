@@ -65,7 +65,7 @@
     {
       "name": "editing the placed text updates only Ada and keeps Bea",
       "ok": true,
-      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T08:44:48.208Z\"},\"bea\":\"bea.recover@example.com\"}"
+      "detail": "{\"ada\":{\"id\":\"ada-mail\",\"key\":\"email\",\"label\":\"email\",\"value\":\"ada.recover@example.com!\",\"status\":\"confirmed\",\"origin\":\"pdf-field\",\"quote\":\"\",\"updatedAt\":\"2026-11-08T09:04:09.578Z\"},\"bea\":\"bea.recover@example.com\"}"
     },
     {
       "name": "the placed line is still there after reload",
@@ -83,9 +83,9 @@
       "detail": "{\"x\":0,\"y\":320.484375,\"width\":390,\"height\":185.671875}"
     },
     {
-      "name": "a rotated scan still offers no line positions",
+      "name": "a rotated scan is not given a guessed line",
       "ok": true,
-      "detail": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself."
+      "detail": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself."
     },
     {
       "name": "a rotated page can take a value placed by hand",
@@ -118,9 +118,9 @@
       "detail": "ada.recover@example.com!"
     },
     {
-      "name": "a cropped scan still offers no line positions",
+      "name": "a cropped scan is a review estimate or a manual fallback, not an automatic fill",
       "ok": true,
-      "detail": "This scan is cropped. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself."
+      "detail": "1 scan estimates. Nothing is written until you check a value."
     },
     {
       "name": "a cropped page can take a value placed by hand",

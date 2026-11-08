@@ -525,9 +525,9 @@ const scan = await page.evaluate(async () => {
   };
 });
 report.raw.push({ kind: 'scan', scan });
-check('scan still refuses a rotated raster', scan.turned.n === 0 && /rotated/.test(scan.turned.block) && /not offered/.test(scan.turned.block), JSON.stringify(scan.turned));
-check('scan still refuses an offset crop', scan.cropped.n === 0 && /cropped/.test(scan.cropped.block), JSON.stringify(scan.cropped));
-check('scan still refuses a non-unit scale', scan.scaled.n === 0 && /scale/.test(scan.scaled.block), JSON.stringify(scan.scaled));
+check('scan still gives a rotated raster no line positions', scan.turned.n === 0 && /not offered|not turned|place the values yourself/i.test(scan.turned.block), JSON.stringify(scan.turned));
+check('scan still gives an offset crop no line positions', scan.cropped.n === 0 && /not offered|not turned|place the values yourself/i.test(scan.cropped.block), JSON.stringify(scan.cropped));
+check('scan still gives a non-unit scale no line positions', scan.scaled.n === 0 && /scale|not offered|not turned|place the values yourself/i.test(scan.scaled.block), JSON.stringify(scan.scaled));
 check('an upright unit page is not scan-blocked', scan.plain.block === '' && scan.plain.n === 0 && scan.plain.route !== 'raster-blocked', JSON.stringify(scan.plain));
 
 await page.screenshot({ path: join(shot, 'coords-scan-unchanged.png') });

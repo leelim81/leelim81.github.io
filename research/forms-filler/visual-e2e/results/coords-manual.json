@@ -165,7 +165,7 @@
     {
       "name": "the map keeps geometry and not the typed value or person",
       "ok": true,
-      "detail": "{\"ok\":true,\"vault\":{\"schema\":1,\"maps\":[{\"id\":\"jmr1o1qyy5cd\",\"name\":\"Quarter map\",\"fileSha256\":\"9c67a35ffd852a6d9c1ffa7cc57f3776b28ada15c3a9534a578ab140c487f403\",\"role\":\"applicant\",\"createdAt\":\"2026-11-08T08:43:44.090Z\",\"updatedAt\":\"2026-11-08T08:43:44.090Z\",\"pages\":[{\"width\":200,\"height\":400,\"slots\":[{\"key\":\"email\",\"role\":\"applicant\",\"x\":0.07291666666666667,\"y\":0.08332290649414062,\"w\":0.42,\"h\":0.09100000000000001,\"fontSize\":14}],\"rotation\":90,\"userUnit\":1,\"cropX\":0,\"cropY\":0,\"cropWidth\":200,\"cro"
+      "detail": "{\"ok\":true,\"vault\":{\"schema\":1,\"maps\":[{\"id\":\"oawfz0huoum7\",\"name\":\"Quarter map\",\"fileSha256\":\"237c6df56e0c9662a939ded1d54e934d3125195339387ec83bfcdaaea4a9f737\",\"role\":\"applicant\",\"createdAt\":\"2026-11-08T09:01:53.445Z\",\"updatedAt\":\"2026-11-08T09:01:53.445Z\",\"pages\":[{\"width\":200,\"height\":400,\"slots\":[{\"key\":\"email\",\"role\":\"applicant\",\"x\":0.07291666666666667,\"y\":0.08332290649414062,\"w\":0.42,\"h\":0.09100000000000001,\"fontSize\":14}],\"rotation\":90,\"userUnit\":1,\"cropX\":0,\"cropY\":0,\"cropWidth\":200,\"cro"
     },
     {
       "name": "an editor turn still blocks a map",
@@ -218,19 +218,19 @@
       "detail": "{\"dist\":0.00015832070500958122,\"ratio\":2}"
     },
     {
-      "name": "scan still refuses a rotated raster",
+      "name": "scan still gives a rotated raster no line positions",
       "ok": true,
-      "detail": "{\"n\":0,\"block\":\"This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.\",\"route\":\"raster-blocked\"}"
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
     },
     {
-      "name": "scan still refuses an offset crop",
+      "name": "scan still gives an offset crop no line positions",
       "ok": true,
-      "detail": "{\"n\":0,\"block\":\"This scan is cropped. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.\",\"route\":\"raster-blocked\"}"
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
     },
     {
-      "name": "scan still refuses a non-unit scale",
+      "name": "scan still gives a non-unit scale no line positions",
       "ok": true,
-      "detail": "{\"n\":0,\"block\":\"This scan is on a page scale other than 1. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.\",\"route\":\"raster-blocked\"}"
+      "detail": "{\"n\":0,\"block\":\"This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.\",\"route\":\"raster-blocked\"}"
     },
     {
       "name": "an upright unit page is not scan-blocked",
@@ -244,19 +244,19 @@
     "No phone was used. Current Chrome stable load-unpacked was not this script."
   ],
   "hashes": {
-    "rot0": "f9fa523b808f22a51ae09679a8792812a4653343b251b5b1c98d197d31d54b97",
-    "rot90": "9c67a35ffd852a6d9c1ffa7cc57f3776b28ada15c3a9534a578ab140c487f403",
-    "rot180": "d91c67675abc8ead20c7bb3097c5fc305bb569378a4e67f23bc0fd81da431c5b",
-    "rot270": "2d1eeb5572e1d24569e50602472d5b3437b54f92a0b816020c35acb642689b97",
-    "crop": "c1a0a3f34d82c26d8faf70dea05a2a96b0920fc7719be9f0836e4420da96e8ba",
-    "mediaOff": "2bcb50d84594bf22a054089a4e24e1e05b5a4f021f35b0f048bcdeb045242978",
-    "unit2": "2d879432124aee1e66039ca0923faccc9ec96078ef3a1478a3cee524eeaa2c76",
-    "rot45": "7d13133393336b70338ea5205d2048c21daae2473d9254fd4832af0adc1abdd2",
-    "unit0": "1586423e1e9fbd79cc8f4e5a800983200f8a9e678e9ed2f4cf2fa5624e2b58cf",
-    "white90": "fd96a18a3fcdce725aa2b900ed170e198db15570a81693e0e7622d30277cd666",
-    "widget90": "e7ec59efaed9d32304d14aaee3dddfed0d55e90521f69239b48730b3ecbbb921",
-    "twoPage": "ca2e94a5640a72373b41369125093880d9924084ad7aaa90e87fc2f9b01f1555",
-    "freshLetter": "84259e0b2e797292b2917fff101dc1987de86e9a111f82dc64afea04ff187515",
+    "rot0": "aca942777c6b908d729d33ce15ef7c2ed22e8452a5b05517ddb81bc6f2b2905b",
+    "rot90": "237c6df56e0c9662a939ded1d54e934d3125195339387ec83bfcdaaea4a9f737",
+    "rot180": "46cedd348eccf55c2f1b439db3aeff0520c5380a9b8c9d1d9b79fc8c38a0bc35",
+    "rot270": "7c7bcfaf62dc3042126e470b230d32065208164cd01819588725a294c995d0cc",
+    "crop": "a1096e23a0a95438406ef9b047439be5886227944c15a83ea54c52e49c8fbaa0",
+    "mediaOff": "44234e76f888762e63a00b1d53b9e152fe7279b09389c0bd9e8b4f75a67bc0a5",
+    "unit2": "ac891e53bf499b6179f444698ea186ec784a649d1ccdee5b6ee3dec2c418c491",
+    "rot45": "763e31e36e66ca15deb7888b99129d10efd5616516702cfbdc1f42828753af75",
+    "unit0": "74d905f9e3ab9fa48a8000018b42dc3a37d0efad2b2f9ba77d5bfb9749436c75",
+    "white90": "43ae6c054f44443ba6b34f57890b490b67408ccc317c455cab7aaa83911c1d17",
+    "widget90": "f780a760338ef57109f58722cd5991adeb242222bf19f986ece85bad00b52876",
+    "twoPage": "d6c60d46113e675e7b63b364920b844817640cb0f88f791a522f6a978ffc5e39",
+    "freshLetter": "d70372f828837736efc1524ffd046a95cfebe5e3353e06387ba838d204826fc9",
     "mossTurned": "8f4f681f36e0cab9c6f65464f86f489c009991a7e11bbc4f206b720b1b7ef0f8",
     "mossCrop": "de18b128da74b84def291fbd68b45a03189b97506bef86bf65c2085711026c63"
   },
@@ -868,17 +868,17 @@
       "scan": {
         "turned": {
           "n": 0,
-          "block": "This scan is rotated. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
           "route": "raster-blocked"
         },
         "cropped": {
           "n": 0,
-          "block": "This scan is cropped. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
           "route": "raster-blocked"
         },
         "scaled": {
           "n": 0,
-          "block": "This scan is on a page scale other than 1. Line positions are not offered, because a guess would land in the wrong place. Open it in the editor and place the values yourself.",
+          "block": "This scan did not produce a line position in the view. The page was not turned to force a reading. Place the values yourself.",
           "route": "raster-blocked"
         },
         "plain": {

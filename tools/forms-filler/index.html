@@ -53,6 +53,11 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
   </div>
   <p class="review-quote" id="whatWorks">This page reads a form and your papers on this computer. You choose which values to keep. Place a missing line opens the editor, where a blank map can reuse those places on the same file for someone else. A desktop browser extension can fill another website from a file you export. It is not in the Chrome Web Store, and this page cannot install it for you.</p>
   <p id="readStatus" class="read-status" hidden role="status"></p>
+  <section id="scanReview" class="review" hidden aria-labelledby="scanReviewTitle">
+    <h2 id="scanReviewTitle">Scan estimates</h2>
+    <p id="scanReviewLead" class="review-quote"></p>
+    <ul id="scanReviewList" class="review-list"></ul>
+  </section>
   <div id="modelBox" class="model" hidden>
     <p id="modelTitle">Downloading private model</p>
     <p id="modelNote" class="note"></p>
@@ -126,6 +131,7 @@ try { localStorage.removeItem('tools-theme'); } catch (e) {}
 <script src="llm.js"></script>
 <script src="extract.js"></script>
 <script src="spots.js"></script>
+<script src="../pdf-editor/coords.js"></script>
 <script src="fields.js"></script>
 <script src="sanitize.js"></script>
 <script src="facts.js"></script>

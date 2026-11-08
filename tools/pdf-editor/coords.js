@@ -136,6 +136,7 @@
     fractionToPdf: fractionToPdf,
     boxOf: boxOf,
     textOrigin: textOrigin,
-    frameOf: frameOf
+    frameOf: frameOf,
+    fileUserUnit: fileUserUnit
   };
 });

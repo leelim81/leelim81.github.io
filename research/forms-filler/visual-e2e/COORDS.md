@@ -28,7 +28,7 @@ pdf-lib then rotates the type or the box so it stays upright in that view: 0°, 
 
 UserUnit must be a finite number in `(0, 75000]`, and the file’s value must match what this pdf.js reports. A missing UserUnit is 1. This build reports UserUnit and does not scale the viewport by it. pdf-lib draws in that same default user space, so the fraction lands on the click. A reader that honors UserUnit scales the whole page, including the new type. Zero, a negative value, or a mismatch is refused. Rotation other than a quarter turn is refused. Nothing unsupported is given a guessed point.
 
-Scan suggestions still stop for rotation, an offset crop, and a non-unit or unreadable scale. `fields.js` was not given a new threshold.
+Scan suggestions on an upright unit page are unchanged. A later pass can carry an unchanged detector spot through this ledger for review only, when the ledger accepts the page and the spot is a fraction of that rendered view. A sideways view is not turned. The record is [SCAN-TRANSPORT.md](SCAN-TRANSPORT.md).
 
 A map for these pages stores the media width and height plus rotation, UserUnit, and the CropBox. An older map has none of those extra fields and still applies only to an upright unit page whose crop equals its media box. The file must still match by SHA-256. Editor rotation and a reordered page are still refused. The map does not store the value, the person, or the profile id.
 
