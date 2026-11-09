@@ -766,7 +766,7 @@
             used = jobs[i];
           }
           var vote = bag.length >= 2 ? FormFacts.identityVote(bag) : null;
-          if (vote && vote.nric && vote.name) {
+          if (vote && vote.nric && vote.name && vote.nricChecked) {
             return {
               text: votedCardText(vote),
               channel: 'ocr',

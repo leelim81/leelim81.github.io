@@ -24,7 +24,38 @@ const GOOD = makeNric('S', '8523146');
 const BAD = 'S8523146A';
 check('the synthetic NRIC passes the app checksum', facts.nricChecksum(GOOD) && !facts.nricChecksum(BAD), GOOD);
 const parsed = facts.identityRead('REPUBLIC OF SINGAPORE\nIDENTITY CARD\nName\nTAN WEI MING\n陈伟明\n' + GOOD + '\nDate of birth\n15 JAN 1990\n10 EXAMPLE LANE\n');
-check('a card-like text block yields the Latin name and the valid ID', parsed.name === 'TAN WEI MING' && parsed.nric === GOOD && parsed.nricValid && !/陈/.test(parsed.name), JSON.stringify(parsed));
+check('a card-like text block yields the Latin name and the valid ID', parsed.name === 'TAN WEI MING' && parsed.nric === GOOD && parsed.nricValid && !parsed.nameAlias && !/陈/.test(parsed.name), JSON.stringify(parsed));
+const aliasRead = facts.identityRead('Name\nTAN WEI MING (CHEN WEIMING)\n' + GOOD + '\n');
+check('a parenthetical alias stays on the full printed name', aliasRead.name === 'TAN WEI MING (CHEN WEIMING)' && aliasRead.namePlain === 'TAN WEI MING' && aliasRead.nameAlias === 'CHEN WEIMING', JSON.stringify(aliasRead));
+const wrappedRead = facts.identityRead('Name\nTAN WEI MING\n(CHEN WEIMING)\n' + GOOD + '\n');
+check('an alias wrapped onto the next line stays on the full name', wrappedRead.name === 'TAN WEI MING (CHEN WEIMING)' && wrappedRead.namePlain === 'TAN WEI MING', JSON.stringify(wrappedRead));
+const longName = 'SITI NUR ALEESYA BINTI MOHAMED ABDUL RAHMAN';
+const longRead = facts.identityRead('Name\n' + longName + '\n' + GOOD + '\n');
+check('a long printed name is kept whole', longRead.name === longName && !longRead.nameAlias, JSON.stringify(longRead));
+const votedAlias = facts.identityVote([
+  { name: 'TAN WEI MING', nric: GOOD, nricValid: true, nameConf: 90 },
+  { name: 'TAN WEI MING (CHEN WEIMING)', nric: GOOD, nricValid: true, nameConf: 90 }
+]);
+check('voting offers the printed alias and does not pre-check that name', votedAlias.name === 'TAN WEI MING (CHEN WEIMING)' && votedAlias.namePlain === 'TAN WEI MING' && votedAlias.nameChecked === false && votedAlias.nricChecked === true && votedAlias.nameUnconfirmed === false, JSON.stringify(votedAlias));
+const junkLabels = ['RACE', 'MALE', 'FEMALE', 'CHINESE', 'MALAY', 'INDIAN', 'DATE OF BIRTH', 'BLOOD GROUP', 'IDENTITY CARD', 'SINGAPORE', 'COUNTRY OF BIRTH', 'SEX', 'NAME'];
+junkLabels.forEach((label) => {
+  const same = facts.identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
+  check('same-line (' + label + ') is not a name alias', same.name === 'TAN WEI MING' && !same.nameAlias && !same.nameRepaired, JSON.stringify(same));
+  const next = facts.identityRead('Name\nTAN WEI MING\n(' + label + ')\nS1234567D\n');
+  check('next-line (' + label + ') is not a name alias', next.name === 'TAN WEI MING' && !next.nameAlias && !next.nameRepaired, JSON.stringify(next));
+});
+const missingClose = facts.identityRead('Name\nTAN WEI MING (CHEN WEIMING\nS1234567D\n');
+check('a missing close bracket does not glue the alias into the main name', missingClose.name === 'TAN WEI MING' && missingClose.nameUnconfirmed && !missingClose.nameAlias && missingClose.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(missingClose));
+const missingOpen = facts.identityRead('Name\nTAN WEI MING CHEN WEIMING)\nS1234567D\n');
+check('a missing open bracket does not glue the alias into the main name', missingOpen.name === 'TAN WEI MING' && missingOpen.nameUnconfirmed && !missingOpen.nameAlias && missingOpen.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(missingOpen));
+const wrapOpen = facts.identityRead('Name\nTAN WEI MING\n(CHEN WEIMING\nS1234567D\n');
+check('a wrapped alias missing its close bracket stays off the main name', wrapOpen.name === 'TAN WEI MING' && wrapOpen.nameUnconfirmed && wrapOpen.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(wrapOpen));
+const wrapClose = facts.identityRead('Name\nTAN WEI MING\nCHEN WEIMING)\nS1234567D\n');
+check('a wrapped alias missing its open bracket stays off the main name', wrapClose.name === 'TAN WEI MING' && wrapClose.nameUnconfirmed && wrapClose.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(wrapClose));
+const junkOpen = facts.identityRead('Name\nTAN WEI MING (RACE\nS1234567D\n');
+check('an unbalanced card label is not repaired into an alias', junkOpen.name === 'TAN WEI MING' && junkOpen.nameUnconfirmed && !junkOpen.nameAlias && !junkOpen.nameRepaired, JSON.stringify(junkOpen));
+const junkNext = facts.identityRead('Name\nTAN WEI MING\n(MALE\nS1234567D\n');
+check('an unbalanced sex label on the next line is not an alias', junkNext.name === 'TAN WEI MING' && !junkNext.nameAlias && !junkNext.nameRepaired, JSON.stringify(junkNext));
 const invalid = facts.identityRead('Name\nTAN WEI MING\n' + BAD + '\n');
 check('a bad checksum stays unconfirmed', invalid.nric === BAD && invalid.nricUnconfirmed && !invalid.nricValid, JSON.stringify(invalid));
 const dollar = facts.identityRead('Name\nTAN WEI MING\n$' + GOOD.slice(1) + '\n');
@@ -127,10 +158,22 @@ async function paintCard(file, spec) {
     ctx.fillText('IDENTITY CARD', 80, 140);
     ctx.font = '22px sans-serif';
     ctx.fillText('Name', 80, 230);
-    ctx.font = 'bold 54px sans-serif';
-    ctx.fillText(spec.name, 80, 300);
-    ctx.font = '36px sans-serif';
-    ctx.fillText(spec.chinese, 80, 360);
+    if (spec.alias && !spec.aliasWrap) {
+      ctx.font = 'bold 42px sans-serif';
+      ctx.fillText(spec.name + ' (' + spec.alias + ')', 80, 300);
+      ctx.font = '36px sans-serif';
+      ctx.fillText(spec.chinese, 80, 360);
+    } else if (spec.alias && spec.aliasWrap) {
+      ctx.font = 'bold 48px sans-serif';
+      ctx.fillText(spec.name, 80, 290);
+      ctx.font = 'bold 40px sans-serif';
+      ctx.fillText('(' + spec.alias + ')', 80, 350);
+    } else {
+      ctx.font = spec.name.length > 28 ? 'bold 32px sans-serif' : 'bold 54px sans-serif';
+      ctx.fillText(spec.name, 80, 300);
+      ctx.font = '36px sans-serif';
+      ctx.fillText(spec.chinese, 80, 360);
+    }
     ctx.font = '22px sans-serif';
     ctx.fillText('NRIC', 80, 430);
     ctx.font = 'bold 48px monospace';
@@ -224,6 +267,9 @@ async function paintCard(file, spec) {
 }
 const front = { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#ffffff', ink: '#111111', rotate: 0 };
 await paintCard('/tmp/synthetic-id-clear.png', front);
+await paintCard('/tmp/synthetic-id-alias.png', Object.assign({}, front, { alias: 'CHEN WEIMING' }));
+await paintCard('/tmp/synthetic-id-alias-wrap.png', Object.assign({}, front, { alias: 'CHEN WEIMING', aliasWrap: true }));
+await paintCard('/tmp/synthetic-id-long.png', Object.assign({}, front, { name: 'SITI NUR ALEESYA BINTI MOHAMED ABDUL RAHMAN', chinese: '' }));
 await paintCard('/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#d5d5d5', ink: '#6e6e6e', rotate: 0.1 });
 await paintCard('/tmp/synthetic-id-bad.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: BAD, paper: '#ffffff', ink: '#111111', rotate: 0 });
 await paintCard('/tmp/synthetic-id-turn.png', Object.assign({}, front, { turn: 90 }));
@@ -281,6 +327,12 @@ async function openDesk() {
   page.network = watchNetwork(page);
   await page.addInitScript(() => { window.__ffReadBudgetMs = 70000; });
   await page.goto('http://127.0.0.1:8865/tools/forms-filler/?photo=' + Date.now(), { waitUntil: 'domcontentloaded' });
+  if (!openDesk.noted) {
+    await page.waitForFunction(() => /photo and text reading/i.test((document.getElementById('modelState') || {}).textContent || ''));
+    const banner = await page.locator('#modelState').innerText();
+    check('the first note says photo reading works and the private model is optional', /photo and text reading/i.test(banner) && /private model/i.test(banner) && !/Private model unavailable\. This browser has no WebGPU, so nothing is downloaded/.test(banner), banner.slice(0, 240));
+    openDesk.noted = true;
+  }
   return page;
 }
 async function attach(page, image) {
@@ -329,6 +381,12 @@ async function reviewText(page) {
   return (visible + ' ' + typed.join(' ')).replace(/\s+/g, ' ').trim();
 }
 const review = await reviewText(clearPage);
+const starting = await clearPage.locator('#reviewList label').evaluateAll((labels) => labels.map((label) => ({
+  text: label.innerText,
+  checked: !!(label.querySelector('input[type="checkbox"]') && label.querySelector('input[type="checkbox"]').checked)
+})));
+check('a consistent valid ID starts checked', starting.some((row) => /nric/i.test(row.text) && row.checked), JSON.stringify(starting));
+check('an agreed name with no alias starts checked', starting.some((row) => /name/i.test(row.text) && !/Unconfirmed/i.test(row.text) && row.checked), JSON.stringify(starting));
 check('the photo review shows the card name and the valid ID', review.includes('TAN WEI MING') && review.includes(GOOD), review.slice(0, 300));
 check('recognition does not leave this origin', clearPage.network.outside.length === 0, clearPage.network.outside.slice(0, 4).join(' | ') || 'none');
 console.log('LOCAL_OCR_REQUESTS', [...new Set(clearPage.network.local)].join(' | ') || 'none');
@@ -417,6 +475,70 @@ await clearOut.reload({ waitUntil: 'domcontentloaded' });
 const clearedBytes = await draftBytes(clearOut);
 check('start over leaves no photo bytes after reload', clearedBytes.imageBytes === 0, JSON.stringify(clearedBytes));
 await clearOut.close();
+
+async function reviewRows(page) {
+  return page.locator('#reviewList li').evaluateAll((rows) => rows.map((row) => ({
+    text: row.innerText + ' ' + Array.from(row.querySelectorAll('input[type="text"]')).map((el) => el.value).join(' '),
+    checked: !!(row.querySelector('input[type="checkbox"]') && row.querySelector('input[type="checkbox"]').checked),
+    button: !!(row.querySelector('button') && /Without bracketed name/.test(row.querySelector('button').textContent || ''))
+  })));
+}
+const aliasPage = await openDesk();
+await aliasPage.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+await aliasPage.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await aliasPage.locator('#refInput').setInputFiles('/tmp/synthetic-id-alias.png');
+await aliasPage.waitForFunction(() => {
+  const row = document.querySelector('.ref-preview');
+  return row && row.textContent && row.textContent !== 'Reading…';
+});
+await aliasPage.click('#fillBtn');
+await aliasPage.waitForSelector('#reviewBox:not([hidden])');
+const aliasRows = await reviewRows(aliasPage);
+const aliasText = aliasRows.map((row) => row.text).join(' | ');
+check('the alias card offers the full printed name', aliasText.includes('TAN WEI MING (CHEN WEIMING)') && aliasRows.some((row) => row.button), aliasText.slice(0, 240));
+check('the alias name starts unchecked and the valid ID starts checked', aliasRows.some((row) => /TAN WEI MING \(CHEN WEIMING\)/.test(row.text) && !row.checked) && aliasRows.some((row) => /nric/i.test(row.text) && row.checked), JSON.stringify(aliasRows));
+await aliasPage.locator('#reviewList input[type="checkbox"]').evaluateAll((boxes) => boxes.forEach((box) => { box.checked = true; }));
+await aliasPage.click('#reviewUse');
+await aliasPage.waitForURL(/pdf-editor/);
+await aliasPage.waitForSelector('#pages .ann-body');
+const aliasMarks = await aliasPage.locator('#pages .ann-body').allInnerTexts();
+check('the confirmed full name lands on the applicant line and the debiting line stays blank', aliasMarks.length === 2 && aliasMarks.includes('TAN WEI MING (CHEN WEIMING)') && aliasMarks.includes(GOOD) && !aliasMarks.some((mark) => /Debit/.test(mark)), aliasMarks.join(' | '));
+await aliasPage.close();
+
+const wrapPage = await openDesk();
+await wrapPage.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+await wrapPage.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await wrapPage.locator('#refInput').setInputFiles('/tmp/synthetic-id-alias-wrap.png');
+await wrapPage.waitForFunction(() => {
+  const row = document.querySelector('.ref-preview');
+  return row && row.textContent && row.textContent !== 'Reading…';
+});
+await wrapPage.click('#fillBtn');
+await wrapPage.waitForSelector('#reviewBox:not([hidden])');
+check('a wrapped alias is offered in full with a one-tap shorter name', (await reviewRows(wrapPage)).some((row) => row.button && /TAN WEI MING \(CHEN WEIMING\)/.test(row.text)), JSON.stringify(await reviewRows(wrapPage)));
+await wrapPage.getByRole('button', { name: 'Without bracketed name' }).click();
+const afterTap = await reviewRows(wrapPage);
+check('one tap selects the name without the bracketed alias', afterTap.some((row) => /name/i.test(row.text) && row.checked && !/CHEN WEIMING/.test(row.text)), JSON.stringify(afterTap));
+await wrapPage.click('#reviewUse');
+await wrapPage.waitForURL(/pdf-editor/);
+await wrapPage.waitForSelector('#pages .ann-body');
+const wrapMarks = await wrapPage.locator('#pages .ann-body').allInnerTexts();
+check('the shorter name is what gets written', wrapMarks.some((mark) => mark.replace(/\s+/g, ' ').trim() === 'TAN WEI MING') && !wrapMarks.some((mark) => /CHEN WEIMING/.test(mark)), wrapMarks.join(' | '));
+await wrapPage.close();
+
+const longPage = await openDesk();
+await longPage.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+await longPage.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await longPage.locator('#refInput').setInputFiles('/tmp/synthetic-id-long.png');
+await longPage.waitForFunction(() => {
+  const row = document.querySelector('.ref-preview');
+  return row && row.textContent && row.textContent !== 'Reading…';
+});
+await longPage.click('#fillBtn');
+await longPage.waitForSelector('#reviewBox:not([hidden])');
+const longReview = await reviewText(longPage);
+check('a long name is offered whole and without an invented alias', longReview.includes('SITI NUR ALEESYA BINTI MOHAMED ABDUL RAHMAN') && !/Without bracketed name/.test(longReview) && !/\(/.test(longReview), longReview.slice(0, 240));
+await longPage.close();
 
 async function probe(label, files, want) {
   const page = await openDesk();

@@ -57,7 +57,130 @@
     return (valid[0] || hits[0]);
   }
 
+  function plainOf(name) {
+    return String(name || '').replace(/\s+\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function aliasOf(name) {
+    var match = String(name || '').match(/\(([A-Za-z][A-Za-z'’.\- ]*)\)\s*$/);
+    return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+  }
+
+  var ALIAS_BLOCK = {
+    race: 1, male: 1, female: 1, chinese: 1, malay: 1, indian: 1, eurasian: 1,
+    date: 1, birth: 1, blood: 1, group: 1, identity: 1, card: 1, singapore: 1,
+    country: 1, sex: 1, name: 1, republic: 1, citizen: 1, nationality: 1,
+    passport: 1, nric: 1, fin: 1, address: 1, issue: 1, official: 1
+  };
+  var ALIAS_STOP = { of: 1, the: 1, and: 1, or: 1 };
+
+  function acceptableMain(words) {
+    if (!words || words.length < 2 || words.length > 8) return false;
+    if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD'; })) return false;
+    if (words.filter(function (word) { return JUNK[word.toLowerCase()]; }).length >= words.length - 1) return false;
+    if (words.every(function (word) { return JUNK[word.toLowerCase()]; })) return false;
+    return true;
+  }
+
+  function aliasOk(text) {
+    var raw = String(text || '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!raw || /\d/.test(raw)) return false;
+    var words = raw.split(' ').filter(Boolean);
+    if (words.length < 1 || words.length > 5) return false;
+    if (words.some(function (word) { return !/^[A-Za-z][A-Za-z'’.\-]{1,}$/.test(word); })) return false;
+    if (words.some(function (word) { return ALIAS_BLOCK[word.toLowerCase()]; })) return false;
+    if (words.every(function (word) { return ALIAS_STOP[word.toLowerCase()]; })) return false;
+    return true;
+  }
+
+  function nameResult(plain, alias, unbalanced) {
+    var repaired = unbalanced && alias ? plain + ' (' + alias + ')' : '';
+    var full = !unbalanced && alias ? plain + ' (' + alias + ')' : plain;
+    return {
+      full: full,
+      plain: plain,
+      alias: unbalanced ? '' : alias,
+      repaired: repaired,
+      unbalanced: !!unbalanced
+    };
+  }
+
+  function splitMissingOpen(raw) {
+    var words = String(raw || '').replace(/\)/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    if (words.length > 6 && acceptableMain(words)) return { plain: words.join(' '), alias: '' };
+    var best = null;
+    for (var n = Math.min(4, words.length - 2); n >= 2; n--) {
+      var suffix = words.slice(words.length - n);
+      var prefix = words.slice(0, words.length - n);
+      if (prefix.length < suffix.length) continue;
+      if (prefix.length > 4) continue;
+      if (!aliasOk(suffix.join(' ')) || !acceptableMain(prefix)) continue;
+      best = { plain: prefix.join(' '), alias: suffix.join(' ') };
+      break;
+    }
+    if (best) return best;
+    if (acceptableMain(words)) return { plain: words.join(' '), alias: '' };
+    return null;
+  }
+
+  function parseNameLine(line) {
+    var raw = String(line || '').replace(/\s+/g, ' ').trim();
+    if (!raw) return null;
+    var balanced = raw.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){1,7}) +\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\)\s*$/);
+    if (balanced) {
+      var main = balanced[1].split(' ').filter(Boolean);
+      if (!acceptableMain(main)) return null;
+      var alias = aliasOk(balanced[2]) ? balanced[2].replace(/\s+/g, ' ').trim() : '';
+      return nameResult(main.join(' '), alias, false);
+    }
+    var opened = raw.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){1,7}) +\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\s*$/);
+    if (opened && opened[0].indexOf(')') < 0) {
+      var openMain = opened[1].split(' ').filter(Boolean);
+      if (!acceptableMain(openMain)) return null;
+      var openAlias = aliasOk(opened[2]) ? opened[2].replace(/\s+/g, ' ').trim() : '';
+      return nameResult(openMain.join(' '), openAlias, true);
+    }
+    if (raw.indexOf('(') < 0 && /\)\s*$/.test(raw)) {
+      var closed = splitMissingOpen(raw);
+      if (!closed) return null;
+      return nameResult(closed.plain, closed.alias, true);
+    }
+    var plain = raw.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){1,7})$/);
+    if (!plain) return null;
+    var words = plain[1].split(' ').filter(Boolean);
+    if (!acceptableMain(words)) return null;
+    return nameResult(words.join(' '), '', false);
+  }
+
+  function isNameLabel(line) {
+    var text = String(line || '').replace(/[:.\s]+$/g, '').trim();
+    if (/debit|account|bank/i.test(text)) return false;
+    return /^(full name|name)$/i.test(text);
+  }
+
+  function printedName(text) {
+    var lines = linesOf(text);
+    for (var i = 0; i < lines.length; i++) {
+      if (!isNameLabel(lines[i])) continue;
+      var parsed = parseNameLine(lines[i + 1] || '');
+      if (!parsed) continue;
+      if (!parsed.alias && !parsed.unbalanced) {
+        var wrapped = String(lines[i + 2] || '').replace(/\s+/g, ' ').trim();
+        var closedWrap = wrapped.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\)$/);
+        var openWrap = !closedWrap && wrapped.indexOf(')') < 0 ? wrapped.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})$/) : null;
+        var endWrap = !closedWrap && wrapped.indexOf('(') < 0 ? wrapped.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\)$/) : null;
+        var inner = closedWrap ? closedWrap[1] : (openWrap ? openWrap[1] : (endWrap ? endWrap[1] : ''));
+        if (inner && closedWrap && aliasOk(inner)) parsed = nameResult(parsed.plain, inner.replace(/\s+/g, ' ').trim(), false);
+        else if (inner && (openWrap || endWrap)) parsed = nameResult(parsed.plain, aliasOk(inner) ? inner.replace(/\s+/g, ' ').trim() : '', true);
+      }
+      return parsed;
+    }
+    return { full: '', plain: '', alias: '' };
+  }
+
   function nameFrom(text) {
+    var printed = printedName(text);
+    if (printed.full) return printed.full;
     var inline = String(text || '').match(/\bfull name\b[ \t]*[:\-][ \t]*([A-Za-z][A-Za-z'’.\-]+(?:[ \t]+[A-Za-z][A-Za-z'’.\-]+){1,5})/i);
     if (inline) return inline[1].replace(/\s+/g, ' ').trim();
     var lines = linesOf(text);
@@ -799,44 +922,81 @@
         if (read && read.nric === nric && nricChecksum(read.nric) && read.name) paired.push(read.name);
       });
     }
-    var name = agreedName(paired);
-    if (!name) {
-      var repeated = [];
+    function plainPool(reads) {
+      return (reads || []).map(function (read) {
+        var name = '';
+        if (typeof read === 'string') name = read;
+        else if (read && typeof read.name === 'string') name = read.name;
+        return plainOf(name);
+      }).filter(Boolean);
+    }
+    var namePool = paired.length ? paired.map(plainOf) : plainPool(list);
+    var plain = agreedName(namePool);
+    if (!plain) {
       var counts = {};
+      namePool.forEach(function (item) { counts[item] = (counts[item] || 0) + 1; });
+      var repeated = [];
+      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
+      plain = agreedName(repeated);
+    }
+    var aliasCounts = {};
+    if (plain) {
+      list.forEach(function (read) {
+        if (!read || plainOf(read.name) !== plain) return;
+        var alias = aliasOf(read.name) || (read.nameAlias || '');
+        if (alias && aliasOk(alias)) aliasCounts[alias] = (aliasCounts[alias] || 0) + 1;
+      });
+    }
+    var alias = soleLeader(aliasCounts);
+    if (alias && !aliasOk(alias)) alias = '';
+    var repaired = '';
+    var unbalanced = false;
+    if (plain && !alias) {
+      list.forEach(function (read) {
+        if (!read || plainOf(read.name) !== plain) return;
+        if (read.unbalanced) unbalanced = true;
+        if (read.nameRepaired && aliasOk(aliasOf(read.nameRepaired))) repaired = read.nameRepaired;
+      });
+    }
+    var name = plain ? (alias ? plain + ' (' + alias + ')' : plain) : '';
+    var support = 0;
+    if (plain) list.forEach(function (read) { if (read && plainOf(read.name) === plain) support++; });
+    var tokens = plain ? plain.split(' ').filter(Boolean) : [];
+    var nameUnconfirmed = false;
+    if (plain) {
       list.forEach(function (read) {
         if (!read || !read.name) return;
-        counts[read.name] = (counts[read.name] || 0) + 1;
-      });
-      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
-      name = agreedName(repeated);
-    }
-    var tokens = String(name || '').split(' ').filter(Boolean);
-    var nameUnconfirmed = false;
-    if (name) {
-      list.forEach(function (read) {
-        if (!read || !read.name || read.name === name) {
-          if (read && read.name === name && read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
+        var otherPlain = plainOf(read.name);
+        if (otherPlain === plain) {
+          if (read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
           return;
         }
-        var other = String(read.name).split(' ').filter(Boolean);
+        var other = otherPlain.split(' ').filter(Boolean);
         if (other.length > tokens.length) nameUnconfirmed = true;
         if (tokens.length && tokens.every(function (word) { return other.indexOf(word) >= 0; })) nameUnconfirmed = true;
       });
     }
+    if (unbalanced && !alias) nameUnconfirmed = true;
     return {
       name: name || '',
+      namePlain: plain || '',
+      nameAlias: alias || '',
+      nameRepaired: (!alias && repaired) || '',
       nric: nric || '',
       nricValid: !!nric,
       nameConf: null,
       nricConf: null,
       nameUnconfirmed: nameUnconfirmed,
-      nricUnconfirmed: false
+      nricUnconfirmed: false,
+      nameChecked: !!(name && !nameUnconfirmed && !alias && support >= 2),
+      nricChecked: !!(nric && nricCounts[nric] >= 2)
     };
   }
 
   function identityRead(text, words) {
     var raw = String(text || '');
-    var name = nameFrom(raw);
+    var printed = printedName(raw);
+    var name = printed.full || nameFrom(raw);
     var hits = nricTokens(raw);
     var valid = hits.filter(nricChecksum);
     var nric = '';
@@ -851,12 +1011,18 @@
     var nricConf = tokenConfidence(words, nric);
     return {
       name: name,
+      namePlain: printed.plain || plainOf(name),
+      nameAlias: printed.alias || '',
+      nameRepaired: printed.repaired || '',
+      unbalanced: !!printed.unbalanced,
       nric: nric,
       nricValid: nricValid,
       nameConf: nameConf,
       nricConf: nricConf,
-      nameUnconfirmed: !!(name && nameConf != null && nameConf < 55),
-      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55)))
+      nameUnconfirmed: !!(printed.unbalanced || (name && nameConf != null && nameConf < 55)),
+      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55))),
+      nameChecked: false,
+      nricChecked: false
     };
   }
 
