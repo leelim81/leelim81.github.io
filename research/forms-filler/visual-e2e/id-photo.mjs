@@ -500,6 +500,43 @@ const clearedBytes = await draftBytes(clearOut);
 check('start over leaves no photo bytes after reload', clearedBytes.imageBytes === 0, JSON.stringify(clearedBytes));
 await clearOut.close();
 
+const returnPage = await openDesk();
+await attach(returnPage, '/tmp/synthetic-id-clear.png');
+await returnPage.reload({ waitUntil: 'domcontentloaded' });
+await returnPage.waitForFunction(() => /Photo cleared for privacy/.test((document.querySelector('.ref-preview') || {}).textContent || ''));
+const returnedRows = await returnPage.locator('.ref-row').count();
+const returnedPreview = await returnPage.locator('.ref-preview').innerText();
+const returnedBytes = await draftBytes(returnPage);
+check('a wiped photo stays visible as cleared and keeps no bytes', returnedRows === 1 && /Photo cleared for privacy — add it again/.test(returnedPreview) && returnedBytes.imageBytes === 0, returnedPreview + ' ' + JSON.stringify(returnedBytes));
+await returnPage.click('#fillBtn');
+await returnPage.waitForFunction(() => /add the ID photo again/.test((document.getElementById('failText') || {}).textContent || '') || /add the ID photo again/.test((document.getElementById('readStatus') || {}).textContent || ''));
+const returnFill = ((await returnPage.locator('#failText').innerText().catch(() => '')) + ' ' + (await returnPage.locator('#readStatus').innerText().catch(() => ''))).replace(/\s+/g, ' ').trim();
+check('filling a cleared photo does not open the editor', !/pdf-editor/.test(returnPage.url()) && /Nothing could be read from your papers — add the ID photo again/.test(returnFill) && !(await returnPage.locator('#reviewBox').isVisible()), returnPage.url() + ' ' + returnFill);
+await returnPage.locator('#refInput').setInputFiles('/tmp/synthetic-id-clear.png');
+await returnPage.waitForFunction(() => {
+  const rows = Array.from(document.querySelectorAll('.ref-preview'));
+  return rows.length === 1 && rows.every((row) => row.textContent && row.textContent !== 'Reading…' && !/Photo cleared for privacy/.test(row.textContent));
+});
+const reread = await returnPage.locator('.ref-preview').allInnerTexts();
+check('adding the same photo again replaces the cleared entry and is read', reread.length === 1 && !/No fields found/.test(reread.join(' ')) && /TAN WEI MING/.test(reread.join(' ')), reread.join(' | '));
+await returnPage.locator('#refInput').setInputFiles('/tmp/synthetic-id-clear.png');
+await returnPage.waitForFunction(() => /already in the list/.test((document.getElementById('readStatus') || {}).textContent || ''));
+const duplicateRows = await returnPage.locator('.ref-preview').allInnerTexts();
+check('adding that photo name again does not create a second unread row', duplicateRows.length === 1 && !/No fields found/.test(duplicateRows.join(' ')) && /already in the list/.test(await returnPage.locator('#readStatus').innerText()), duplicateRows.join(' | '));
+await returnPage.click('#fillBtn');
+await returnPage.waitForSelector('#reviewBox:not([hidden])');
+const returnReview = await reviewText(returnPage);
+check('the re-added photo proposes the name and NRIC', returnReview.includes('TAN WEI MING') && returnReview.includes(GOOD), returnReview.slice(0, 240));
+await returnPage.locator('#reviewList input[type="checkbox"]').evaluateAll((boxes) => boxes.forEach((box) => { box.checked = true; }));
+await returnPage.click('#reviewUse');
+await returnPage.waitForURL(/pdf-editor/);
+await returnPage.waitForSelector('#pages .ann-body');
+const returnMarks = await returnPage.locator('#pages .ann-body').allInnerTexts();
+check('the re-added photo places the name and NRIC', returnMarks.includes('TAN WEI MING') && returnMarks.includes(GOOD), returnMarks.join(' | '));
+const returnKept = await draftBytes(returnPage);
+check('the re-added photo is still not kept in the saved draft', returnKept.imageBytes === 0, JSON.stringify(returnKept));
+await returnPage.close();
+
 async function reviewRows(page) {
   return page.locator('#reviewList li').evaluateAll((rows) => rows.map((row) => ({
     text: row.innerText + ' ' + Array.from(row.querySelectorAll('input[type="text"]')).map((el) => el.value).join(' '),
