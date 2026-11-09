@@ -1,5 +1,5 @@
 /** Synthetic flat bank form: gray rounded boxes, no AcroForm. Review name and ID only. Viewport 1100 by 900. Not a phone. */
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { createRequire } from 'module';
 import pkg from '/tmp/e2e/node_modules/playwright-core/index.js';
 const require = createRequire('/tmp/formgen/node_modules/pdf-lib/package.json');
@@ -10,22 +10,22 @@ function check(name, ok, detail) {
   checks.push({ name, ok: !!ok, detail: detail == null ? '' : String(detail).slice(0, 400) });
   console.log((ok ? 'PASS' : 'FAIL') + ' ' + name + (detail ? ' :: ' + String(detail).slice(0, 240) : ''));
 }
-function roundedBox(page, x, y, w, h) {
-  const r = 3;
+function roundedBox(page, x, y, w, h, r, g, b) {
+  const radius = Math.min(3, h / 3);
   page.pushOperators(
     pushGraphicsState(),
-    setFillingRgbColor(0.93, 0.93, 0.93),
+    setFillingRgbColor(r == null ? 0.93 : r, g == null ? 0.93 : g, b == null ? 0.93 : b),
     setStrokingRgbColor(0.75, 0.75, 0.75),
     setLineWidth(0.6),
-    moveTo(x + r, y),
-    appendBezierCurve(x + w / 2, y, x + w / 2, y, x + w - r, y),
-    appendBezierCurve(x + w, y, x + w, y, x + w, y + r),
-    appendBezierCurve(x + w, y + h / 2, x + w, y + h / 2, x + w, y + h - r),
-    appendBezierCurve(x + w, y + h, x + w, y + h, x + w - r, y + h),
-    appendBezierCurve(x + w / 2, y + h, x + w / 2, y + h, x + r, y + h),
-    appendBezierCurve(x, y + h, x, y + h, x, y + h - r),
-    appendBezierCurve(x, y + h / 2, x, y + h / 2, x, y + r),
-    appendBezierCurve(x, y, x, y, x + r, y),
+    moveTo(x + radius, y),
+    appendBezierCurve(x + w / 2, y, x + w / 2, y, x + w - radius, y),
+    appendBezierCurve(x + w, y, x + w, y, x + w, y + radius),
+    appendBezierCurve(x + w, y + h / 2, x + w, y + h / 2, x + w, y + h - radius),
+    appendBezierCurve(x + w, y + h, x + w, y + h, x + w - radius, y + h),
+    appendBezierCurve(x + w / 2, y + h, x + w / 2, y + h, x + radius, y + h),
+    appendBezierCurve(x, y + h, x, y + h, x, y + h - radius),
+    appendBezierCurve(x, y + h / 2, x, y + h / 2, x, y + radius),
+    appendBezierCurve(x, y, x, y, x + radius, y),
     closePath(),
     fillAndStroke(),
     popGraphicsState()
@@ -33,8 +33,8 @@ function roundedBox(page, x, y, w, h) {
 }
 const doc = await PDFDocument.create();
 const font = await doc.embedFont(StandardFonts.Helvetica);
-function box(page, x, y, w, h) {
-  roundedBox(page, x, y, w, h);
+function box(page, x, y, w, h, r, g, b) {
+  roundedBox(page, x, y, w, h, r, g, b);
 }
 function label(page, text, x, y) {
   page.drawText(text, { x: x, y: y, size: 9, font: font });
@@ -59,6 +59,15 @@ box(page1, 300, 100, 180, 16);
 label(page1, 'Debiting Account No.', 300, 120);
 box(page1, 31.7, 60, 140, 16);
 label(page1, 'Amount', 31.7, 80);
+label(page1, 'Section banner | header', 31.7, 668);
+box(page1, 31.7, 640, 520, 20, 0.15, 0.15, 0.15);
+label(page1, 'Submit | button', 400, 590);
+box(page1, 450, 560, 100, 22, 0.1, 0.35, 0.8);
+label(page1, 'Fee table | rows', 31.7, 528);
+box(page1, 31.7, 500, 500, 14, 0.7, 0.7, 0.7);
+box(page1, 31.7, 478, 500, 14, 0.62, 0.62, 0.62);
+label(page1, 'Logo | mark', 400, 620);
+box(page1, 450, 600, 48, 28, 0.93, 0.93, 0.93);
 const page2 = doc.addPage([595.28, 841.89]);
 label(page2, 'Terms', 31.7, 760);
 box(page2, 31.7, 700, 200, 16);
@@ -82,6 +91,12 @@ await page.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
 await page.waitForFunction(() => /Form ready|No lines were found|scan estimates/.test((document.getElementById('readStatus') || {}).textContent || ''));
 const ready = await page.locator('#readStatus').innerText();
 check('the flat form is read as lines rather than an empty page', /Form ready/.test(ready), ready);
+const found = await page.evaluate(async (b64) => {
+  const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const read = await FormFields.read(bytes);
+  return (read.fields || []).map((field) => ({ label: field.label, y: Math.round(field.rect.y), x: Math.round(field.rect.x) }));
+}, readFileSync('/tmp/synthetic-bank-form.pdf').toString('base64'));
+check('decorative header, button, table, and logo are not write lines', found.some((field) => /Name as per Example Bank Account/.test(field.label)) && found.some((field) => /NRIC\/Passport\/FIN/.test(field.label)) && !found.some((field) => field.y > 400 || /Section banner|Submit|Fee table|Logo/.test(field.label)), JSON.stringify(found));
 await page.locator('#refInput').setInputFiles('/tmp/synthetic-identity.pdf');
 await page.waitForFunction(() => !document.getElementById('fillBtn').disabled);
 await page.click('#fillBtn');
@@ -115,7 +130,6 @@ const download = page.waitForEvent('download');
 await page.locator('#sizeOptions button[data-level="100"]').click();
 const saved = await download;
 await saved.saveAs('/tmp/synthetic-bank-filled.pdf');
-const { readFileSync } = await import('fs');
 const { inflateSync } = await import('zlib');
 const raw = readFileSync('/tmp/synthetic-bank-filled.pdf').toString('latin1');
 const streams = [];

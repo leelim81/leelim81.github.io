@@ -1,5 +1,70 @@
 /* Read AcroForm fields, or find blank lines on a flat page, then write values back. */
 (function (global) {
+  function paleFill(fill) {
+    if (!fill || !fill.set) return false;
+    var r = Number(fill.r) || 0;
+    var g = Number(fill.g) || 0;
+    var b = Number(fill.b) || 0;
+    if (r > 1 || g > 1 || b > 1) { r = r / 255; g = g / 255; b = b / 255; }
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var lum = 0.3 * r + 0.59 * g + 0.11 * b;
+    var sat = max === 0 ? 0 : (max - min) / max;
+    return lum >= 0.82 && sat <= 0.2;
+  }
+
+  function nearRoundedRect(box, points) {
+    if (!box || !(box.h >= 8 && box.h <= 32 && box.w >= 36 && box.w >= box.h * 2.2)) return false;
+    if (!points || points.length < 4) return false;
+    var edge = Math.max(2.5, Math.min(box.h, 8));
+    function near(v, target) { return Math.abs(v - target) <= edge; }
+    var left = 0;
+    var right = 0;
+    var top = 0;
+    var bottom = 0;
+    points.forEach(function (p) {
+      if (!p) return;
+      if (near(p[0], box.x)) left++;
+      if (near(p[0], box.x + box.w)) right++;
+      if (near(p[1], box.y)) bottom++;
+      if (near(p[1], box.y + box.h)) top++;
+    });
+    return left >= 1 && right >= 1 && top >= 1 && bottom >= 1;
+  }
+
+  function labelNearBox(box, texts) {
+    var top = box.y + box.h;
+    for (var i = 0; i < (texts || []).length; i++) {
+      var text = texts[i];
+      var str = String(text && text.str || '').replace(/\s+/g, ' ').trim();
+      if (str.length < 2 || !/[A-Za-z]/.test(str)) continue;
+      var gap = box.x - (text.x + (text.w || 0));
+      var beside = gap >= -8 && gap <= 110 && text.y >= box.y - 6 && text.y <= top + 10;
+      var above = (text.y - top) >= -2 && (text.y - top) <= 46 && text.x < box.x + box.w && text.x + (text.w || 0) > box.x - 12;
+      if (beside || above) return true;
+    }
+    return false;
+  }
+
+  function sameLine(box, line) {
+    if (!line) return false;
+    var close = Math.abs(line.y - box.y) <= 2.5 || Math.abs(line.y - (box.y + box.h)) <= 2.5;
+    if (!close) return false;
+    var overlap = Math.min(line.x + line.w, box.x + box.w) - Math.max(line.x, box.x);
+    return overlap > Math.min(line.w, box.w) * 0.6;
+  }
+
+  function acceptDrawnBox(spec) {
+    var box = spec && spec.box;
+    if (!box || !(box.w < (spec.pageWidth || 595) * 0.98)) return false;
+    if (!nearRoundedRect(box, spec.points)) return false;
+    if (!spec.strokedOnly && !paleFill(spec.fill)) return false;
+    if (!labelNearBox(box, spec.texts)) return false;
+    var lines = spec.lines || [];
+    for (var i = 0; i < lines.length; i++) if (sameLine(box, lines[i])) return false;
+    return true;
+  }
+
   function copy(bytes) {
     return bytes instanceof Uint8Array ? bytes.slice(0) : new Uint8Array(bytes);
   }
@@ -125,6 +190,7 @@
       });
       var op = await page.getOperatorList();
       var ctm = [1, 0, 0, 1, 0, 0];
+      var fillColor = { r: 0, g: 0, b: 0, set: false };
       var stack = [];
       var pending = null;
       var squares = [];
@@ -139,9 +205,11 @@
         var maxX = -1e9;
         var maxY = -1e9;
         var any = false;
+        var points = [];
         function add(x, y) {
           var p = mapPoint(ctm, x, y);
           any = true;
+          points.push(p);
           if (p[0] < minX) minX = p[0];
           if (p[1] < minY) minY = p[1];
           if (p[0] > maxX) maxX = p[0];
@@ -168,7 +236,7 @@
           }
         }
         if (!any) return null;
-        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY, points: points };
       }
       function consume(path) {
         if (!path) return;
@@ -221,15 +289,30 @@
         if (step && step % 800 === 0) await pause();
         var fn = op.fnArray[step];
         var args = op.argsArray[step];
-        if (fn === OPS.save) stack.push(ctm.slice());
-        else if (fn === OPS.restore) ctm = stack.pop() || [1, 0, 0, 1, 0, 0];
+        if (fn === OPS.save) stack.push({ ctm: ctm.slice(), fill: { r: fillColor.r, g: fillColor.g, b: fillColor.b, set: fillColor.set } });
+        else if (fn === OPS.restore) {
+          var prev = stack.pop();
+          ctm = prev ? prev.ctm : [1, 0, 0, 1, 0, 0];
+          fillColor = prev ? prev.fill : { r: 0, g: 0, b: 0, set: false };
+        }
         else if (fn === OPS.transform && args) ctm = multiply(ctm, args);
+        else if (fn === OPS.setFillRGBColor && args) fillColor = { r: args[0], g: args[1], b: args[2], set: true };
+        else if ((fn === OPS.setFillGray || fn === OPS.setFillGrayColor) && args) fillColor = { r: args[0], g: args[0], b: args[0], set: true };
         else if (fn === OPS.constructPath) pending = args;
         else if (fn === OPS.stroke || fn === OPS.closeStroke || fn === OPS.fill || fn === OPS.eoFill || fn === OPS.fillStroke || fn === OPS.eoFillStroke) {
           var box = pathBounds(pending);
+          var strokedOnly = fn === OPS.stroke || fn === OPS.closeStroke;
           consume(pending);
           pending = null;
-          if (box && box.h >= 8 && box.h <= 32 && box.w >= 36 && box.w < view.width * 0.98) {
+          if (acceptDrawnBox({
+            box: box,
+            points: box && box.points,
+            fill: fillColor,
+            strokedOnly: strokedOnly,
+            texts: texts,
+            lines: lines,
+            pageWidth: view.width
+          })) {
             lines.push({ x: box.x, y: box.y, w: box.w });
           }
         }
@@ -1847,6 +1930,8 @@
     stageReport: stageReport,
     candidateReport: candidateReport,
     lineCropReport: lineCropReport,
-    fieldsFromWords: fieldsFromWords
+    fieldsFromWords: fieldsFromWords,
+    acceptDrawnBox: acceptDrawnBox
   };
-})(window);
+})(typeof window !== 'undefined' ? window : globalThis);
+if (typeof module !== 'undefined' && module.exports) module.exports = (typeof window !== 'undefined' ? window : globalThis).FormFields;

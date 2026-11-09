@@ -35,7 +35,7 @@
     if (/debit/.test(s)) return 'other';
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
-    if (/name as per/.test(s) && /bank account/.test(s)) return 'name';
+    if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
