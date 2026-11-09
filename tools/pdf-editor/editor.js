@@ -1935,6 +1935,10 @@
       fact.appendChild(opt);
     });
     $('recoverPlace').disabled = !facts.length;
+    var active = document.activeElement;
+    if ($('recoverBar') && !$('recoverBar').hidden && (!active || active === document.body || active === document.documentElement)) {
+      if (person && person.options.length) person.focus();
+    }
     if (!facts.length) {
       showRecoverCreate('fact');
       sayReady(chosen.name + ' has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed.');
