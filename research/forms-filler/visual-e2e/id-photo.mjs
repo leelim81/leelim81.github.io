@@ -43,6 +43,36 @@ const malanNext = facts.identityRead('Name\nTAN WEI MING\n(MALAN)\nS1234567D\n')
 check('next-line MALAN stays an alias', malanNext.name === 'TAN WEI MING (MALAN)' && malanNext.nameAlias === 'MALAN', JSON.stringify(malanNext));
 const noor = facts.identityRead('Name\nTAN WEI MING (NOOR)\nS1234567D\n');
 check('NOOR is not blocked by the word NO', noor.nameAlias === 'NOOR', JSON.stringify(noor));
+const stacey = facts.identityRead('Name\nTAN WEI MING (STACEY)\nS1234567D\n');
+check('STACEY is not blocked by the street abbreviation ST', stacey.nameAlias === 'STACEY', JSON.stringify(stacey));
+const august = facts.identityRead('Name\nTAN WEI MING (AUGUST)\nS1234567D\n');
+check('AUGUST stays an alias', august.nameAlias === 'AUGUST', JSON.stringify(august));
+const saint = facts.identityRead('Name\nTAN WEI MING (ST JOHN)\nS1234567D\n');
+check('ST JOHN stays an alias', saint.name === 'TAN WEI MING (ST JOHN)' && saint.nameAlias === 'ST JOHN', JSON.stringify(saint));
+['ORCHARD ROAD', 'ORCHARD RD', 'BLK 123', 'EXAMPLE STREET', 'EXAMPLE ST', 'EXAMPLE LANE', 'EXAMPLE AVENUE', 'EXAMPLE DRIVE', 'EXAMPLE DR', 'EXAMPLE WALK', 'EXAMPLE TERRACE', 'EXAMPLE CRESCENT', 'EXAMPLE CLOSE'].forEach((label) => {
+  const same = facts.identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
+  check('same-line (' + label + ') is not a place alias', same.name === 'TAN WEI MING' && !same.nameAlias && !same.nameRepaired, JSON.stringify(same));
+  const next = facts.identityRead('Name\nTAN WEI MING\n(' + label + ')\nS1234567D\n');
+  check('next-line (' + label + ') is not a place alias', next.name === 'TAN WEI MING' && !next.nameAlias && !next.nameRepaired, JSON.stringify(next));
+});
+const cutName = facts.identityRead('Name\nTAN WEI\nMING\nS1234567D\n');
+const cutVote = facts.identityVote([cutName, cutName]);
+check('a labeled name with another name line below is not pre-checked', cutName.name === 'TAN WEI' && cutName.nameBelow && cutVote.nameChecked === false, JSON.stringify(cutVote));
+const mixedCount = facts.identityVote([
+  facts.identityRead('Name\nTAN WEI MING\nS1234567D\n'),
+  facts.identityRead('Name\nTAN WEI\nS1234567D\n')
+]);
+check('passes that disagree on the name length are not pre-checked', mixedCount.nameChecked === false, JSON.stringify(mixedCount));
+const oneToken = facts.identityVote([
+  { name: 'MING', labeled: true, nric: 'S1234567D', nricValid: true, nameTokens: 1 },
+  { name: 'MING', labeled: true, nric: 'S1234567D', nricValid: true, nameTokens: 1 }
+]);
+check('a one-word labeled name is not pre-checked', oneToken.name === 'MING' && oneToken.nameChecked === false, JSON.stringify(oneToken));
+const completeVote = facts.identityVote([
+  facts.identityRead('Name\nTAN WEI MING\nS1234567D\n'),
+  facts.identityRead('Name\nTAN WEI MING\nS1234567D\n')
+]);
+check('a complete labeled name that every pass reads the same way is pre-checked', completeVote.name === 'TAN WEI MING' && completeVote.nameChecked === true, JSON.stringify(completeVote));
 const unlabeled = facts.identityRead('REPUBLIC OF SINGAPORE\nIDENTITY CARD NO. S1234567D\nab\nTANG WEI MING\n(ALEX KENNETH)\n| Ab\nRace\n');
 check('an unlabeled card keeps the alias on the next line and does not pre-check it', unlabeled.name === 'TANG WEI MING (ALEX KENNETH)' && unlabeled.namePlain === 'TANG WEI MING' && unlabeled.nameAlias === 'ALEX KENNETH' && unlabeled.unlabeled && !unlabeled.nameChecked, JSON.stringify(unlabeled));
 const unlabeledVote = facts.identityVote([unlabeled, unlabeled]);

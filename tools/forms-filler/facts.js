@@ -76,6 +76,20 @@
     occupation: 1, religion: 1, dialect: 1, pass: 1, type: 1, status: 1
   };
   var ALIAS_STOP = { of: 1, the: 1, and: 1, or: 1 };
+  var PLACE_ALIAS = {
+    road: 1, street: 1, avenue: 1, ave: 1, drive: 1, lane: 1, crescent: 1,
+    blk: 1, block: 1, singapore: 1, close: 1, place: 1, walk: 1, terrace: 1,
+    boulevard: 1, blvd: 1, highway: 1, parkway: 1, expressway: 1, quay: 1,
+    jalan: 1, lorong: 1
+  };
+  var PLACE_SHORT = { st: 1, rd: 1, dr: 1 };
+
+  function placeAlias(words) {
+    var lower = (words || []).map(function (word) { return String(word || '').toLowerCase(); });
+    if (!lower.length) return false;
+    if (lower.some(function (word) { return PLACE_ALIAS[word]; })) return true;
+    return !!PLACE_SHORT[lower[lower.length - 1]];
+  }
 
   function acceptableMain(words) {
     if (!words || words.length < 2 || words.length > 8) return false;
@@ -92,8 +106,29 @@
     if (words.length < 1 || words.length > 5) return false;
     if (words.some(function (word) { return !/^[A-Za-z][A-Za-z'’.\-]{1,}$/.test(word); })) return false;
     if (words.some(function (word) { return ALIAS_BLOCK[word.toLowerCase()]; })) return false;
+    if (placeAlias(words)) return false;
     if (words.every(function (word) { return ALIAS_STOP[word.toLowerCase()]; })) return false;
     return true;
+  }
+
+  function nameLikeLine(line) {
+    var raw = String(line || '').replace(/\s+/g, ' ').trim();
+    if (!raw || /\d/.test(raw)) return false;
+    var words = raw.replace(/[()]/g, ' ').split(' ').filter(Boolean);
+    if (!words.length || words.length > 6) return false;
+    if (words.some(function (word) { return !/^[A-Za-z][A-Za-z'’.\-]{1,}$/.test(word); })) return false;
+    if (!words.some(function (word) { return word.length >= 3; })) return false;
+    if (placeAlias(words)) return false;
+    var lower = words.map(function (word) { return word.toLowerCase(); });
+    if (lower.every(function (word) { return JUNK[word] || ALIAS_BLOCK[word] || ALIAS_STOP[word]; })) return false;
+    return true;
+  }
+
+  function markNameShape(parsed, lines, nameIndex, consumedNext) {
+    var words = String(parsed.plain || '').split(' ').filter(Boolean);
+    parsed.nameTokens = words.length;
+    parsed.nameBelow = !consumedNext && nameLikeLine(lines[nameIndex + 1] || '');
+    return parsed;
   }
 
   function nameResult(plain, alias, unbalanced) {
@@ -167,17 +202,23 @@
       if (!isNameLabel(lines[i])) continue;
       var parsed = parseNameLine(lines[i + 1] || '');
       if (!parsed) continue;
+      var consumedNext = false;
       if (!parsed.alias && !parsed.unbalanced) {
         var wrapped = String(lines[i + 2] || '').replace(/\s+/g, ' ').trim();
         var closedWrap = wrapped.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\)$/);
         var openWrap = !closedWrap && wrapped.indexOf(')') < 0 ? wrapped.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})$/) : null;
         var endWrap = !closedWrap && wrapped.indexOf('(') < 0 ? wrapped.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,4})\)$/) : null;
         var inner = closedWrap ? closedWrap[1] : (openWrap ? openWrap[1] : (endWrap ? endWrap[1] : ''));
-        if (inner && closedWrap && aliasOk(inner)) parsed = nameResult(parsed.plain, inner.replace(/\s+/g, ' ').trim(), false);
-        else if (inner && (openWrap || endWrap)) parsed = nameResult(parsed.plain, aliasOk(inner) ? inner.replace(/\s+/g, ' ').trim() : '', true);
+        if (inner && closedWrap && aliasOk(inner)) {
+          parsed = nameResult(parsed.plain, inner.replace(/\s+/g, ' ').trim(), false);
+          consumedNext = true;
+        } else if (inner && (openWrap || endWrap)) {
+          parsed = nameResult(parsed.plain, aliasOk(inner) ? inner.replace(/\s+/g, ' ').trim() : '', true);
+          consumedNext = true;
+        }
       }
       parsed.labeled = true;
-      return parsed;
+      return markNameShape(parsed, lines, i + 1, consumedNext);
     }
     for (var j = 0; j < lines.length - 1; j++) {
       var line = parseNameLine(lines[j]);
@@ -187,7 +228,7 @@
       if (!pair || !aliasOk(pair[1])) continue;
       var found = nameResult(line.plain, pair[1].replace(/\s+/g, ' ').trim(), false);
       found.unlabeled = true;
-      return found;
+      return markNameShape(found, lines, j, true);
     }
     return { full: '', plain: '', alias: '' };
   }
@@ -989,13 +1030,34 @@
       });
     }
     if (unbalanced && !alias) nameUnconfirmed = true;
+    function sameName(a, b) {
+      if (!a || !b) return false;
+      if (a === b) return true;
+      var left = a.split(' ').filter(Boolean);
+      var right = b.split(' ').filter(Boolean);
+      var small = left.length <= right.length ? left : right;
+      var large = left.length <= right.length ? right : left;
+      if (!small.length || small.length === large.length) return false;
+      for (var i = 0; i < small.length; i++) if (small[i] !== large[i]) return false;
+      return true;
+    }
     var anyAlias = !!alias;
     var labeledSupport = 0;
+    var tokenCounts = [];
+    var sawBelow = false;
     list.forEach(function (read) {
       if (!read) return;
       if (read.nameAlias || aliasOf(read.name) || read.nameRepaired) anyAlias = true;
-      if (plain && read.labeled && plainOf(read.name) === plain) labeledSupport++;
+      var other = plainOf(read.name);
+      var related = plain && (other === plain || sameName(other, plain));
+      if (related) {
+        var count = read.nameTokens || other.split(' ').filter(Boolean).length;
+        if (count) tokenCounts.push(count);
+        if (read.nameBelow) sawBelow = true;
+      }
+      if (plain && read.labeled && other === plain) labeledSupport++;
     });
+    var sameCount = tokenCounts.length > 0 && tokenCounts.every(function (count) { return count === tokens.length; });
     return {
       name: name || '',
       namePlain: plain || '',
@@ -1007,7 +1069,7 @@
       nricConf: null,
       nameUnconfirmed: nameUnconfirmed,
       nricUnconfirmed: false,
-      nameChecked: !!(name && !nameUnconfirmed && !anyAlias && labeledSupport >= 2),
+      nameChecked: !!(name && tokens.length >= 2 && sameCount && !sawBelow && !nameUnconfirmed && !anyAlias && labeledSupport >= 2),
       nricChecked: !!(nric && nricCounts[nric] >= 2)
     };
   }
@@ -1036,6 +1098,8 @@
       unbalanced: !!printed.unbalanced,
       unlabeled: !!printed.unlabeled,
       labeled: !!printed.labeled,
+      nameTokens: printed.nameTokens || plainOf(name).split(' ').filter(Boolean).length,
+      nameBelow: !!printed.nameBelow,
       nric: nric,
       nricValid: nricValid,
       nameConf: nameConf,

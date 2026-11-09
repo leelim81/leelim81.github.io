@@ -321,6 +321,67 @@ const labeledVote = identityVote([
 assert.equal(labeledVote.name, 'TAN WEI MING');
 assert.equal(labeledVote.nameChecked, true);
 assert.equal(labeledVote.nricChecked, true);
+
+function assertAlias(text, alias) {
+  const read = identityRead(text);
+  assert.equal(read.nameAlias, alias);
+  assert.equal(read.name, 'TAN WEI MING (' + alias + ')');
+}
+assertAlias('Name\nTAN WEI MING (MALAN)\nS1234567D\n', 'MALAN');
+assertAlias('Name\nTAN WEI MING (NOOR)\nS1234567D\n', 'NOOR');
+assertAlias('Name\nTAN WEI MING (STACEY)\nS1234567D\n', 'STACEY');
+assertAlias('Name\nTAN WEI MING (AUGUST)\nS1234567D\n', 'AUGUST');
+assertAlias('Name\nTAN WEI MING (ST JOHN)\nS1234567D\n', 'ST JOHN');
+assertAlias('Name\nTAN WEI MING\n(ST JOHN)\nS1234567D\n', 'ST JOHN');
+const placeAliases = [
+  'ORCHARD ROAD', 'ORCHARD RD', 'BLK 123', 'SINGAPORE', 'EXAMPLE STREET',
+  'EXAMPLE ST', 'EXAMPLE AVENUE', 'EXAMPLE AVE', 'EXAMPLE DRIVE', 'EXAMPLE DR',
+  'EXAMPLE LANE', 'EXAMPLE CRESCENT', 'EXAMPLE CLOSE', 'EXAMPLE PLACE',
+  'EXAMPLE WALK', 'EXAMPLE TERRACE', 'BLOCK'
+];
+placeAliases.forEach(function (label) {
+  const same = identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
+  assert.equal(same.name, 'TAN WEI MING', label);
+  assert.equal(same.nameAlias, '', label);
+  assert.equal(same.nameRepaired, '', label);
+  const next = identityRead('Name\nTAN WEI MING\n(' + label + ')\nS1234567D\n');
+  assert.equal(next.name, 'TAN WEI MING', 'next ' + label);
+  assert.equal(next.nameAlias, '', 'next ' + label);
+  const bare = identityRead('TANG WEI MING\n(' + label + ')\n');
+  assert.equal(bare.nameAlias, '', 'unlabeled ' + label);
+  assert.equal(bare.nameRepaired, '', 'unlabeled ' + label);
+});
+
+const truncated = identityRead('Name\nTAN WEI\nMING\nS1234567D\n');
+assert.equal(truncated.name, 'TAN WEI');
+assert.equal(truncated.nameBelow, true);
+assert.equal(truncated.labeled, true);
+const truncatedVote = identityVote([truncated, truncated]);
+assert.equal(truncatedVote.name, 'TAN WEI');
+assert.equal(truncatedVote.nameChecked, false);
+const extraLine = identityRead('Name\nTAN WEI MING\nCHEN WEIMING\nS1234567D\n');
+assert.equal(extraLine.name, 'TAN WEI MING');
+assert.equal(extraLine.nameBelow, true);
+const extraVote = identityVote([extraLine, extraLine]);
+assert.equal(extraVote.nameChecked, false);
+const mixedCount = identityVote([
+  identityRead('Name\nTAN WEI MING\nS1234567D\n'),
+  identityRead('Name\nTAN WEI\nS1234567D\n')
+]);
+assert.equal(mixedCount.nameChecked, false);
+const oneToken = identityVote([
+  { name: 'MING', labeled: true, nric: 'S1234567D', nricValid: true, nameTokens: 1 },
+  { name: 'MING', labeled: true, nric: 'S1234567D', nricValid: true, nameTokens: 1 }
+]);
+assert.equal(oneToken.name, 'MING');
+assert.equal(oneToken.nameChecked, false);
+const complete = identityVote([
+  identityRead('Name\nTAN WEI MING\nS1234567D\n'),
+  identityRead('Name\nTAN WEI MING\nS1234567D\n')
+]);
+assert.equal(complete.name, 'TAN WEI MING');
+assert.equal(complete.nameBelow, undefined);
+assert.equal(complete.nameChecked, true);
 console.log('facts tests ok');
 
 // Supported false negatives, not model scores:
