@@ -69,11 +69,16 @@ async function marks(page) {
   return page.locator('#pages .ann-body').allInnerTexts();
 }
 async function settle(page) {
-  for (let i = 0; i < 6 && await page.evaluate(() => window.__heldOpens() > 0); i++) {
-    await page.evaluate(() => window.__releaseNewest());
-    await page.waitForFunction(() => (document.getElementById('saveState') || {}).textContent !== 'Saving…' || window.__heldOpens() >= 0);
+  const start = Date.now();
+  while (Date.now() - start < 5000) {
+    if (await page.evaluate(() => window.__heldOpens() > 0)) await page.evaluate(() => window.__releaseOldest());
+    const ready = await page.evaluate(() => {
+      const text = (document.getElementById('saveState') || {}).textContent || '';
+      return window.__heldOpens() === 0 && (text === 'Saved' || text === '');
+    });
+    if (ready) return;
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 30)));
   }
-  await page.evaluate(() => { while (window.__heldOpens() > 0) window.__releaseOldest(); });
   await page.waitForFunction(() => {
     const text = (document.getElementById('saveState') || {}).textContent || '';
     return text === 'Saved' || text === '';
