@@ -1216,10 +1216,9 @@
         decisions.forEach(function (row) {
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
-          var label = String(field && field.label || '').toLowerCase();
-          var applicantName = /name as per/.test(label) && /bank account/.test(label) && !/debit/.test(label);
-          var applicantId = /nric/.test(label) && /passport|\bfin\b/.test(label);
-          if (!applicantName && !applicantId) {
+          var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field) : '';
+          var slotValue = slot === 'name' ? idn.name : (slot === 'nric' ? idn.nric : '');
+          if (!slot || !slotValue) {
             if (row.decision !== 'abstain') {
               row.decision = 'abstain';
               row.value = '';
@@ -1227,7 +1226,7 @@
             }
             return;
           }
-          if (applicantName && idn.name) {
+          if (slot === 'name') {
             matched = true;
             row.decision = 'review';
             row.value = idn.name;
@@ -1238,8 +1237,9 @@
             row.repaired = idn.nameRepaired && idn.nameRepaired !== idn.name ? idn.nameRepaired : '';
             row.reason = idn.nameUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
             row.quote = 'Read from the photo';
+            return;
           }
-          if (applicantId && idn.nric) {
+          if (slot === 'nric') {
             matched = true;
             row.decision = 'review';
             row.value = idn.nric;

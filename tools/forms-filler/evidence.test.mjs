@@ -2,7 +2,7 @@ import assert from 'assert';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { extract } = require('./evidence.js');
+const { extract, identityPhotoSlot } = require('./evidence.js');
 const { decideAll } = require('./select.js');
 
 const packet = `Patient
@@ -121,5 +121,25 @@ assert.equal(bankRows.bare.decision, 'abstain');
 assert.notEqual(bankRows.bare.value, 'Ada Lane');
 assert.equal(bankRows.debit.decision, 'abstain');
 assert.notEqual(bankRows.debit.value, 'Ada Lane');
+
+assert.equal(identityPhotoSlot({ id: 'full_name', label: 'Full name' }), 'name');
+assert.equal(identityPhotoSlot({ id: 'nric', label: 'NRIC' }), 'nric');
+assert.equal(identityPhotoSlot({ id: 'applicant', label: "Applicant's full name" }), 'name');
+assert.equal(identityPhotoSlot({ id: 'holder', label: 'Name as per Example Bank Account (Underline surname)' }), 'name');
+assert.equal(identityPhotoSlot({ id: 'idline', label: 'NRIC/Passport/FIN No.' }), 'nric');
+assert.equal(identityPhotoSlot({ id: 'bare', label: 'Name as per' }), '');
+assert.equal(identityPhotoSlot({ id: 'debit', label: 'Name as per Debiting Account' }), '');
+assert.equal(identityPhotoSlot({ id: 'credited', label: 'Account No. to be Credited' }), '');
+assert.equal(identityPhotoSlot({ id: 'amount', label: 'Amount' }), '');
+assert.equal(identityPhotoSlot({ id: 'bank', label: 'For Bank Use Only' }), '');
+assert.equal(identityPhotoSlot({ id: 'dob', label: 'Date of birth' }), '');
+assert.equal(identityPhotoSlot({ id: 'sex', label: 'Sex' }), '');
+assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), '');
+assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), '');
+assert.equal(identityPhotoSlot({ id: 'phone', label: 'Home No.' }), '');
+assert.equal(identityPhotoSlot({ id: 'emergency', label: 'Emergency contact name' }), '');
+assert.equal(identityPhotoSlot({ id: 'patient', label: 'Patient name' }), '');
+assert.equal(identityPhotoSlot({ id: 'spouse', label: 'Spouse name' }), '');
+assert.equal(identityPhotoSlot({ id: 'kin', label: 'Next of kin' }), '');
 
 console.log('evidence tests ok');

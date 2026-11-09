@@ -54,6 +54,18 @@
     return 'unspecified';
   }
 
+  /* An identity-card photo is reviewed onto the applicant's name and ID
+     lines. Full name and NRIC count, as does the bank account name line.
+     Someone else's name, a debit line, and every other field stay blank. */
+  function identityPhotoSlot(field) {
+    var kind = fieldKind(field);
+    if (kind !== 'name' && kind !== 'nric') return '';
+    if (fieldRole(field) === 'other') return '';
+    var label = ((field && field.group) || '') + ' ' + ((field && field.label) || '') + ' ' + ((field && field.id) || '');
+    if (/emergency|next of kin|\bkin\b|guardian|witness|\bparent\b|officer|\bunion\b|\bnurse\b|\bdoctor\b/i.test(label)) return '';
+    return kind;
+  }
+
   function normValue(kind, value) {
     var text = String(value || '').replace(/\s+/g, ' ').trim();
     if (!text) return '';
@@ -147,6 +159,7 @@
     extract: extract,
     fieldKind: fieldKind,
     fieldRole: fieldRole,
+    identityPhotoSlot: identityPhotoSlot,
     normValue: normValue,
     kindOfLabel: kindOfLabel
   };
