@@ -103,23 +103,37 @@
   }
   function idbSave(pdfBytes, session) {
     var epoch = session && session.epoch;
-    if (sessionRetired(session)) return Promise.resolve();
+    if (sessionRetired(session)) return Promise.resolve({ written: false, reason: 'cleared' });
     return openDb().then(function (db) {
       return new Promise(function (resolve, reject) {
         var tx = db.transaction('kv', 'readwrite');
         var store = tx.objectStore('kv');
+        var outcome = { written: false, reason: 'skipped' };
         var getReq = store.get('session');
         getReq.onsuccess = function () {
-          if (closed) return;
-          if (sessionRetired(session)) return;
+          if (closed) { outcome = { written: false, reason: 'closed' }; return; }
+          if (sessionRetired(session)) { outcome = { written: false, reason: 'cleared' }; return; }
           var existing = getReq.result;
-          if (existing && existing.epoch && epoch && existing.epoch > epoch) return;
-          if (existing && sessionGeneration(existing) > sessionGeneration(session)) return;
-          if (existing && existing.savedAt && session.savedAt && existing.savedAt > session.savedAt) return;
+          if (existing && existing.epoch && epoch && existing.epoch > epoch) { outcome = { written: false, reason: 'conflict' }; return; }
+          if (existing && sessionGeneration(existing) > sessionGeneration(session)) { outcome = { written: false, reason: 'conflict' }; return; }
+          if (existing && existing.savedAt && session.savedAt && existing.savedAt > session.savedAt) { outcome = { written: false, reason: 'older' }; return; }
+          var existingRevision = existing && existing.revision ? Number(existing.revision) : 0;
+          var baseRevision = Number(session && session.baseRevision || 0);
+          var sameWriter = !!(existing && existing.writerTab && session.writerTab && existing.writerTab === session.writerTab);
+          if (existing && existing.savedAt && session.savedAt && existing.savedAt === session.savedAt && !sameWriter) {
+            outcome = { written: false, reason: 'conflict' }; return;
+          }
+          var otherWriter = !!(existing && existing.writerTab && session.writerTab && existing.writerTab !== session.writerTab);
+          if (otherWriter && existingRevision !== baseRevision) { outcome = { written: false, reason: 'conflict' }; return; }
+          var stored = Object.assign({}, session);
+          delete stored.baseRevision;
+          stored.revision = existingRevision + 1;
+          stored.writerTab = session.writerTab || tabId();
           store.put(pdfBytes, 'pdf');
-          store.put(session, 'session');
+          store.put(stored, 'session');
+          outcome = { written: true, revision: stored.revision };
         };
-        tx.oncomplete = function () { resolve(); };
+        tx.oncomplete = function () { resolve(outcome); };
         tx.onerror = function () { reject(tx.error); };
       });
     });
@@ -138,6 +152,19 @@
   var saveTimer = 0;
   var saveGen = 0;
   var saveClock = 0;
+  var saveNotice = '';
+  var tabToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  // A duplicated tab copies sessionStorage, so this id stays in this document.
+  try { sessionStorage.removeItem('ff-editor-tab'); } catch (err) {}
+  function tabId() {
+    return tabToken;
+  }
+  function sayUnsaved(text) {
+    setSaveStatus('Not saved');
+    if (saveNotice === text) return;
+    saveNotice = text;
+    toast(text);
+  }
   function nextSaveStamp() {
     var now = Date.now();
     if (now <= saveClock) now = saveClock + 1;
@@ -170,6 +197,8 @@
       sheet: state.sheet || null,
       resumeProfileId: ($('recoverPerson') && $('recoverPerson').value) || state.resumeProfileId || '',
       generation: state.generation || state.epoch || 0,
+      baseRevision: state.baseRevision || 0,
+      writerTab: tabId(),
       editedAt: Date.now(),
       resumeNote: '',
       withheld: Array.isArray(state.withheld) ? state.withheld.map(function (page) {
@@ -199,12 +228,20 @@
       var session = editorSession();
       session.savedAt = nextSaveStamp();
       if (sessionRetired(session)) {
-        if (gen === saveGen) setSaveStatus('Not saved');
+        if (gen === saveGen) sayUnsaved('Not saved. Another tab cleared this file.');
         return false;
       }
       rememberHandoff(session);
-      await idbSave(new Uint8Array(state.pdfBytes), session);
+      var result = await idbSave(new Uint8Array(state.pdfBytes), session);
       if (gen !== saveGen || closed || !state.pdfBytes) return true;
+      if (!result || !result.written) {
+        try { sessionStorage.removeItem('ff-editor-handoff'); } catch (err) {}
+        if (result && result.reason === 'cleared') sayUnsaved('Not saved. Another tab cleared this file.');
+        else sayUnsaved('Not saved. This browser kept another save of this file. Reload to see it.');
+        return false;
+      }
+      state.baseRevision = result.revision;
+      saveNotice = '';
       var el = $('saveState');
       el.dataset.gen = String(Number(el.dataset.gen || 0) + 1);
       setSaveStatus('Saved');
@@ -735,6 +772,7 @@
     state.resumeProfileId = session && session.resumeProfileId ? session.resumeProfileId : '';
     state.resumeNote = session && session.resumeNote ? session.resumeNote : '';
     state.generation = session && (session.generation || session.epoch) ? (session.generation || session.epoch) : Date.now();
+    state.baseRevision = session && session.revision ? Number(session.revision) : 0;
     state.withheld = session && Array.isArray(session.withheld) ? session.withheld : [];
     state.sheet = session && session.sheet ? session.sheet : null;
     state.wantRecover = !!(session && session.recover);
