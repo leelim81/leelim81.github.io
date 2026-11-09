@@ -950,29 +950,52 @@
     });
   }
 
-  async function flatten() {
+  function exportShot() {
+    if (!state.pdfBytes) return null;
     syncLiveText();
-    var samePages = state.pages.length > 0 && state.pages.every(function (rec, index) {
+    return {
+      doc: state.docSerial,
+      bytes: state.pdfBytes,
+      fileName: state.fileName || '',
+      person: ($('recoverPerson') && $('recoverPerson').value) || '',
+      pages: state.pages.map(function (page) {
+        return {
+          srcIndex: page.srcIndex,
+          rotation: page.rotation || 0,
+          annotations: (page.annotations || []).map(copyAnn)
+        };
+      })
+    };
+  }
+  function exportShotCurrent(shot) {
+    var person = ($('recoverPerson') && $('recoverPerson').value) || '';
+    return !!shot && shot.doc === state.docSerial && shot.bytes === state.pdfBytes && shot.person === person && !!state.pdfBytes;
+  }
+
+  async function flatten(shot) {
+    if (!shot) shot = exportShot();
+    if (!shot || !shot.bytes) return new Uint8Array();
+    var samePages = shot.pages.length > 0 && shot.pages.every(function (rec, index) {
       return rec.srcIndex === index && !rec.rotation;
     });
     if (samePages) {
-      var kept = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
-      if (kept.getPageCount() === state.pages.length) {
+      var kept = await PDFLib.PDFDocument.load(shot.bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+      if (kept.getPageCount() === shot.pages.length) {
         var keptFont = await kept.embedFont(PDFLib.StandardFonts.Helvetica);
-        for (var k = 0; k < state.pages.length; k++) {
+        for (var k = 0; k < shot.pages.length; k++) {
           var keptPage = kept.getPages()[k];
-          for (var ak = 0; ak < state.pages[k].annotations.length; ak++) {
-            await drawAnn(kept, keptPage, keptFont, state.pages[k].annotations[ak]);
+          for (var ak = 0; ak < shot.pages[k].annotations.length; ak++) {
+            await drawAnn(kept, keptPage, keptFont, shot.pages[k].annotations[ak]);
           }
         }
         return kept.save();
       }
     }
-    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    var src = await PDFLib.PDFDocument.load(shot.bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
     var out = await PDFLib.PDFDocument.create();
     var font = await out.embedFont(PDFLib.StandardFonts.Helvetica);
-    for (var i = 0; i < state.pages.length; i++) {
-      var rec = state.pages[i];
+    for (var i = 0; i < shot.pages.length; i++) {
+      var rec = shot.pages[i];
       var copied = (await out.copyPages(src, [rec.srcIndex]))[0];
       var total = ((copied.getRotation().angle || 0) + (rec.rotation || 0)) % 360;
       copied.setRotation(PDFLib.degrees(total));
@@ -1074,13 +1097,14 @@
     return { fit: true, move: moves.join(' and ') };
   }
 
-  async function textOffPage() {
-    syncLiveText();
-    var src = await PDFLib.PDFDocument.load(state.pdfBytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+  async function textOffPage(shot) {
+    if (!shot) shot = exportShot();
+    if (!shot || !shot.bytes) return [];
+    var src = await PDFLib.PDFDocument.load(shot.bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
     var font = await src.embedFont(PDFLib.StandardFonts.Helvetica);
     var found = [];
-    for (var i = 0; i < state.pages.length; i++) {
-      var rec = state.pages[i];
+    for (var i = 0; i < shot.pages.length; i++) {
+      var rec = shot.pages[i];
       var lib = src.getPages()[rec.srcIndex];
       if (!lib) continue;
       var crop = lib.getCropBox();
@@ -1091,7 +1115,7 @@
         var ann = rec.annotations[a];
         var advice = overflowAdvice(ann, crop, angle, font, unit);
         if (!advice) continue;
-        found.push({ id: ann.id, text: ann.text || '', page: i + 1, pages: state.pages.length, advice: advice });
+        found.push({ id: ann.id, text: ann.text || '', page: i + 1, pages: shot.pages.length, advice: advice });
       }
     }
     return found;
@@ -1265,13 +1289,16 @@
 
   async function openDownload() {
     if (!state.pdfBytes) return;
+    var shot = exportShot();
+    if (!shot) return;
     var warn = [];
-    try { warn = await textOffPage(); } catch (err) { warn = []; }
+    try { warn = await textOffPage(shot); } catch (err) { warn = []; }
+    if (!exportShotCurrent(shot)) return;
     paintExportWarn(warn);
     $('downloadModal').hidden = false;
-    var stem = (state.fileName || 'document').replace(/\.pdf$/i, '');
+    var stem = (shot.fileName || 'document').replace(/\.pdf$/i, '');
     PdfSizes.mount($('sizeOptions'), {
-      getBytes: flatten,
+      getBytes: function () { return flatten(shot); },
       nameFor: function (level) {
         return level === 100 ? stem + '-edited.pdf' : stem + '-edited-' + level + '.pdf';
       },
