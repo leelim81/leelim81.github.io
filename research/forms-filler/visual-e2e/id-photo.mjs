@@ -37,6 +37,25 @@ const votedAlias = facts.identityVote([
   { name: 'TAN WEI MING (CHEN WEIMING)', nric: GOOD, nricValid: true, nameConf: 90 }
 ]);
 check('voting offers the printed alias and does not pre-check that name', votedAlias.name === 'TAN WEI MING (CHEN WEIMING)' && votedAlias.namePlain === 'TAN WEI MING' && votedAlias.nameChecked === false && votedAlias.nricChecked === true && votedAlias.nameUnconfirmed === false, JSON.stringify(votedAlias));
+const junkLabels = ['RACE', 'MALE', 'FEMALE', 'CHINESE', 'MALAY', 'INDIAN', 'DATE OF BIRTH', 'BLOOD GROUP', 'IDENTITY CARD', 'SINGAPORE', 'COUNTRY OF BIRTH', 'SEX', 'NAME'];
+junkLabels.forEach((label) => {
+  const same = facts.identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
+  check('same-line (' + label + ') is not a name alias', same.name === 'TAN WEI MING' && !same.nameAlias && !same.nameRepaired, JSON.stringify(same));
+  const next = facts.identityRead('Name\nTAN WEI MING\n(' + label + ')\nS1234567D\n');
+  check('next-line (' + label + ') is not a name alias', next.name === 'TAN WEI MING' && !next.nameAlias && !next.nameRepaired, JSON.stringify(next));
+});
+const missingClose = facts.identityRead('Name\nTAN WEI MING (CHEN WEIMING\nS1234567D\n');
+check('a missing close bracket does not glue the alias into the main name', missingClose.name === 'TAN WEI MING' && missingClose.nameUnconfirmed && !missingClose.nameAlias && missingClose.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(missingClose));
+const missingOpen = facts.identityRead('Name\nTAN WEI MING CHEN WEIMING)\nS1234567D\n');
+check('a missing open bracket does not glue the alias into the main name', missingOpen.name === 'TAN WEI MING' && missingOpen.nameUnconfirmed && !missingOpen.nameAlias && missingOpen.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(missingOpen));
+const wrapOpen = facts.identityRead('Name\nTAN WEI MING\n(CHEN WEIMING\nS1234567D\n');
+check('a wrapped alias missing its close bracket stays off the main name', wrapOpen.name === 'TAN WEI MING' && wrapOpen.nameUnconfirmed && wrapOpen.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(wrapOpen));
+const wrapClose = facts.identityRead('Name\nTAN WEI MING\nCHEN WEIMING)\nS1234567D\n');
+check('a wrapped alias missing its open bracket stays off the main name', wrapClose.name === 'TAN WEI MING' && wrapClose.nameUnconfirmed && wrapClose.nameRepaired === 'TAN WEI MING (CHEN WEIMING)', JSON.stringify(wrapClose));
+const junkOpen = facts.identityRead('Name\nTAN WEI MING (RACE\nS1234567D\n');
+check('an unbalanced card label is not repaired into an alias', junkOpen.name === 'TAN WEI MING' && junkOpen.nameUnconfirmed && !junkOpen.nameAlias && !junkOpen.nameRepaired, JSON.stringify(junkOpen));
+const junkNext = facts.identityRead('Name\nTAN WEI MING\n(MALE\nS1234567D\n');
+check('an unbalanced sex label on the next line is not an alias', junkNext.name === 'TAN WEI MING' && !junkNext.nameAlias && !junkNext.nameRepaired, JSON.stringify(junkNext));
 const invalid = facts.identityRead('Name\nTAN WEI MING\n' + BAD + '\n');
 check('a bad checksum stays unconfirmed', invalid.nric === BAD && invalid.nricUnconfirmed && !invalid.nricValid, JSON.stringify(invalid));
 const dollar = facts.identityRead('Name\nTAN WEI MING\n$' + GOOD.slice(1) + '\n');

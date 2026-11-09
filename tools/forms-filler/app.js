@@ -672,6 +672,22 @@
         });
         li.appendChild(alt);
       }
+      if (row.repaired && row.repaired !== row.value) {
+        var repair = document.createElement('button');
+        repair.type = 'button';
+        repair.className = 'review-quote';
+        repair.textContent = 'With bracketed name';
+        repair.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          var editor = li.querySelector('input[type="text"]');
+          if (editor) editor.value = row.repaired;
+          else text.textContent = (row.kind || 'field') + ': ' + row.repaired;
+          row.value = row.repaired;
+          boxIn.checked = true;
+        });
+        li.appendChild(repair);
+      }
       list.appendChild(li);
     });
     box.hidden = false;
@@ -1176,6 +1192,7 @@
           if (chosen.nricUnconfirmed) idn.nricUnconfirmed = true;
           idn.namePlain = chosen.namePlain || idn.namePlain || '';
           idn.nameAlias = chosen.nameAlias || '';
+          idn.nameRepaired = chosen.nameRepaired || '';
           idn.nameChecked = !!chosen.nameChecked && !idn.nameUnconfirmed;
           idn.nricChecked = !!chosen.nricChecked && !idn.nricUnconfirmed;
         }
@@ -1203,6 +1220,7 @@
             row.editable = !!idn.nameUnconfirmed;
             row.checked = !!idn.nameChecked;
             row.plain = idn.namePlain && idn.namePlain !== idn.name ? idn.namePlain : '';
+            row.repaired = idn.nameRepaired && idn.nameRepaired !== idn.name ? idn.nameRepaired : '';
             row.reason = idn.nameUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
             row.quote = 'Read from the photo';
           }
