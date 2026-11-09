@@ -3,12 +3,12 @@ on:
   push:
     paths:
       - research/forms-filler/**
-      - tools/forms-filler/facts.js
+      - tools/forms-filler/**
       - .github/workflows/forms-research.yml
   pull_request:
     paths:
       - research/forms-filler/**
-      - tools/forms-filler/facts.js
+      - tools/forms-filler/**
 jobs:
   integrity:
     runs-on: ubuntu-latest
@@ -21,6 +21,8 @@ jobs:
         with:
           node-version: "22"
       - run: python3 research/forms-filler/scripts/assert_integrity.py
+      - run: node tools/forms-filler/evidence.test.mjs
+      - run: node tools/forms-filler/facts.test.mjs
       - run: python3 research/forms-filler/scripts/score_predictions.py --smoke
       - run: node research/forms-filler/scripts/export_parser_baseline.mjs
       - run: python3 research/forms-filler/scripts/score_parser_baseline.py

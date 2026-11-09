@@ -54,6 +54,50 @@
     return 'unspecified';
   }
 
+  var OTHER_ROLE = /\b(nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|contacts?|emergency|payees?|joints?|second\s+applicants?|holders?\s*2|2nd\s+applicants?|applicants?\s*2|witness(?:es)?|next\s+of\s+kin|\bkin\b|children|child|dependants?|dependents?|officers?|agents?|authoris(?:e|ed)\s+persons?|authoriz(?:e|ed)\s+persons?|introducers?|patients?|nurses?|doctors?|siblings?|signatories|signatory)\b/i;
+
+  function fieldContext(field) {
+    return [field && field.group, field && field.heading, field && field.section]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  function namesOtherRole(text) {
+    return OTHER_ROLE.test(String(text || '').replace(/[_./]+/g, ' '));
+  }
+
+  function applicantSection(field) {
+    var text = fieldContext(field);
+    if (!text || namesOtherRole(text)) return false;
+    return /\bapplicants?\b/i.test(text);
+  }
+
+  /* The card name and NRIC are offered only on a line that is clearly the
+     applicant's own. Any other role in the label or the nearest section
+     abstains, and so does a repeated name or NRIC when no applicant section
+     can be told apart. */
+  function applicantIdentitySlot(field) {
+    if (!field || namesOtherRole(field.label) || namesOtherRole(fieldContext(field)) || namesOtherRole(field.id)) return '';
+    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s]+$/g, '');
+    if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
+    if (/^name as per nric\b/.test(s)) return 'name';
+    if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
+    if (/^(?:full name|name)$/.test(s)) return 'name';
+    if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
+    return '';
+  }
+
+  function identityPhotoSlot(field, fields) {
+    var slot = applicantIdentitySlot(field);
+    if (!slot) return '';
+    var list = fields && fields.length ? fields : [field];
+    var same = list.filter(function (item) { return applicantIdentitySlot(item) === slot; });
+    if (same.length <= 1) return slot;
+    var owned = same.filter(applicantSection);
+    if (!owned.length) return '';
+    return owned.indexOf(field) >= 0 ? slot : '';
+  }
+
   function normValue(kind, value) {
     var text = String(value || '').replace(/\s+/g, ' ').trim();
     if (!text) return '';
@@ -147,6 +191,7 @@
     extract: extract,
     fieldKind: fieldKind,
     fieldRole: fieldRole,
+    identityPhotoSlot: identityPhotoSlot,
     normValue: normValue,
     kindOfLabel: kindOfLabel
   };
