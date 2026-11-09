@@ -27,6 +27,16 @@
 
   function selectedId() { return $('profilePick') ? $('profilePick').value : ''; }
 
+  function clearFactControls() {
+    if ($('profileFacts')) $('profileFacts').textContent = '';
+    if ($('profilePending')) $('profilePending').textContent = '';
+  }
+
+  function rowIsCurrent(profileId) {
+    if (selectPersonId) return false;
+    return !!profileId && profileId === selectedId();
+  }
+
   async function paint() {
     var ticket = ++paintSerial;
     var data = await vault();
@@ -76,6 +86,10 @@
           var profileId = profile.id;
           var factId = fact.id;
           var value = input.value;
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
           var stored = await FormProfiles.persist(null, function (current) {
             var edited = FormProfiles.editFact(current, profileId, factId, value);
             if (!edited.ok) return { ok: false, reason: edited.reason || 'cancelled' };
@@ -92,6 +106,10 @@
         drop.addEventListener('click', async function () {
           var profileId = profile.id;
           var factId = fact.id;
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
           var stored = await FormProfiles.persist(null, function (current) {
             return { ok: true, vault: FormProfiles.deleteFact(current, profileId, factId).vault };
           });
@@ -120,10 +138,13 @@
         btn.className = 'btn';
         btn.textContent = 'File under the selected person';
         btn.addEventListener('click', async function () {
-          var profileId = selectedId();
+          var profileId = chosen;
           var pendingId = item.id;
           if (!profileId) { say('Choose a person first.'); return; }
-          if (selectPersonId && profileId === selectPersonId) { say('That person is not saved yet. Nothing was written.'); return; }
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
           var stored = await FormProfiles.persist(null, function (current) {
             var assigned = FormProfiles.assignPending(current, pendingId, profileId);
             if (!assigned.ok) return { ok: false, reason: assigned.reason || 'cancelled' };
@@ -172,6 +193,7 @@
       var now = new Date().toISOString();
       selectPersonId = personId;
       paintSerial += 1;
+      clearFactControls();
       var pick = $('profilePick');
       if (pick) {
         var shown = document.createElement('option');
@@ -274,6 +296,7 @@
     });
     $('profilePick').addEventListener('change', function () {
       if (selectedId() !== selectPersonId) selectPersonId = '';
+      clearFactControls();
       paint();
     });
     paint();
