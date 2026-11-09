@@ -23,6 +23,14 @@
     return (String(text).match(/[\u3400-\u9fff]/g) || []).length;
   }
 
+  function identityLabel(text) {
+    var s = String(text || '').replace(/\s+/g, ' ').trim();
+    if (/debit/i.test(s)) return '';
+    if (/name as per/i.test(s) && /bank account/i.test(s)) return s.replace(/\s*\(.*$/, '').trim();
+    if (/nric/i.test(s) && /passport|fin/i.test(s)) return s;
+    return '';
+  }
+
   function usableLabel(text) {
     var s = String(text || '').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
     if (s.length < 2 || s.length > 60) return '';
@@ -50,8 +58,9 @@
       var str = String(item.str || '').replace(/\s+/g, ' ').trim();
       if (!str) return;
       if (item.y < 88 || item.y > height - 68) return;
-      if ((item.w || 0) > 300) return;
-      var label = usableLabel(str);
+      var identity = identityLabel(str);
+      if ((item.w || 0) > 300 && !identity) return;
+      var label = identity || usableLabel(str);
       if (!label) return;
       out.push({
         x: item.x,
@@ -298,7 +307,7 @@
     return width * 0.975;
   }
 
-  function widenSlot(slot, texts, width) {
+  function widenSlot(slot, texts, width, slots) {
     var label = null;
     for (var i = 0; i < texts.length; i++) {
       if (texts[i].str === slot.label) { label = texts[i]; break; }
@@ -317,6 +326,12 @@
       if (Math.abs(text.y - slot.lineY) > 14) return;
       if (text.x - 4 < end) end = text.x - 4;
     });
+    (slots || []).forEach(function (other) {
+      if (other === slot) return;
+      var sameRow = Math.abs((other.lineY != null ? other.lineY : other.y) - slot.lineY) < 6;
+      if (!sameRow || other.x <= slot.x + 8) return;
+      if (other.x - 6 < end) end = other.x - 6;
+    });
     if (end - slot.x > slot.w + 8) slot.w = end - slot.x;
     if (!(slot.lines > 1)) {
       slot.y = (slot.lineY != null ? slot.lineY : slot.y - 1) + 1;
@@ -325,7 +340,7 @@
   }
 
   function keepSlot(slot, texts) {
-    if (/important notice|please submit|^please\b|particulars of|details of|declaration by|i agree|i hereby|for official use|certificate of|this section/i.test(slot.label)) return false;
+    if (/important notice|please submit|^please\b|particulars of|details of|declaration by|i agree|i hereby|for official use|bank use only|for bank use|certificate of|this section/i.test(slot.label)) return false;
     if (!/\b(full\s*)?name\b|\bnric\b|\bfin\b|\baddress\b|\bpostal\b|\be-?mail\b|\bphone\b|\btel\b|\bhandset\b|\bcallback\b|\bmobile\b|\binbox\b|\bmailbox\b|\bpremises\b|\bdwelling\b|\bh\s*\/\s*p\b|\bdate\b|\bbirth\b|\bdob\b|\bsignature\b|\bmember\b|\bsex\b|\bmale\b|\bfemale\b|\brace\b|\bcontact\b|\bhospital\b|\badmit|\bdischarge|\bsalary\b|\bdesignation\b|\bdepartment\b|\boffice\b|\bapplicant\b|\bpassport\b|\bcompany\b|\bunion\b|\bcode\b|\bgender\b|\bmarital\b|\bemployer\b|\boccupation\b|\bnationality\b|\bbank\b|\baccount\b|\bsection\b|\bdepot\b|\bpolicy\b|\bofficer\b|\brelationship\b|\bplan\b|\bemail\b|\bstreet\b|\bunit\b|\bblk\b|\bhouse\b|\bjoined\b|\bservice\b|\bidentification\b|\bidentity\b|\b(off|res|pgr|hp)\s*no\b/i.test(slot.label)) return false;
     if (/^(job|contact details|your contact|address in singapore|personal particulars|residential status|marital status|highest education( level)?|ntuc|race|gender)$/i.test(slot.label)) return false;
     if (/fairprice|ntuc|understand|rebates|dividend|entrance fee|this section/i.test(slot.label)) return false;
@@ -510,7 +525,7 @@
     slots = mergeStacks(slots);
     slots = moveCaptionToFloor(slots, texts);
     slots = slots.filter(function (slot) { return !!slot.label; });
-    slots.forEach(function (slot) { widenSlot(slot, texts, width); });
+    slots.forEach(function (slot) { widenSlot(slot, texts, width, slots); });
     slots = slots.filter(function (slot) { return keepSlot(slot, texts); });
     texts.forEach(function (text) {
       var bare = String(text.str || '').replace(/[:\s]+$/, '');
@@ -649,6 +664,7 @@
       var value = values && values[field.id] != null ? String(values[field.id]) : '';
       var check = field.type === 'radio' || field.type === 'checkbox';
       if (check && !chosen(field, value)) return;
+      if (!check && !value.trim()) return;
       var rect = field.rect;
       var pw = field.pageWidth || 595;
       var ph = field.pageHeight || 842;

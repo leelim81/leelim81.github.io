@@ -105,4 +105,21 @@ const repeated = decideAll(
 assert.equal(repeated[0].reason, 'conflict');
 assert.equal(repeated[0].candidates.length, 2);
 
+const bankName = { id: 'holder', label: 'Name as per Example Bank Account (Underline surname)', type: 'text' };
+const bare = { id: 'bare', label: 'Name as per', type: 'text' };
+const debit = { id: 'debit', label: 'Name as per Debiting Account', type: 'text' };
+const idLine = { id: 'idline', label: 'NRIC/Passport/FIN No.', type: 'text' };
+const identity = 'Applicant:\nName: Ada Lane\nNRIC: S1234567D\n';
+const bankRows = Object.fromEntries(decideAll([bankName, bare, debit, idLine], identity, open).map((row) => [row.fieldId, row]));
+assert.equal(bankRows.holder.decision, 'review');
+assert.equal(bankRows.holder.reason, 'identity_needs_review');
+assert.equal(bankRows.holder.value, 'Ada Lane');
+assert.equal(bankRows.idline.decision, 'review');
+assert.equal(bankRows.idline.reason, 'identity_needs_review');
+assert.equal(bankRows.idline.value, 'S1234567D');
+assert.equal(bankRows.bare.decision, 'abstain');
+assert.notEqual(bankRows.bare.value, 'Ada Lane');
+assert.equal(bankRows.debit.decision, 'abstain');
+assert.notEqual(bankRows.debit.value, 'Ada Lane');
+
 console.log('evidence tests ok');

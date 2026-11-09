@@ -96,6 +96,13 @@
           reason: 'type_not_cleared', hard: null
         });
       }
+      var label = String((field && field.label) || '').toLowerCase();
+      if ((/name as per/.test(label) && /bank account/.test(label)) || (/nric/.test(label) && /passport|fin/.test(label))) {
+        return Object.assign(base, {
+          decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
+          reason: 'identity_needs_review', hard: null
+        });
+      }
       return Object.assign(base, {
         decision: 'autofill', value: fact.value, factId: fact.id, quote: fact.quote,
         reason: 'explicit_single_source', hard: null
