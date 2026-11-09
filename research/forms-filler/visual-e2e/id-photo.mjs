@@ -101,6 +101,10 @@ label(p2, 'For Bank Use Only', 31.7, 722);
 const p3 = formDoc.addPage([595.28, 841.89]);
 label(p3, 'Reply envelope', 31.7, 760);
 writeFileSync('/tmp/synthetic-bank-form.pdf', await formDoc.save());
+const refDoc = await PDFDocument.create();
+const refFont = await refDoc.embedFont(StandardFonts.Helvetica);
+refDoc.addPage([300, 200]).drawText('Reference note only', { x: 24, y: 120, size: 12, font: refFont });
+writeFileSync('/tmp/synthetic-id-ref.pdf', await refDoc.save());
 
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
 const painter = await browser.newPage();
@@ -297,6 +301,28 @@ const clearReadMs = Date.now() - clearStarted;
 await clearPage.click('#fillBtn');
 await clearPage.waitForSelector('#reviewBox:not([hidden])');
 console.log('CLEAR_PHOTO_MS', Date.now() - clearStarted, 'READ_MS', clearReadMs);
+async function draftBytes(page) {
+  return page.evaluate(async () => {
+    const db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('tools-forms-filler');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const draft = await new Promise((resolve, reject) => {
+      const req = db.transaction('kv', 'readonly').objectStore('kv').get('draft');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const refs = (draft && draft.refs) || [];
+    function size(ref) { return ref && ref.bytes ? ref.bytes.length : 0; }
+    const images = refs.filter((ref) => String(ref.mime || '').indexOf('image/') === 0 || /\.png$/i.test(ref.name || ''));
+    const pdfs = refs.filter((ref) => ref.mime === 'application/pdf' || /\.pdf$/i.test(ref.name || ''));
+    return {
+      imageBytes: images.reduce((total, ref) => total + size(ref), 0),
+      pdfBytes: pdfs.reduce((total, ref) => total + size(ref), 0)
+    };
+  });
+}
 async function reviewText(page) {
   const typed = await page.locator('#reviewList input[type="text"]').evaluateAll((els) => els.map((el) => el.value)).catch(() => []);
   const visible = await page.locator('#reviewList').innerText();
@@ -325,24 +351,8 @@ await clearPage.reload({ waitUntil: 'domcontentloaded' });
 await clearPage.waitForSelector('#pages .ann-body');
 const again = await clearPage.locator('#pages .ann-body').allInnerTexts();
 check('reload keeps the confirmed name and ID', again.includes('TAN WEI MING') && again.includes(GOOD) && again.length === 2, again.join(' | '));
-const keptBytes = await clearPage.evaluate(async () => {
-  const db = await new Promise((resolve, reject) => {
-    const req = indexedDB.open('tools-forms-filler');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  const draft = await new Promise((resolve, reject) => {
-    const req = db.transaction('kv', 'readonly').objectStore('kv').get('draft');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  const refs = (draft && draft.refs) || [];
-  return refs.reduce((total, ref) => {
-    const image = String(ref.mime || '').indexOf('image/') === 0 || /\.png$/i.test(ref.name || '');
-    return total + (image && ref.bytes ? ref.bytes.length : 0);
-  }, 0);
-});
-check('the confirmed photo is not kept in the saved draft', keptBytes === 0, String(keptBytes));
+const keptBytes = await draftBytes(clearPage);
+check('the confirmed photo is not kept in the saved draft', keptBytes.imageBytes === 0, JSON.stringify(keptBytes));
 await clearPage.close();
 
 const badPage = await openDesk();
@@ -367,7 +377,46 @@ await blankPage.waitForFunction(() => /Could not read/i.test((document.getElemen
 const blankMsg = ((await blankPage.locator('#failText').innerText().catch(() => '')) + ' ' + (await blankPage.locator('.ref-preview').innerText().catch(() => ''))).trim();
 check('a photo with no text says it could not be read', /Could not read/i.test(await blankPage.locator('#failText').innerText()), blankMsg.slice(0, 240));
 check('a failed photo does not open the editor', !/pdf-editor/.test(blankPage.url()), blankPage.url());
+await blankPage.reload({ waitUntil: 'domcontentloaded' });
+const failedBytes = await draftBytes(blankPage);
+check('a failed read leaves no photo bytes after reload', failedBytes.imageBytes === 0, JSON.stringify(failedBytes));
 await blankPage.close();
+
+async function staged(page, photo) {
+  await page.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+  await page.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+  await page.locator('#refInput').setInputFiles(['/tmp/synthetic-id-ref.pdf', photo]);
+  await page.waitForFunction(() => {
+    const rows = Array.from(document.querySelectorAll('.ref-preview'));
+    return rows.length >= 2 && rows.every((row) => row.textContent && row.textContent !== 'Reading…');
+  });
+}
+const leavePage = await openDesk();
+await staged(leavePage, '/tmp/synthetic-id-clear.png');
+await leavePage.click('#fillBtn');
+await leavePage.waitForSelector('#reviewBox:not([hidden])');
+await leavePage.reload({ waitUntil: 'domcontentloaded' });
+const leftBytes = await draftBytes(leavePage);
+check('leaving mid-review leaves no photo bytes and keeps the PDF reference', leftBytes.imageBytes === 0 && leftBytes.pdfBytes > 0, JSON.stringify(leftBytes));
+await leavePage.close();
+
+const nextPage = await openDesk();
+await staged(nextPage, '/tmp/synthetic-id-clear.png');
+await nextPage.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+await nextPage.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await nextPage.reload({ waitUntil: 'domcontentloaded' });
+const nextBytes = await draftBytes(nextPage);
+check('a new document leaves no photo bytes and keeps the PDF reference', nextBytes.imageBytes === 0 && nextBytes.pdfBytes > 0, JSON.stringify(nextBytes));
+await nextPage.close();
+
+const clearOut = await openDesk();
+await staged(clearOut, '/tmp/synthetic-id-clear.png');
+await clearOut.click('#clearBtn');
+await clearOut.waitForFunction(() => /Started over/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await clearOut.reload({ waitUntil: 'domcontentloaded' });
+const clearedBytes = await draftBytes(clearOut);
+check('start over leaves no photo bytes after reload', clearedBytes.imageBytes === 0, JSON.stringify(clearedBytes));
+await clearOut.close();
 
 async function probe(label, files, want) {
   const page = await openDesk();
