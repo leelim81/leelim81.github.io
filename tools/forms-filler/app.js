@@ -406,9 +406,11 @@
       var preview = document.createElement('span');
       preview.className = 'ref-preview';
       if (ref.status === 'reading') preview.textContent = 'Reading…';
+      else if (ref.status === 'cleared') preview.textContent = 'Photo cleared for privacy — add it again';
       else if (ref.status === 'error') preview.textContent = ref.preview || 'Couldn’t read this file.';
-      else if (!ref.preview) preview.textContent = 'No fields found in this file.';
-      else preview.textContent = ref.preview;
+      else if (ref.preview) preview.textContent = ref.preview;
+      else if (identityPhotoRef(ref)) preview.textContent = 'Could not read a name or ID from this photo. Nothing was filled.';
+      else preview.textContent = 'No fields found in this file.';
       main.appendChild(name);
       main.appendChild(preview);
       var btn = document.createElement('button');
@@ -487,9 +489,17 @@
 
   function addRef(bytes, name, mime) {
     var label = name || 'reference';
+    var removed = false;
+    state.refs = state.refs.filter(function (ref) {
+      if (!ref || ref.name !== label || !photoCleared(ref)) return true;
+      stopRead(ref);
+      removed = true;
+      return false;
+    });
     var dup = state.refs.some(function (ref) { return ref.name === label && sameFile(ref.bytes, bytes); });
     if (dup) {
       status(label + ' is already in the list.', false);
+      if (removed) renderRefs();
       return false;
     }
     var ref = {
@@ -542,7 +552,7 @@
         try { await ref.pending; } catch (err) {}
       }
       ref = refById(ids[i]);
-      if (!ref || !ref.text || !String(ref.text).trim()) continue;
+      if (!ref || ref.status === 'cleared' || photoCleared(ref) || !ref.text || !String(ref.text).trim()) continue;
       parts.push(String(ref.text).trim());
     }
     return parts.join('\n\n');
@@ -1149,8 +1159,13 @@
       var notesAll = await corpus();
       if (!current()) return;
       if (!notesAll.trim()) {
-        var photoRef = state.refs.some(function (ref) { return ref.channel === 'ocr' || String(ref.mime || '').indexOf('image/') === 0; });
-        throw new Error(photoRef ? 'Could not read a name or ID from the photo. Nothing was filled.' : 'The references had no readable text.');
+        var clearedPhoto = state.refs.some(function (ref) { return ref.status === 'cleared'; });
+        var photoRef = state.refs.some(function (ref) {
+          return ref.status !== 'cleared' && (ref.channel === 'ocr' || identityPhotoRef(ref));
+        });
+        throw new Error(clearedPhoto
+          ? 'Nothing could be read from your papers — add the ID photo again'
+          : (photoRef ? 'Could not read a name or ID from the photo. Nothing was filled.' : 'The references had no readable text.'));
       }
       state.notes = notesAll;
       state.modelNote = 'skipped';
@@ -1444,9 +1459,21 @@
     return /\.(png|jpe?g|webp|gif|bmp|heic|tif|tiff)$/i.test(ref.name || '');
   }
 
+  function photoCleared(ref) {
+    return identityPhotoRef(ref) && !(ref.bytes && ref.bytes.length);
+  }
+
   function wipeIdentityPhotoBytes() {
     (state.refs || []).forEach(function (ref) {
-      if (identityPhotoRef(ref)) ref.bytes = new Uint8Array(0);
+      if (!identityPhotoRef(ref)) return;
+      ref.bytes = new Uint8Array(0);
+      ref.text = '';
+      ref.words = [];
+      ref.identity = null;
+      ref.channel = '';
+      ref.status = 'cleared';
+      ref.preview = 'Photo cleared for privacy — add it again';
+      ref.pending = null;
     });
   }
 
@@ -1474,12 +1501,13 @@
       imageNote: state.imageNote || '',
       deskewDeg: state.deskewDeg || 0,
       refs: state.refs.map(function (ref) {
+        var photo = identityPhotoRef(ref);
         return {
           id: ref.id,
           name: ref.name,
-          bytes: identityPhotoRef(ref) ? new Uint8Array(0) : ref.bytes,
+          bytes: photo ? new Uint8Array(0) : ref.bytes,
           mime: ref.mime,
-          text: ref.text || ''
+          text: photo ? '' : (ref.text || '')
         };
       })
     };
@@ -1821,16 +1849,23 @@
       }
       if (userTouched) return;
       state.refs = (draft.refs || []).map(function (ref) {
+        var bytes = ref.bytes && ref.bytes.length ? ref.bytes : new Uint8Array(0);
         var item = {
           id: ref.id || '',
           name: ref.name || 'reference',
-          bytes: ref.bytes,
+          bytes: bytes,
           mime: ref.mime || '',
           text: ref.text || '',
           status: 'reading',
           preview: '',
           pending: null
         };
+        if (photoCleared(item)) {
+          item.text = '';
+          item.status = 'cleared';
+          item.preview = 'Photo cleared for privacy — add it again';
+          return item;
+        }
         if (item.text) rememberRef(item);
         return item;
       });
@@ -1843,7 +1878,7 @@
       });
       if (changedId) scheduleSave();
       state.refs.forEach(function (ref) {
-        if (ref.status === 'reading' && ref.bytes) ref.pending = extractOne(ref);
+        if (ref.status === 'reading' && ref.bytes && ref.bytes.length) ref.pending = extractOne(ref);
       });
       refreshLabels();
       paintModel();
