@@ -115,6 +115,7 @@
           var existing = getReq.result;
           if (existing && existing.epoch && epoch && existing.epoch > epoch) return;
           if (existing && sessionGeneration(existing) > sessionGeneration(session)) return;
+          if (existing && existing.savedAt && session.savedAt && existing.savedAt > session.savedAt) return;
           store.put(pdfBytes, 'pdf');
           store.put(session, 'session');
         };
@@ -136,6 +137,13 @@
 
   var saveTimer = 0;
   var saveGen = 0;
+  var saveClock = 0;
+  function nextSaveStamp() {
+    var now = Date.now();
+    if (now <= saveClock) now = saveClock + 1;
+    saveClock = now;
+    return now;
+  }
   function setSaveStatus(text) {
     var el = $('saveState');
     el.textContent = text || '';
@@ -189,13 +197,14 @@
     setSaveStatus('Saving…');
     try {
       var session = editorSession();
+      session.savedAt = nextSaveStamp();
       if (sessionRetired(session)) {
         if (gen === saveGen) setSaveStatus('Not saved');
         return false;
       }
       rememberHandoff(session);
       await idbSave(new Uint8Array(state.pdfBytes), session);
-      if (gen !== saveGen) return true;
+      if (gen !== saveGen || closed || !state.pdfBytes) return true;
       var el = $('saveState');
       el.dataset.gen = String(Number(el.dataset.gen || 0) + 1);
       setSaveStatus('Saved');
