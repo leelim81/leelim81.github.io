@@ -176,7 +176,18 @@
         if (inner && closedWrap && aliasOk(inner)) parsed = nameResult(parsed.plain, inner.replace(/\s+/g, ' ').trim(), false);
         else if (inner && (openWrap || endWrap)) parsed = nameResult(parsed.plain, aliasOk(inner) ? inner.replace(/\s+/g, ' ').trim() : '', true);
       }
+      parsed.labeled = true;
       return parsed;
+    }
+    for (var j = 0; j < lines.length - 1; j++) {
+      var line = parseNameLine(lines[j]);
+      if (!line || line.alias || line.unbalanced) continue;
+      var follow = String(lines[j + 1] || '').replace(/\s+/g, ' ').trim();
+      var pair = follow.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){1,4})\)$/);
+      if (!pair || !aliasOk(pair[1])) continue;
+      var found = nameResult(line.plain, pair[1].replace(/\s+/g, ' ').trim(), false);
+      found.unlabeled = true;
+      return found;
     }
     return { full: '', plain: '', alias: '' };
   }
@@ -962,8 +973,6 @@
       });
     }
     var name = plain ? (alias ? plain + ' (' + alias + ')' : plain) : '';
-    var support = 0;
-    if (plain) list.forEach(function (read) { if (read && plainOf(read.name) === plain) support++; });
     var tokens = plain ? plain.split(' ').filter(Boolean) : [];
     var nameUnconfirmed = false;
     if (plain) {
@@ -980,6 +989,13 @@
       });
     }
     if (unbalanced && !alias) nameUnconfirmed = true;
+    var anyAlias = !!alias;
+    var labeledSupport = 0;
+    list.forEach(function (read) {
+      if (!read) return;
+      if (read.nameAlias || aliasOf(read.name) || read.nameRepaired) anyAlias = true;
+      if (plain && read.labeled && plainOf(read.name) === plain) labeledSupport++;
+    });
     return {
       name: name || '',
       namePlain: plain || '',
@@ -991,7 +1007,7 @@
       nricConf: null,
       nameUnconfirmed: nameUnconfirmed,
       nricUnconfirmed: false,
-      nameChecked: !!(name && !nameUnconfirmed && !alias && support >= 2),
+      nameChecked: !!(name && !nameUnconfirmed && !anyAlias && labeledSupport >= 2),
       nricChecked: !!(nric && nricCounts[nric] >= 2)
     };
   }
@@ -1018,6 +1034,8 @@
       nameAlias: printed.alias || '',
       nameRepaired: printed.repaired || '',
       unbalanced: !!printed.unbalanced,
+      unlabeled: !!printed.unlabeled,
+      labeled: !!printed.labeled,
       nric: nric,
       nricValid: nricValid,
       nameConf: nameConf,

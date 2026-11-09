@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import assert from 'assert';
 
 const require = createRequire(import.meta.url);
-const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject, nricChecksum, identityVote } = require('./facts.js');
+const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject, nricChecksum, identityRead, identityVote } = require('./facts.js');
 
 const ocr = `REPUBLIC OF SINGAPORE
 IDENTITY CARD NO. S1234567D
@@ -277,6 +277,50 @@ const partialName = identityVote([
 assert.equal(partialName.name, 'WEI MING');
 assert.equal(partialName.nameUnconfirmed, true);
 assert.equal(partialName.nric, 'S1234567D');
+
+const unlabeledCard = `REPUBLIC OF SINGAPORE
+IDENTITY CARD NO. S1234567D
+ab
+TANG WEI MING
+(ALEX KENNETH)
+| Ab
+Race`;
+const unlabeledRead = identityRead(unlabeledCard);
+assert.equal(unlabeledRead.name, 'TANG WEI MING (ALEX KENNETH)');
+assert.equal(unlabeledRead.namePlain, 'TANG WEI MING');
+assert.equal(unlabeledRead.nameAlias, 'ALEX KENNETH');
+assert.equal(unlabeledRead.unlabeled, true);
+assert.equal(unlabeledRead.nameChecked, false);
+assert.equal(fromText(unlabeledCard).name, 'TANG WEI MING (ALEX KENNETH)');
+const unlabeledVote = identityVote([unlabeledRead, unlabeledRead]);
+assert.equal(unlabeledVote.name, 'TANG WEI MING (ALEX KENNETH)');
+assert.equal(unlabeledVote.nameChecked, false);
+assert.equal(unlabeledVote.nric, 'S1234567D');
+assert.equal(unlabeledVote.nricChecked, true);
+function assertNoAlias(text) {
+  const read = identityRead(text);
+  assert.equal(read.name, 'TANG WEI MING');
+  assert.equal(read.nameAlias, '');
+  assert.equal(read.nameRepaired, '');
+}
+assertNoAlias('TANG WEI MING\n(RACE)\n');
+assertNoAlias('TANG WEI MING\n(ALEX 9KENNETH)\n');
+assertNoAlias('TANG WEI MING\n(99/99/9999\n');
+assertNoAlias('TANG WEI MING\nRace\n(ALEX KENNETH)\n');
+assertNoAlias('TANG WEI MING\n(ALEX KENNETH\n');
+const plainFallback = identityVote([
+  identityRead('TANG WEI MING\nS1234567D\n'),
+  identityRead('TANG WEI MING\nS1234567D\n')
+]);
+assert.equal(plainFallback.name, 'TANG WEI MING');
+assert.equal(plainFallback.nameChecked, false);
+const labeledVote = identityVote([
+  identityRead('Name\nTAN WEI MING\nS1234567D\n'),
+  identityRead('Name\nTAN WEI MING\nS1234567D\n')
+]);
+assert.equal(labeledVote.name, 'TAN WEI MING');
+assert.equal(labeledVote.nameChecked, true);
+assert.equal(labeledVote.nricChecked, true);
 console.log('facts tests ok');
 
 // Supported false negatives, not model scores:
