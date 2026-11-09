@@ -37,7 +37,8 @@
     sourceSha256: '',
     pdfSha256: '',
     resumeProfileId: '',
-    resumeNote: ''
+    resumeNote: '',
+    docSerial: 0
   };
   var closed = false;
 
@@ -224,6 +225,8 @@
     $('fileName').textContent = state.fileName || '';
   }
   function showEmpty() {
+    state.docSerial += 1;
+    recoverPanelGen += 1;
     $('empty').hidden = false;
     $('toolbar').hidden = true;
     $('status').hidden = true;
@@ -697,6 +700,7 @@
   }
 
   async function loadBytes(bytes, fileName, session) {
+    state.docSerial += 1;
     state.pdfBytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     state.fileName = fileName || 'document.pdf';
     if (state.doc) { try { await state.doc.destroy(); } catch (e) {} }
@@ -1857,14 +1861,20 @@
     bar.hidden = !open;
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open && !was) {
-      var focus = bar.querySelector('select, input, button');
+      var nodes = bar.querySelectorAll('select, input, button');
+      var focus = null;
+      for (var i = 0; i < nodes.length; i++) {
+        if (!nodes[i].closest('[hidden]')) { focus = nodes[i]; break; }
+      }
       if (focus) focus.focus();
     }
     if (!open && was) toggle.focus();
-    if (!open && barId === 'recoverBar') {
+    if (barId === 'recoverBar' && open !== was) recoverPanelGen += 1;
+    if (!open && was && barId === 'recoverBar') {
       cancelRecoverCommit();
       disarmRecover('Placement was cancelled.');
     }
+    if (open && !was && barId === 'recoverBar') refreshRecover();
   }
   var recoverCommit = 0;
   function setRecoverBusy(on) {
@@ -1880,19 +1890,43 @@
   function recoverOpen(token) {
     return token === recoverCommit && $('recoverBar') && !$('recoverBar').hidden;
   }
+  var recoverListGen = 0;
+  var recoverPanelGen = 0;
+  function recoverTicket() {
+    return { request: recoverListGen, doc: state.docSerial, panel: recoverPanelGen };
+  }
+  function recoverTicketCurrent(ticket) {
+    return !!ticket && ticket.request === recoverListGen && ticket.doc === state.docSerial && ticket.panel === recoverPanelGen;
+  }
+  function focusRecoverIfUnowned(el, ticket) {
+    if (!el || !el.isConnected || el.closest('[hidden]')) return;
+    var bar = $('recoverBar');
+    if (!bar || bar.hidden || !bar.contains(el)) return;
+    var active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    el.focus();
+    if (!ticket) return;
+    requestAnimationFrame(function () {
+      if (!recoverTicketCurrent(ticket)) return;
+      focusRecoverIfUnowned(el);
+    });
+  }
   async function refreshRecover() {
     if ($('assistBar')) $('assistBar').hidden = !state.pdfBytes;
     var person = $('recoverPerson');
     var fact = $('recoverFact');
+    if (!person || !fact) return;
     var previous = person.value;
-    person.textContent = '';
-    fact.textContent = '';
+    var ticket = recoverTicket();
+    ticket.request = ++recoverListGen;
     if (!window.FormProfiles) {
+      if (!recoverTicketCurrent(ticket)) return;
       recoverSay('Saved values are not available in this browser.');
       $('recoverPlace').disabled = true;
       return;
     }
     function sayReady(text) {
+      if (!recoverTicketCurrent(ticket)) return;
       if (state.resumeNote) {
         recoverSay(state.resumeNote + ' ' + text);
         state.resumeNote = '';
@@ -1901,15 +1935,23 @@
       recoverSay(text);
     }
     var loaded = await FormProfiles.load();
+    if (!recoverTicketCurrent(ticket)) return;
+    person.textContent = '';
+    fact.textContent = '';
     var profiles = loaded.ok ? loaded.vault.profiles : [];
     var personLabel = $('recoverPerson') && $('recoverPerson').closest('label');
     if (personLabel) personLabel.hidden = !profiles.length;
     if (!profiles.length) {
+      if (!recoverTicketCurrent(ticket)) return;
       showRecoverCreate('person');
       sayReady('No one is saved yet. Add a person and a confirmed value, then place it. Text on the toolbar types on the page without saving a person.');
       $('recoverPlace').disabled = true;
-      if (state.wantRecover && $('recoverBar').hidden) setPanel('recoverBar', 'assistToggle', true);
-      if ($('recoverPersonName') && !$('recoverBar').hidden) $('recoverPersonName').focus();
+      if (state.wantRecover && $('recoverBar').hidden) {
+        if (!recoverTicketCurrent(ticket)) return;
+        setPanel('recoverBar', 'assistToggle', true);
+        return;
+      }
+      focusRecoverIfUnowned($('recoverPersonName'), ticket);
       return;
     }
     profiles.forEach(function (profile) {
@@ -1935,6 +1977,8 @@
       fact.appendChild(opt);
     });
     $('recoverPlace').disabled = !facts.length;
+    if (!recoverTicketCurrent(ticket)) return;
+    focusRecoverIfUnowned(person, ticket);
     if (!facts.length) {
       showRecoverCreate('fact');
       sayReady(chosen.name + ' has no confirmed value yet. Type one and save it, then place it. Unconfirmed reads stay unconfirmed.');
