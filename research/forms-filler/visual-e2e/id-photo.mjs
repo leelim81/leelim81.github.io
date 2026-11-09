@@ -37,7 +37,13 @@ const votedAlias = facts.identityVote([
   { name: 'TAN WEI MING (CHEN WEIMING)', nric: GOOD, nricValid: true, nameConf: 90 }
 ]);
 check('voting offers the printed alias and does not pre-check that name', votedAlias.name === 'TAN WEI MING (CHEN WEIMING)' && votedAlias.namePlain === 'TAN WEI MING' && votedAlias.nameChecked === false && votedAlias.nricChecked === true && votedAlias.nameUnconfirmed === false, JSON.stringify(votedAlias));
-const junkLabels = ['RACE', 'MALE', 'FEMALE', 'CHINESE', 'MALAY', 'INDIAN', 'DATE OF BIRTH', 'BLOOD GROUP', 'IDENTITY CARD', 'SINGAPORE', 'COUNTRY OF BIRTH', 'SEX', 'NAME'];
+const malan = facts.identityRead('Name\nTAN WEI MING (MALAN)\nS1234567D\n');
+check('MALAN stays an alias', malan.name === 'TAN WEI MING (MALAN)' && malan.nameAlias === 'MALAN', JSON.stringify(malan));
+const malanNext = facts.identityRead('Name\nTAN WEI MING\n(MALAN)\nS1234567D\n');
+check('next-line MALAN stays an alias', malanNext.name === 'TAN WEI MING (MALAN)' && malanNext.nameAlias === 'MALAN', JSON.stringify(malanNext));
+const noor = facts.identityRead('Name\nTAN WEI MING (NOOR)\nS1234567D\n');
+check('NOOR is not blocked by the word NO', noor.nameAlias === 'NOOR', JSON.stringify(noor));
+const junkLabels = ['RACE', 'MALE', 'FEMALE', 'CHINESE', 'MALAY', 'INDIAN', 'DATE OF BIRTH', 'BLOOD GROUP', 'IDENTITY CARD', 'SINGAPORE', 'COUNTRY OF BIRTH', 'SEX', 'NAME', 'OTHERS', 'PR', 'POSTAL CODE', 'ADDRESS', 'NRIC', 'FIN', 'CITIZEN', 'EURASIAN', 'NATIONALITY', 'PLACE', 'ISSUE', 'EXPIRY', 'DATE', 'CARD', 'NO', 'NUMBER', 'REPUBLIC', 'BIRTH', 'BLK', 'STREET', 'UNIT'];
 junkLabels.forEach((label) => {
   const same = facts.identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
   check('same-line (' + label + ') is not a name alias', same.name === 'TAN WEI MING' && !same.nameAlias && !same.nameRepaired, JSON.stringify(same));

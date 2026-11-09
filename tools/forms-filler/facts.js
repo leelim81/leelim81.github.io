@@ -70,7 +70,10 @@
     race: 1, male: 1, female: 1, chinese: 1, malay: 1, indian: 1, eurasian: 1,
     date: 1, birth: 1, blood: 1, group: 1, identity: 1, card: 1, singapore: 1,
     country: 1, sex: 1, name: 1, republic: 1, citizen: 1, nationality: 1,
-    passport: 1, nric: 1, fin: 1, address: 1, issue: 1, official: 1
+    passport: 1, nric: 1, fin: 1, address: 1, issue: 1, official: 1,
+    others: 1, pr: 1, postal: 1, code: 1, place: 1, expiry: 1, no: 1, number: 1,
+    blk: 1, street: 1, unit: 1, permanent: 1, resident: 1, hanyu: 1, pinyin: 1,
+    occupation: 1, religion: 1, dialect: 1, pass: 1, type: 1, status: 1
   };
   var ALIAS_STOP = { of: 1, the: 1, and: 1, or: 1 };
 
