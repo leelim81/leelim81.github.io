@@ -160,6 +160,74 @@ await tied('B');
   await context.close();
 }
 
+{
+  const context = await browser.newContext({ viewport: { width: 1100, height: 900 } });
+  const opener = await context.newPage();
+  opener.setDefaultTimeout(15000);
+  await opener.goto('http://127.0.0.1:8840/tools/pdf-editor/?open=' + Date.now(), { waitUntil: 'domcontentloaded' });
+  await opener.evaluate(() => indexedDB.deleteDatabase('tools-edit-sign-pdf'));
+  await opener.reload({ waitUntil: 'domcontentloaded' });
+  await opener.locator('#fileInput').setInputFiles('/tmp/save-tabs.pdf');
+  await opener.waitForSelector('#pages canvas', { state: 'visible' });
+  await opener.locator('#addText').click();
+  await opener.locator('.ann-body').click();
+  await opener.keyboard.type('Shared');
+  await opener.keyboard.press('Escape');
+  await opener.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Saved');
+  await opener.evaluate(() => sessionStorage.setItem('ff-editor-canary', 'from-opener'));
+  const popupPromise = opener.waitForEvent('popup');
+  await opener.evaluate(() => window.open(location.pathname + '?child=1', '_blank'));
+  const child = await popupPromise;
+  child.setDefaultTimeout(15000);
+  await child.waitForSelector('#pages .ann-body');
+  const inherited = await child.evaluate(() => sessionStorage.getItem('ff-editor-canary'));
+  check('a tab opened from this one inherits sessionStorage', inherited === 'from-opener', inherited);
+  await retitle(child, 'From child');
+  await child.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Saved');
+  await retitle(opener, 'From opener later');
+  await opener.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Not saved');
+  const kept = await stored(opener);
+  check('the opener cannot replace the save made in the tab it opened', kept.text === 'From child' && (await statusOf(opener)) === 'Not saved' && (await statusOf(child)) === 'Saved', JSON.stringify(kept) + ' ' + await statusOf(opener) + '/' + await statusOf(child));
+  await opener.reload({ waitUntil: 'domcontentloaded' });
+  await opener.waitForSelector('#pages .ann-body');
+  check('reload restores the save from the opened tab', (await marks(opener)).join('|') === 'From child', (await marks(opener)).join('|'));
+  await retitle(opener, 'After reload');
+  await opener.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Saved');
+  check('after reload the opener can save the next edit', (await stored(opener)).text === 'After reload', (await stored(opener)).text);
+  await context.close();
+}
+
+{
+  const context = await browser.newContext({ viewport: { width: 1100, height: 900 } });
+  const original = await context.newPage();
+  original.setDefaultTimeout(15000);
+  await original.goto('http://127.0.0.1:8840/tools/pdf-editor/?dup=' + Date.now(), { waitUntil: 'domcontentloaded' });
+  await original.evaluate(() => indexedDB.deleteDatabase('tools-edit-sign-pdf'));
+  await original.reload({ waitUntil: 'domcontentloaded' });
+  await original.locator('#fileInput').setInputFiles('/tmp/save-tabs.pdf');
+  await original.waitForSelector('#pages canvas', { state: 'visible' });
+  await original.locator('#addText').click();
+  await original.locator('.ann-body').click();
+  await original.keyboard.type('Shared');
+  await original.keyboard.press('Escape');
+  await original.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Saved');
+  await original.evaluate(() => sessionStorage.setItem('ff-editor-tab', 'cloned-writer'));
+  const duplicate = await context.newPage();
+  duplicate.setDefaultTimeout(15000);
+  await duplicate.addInitScript(() => { sessionStorage.setItem('ff-editor-tab', 'cloned-writer'); });
+  await duplicate.goto('http://127.0.0.1:8840/tools/pdf-editor/?dup-child=1', { waitUntil: 'domcontentloaded' });
+  await duplicate.waitForSelector('#pages .ann-body');
+  const cloned = await duplicate.evaluate(() => sessionStorage.getItem('ff-editor-tab'));
+  check('a duplicated tab does not keep the copied writer id', cloned !== 'cloned-writer', cloned);
+  await retitle(duplicate, 'From duplicate');
+  await duplicate.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Saved');
+  await retitle(original, 'From original later');
+  await original.waitForFunction(() => (document.getElementById('saveState') || {}).textContent === 'Not saved');
+  const kept = await stored(original);
+  check('a duplicated tab’s committed text survives the original tab’s later save', kept.text === 'From duplicate' && (await statusOf(duplicate)) === 'Saved', JSON.stringify(kept) + ' ' + await statusOf(original));
+  await context.close();
+}
+
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
 await browser.close();
 if (checks.some((item) => !item.ok)) process.exit(1);

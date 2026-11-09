@@ -154,15 +154,10 @@
   var saveClock = 0;
   var saveNotice = '';
   var tabToken = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  // A duplicated tab copies sessionStorage, so this id stays in this document.
+  try { sessionStorage.removeItem('ff-editor-tab'); } catch (err) {}
   function tabId() {
-    try {
-      var id = sessionStorage.getItem('ff-editor-tab');
-      if (!id) {
-        id = tabToken;
-        sessionStorage.setItem('ff-editor-tab', id);
-      }
-      return id;
-    } catch (err) { return tabToken; }
+    return tabToken;
   }
   function sayUnsaved(text) {
     setSaveStatus('Not saved');
