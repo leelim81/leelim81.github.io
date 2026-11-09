@@ -741,6 +741,76 @@
     return total / scores.length;
   }
 
+  function soleLeader(counts) {
+    var best = '';
+    var seen = 0;
+    var tie = false;
+    Object.keys(counts).forEach(function (key) {
+      if (counts[key] > seen) { seen = counts[key]; best = key; tie = false; }
+      else if (counts[key] === seen) tie = true;
+    });
+    return tie ? '' : best;
+  }
+
+  function agreedName(names) {
+    var unique = [];
+    (names || []).forEach(function (name) {
+      var clean = String(name || '').replace(/\s+/g, ' ').trim();
+      if (clean && unique.indexOf(clean) < 0) unique.push(clean);
+    });
+    if (!unique.length) return '';
+    var longest = unique.slice().sort(function (a, b) { return b.length - a.length; })[0];
+    var ok = unique.every(function (name) {
+      if (name === longest) return true;
+      var small = name.split(' ');
+      var large = longest.split(' ');
+      if (small.length > large.length) return false;
+      for (var i = 0; i < small.length; i++) {
+        if (large[i] !== small[i] && large[i].indexOf(small[i]) !== 0) return false;
+        if (small[i].length < 2) return false;
+      }
+      return true;
+    });
+    return ok ? longest : '';
+  }
+
+  function identityVote(reads) {
+    var list = reads || [];
+    var nricCounts = {};
+    list.forEach(function (read) {
+      var id = read && read.nric;
+      if (!id || !nricChecksum(id)) return;
+      nricCounts[id] = (nricCounts[id] || 0) + 1;
+    });
+    var nric = soleLeader(nricCounts);
+    var paired = [];
+    if (nric) {
+      list.forEach(function (read) {
+        if (read && read.nric === nric && nricChecksum(read.nric) && read.name) paired.push(read.name);
+      });
+    }
+    var name = agreedName(paired);
+    if (!name) {
+      var repeated = [];
+      var counts = {};
+      list.forEach(function (read) {
+        if (!read || !read.name) return;
+        counts[read.name] = (counts[read.name] || 0) + 1;
+      });
+      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
+      name = agreedName(repeated);
+    }
+    return {
+      name: name || '',
+      nric: nric || '',
+      nricValid: !!nric,
+      nameConf: null,
+      nricConf: null,
+      nameUnconfirmed: false,
+      nricUnconfirmed: false
+    };
+  }
+
   function identityRead(text, words) {
     var raw = String(text || '');
     var name = nameFrom(raw);
@@ -800,6 +870,7 @@
     preview: preview,
     accept: accept,
     nricChecksum: nricChecksum,
-    identityRead: identityRead
+    identityRead: identityRead,
+    identityVote: identityVote
   };
 });

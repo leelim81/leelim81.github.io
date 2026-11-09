@@ -31,6 +31,24 @@ const dollar = facts.identityRead('Name\nTAN WEI MING\n$' + GOOD.slice(1) + '\n'
 check('a dollar sign in the prefix is read as S only when that checksum passes', dollar.nric === GOOD && dollar.nricValid && !dollar.nricUnconfirmed, JSON.stringify(dollar));
 const dollarBad = facts.identityRead('Name\nTAN WEI MING\n$' + BAD.slice(1) + '\n');
 check('a dollar sign is not rewritten into a different valid ID', dollarBad.nric === BAD && !dollarBad.nricValid && dollarBad.nricUnconfirmed, JSON.stringify(dollarBad));
+const FIN = makeNric('F', '3852416');
+const FIN_G = makeNric('G', '2941705');
+const OTHER = makeNric('S', '1234567');
+const voted = facts.identityVote([
+  { name: 'TAN WE', nric: GOOD, nricValid: true },
+  { name: 'TAN WEI MING', nric: GOOD, nricValid: true }
+]);
+check('voting keeps one checksum-valid ID and the longer agreeing name', voted.nric === GOOD && voted.nricValid && voted.name === 'TAN WEI MING', JSON.stringify(voted));
+const rejected = facts.identityVote([
+  { name: 'TAN WEI MING', nric: BAD, nricValid: false },
+  { name: 'TAN WEI MING', nric: BAD, nricValid: false }
+]);
+check('voting does not propose a failed checksum', rejected.nric === '' && rejected.name === 'TAN WEI MING', JSON.stringify(rejected));
+const split = facts.identityVote([
+  { name: 'TAN WEI MING', nric: GOOD, nricValid: true },
+  { name: 'ADA LANE', nric: OTHER, nricValid: true }
+]);
+check('voting drops two different valid IDs', split.nric === '' && split.name === '', JSON.stringify(split));
 
 function roundedBox(page, x, y, w, h) {
   const r = 3;
@@ -124,13 +142,94 @@ async function paintCard(file, spec) {
     ctx.fillText('10 EXAMPLE LANE', 80, 680);
     ctx.fillText('SINGAPORE 018956', 80, 720);
     ctx.restore();
-    return canvas.toDataURL('image/png');
+    let output = canvas;
+    if (spec.side === 'back') {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = spec.paper;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = spec.ink;
+      ctx.font = '28px sans-serif';
+      ctx.fillText('IDENTITY CARD', 80, 90);
+      ctx.fillText('BACK', 80, 140);
+      ctx.font = '22px sans-serif';
+      ctx.fillText('Address', 80, 240);
+      ctx.font = '36px sans-serif';
+      ctx.fillText('10 EXAMPLE LANE', 80, 300);
+      ctx.fillText('SINGAPORE 018956', 80, 360);
+      ctx.font = '22px sans-serif';
+      ctx.fillText('Date of issue', 80, 460);
+      ctx.font = '32px sans-serif';
+      ctx.fillText('02 FEB 2020', 80, 510);
+    }
+    if (spec.downscale) {
+      const small = document.createElement('canvas');
+      small.width = spec.downscale;
+      small.height = Math.round(canvas.height * (spec.downscale / canvas.width));
+      small.getContext('2d').drawImage(canvas, 0, 0, small.width, small.height);
+      output = small;
+    }
+    if (spec.blur) {
+      const soft = document.createElement('canvas');
+      soft.width = output.width;
+      soft.height = output.height;
+      const softCtx = soft.getContext('2d');
+      softCtx.filter = 'blur(' + spec.blur + 'px)';
+      softCtx.drawImage(output, 0, 0);
+      output = soft;
+    }
+    if (spec.glare) {
+      const glare = output.getContext('2d');
+      const spot = glare.createRadialGradient(output.width * 0.72, output.height * 0.28, 10, output.width * 0.72, output.height * 0.28, output.width * 0.38);
+      spot.addColorStop(0, 'rgba(255,255,255,0.82)');
+      spot.addColorStop(1, 'rgba(255,255,255,0)');
+      glare.fillStyle = spot;
+      glare.fillRect(0, 0, output.width, output.height);
+    }
+    if (spec.perspective) {
+      const warped = document.createElement('canvas');
+      warped.width = output.width;
+      warped.height = output.height;
+      const warp = warped.getContext('2d');
+      warp.fillStyle = '#e7e1d6';
+      warp.fillRect(0, 0, warped.width, warped.height);
+      const strips = 48;
+      for (let i = 0; i < strips; i++) {
+        const t = i / (strips - 1);
+        const sw = output.width / strips + 1;
+        const sx = output.width / strips * i;
+        const shift = (t - 0.5) * output.width * 0.08;
+        const destH = output.height * (0.9 + 0.1 * t);
+        warp.drawImage(output, sx, 0, sw, output.height, sx + shift, (output.height - destH) / 2, sw, destH);
+      }
+      output = warped;
+    }
+    if (spec.turn) {
+      const turned = document.createElement('canvas');
+      const quarter = spec.turn % 180 !== 0;
+      turned.width = quarter ? output.height : output.width;
+      turned.height = quarter ? output.width : output.height;
+      const turnCtx = turned.getContext('2d');
+      turnCtx.translate(turned.width / 2, turned.height / 2);
+      turnCtx.rotate(spec.turn * Math.PI / 180);
+      turnCtx.drawImage(output, -output.width / 2, -output.height / 2);
+      output = turned;
+    }
+    return output.toDataURL('image/png');
   }, spec);
   writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
 }
-await paintCard('/tmp/synthetic-id-clear.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#ffffff', ink: '#111111', rotate: 0 });
+const front = { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#ffffff', ink: '#111111', rotate: 0 };
+await paintCard('/tmp/synthetic-id-clear.png', front);
 await paintCard('/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#d5d5d5', ink: '#6e6e6e', rotate: 0.1 });
 await paintCard('/tmp/synthetic-id-bad.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: BAD, paper: '#ffffff', ink: '#111111', rotate: 0 });
+await paintCard('/tmp/synthetic-id-turn.png', Object.assign({}, front, { turn: 90 }));
+await paintCard('/tmp/synthetic-id-skew.png', Object.assign({}, front, { perspective: true }));
+await paintCard('/tmp/synthetic-id-glare.png', Object.assign({}, front, { glare: true }));
+await paintCard('/tmp/synthetic-id-low.png', Object.assign({}, front, { downscale: 420 }));
+await paintCard('/tmp/synthetic-id-blur.png', Object.assign({}, front, { blur: 1.6 }));
+await paintCard('/tmp/synthetic-id-back.png', Object.assign({}, front, { side: 'back' }));
+await paintCard('/tmp/synthetic-id-fin.png', Object.assign({}, front, { nric: FIN }));
+await paintCard('/tmp/synthetic-id-fing.png', Object.assign({}, front, { nric: FIN_G }));
 await painter.setContent('<canvas id="c" width="80" height="80"></canvas>');
 const blankUrl = await painter.evaluate(() => {
   const canvas = document.getElementById('c');
@@ -234,7 +333,7 @@ await badPage.click('#fillBtn');
 const badReview = await badPage.waitForSelector('#reviewBox:not([hidden])').then(() => reviewText(badPage)).catch(() => '');
 const badFail = await badPage.locator('#failText').innerText().catch(() => '');
 const badShown = badReview || badFail;
-check('a bad checksum is unconfirmed or unread, and not described as already written', /Unconfirmed|Checksum|Could not read/i.test(badShown) && !/Wrote [1-9]/.test(await badPage.locator('#readStatus').innerText().catch(() => '')), badShown.slice(0, 300));
+check('a failed checksum is not proposed', !badShown.includes(BAD) && !/pdf-editor/.test(badPage.url()) && !/Wrote [1-9]/.test(await badPage.locator('#readStatus').innerText().catch(() => '')), badShown.slice(0, 300));
 if (badReview) {
   await badPage.click('#reviewSkip');
   await badPage.waitForURL(/pdf-editor/);
@@ -252,25 +351,48 @@ check('a photo with no text says it could not be read', /Could not read/i.test(a
 check('a failed photo does not open the editor', !/pdf-editor/.test(blankPage.url()), blankPage.url());
 await blankPage.close();
 
-const faintPage = await openDesk();
-const faintStarted = Date.now();
-await attach(faintPage, '/tmp/synthetic-id-faint.png');
-await faintPage.click('#fillBtn');
-await faintPage.waitForFunction(() => {
-  const review = document.getElementById('reviewBox');
-  const fail = document.getElementById('failText');
-  return (review && !review.hidden) || (fail && /Could not read/i.test(fail.textContent || ''));
-});
-const faintMs = Date.now() - faintStarted;
-const faintReview = await faintPage.locator('#reviewBox').isVisible() ? await reviewText(faintPage) : '';
-const faintFail = await faintPage.locator('#failText').innerText().catch(() => '');
-const faintHit = faintReview.includes('TAN WEI MING') && faintReview.includes(GOOD);
-console.log('FAINT_PHOTO_MS', faintMs, 'HIT', faintHit);
-console.log('FAINT_REVIEW', faintReview.slice(0, 240), 'FAIL', faintFail.slice(0, 180));
-const faintReported = faintHit || /Could not read/i.test(faintFail + faintReview) || !!faintReview;
-check('a rotated faint photo is shown for confirmation or reported as unread', faintReported && !/pdf-editor/.test(faintPage.url()), (faintHit ? 'full read' : (faintReview ? 'partial ' + faintReview.slice(0, 120) : faintFail.slice(0, 120))));
-if (faintReview) check('a faint read is not written until it is confirmed', await faintPage.locator('#reviewList input[type="checkbox"]:checked').count() === 0 && !/pdf-editor/.test(faintPage.url()), faintReview.slice(0, 180));
-await faintPage.close();
+async function probe(label, files, want) {
+  const page = await openDesk();
+  const started = Date.now();
+  const list = Array.isArray(files) ? files : [files];
+  await page.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+  await page.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+  page.network.arm();
+  await page.locator('#refInput').setInputFiles(list);
+  await page.waitForFunction((count) => {
+    const rows = Array.from(document.querySelectorAll('.ref-preview'));
+    return rows.length >= count && rows.every((row) => row.textContent && row.textContent !== 'Reading…');
+  }, list.length);
+  await page.click('#fillBtn');
+  await page.waitForFunction(() => {
+    const review = document.getElementById('reviewBox');
+    const fail = document.getElementById('failText');
+    return (review && !review.hidden) || (fail && /Could not read/i.test(fail.textContent || ''));
+  });
+  const ms = Date.now() - started;
+  const review = await page.locator('#reviewBox').isVisible() ? await reviewText(page) : '';
+  const fail = await page.locator('#failText').innerText().catch(() => '');
+  const shown = (review + ' ' + fail).replace(/\s+/g, ' ').trim();
+  const ids = shown.match(/[STFGM]\d{7}[A-Z]/g) || [];
+  const invalid = ids.filter((id) => !facts.nricChecksum(id));
+  const goal = want.id ? want : (want.report || {});
+  const hit = !!(goal.id && shown.includes(goal.name) && shown.includes(goal.id));
+  console.log('VARIANT', label, 'MS', ms, 'HIT', goal.id ? hit : (want.none ? ids.length === 0 : 'reported'), shown.slice(0, 160));
+  check(label + ' proposes no failed checksum', invalid.length === 0 && !/pdf-editor/.test(page.url()), shown.slice(0, 180));
+  if (want.id) check(label + ' reads the name and checksum-valid ID', hit, shown.slice(0, 180));
+  if (want.none) check(label + ' does not invent an ID', ids.length === 0, shown.slice(0, 180));
+  await page.close();
+}
+await probe('faint rotated', '/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', id: GOOD });
+await probe('quarter turn', '/tmp/synthetic-id-turn.png', { name: 'TAN WEI MING', id: GOOD });
+await probe('phone skew', '/tmp/synthetic-id-skew.png', { report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('glare', '/tmp/synthetic-id-glare.png', { report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('low resolution', '/tmp/synthetic-id-low.png', { report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('blur', '/tmp/synthetic-id-blur.png', { report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('FIN F', '/tmp/synthetic-id-fin.png', { name: 'TAN WEI MING', id: FIN });
+await probe('FIN G', '/tmp/synthetic-id-fing.png', { name: 'TAN WEI MING', id: FIN_G });
+await probe('card back', '/tmp/synthetic-id-back.png', { none: true });
+await probe('both sides', ['/tmp/synthetic-id-clear.png', '/tmp/synthetic-id-back.png'], { name: 'TAN WEI MING', id: GOOD });
 await browser.close();
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
 if (checks.some((item) => !item.ok)) process.exit(1);
