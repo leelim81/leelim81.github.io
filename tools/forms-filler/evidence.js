@@ -30,6 +30,12 @@
   function fieldKind(field) {
     var s = ((field && field.label) || '') + ' ' + ((field && field.id) || '');
     s = s.toLowerCase();
+    if (/bank use only|for bank use|official use only/.test(s)) return 'other';
+    if (/signature|authoris|authoriz/.test(s)) return 'other';
+    if (/debit/.test(s)) return 'other';
+    if (/account\s*no|account number|to be credited/.test(s)) return 'other';
+    if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
+    if (/name as per/.test(s) && /bank account/.test(s)) return 'name';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';

@@ -128,6 +128,48 @@
       var stack = [];
       var pending = null;
       var squares = [];
+      function pathBounds(path) {
+        if (!path) return null;
+        var ops = path[0];
+        var args = path[1];
+        if (!ops || !args) return null;
+        var i = 0;
+        var minX = 1e9;
+        var minY = 1e9;
+        var maxX = -1e9;
+        var maxY = -1e9;
+        var any = false;
+        function add(x, y) {
+          var p = mapPoint(ctm, x, y);
+          any = true;
+          if (p[0] < minX) minX = p[0];
+          if (p[1] < minY) minY = p[1];
+          if (p[0] > maxX) maxX = p[0];
+          if (p[1] > maxY) maxY = p[1];
+        }
+        for (var b = 0; b < ops.length; b++) {
+          var code = ops[b];
+          if (code === OPS.moveTo || code === OPS.lineTo) {
+            add(args[i], args[i + 1]);
+            i += 2;
+          } else if (code === OPS.curveTo) {
+            add(args[i], args[i + 1]);
+            add(args[i + 2], args[i + 3]);
+            add(args[i + 4], args[i + 5]);
+            i += 6;
+          } else if (code === OPS.curveTo2 || code === OPS.curveTo3) {
+            add(args[i], args[i + 1]);
+            add(args[i + 2], args[i + 3]);
+            i += 4;
+          } else if (code === OPS.rectangle) {
+            add(args[i], args[i + 1]);
+            add(args[i] + args[i + 2], args[i + 1] + args[i + 3]);
+            i += 4;
+          }
+        }
+        if (!any) return null;
+        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+      }
       function consume(path) {
         if (!path) return;
         var ops = path[0];
@@ -184,8 +226,12 @@
         else if (fn === OPS.transform && args) ctm = multiply(ctm, args);
         else if (fn === OPS.constructPath) pending = args;
         else if (fn === OPS.stroke || fn === OPS.closeStroke || fn === OPS.fill || fn === OPS.eoFill || fn === OPS.fillStroke || fn === OPS.eoFillStroke) {
+          var box = pathBounds(pending);
           consume(pending);
           pending = null;
+          if (box && box.h >= 8 && box.h <= 32 && box.w >= 36 && box.w < view.width * 0.98) {
+            lines.push({ x: box.x, y: box.y, w: box.w });
+          }
         }
       }
       var images = 0;
