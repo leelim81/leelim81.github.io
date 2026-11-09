@@ -569,12 +569,26 @@
         nearest = other;
         nearestDy = dy;
       });
-      if (!slot.group && nearest && /dependant|dependent|spouse|\bchild\b|officer/i.test(nearest.label)) slot.group = nearest.label;
+      if (!slot.group && nearest && /dependant|dependent|spouse|\bchild\b|officer|nominee|referee|beneficiary|mother|father|parent|guardian|payee|witness|introducer|\bkin\b|\bagent\b/i.test(nearest.label)) slot.group = nearest.label;
       slots.forEach(function (other) {
         if (other === slot || slot.group) return;
         if (Math.abs((other.lineY != null ? other.lineY : other.y) - y) > 8) return;
-        if (/dependant|dependent|spouse|\bchild\b|officer/i.test(other.label)) slot.group = other.label;
+        if (/dependant|dependent|spouse|\bchild\b|officer|nominee|referee|beneficiary|mother|father|parent|guardian|payee|witness|introducer|\bkin\b|\bagent\b/i.test(other.label)) slot.group = other.label;
       });
+      if (!slot.group) {
+        var heading = '';
+        var headingDy = 120;
+        texts.forEach(function (text) {
+          var line = String(text.str || '').replace(/[:.\s]+$/g, '').replace(/\s+/g, ' ').trim();
+          if (!/^(nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|emergency(?: contact)?|contacts?|payees?|joint(?: account(?: holder)?)?|second applicants?|holder 2|witnesses?|next of kin|kin|children|child|dependants?|dependents?|officers?|agents?|authorised persons?|authorized persons?|introducers?)$/i.test(line)) return;
+          var dy = text.y - y;
+          if (dy < 8 || dy > 110 || dy >= headingDy) return;
+          if (text.x > slot.x + 80) return;
+          heading = line;
+          headingDy = dy;
+        });
+        if (heading) slot.group = heading;
+      }
       var own = normLabel(slot.label);
       var nearLabel = texts.some(function (text) {
         var textName = normLabel(text.str);

@@ -1216,7 +1216,7 @@
         decisions.forEach(function (row) {
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
-          var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field) : '';
+          var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
           var slotValue = slot === 'name' ? idn.name : (slot === 'nric' ? idn.nric : '');
           if (!slot || !slotValue) {
             if (row.decision !== 'abstain') {

@@ -141,5 +141,62 @@ assert.equal(identityPhotoSlot({ id: 'emergency', label: 'Emergency contact name
 assert.equal(identityPhotoSlot({ id: 'patient', label: 'Patient name' }), '');
 assert.equal(identityPhotoSlot({ id: 'spouse', label: 'Spouse name' }), '');
 assert.equal(identityPhotoSlot({ id: 'kin', label: 'Next of kin' }), '');
+assert.equal(identityPhotoSlot({ id: 'as_nric', label: 'Name as per NRIC' }), 'name');
+assert.equal(identityPhotoSlot({ id: 'fin', label: 'FIN' }), 'nric');
+
+const roles = [
+  ['Nominee', 'Nominee'],
+  ['Referee', 'Referee'],
+  ['Beneficiary', 'Beneficiary'],
+  ["Mother's", 'Mother'],
+  ["Father's", 'Father'],
+  ["Parent's", 'Parent'],
+  ['Spouse', 'Spouse'],
+  ['Guardian', 'Guardian'],
+  ['Contact', 'Contact'],
+  ['Emergency', 'Emergency contact'],
+  ['Payee', 'Payee'],
+  ['Joint account holder', 'Joint account holder'],
+  ['Second applicant', 'Second applicant'],
+  ['Holder 2', 'Holder 2'],
+  ['Witness', 'Witness'],
+  ['Next of kin', 'Next of kin'],
+  ['Child', 'Child'],
+  ['Dependant', 'Dependant'],
+  ['Officer', 'Officer'],
+  ['Agent', 'Agent'],
+  ['Authorised person', 'Authorised person'],
+  ['Introducer', 'Introducer']
+];
+roles.forEach(function (pair) {
+  const prefix = pair[0];
+  const heading = pair[1];
+  assert.equal(identityPhotoSlot({ id: 'p', label: prefix + ' full name' }), '', prefix + ' label');
+  assert.equal(identityPhotoSlot({ id: 'p', label: prefix + ' NRIC' }), '', prefix + ' id label');
+  assert.equal(identityPhotoSlot({ id: 'h', label: 'Full name', group: heading }), '', heading + ' heading');
+  assert.equal(identityPhotoSlot({ id: 'h', label: 'NRIC', group: heading }), '', heading + ' id heading');
+  assert.equal(identityPhotoSlot({ id: 's', label: 'Name', section: heading }), '', heading + ' section');
+});
+
+const people = [
+  { id: 'a_name', label: 'Full name', group: "Applicant's particulars" },
+  { id: 'a_nric', label: 'NRIC/Passport/FIN No.', group: "Applicant's particulars" },
+  { id: 'n_name', label: 'Full name', group: 'Nominee' },
+  { id: 'n_nric', label: 'NRIC', group: 'Nominee' },
+  { id: 'r_name', label: 'Referee full name' },
+  { id: 'r_nric', label: 'Referee NRIC' }
+];
+const offered = people.filter(function (field) { return identityPhotoSlot(field, people); }).map(function (field) { return field.id; });
+assert.deepEqual(offered, ['a_name', 'a_nric']);
+
+const repeatedNames = [
+  { id: 'n1', label: 'Full name' },
+  { id: 'n2', label: 'Name' },
+  { id: 'i1', label: 'NRIC' },
+  { id: 'i2', label: 'FIN' }
+];
+repeatedNames.forEach(function (field) {
+  assert.equal(identityPhotoSlot(field, repeatedNames), '', field.id);
+});
 
 console.log('evidence tests ok');
