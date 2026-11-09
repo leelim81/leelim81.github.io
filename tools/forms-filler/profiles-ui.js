@@ -25,6 +25,22 @@
   var paintSerial = 0;
   var selectPersonId = '';
 
+  function typedFact() {
+    return $('factValue') ? String($('factValue').value || '').replace(/^\s+|\s+$/g, '') : '';
+  }
+  function finishPersonAdded(personId) {
+    var box = typedFact();
+    if (!box) {
+      say('Person added on this browser.');
+      return;
+    }
+    if (selectedId() === personId) {
+      say('Person added on this browser. The value in the box was not saved yet. Press Add value to save it.');
+      return;
+    }
+    say('Person added on this browser. The value in the box was not saved.');
+  }
+
   function selectedId() { return $('profilePick') ? $('profilePick').value : ''; }
 
   function clearFactControls() {
@@ -215,7 +231,7 @@
         return;
       }
       await paint();
-      say('Person added on this browser.');
+      finishPersonAdded(personId);
     });
     $('profileDelete').addEventListener('click', async function () {
       var profileId = selectedId();
@@ -230,7 +246,10 @@
     $('factAdd').addEventListener('click', async function () {
       var profileId = selectedId();
       if (!profileId) { say('Choose a person first.'); return; }
-      if (selectPersonId && profileId === selectPersonId) { say('That person is not saved yet. Nothing was written.'); return; }
+      if (selectPersonId && profileId === selectPersonId) {
+        say('That person is not saved yet. Nothing was written.');
+        return;
+      }
       var key = $('factKey').value;
       var label = $('factLabel').value;
       var value = $('factValue').value;
