@@ -472,6 +472,7 @@
       if (live.channel === 'ocr' && !live.preview) live.preview = 'Could not read a name or ID from this photo. Nothing was filled.';
       if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
+    if (identityPhotoRef(live) && (failed || !live.text)) live.bytes = new Uint8Array(0);
     renderRefs();
     scheduleSave();
   }
@@ -1224,14 +1225,7 @@
       if (reviews.length && $('reviewBox')) {
         confirmed = await confirmReviews(reviews);
         if (!current()) return;
-        if (identityPhoto) {
-          state.refs.forEach(function (ref) {
-            if (String(ref.mime || '').indexOf('image/') === 0 || /\.(png|jpe?g|webp)$/i.test(ref.name || '')) ref.bytes = new Uint8Array(0);
-          });
-          clearTimeout(saveTimer);
-          draftEpoch++;
-          await persistDraft();
-        }
+        if (identityPhoto) await forgetIdentityPhotos();
         if (confirmed.length && state.profileId && window.FormProfiles) {
           try {
             var live = await FormProfiles.load();
@@ -1268,6 +1262,7 @@
       $('failText').textContent = msg;
       $('failBox').hidden = false;
       status(msg, false);
+      await forgetIdentityPhotos();
     }
   }
 
@@ -1400,6 +1395,25 @@
     return run;
   }
 
+  function identityPhotoRef(ref) {
+    if (!ref) return false;
+    if (String(ref.mime || '').indexOf('image/') === 0) return true;
+    return /\.(png|jpe?g|webp|gif|bmp|heic|tif|tiff)$/i.test(ref.name || '');
+  }
+
+  function wipeIdentityPhotoBytes() {
+    (state.refs || []).forEach(function (ref) {
+      if (identityPhotoRef(ref)) ref.bytes = new Uint8Array(0);
+    });
+  }
+
+  function forgetIdentityPhotos() {
+    wipeIdentityPhotoBytes();
+    clearTimeout(saveTimer);
+    draftEpoch++;
+    return persistDraft();
+  }
+
   function draftSnapshot() {
     var image = state.sourceBytes && !isPdfBytes(state.sourceBytes);
     var hasForm = image ? state.sourceBytes : state.formBytes;
@@ -1417,7 +1431,13 @@
       imageNote: state.imageNote || '',
       deskewDeg: state.deskewDeg || 0,
       refs: state.refs.map(function (ref) {
-        return { id: ref.id, name: ref.name, bytes: ref.bytes, mime: ref.mime, text: ref.text || '' };
+        return {
+          id: ref.id,
+          name: ref.name,
+          bytes: identityPhotoRef(ref) ? new Uint8Array(0) : ref.bytes,
+          mime: ref.mime,
+          text: ref.text || ''
+        };
       })
     };
   }
@@ -1520,6 +1540,7 @@
         if (mine !== takeToken) return;
         var item = loaded[i];
         if (kind === 'form') {
+          wipeIdentityPhotoBytes();
           await discardDraft();
           if (mine !== takeToken) return;
           var applied = await setForm(item.bytes, item.name, item.type);
@@ -1570,6 +1591,7 @@
     state.kind = '';
     state.imageFrame = null;
     state.imageNote = '';
+    wipeIdentityPhotoBytes();
     var pendingRefs = state.refs.slice();
     state.refs = [];
     state.readEpoch = (state.readEpoch || 0) + 1;
@@ -1650,6 +1672,7 @@
     fillToken++;
     state.handedOff = true;
     state.running = false;
+    wipeIdentityPhotoBytes();
     $('skipModel').hidden = true;
     $('modelBox').hidden = true;
     state.proposals = rowsFrom(state.seeded || {}, {}, state.notes || '');
@@ -1667,6 +1690,7 @@
     });
   });
   window.addEventListener('pagehide', function () {
+    wipeIdentityPhotoBytes();
     clearTimeout(saveTimer);
     persistDraft();
   });
