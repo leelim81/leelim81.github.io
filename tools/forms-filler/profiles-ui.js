@@ -22,13 +22,32 @@
     if (message) say(message);
   }
 
-  function selectedId() { return $('profilePick').value; }
+  var paintSerial = 0;
+  var selectPersonId = '';
+
+  function selectedId() { return $('profilePick') ? $('profilePick').value : ''; }
+
+  function clearFactControls() {
+    if ($('profileFacts')) $('profileFacts').textContent = '';
+    if ($('profilePending')) $('profilePending').textContent = '';
+  }
+
+  function rowIsCurrent(profileId) {
+    if (selectPersonId) return false;
+    return !!profileId && profileId === selectedId();
+  }
 
   async function paint() {
+    var ticket = ++paintSerial;
     var data = await vault();
-    if (!data || !$('profilePick')) return;
+    if (ticket !== paintSerial || !data || !$('profilePick')) return;
     var pick = $('profilePick');
     var previous = pick.value;
+    var prefer = selectPersonId;
+    if (prefer && !data.profiles.some(function (p) { return p.id === prefer; })) {
+      say('That person is not saved yet.');
+      return;
+    }
     pick.textContent = '';
     data.profiles.forEach(function (profile) {
       var opt = document.createElement('option');
@@ -36,8 +55,13 @@
       opt.textContent = profile.name;
       pick.appendChild(opt);
     });
-    if (previous && data.profiles.some(function (p) { return p.id === previous; })) pick.value = previous;
-    var profile = data.profiles.filter(function (p) { return p.id === pick.value; })[0];
+    var chosen = '';
+    if (prefer) chosen = prefer;
+    else if (previous && data.profiles.some(function (p) { return p.id === previous; })) chosen = previous;
+    else if (data.profiles[0]) chosen = data.profiles[0].id;
+    if (chosen) pick.value = chosen;
+    if (prefer && chosen === prefer && selectPersonId === prefer) selectPersonId = '';
+    var profile = data.profiles.filter(function (p) { return p.id === chosen; })[0];
     var list = $('profileFacts');
     list.textContent = '';
     if (!data.profiles.length) {
@@ -59,20 +83,39 @@
         saveBtn.className = 'btn';
         saveBtn.textContent = 'Save correction';
         saveBtn.addEventListener('click', async function () {
-          var current = await vault();
-          if (!current) return;
-          var edited = FormProfiles.editFact(current, profile.id, fact.id, input.value);
-          if (!edited.ok) { say('That value was not saved.'); return; }
-          await save(edited.vault, 'Saved on this browser.');
+          var profileId = profile.id;
+          var factId = fact.id;
+          var value = input.value;
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
+          var stored = await FormProfiles.persist(null, function (current) {
+            var edited = FormProfiles.editFact(current, profileId, factId, value);
+            if (!edited.ok) return { ok: false, reason: edited.reason || 'cancelled' };
+            return { ok: true, vault: edited.vault };
+          });
+          if (!stored.ok) { say('That value was not saved.'); return; }
+          await paint();
+          say('Saved on this browser.');
         });
         var drop = document.createElement('button');
         drop.type = 'button';
         drop.className = 'btn';
         drop.textContent = 'Delete';
         drop.addEventListener('click', async function () {
-          var current = await vault();
-          if (!current) return;
-          await save(FormProfiles.deleteFact(current, profile.id, fact.id).vault, 'Deleted.');
+          var profileId = profile.id;
+          var factId = fact.id;
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
+          var stored = await FormProfiles.persist(null, function (current) {
+            return { ok: true, vault: FormProfiles.deleteFact(current, profileId, factId).vault };
+          });
+          if (!stored.ok) { say('This browser blocked local storage. Nothing was saved.'); return; }
+          await paint();
+          say('Deleted.');
         });
         li.appendChild(label);
         li.appendChild(input);
@@ -95,11 +138,24 @@
         btn.className = 'btn';
         btn.textContent = 'File under the selected person';
         btn.addEventListener('click', async function () {
-          var current = await vault();
-          if (!current || !selectedId()) { say('Choose a person first.'); return; }
-          var assigned = FormProfiles.assignPending(current, item.id, selectedId());
-          if (!assigned.ok) { say('That value was not filed.'); return; }
-          await save(assigned.vault, 'Filed under the selected person.');
+          var profileId = chosen;
+          var pendingId = item.id;
+          if (!profileId) { say('Choose a person first.'); return; }
+          if (!rowIsCurrent(profileId)) {
+            say(selectPersonId ? 'That person is not saved yet. Nothing was written.' : 'That value is not for the selected person. Nothing was written.');
+            return;
+          }
+          var stored = await FormProfiles.persist(null, function (current) {
+            var assigned = FormProfiles.assignPending(current, pendingId, profileId);
+            if (!assigned.ok) return { ok: false, reason: assigned.reason || 'cancelled' };
+            return { ok: true, vault: assigned.vault };
+          });
+          if (!stored.ok) {
+            say(stored.reason === 'needs-mapping' || stored.reason === 'missing' ? 'That person is not saved yet. Nothing was written.' : 'That value was not filed.');
+            return;
+          }
+          await paint();
+          say('Filed under the selected person.');
         });
         row.appendChild(btn);
         pending.appendChild(row);
@@ -129,28 +185,69 @@
     });
     key.addEventListener('change', function () { $('factLabel').hidden = key.value !== 'custom'; });
     $('profileAdd').addEventListener('click', async function () {
-      var name = window.prompt('Name for this person');
+      var raw = window.prompt('Name for this person');
+      if (raw == null) return;
+      var name = String(raw).replace(/^\s+|\s+$/g, '').slice(0, 80);
       if (!name) return;
-      var current = await vault();
-      if (!current) return;
-      if (current.profiles.length >= 30) { say('Too many people are stored.'); return; }
-      current.profiles.push({ id: Math.random().toString(36).slice(2, 12), name: name.slice(0, 80), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), facts: [] });
-      await save(current, 'Person added on this browser.');
+      var personId = Math.random().toString(36).slice(2, 12);
+      var now = new Date().toISOString();
+      selectPersonId = personId;
+      paintSerial += 1;
+      clearFactControls();
+      var pick = $('profilePick');
+      if (pick) {
+        var shown = document.createElement('option');
+        shown.value = personId;
+        shown.textContent = name;
+        pick.appendChild(shown);
+        pick.value = personId;
+      }
+      var stored = await FormProfiles.persist(null, function (current) {
+        if ((current.profiles || []).some(function (p) { return p.id === personId; })) return { ok: true, unchanged: true, vault: current };
+        if (current.profiles.length >= 30) return { ok: false, reason: 'full' };
+        current.profiles.push({ id: personId, name: name, createdAt: now, updatedAt: now, facts: [] });
+        return { ok: true, vault: current };
+      });
+      if (!stored.ok) {
+        if (selectPersonId === personId) selectPersonId = '';
+        say(stored.reason === 'full' ? 'Too many people are stored.' : 'This browser blocked local storage. Nothing was saved.');
+        await paint();
+        return;
+      }
+      await paint();
+      say('Person added on this browser.');
     });
     $('profileDelete').addEventListener('click', async function () {
-      var current = await vault();
-      if (!current || !selectedId()) return;
-      await save(FormProfiles.deleteProfile(current, selectedId()).vault, 'Person deleted.');
+      var profileId = selectedId();
+      if (!profileId) return;
+      var stored = await FormProfiles.persist(null, function (current) {
+        return { ok: true, vault: FormProfiles.deleteProfile(current, profileId).vault };
+      });
+      if (!stored.ok) { say('This browser blocked local storage. Nothing was saved.'); return; }
+      await paint();
+      say('Person deleted.');
     });
     $('factAdd').addEventListener('click', async function () {
-      var current = await vault();
-      if (!current || !selectedId()) { say('Choose a person first.'); return; }
-      var result = $('factKey').value === 'custom'
-        ? FormProfiles.addCustom(current, selectedId(), $('factLabel').value, $('factValue').value)
-        : FormProfiles.confirmFact(current, selectedId(), $('factKey').value, $('factValue').value);
-      if (!result.ok) { say('That value was not saved.'); return; }
+      var profileId = selectedId();
+      if (!profileId) { say('Choose a person first.'); return; }
+      if (selectPersonId && profileId === selectPersonId) { say('That person is not saved yet. Nothing was written.'); return; }
+      var key = $('factKey').value;
+      var label = $('factLabel').value;
+      var value = $('factValue').value;
+      var stored = await FormProfiles.persist(null, function (current) {
+        var result = key === 'custom'
+          ? FormProfiles.addCustom(current, profileId, label, value)
+          : FormProfiles.confirmFact(current, profileId, key, value);
+        if (!result.ok) return { ok: false, reason: result.reason || 'cancelled' };
+        return { ok: true, vault: result.vault };
+      });
+      if (!stored.ok) {
+        say(stored.reason === 'needs-mapping' || stored.reason === 'missing' ? 'That person is not saved yet. Nothing was written.' : 'That value was not saved.');
+        return;
+      }
       $('factValue').value = '';
-      await save(result.vault, 'Saved on this browser.');
+      await paint();
+      say('Saved on this browser.');
     });
     if ($('profileToggle')) {
       $('profileToggle').addEventListener('click', function () { setSavedOpen($('profileBox').hidden); });
@@ -197,7 +294,11 @@
       await paint();
       say('Cleared every saved person, value, and unfiled item.');
     });
-    $('profilePick').addEventListener('change', function () { paint(); });
+    $('profilePick').addEventListener('change', function () {
+      if (selectedId() !== selectPersonId) selectPersonId = '';
+      clearFactControls();
+      paint();
+    });
     paint();
   }
 
