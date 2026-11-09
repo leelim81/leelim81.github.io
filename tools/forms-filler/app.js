@@ -451,6 +451,7 @@
       unread = spatial.unread || '';
       ref.channel = spatial.channel || 'text-layer';
       ref.words = spatial.words || [];
+      ref.identity = spatial.identity || null;
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
@@ -460,14 +461,15 @@
     if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
     if (!live || live !== ref) return;
-    if (failed) {
+      if (failed) {
       live.status = 'error';
-      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : '';
+      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : 'Could not read this photo. Nothing was filled.';
       live.text = '';
       live.words = [];
     } else {
       live.text = text || '';
       rememberRef(live);
+      if (live.channel === 'ocr' && !live.preview) live.preview = 'Could not read a name or ID from this photo. Nothing was filled.';
       if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
     renderRefs();
@@ -635,7 +637,15 @@
         list.appendChild(li);
         return;
       } else {
-        text.textContent = (row.kind || 'field') + ': ' + row.value;
+        text.textContent = (row.editable ? 'Unconfirmed ' : '') + (row.kind || 'field') + ': ' + (row.editable ? '' : row.value);
+        if (row.editable) {
+          var edit = document.createElement('input');
+          edit.type = 'text';
+          edit.value = row.value;
+          edit.setAttribute('data-field', row.fieldId);
+          edit.setAttribute('aria-label', 'Unconfirmed ' + (row.kind || 'value'));
+          label.appendChild(edit);
+        }
         var quote = document.createElement('span');
         quote.className = 'review-quote';
         quote.textContent = row.quote ? ' Source: ' + row.quote : '';
@@ -649,9 +659,20 @@
     box.hidden = false;
     return new Promise(function (resolve) {
       function finish(useChecked) {
+        list.querySelectorAll('input[type="text"]').forEach(function (input) {
+          var id = input.getAttribute('data-field');
+          reviews.forEach(function (row) {
+            if (row.fieldId === id) row.value = String(input.value || '').trim();
+          });
+        });
         var ids = [];
         if (useChecked) {
-          list.querySelectorAll('input:checked').forEach(function (input) { ids.push(input.value); });
+          list.querySelectorAll('input[type="checkbox"]:checked').forEach(function (input) {
+            var row = null;
+            for (var r = 0; r < reviews.length; r++) if (reviews[r].fieldId === input.value) row = reviews[r];
+            if (row && row.kind === 'nric' && window.FormFacts && !FormFacts.nricChecksum(String(row.value || '').replace(/\s/g, '').toUpperCase())) return;
+            ids.push(input.value);
+          });
         }
         $('reviewUse').removeEventListener('click', onUse);
         $('reviewSkip').removeEventListener('click', onSkip);
@@ -1093,7 +1114,10 @@
       status('Reading the papers…', true);
       var notesAll = await corpus();
       if (!current()) return;
-      if (!notesAll.trim()) throw new Error('The references had no readable text.');
+      if (!notesAll.trim()) {
+        var photoRef = state.refs.some(function (ref) { return ref.channel === 'ocr' || String(ref.mime || '').indexOf('image/') === 0; });
+        throw new Error(photoRef ? 'Could not read a name or ID from the photo. Nothing was filled.' : 'The references had no readable text.');
+      }
       state.notes = notesAll;
       state.modelNote = 'skipped';
       paintModel();
@@ -1108,6 +1132,68 @@
           row.reason = 'scan_location_unconfirmed';
         }
       });
+      var identityPhoto = state.refs.some(function (ref) {
+        return ref.channel === 'ocr' && (String(ref.mime || '').indexOf('image/') === 0 || /\.(png|jpe?g|webp)$/i.test(ref.name || ''));
+      });
+      if (identityPhoto && window.FormFacts && FormFacts.identityRead) {
+        var photoWords = [];
+        state.refs.forEach(function (ref) {
+          if (ref.channel === 'ocr' && ref.words) ref.words.forEach(function (word) { photoWords.push(word); });
+        });
+        var idn = FormFacts.identityRead(notesAll, photoWords);
+        var chosen = null;
+        state.refs.forEach(function (ref) {
+          var voted = ref && ref.identity;
+          if (!voted || (!voted.name && !voted.nric)) return;
+          if (!chosen || (voted.nricValid && !chosen.nricValid)) chosen = voted;
+          else if (chosen && voted.name && voted.name === chosen.name && voted.nameUnconfirmed) chosen.nameUnconfirmed = true;
+        });
+        if (chosen) {
+          if (chosen.name) idn.name = chosen.name;
+          if (chosen.nric && chosen.nricValid) {
+            idn.nric = chosen.nric;
+            idn.nricValid = true;
+          }
+          if (chosen.nameUnconfirmed) idn.nameUnconfirmed = true;
+          if (chosen.nricUnconfirmed) idn.nricUnconfirmed = true;
+        }
+        if (!idn.name && !idn.nric) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
+        var matched = false;
+        decisions.forEach(function (row) {
+          var field = null;
+          for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
+          var label = String(field && field.label || '').toLowerCase();
+          var applicantName = /name as per/.test(label) && /bank account/.test(label) && !/debit/.test(label);
+          var applicantId = /nric/.test(label) && /passport|\bfin\b/.test(label);
+          if (!applicantName && !applicantId) {
+            if (row.decision !== 'abstain') {
+              row.decision = 'abstain';
+              row.value = '';
+              row.reason = 'not_identity';
+            }
+            return;
+          }
+          if (applicantName && idn.name) {
+            matched = true;
+            row.decision = 'review';
+            row.value = idn.name;
+            row.kind = 'name';
+            row.editable = !!idn.nameUnconfirmed;
+            row.reason = idn.nameUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
+            row.quote = 'Read from the photo';
+          }
+          if (applicantId && idn.nric) {
+            matched = true;
+            row.decision = 'review';
+            row.value = idn.nric;
+            row.kind = 'nric';
+            row.editable = !!idn.nricUnconfirmed;
+            row.reason = idn.nricUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
+            row.quote = idn.nricValid ? 'Read from the photo' : 'Checksum not confirmed';
+          }
+        });
+        if (!matched) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
+      }
       function proposalsFrom(confirmed) {
         var allow = {};
         (confirmed || []).forEach(function (id) { allow[id] = true; });
@@ -1138,6 +1224,14 @@
       if (reviews.length && $('reviewBox')) {
         confirmed = await confirmReviews(reviews);
         if (!current()) return;
+        if (identityPhoto) {
+          state.refs.forEach(function (ref) {
+            if (String(ref.mime || '').indexOf('image/') === 0 || /\.(png|jpe?g|webp)$/i.test(ref.name || '')) ref.bytes = new Uint8Array(0);
+          });
+          clearTimeout(saveTimer);
+          draftEpoch++;
+          await persistDraft();
+        }
         if (confirmed.length && state.profileId && window.FormProfiles) {
           try {
             var live = await FormProfiles.load();
@@ -1146,7 +1240,8 @@
               confirmed.forEach(function (fieldId) {
                 var row = null;
                 for (var r = 0; r < reviews.length; r++) if (reviews[r].fieldId === fieldId) row = reviews[r];
-                if (!row) return;
+                if (!row || !row.value) return;
+                if (row.kind === 'nric' && window.FormFacts && !FormFacts.nricChecksum(String(row.value).replace(/\s/g, '').toUpperCase())) return;
                 var saved = FormProfiles.confirmFact(next, state.profileId, row.kind, row.value);
                 if (saved.ok) next = saved.vault;
               });

@@ -621,6 +621,210 @@
     }
   }
 
+  function grayPixels(data) {
+    var src = data.data;
+    var gray = new Uint8Array(data.width * data.height);
+    for (var i = 0, p = 0; i < src.length; i += 4, p++) {
+      gray[p] = Math.round((src[i] * 30 + src[i + 1] * 59 + src[i + 2] * 11) / 100);
+    }
+    return gray;
+  }
+
+  function stretchGray(gray) {
+    var hist = new Uint32Array(256);
+    for (var i = 0; i < gray.length; i++) hist[gray[i]]++;
+    var limit = Math.max(1, gray.length * 0.02);
+    var low = 0;
+    var high = 255;
+    var seen = 0;
+    for (var v = 0; v < 256; v++) { seen += hist[v]; if (seen >= limit) { low = v; break; } }
+    seen = 0;
+    for (var u = 255; u >= 0; u--) { seen += hist[u]; if (seen >= limit) { high = u; break; } }
+    if (high <= low + 8) return gray;
+    var scale = 255 / (high - low);
+    for (var j = 0; j < gray.length; j++) {
+      var x = Math.round((gray[j] - low) * scale);
+      gray[j] = x < 0 ? 0 : x > 255 ? 255 : x;
+    }
+    return gray;
+  }
+
+  function adaptiveGray(gray, width, height) {
+    var radius = 12;
+    var bias = 8;
+    var stride = width + 1;
+    var integ = new Uint32Array(stride * (height + 1));
+    for (var y = 1; y <= height; y++) {
+      var row = 0;
+      for (var x = 1; x <= width; x++) {
+        row += gray[(y - 1) * width + (x - 1)];
+        integ[y * stride + x] = integ[(y - 1) * stride + x] + row;
+      }
+    }
+    var out = new Uint8Array(gray.length);
+    for (var y2 = 0; y2 < height; y2++) {
+      var y0 = Math.max(0, y2 - radius);
+      var y1 = Math.min(height - 1, y2 + radius);
+      for (var x2 = 0; x2 < width; x2++) {
+        var x0 = Math.max(0, x2 - radius);
+        var x1 = Math.min(width - 1, x2 + radius);
+        var area = (x1 - x0 + 1) * (y1 - y0 + 1);
+        var sum = integ[(y1 + 1) * stride + (x1 + 1)] - integ[y0 * stride + (x1 + 1)] - integ[(y1 + 1) * stride + x0] + integ[y0 * stride + x0];
+        out[y2 * width + x2] = gray[y2 * width + x2] + bias >= sum / area ? 255 : 0;
+      }
+    }
+    return out;
+  }
+
+  function paintGray(image, gray) {
+    var src = image.data;
+    for (var p = 0, i = 0; p < gray.length; p++, i += 4) {
+      src[i] = src[i + 1] = src[i + 2] = gray[p];
+      src[i + 3] = 255;
+    }
+    return image;
+  }
+
+  function cardVariant(source, spec) {
+    var tilt = ((spec.rotate || 0) + (spec.tilt || 0)) * Math.PI / 180;
+    var baseW = source.width;
+    var baseH = source.height;
+    var cos = Math.abs(Math.cos(tilt));
+    var sin = Math.abs(Math.sin(tilt));
+    var boundW = Math.ceil(baseW * cos + baseH * sin);
+    var boundH = Math.ceil(baseW * sin + baseH * cos);
+    var scale = boundW < 1400 ? 1400 / boundW : 1;
+    if (boundW * scale > 1800) scale = 1800 / boundW;
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(boundW * scale));
+    canvas.height = Math.max(1, Math.round(boundH * scale));
+    var ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(tilt);
+    if (spec.shear) ctx.transform(1, 0, spec.shear, 1, 0, 0);
+    ctx.scale(scale, scale);
+    ctx.drawImage(source, -baseW / 2, -baseH / 2);
+    ctx.restore();
+    var image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var gray = stretchGray(grayPixels(image));
+    if (spec.threshold) gray = adaptiveGray(gray, canvas.width, canvas.height);
+    ctx.putImageData(paintGray(image, gray), 0, 0);
+    return canvas;
+  }
+
+  function cardJobs() {
+    return [
+      { rotate: 0, tilt: 0, threshold: false, shear: 0 },
+      { rotate: 0, tilt: 0, threshold: true, shear: 0 },
+      { rotate: 90, tilt: 0, threshold: false, shear: 0 },
+      { rotate: 180, tilt: 0, threshold: false, shear: 0 },
+      { rotate: 270, tilt: 0, threshold: false, shear: 0 },
+      { rotate: 0, tilt: -6, threshold: true, shear: 0 },
+      { rotate: 0, tilt: 6, threshold: true, shear: 0 },
+      { rotate: 0, tilt: -3, threshold: false, shear: 0 },
+      { rotate: 0, tilt: 3, threshold: false, shear: 0 },
+      { rotate: 0, tilt: -8, threshold: true, shear: 0 },
+      { rotate: 0, tilt: 8, threshold: true, shear: 0 },
+      { rotate: 0, tilt: 0, threshold: true, shear: -0.12 },
+      { rotate: 0, tilt: 0, threshold: true, shear: 0.12 }
+    ];
+  }
+
+  function votedCardText(vote) {
+    var lines = [];
+    if (vote && vote.name) lines.push('Name', vote.name);
+    if (vote && vote.nric) lines.push(vote.nric);
+    return lines.join('\n');
+  }
+
+  async function recognizeCard(session, canvas, scale, pageWidth, pageHeight) {
+    return enqueueOcr(async function () {
+      try {
+        if (session.cancelled || session.released) throw cancelledError();
+        if (!global.FormFacts || !FormFacts.identityRead || !FormFacts.identityVote) {
+          return recognizePlain(session, canvas, scale, pageWidth, pageHeight);
+        }
+        var worker = await ocrWorker(session);
+        var bag = [];
+        var words = [];
+        var used = { rotate: 0, tilt: 0 };
+        var jobs = cardJobs();
+        for (var i = 0; i < jobs.length; i++) {
+          if (session.cancelled || session.released) throw cancelledError();
+          var variant = cardVariant(canvas, jobs[i]);
+          await applyParams(session, worker, { tessedit_pageseg_mode: '6' });
+          worker = await ocrWorker(session);
+          var result = await recognizeBounded(session, worker, variant);
+          var packed = linesFromWords(result && result.data && result.data.words);
+          var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
+          bag.push(read);
+          if (read.nricValid || (read.name && read.name.split(' ').length >= 3)) {
+            words = mapWords(packed.items, scale, pageHeight);
+            used = jobs[i];
+          }
+          var vote = bag.length >= 2 ? FormFacts.identityVote(bag) : null;
+          if (vote && vote.nric && vote.name) {
+            return {
+              text: votedCardText(vote),
+              channel: 'ocr',
+              words: words,
+              identity: vote,
+              transform: {
+                kind: 'render-ocr',
+                scale: scale,
+                pageWidth: pageWidth,
+                pageHeight: pageHeight,
+                rotationDeg: used.rotate + used.tilt,
+                deskew: 'search'
+              }
+            };
+          }
+        }
+        var finalVote = FormFacts.identityVote(bag);
+        return {
+          text: votedCardText(finalVote),
+          channel: 'ocr',
+          words: words,
+          identity: finalVote,
+          transform: {
+            kind: 'render-ocr',
+            scale: scale,
+            pageWidth: pageWidth,
+            pageHeight: pageHeight,
+            rotationDeg: used.rotate + used.tilt,
+            deskew: finalVote && (finalVote.nric || finalVote.name) ? 'search' : 'none'
+          }
+        };
+      } finally {
+        releaseLease(session);
+      }
+    });
+  }
+
+  async function recognizePlain(session, canvas, scale, pageWidth, pageHeight) {
+    var worker = await ocrWorker(session);
+    await applyParams(session, worker, { tessedit_pageseg_mode: '6' });
+    worker = await ocrWorker(session);
+    var result = await recognizeBounded(session, worker, canvas);
+    var packed = linesFromWords(result && result.data && result.data.words);
+    return {
+      text: packed.text,
+      channel: 'ocr',
+      words: mapWords(packed.items, scale, pageHeight),
+      transform: {
+        kind: 'render-ocr',
+        scale: scale,
+        pageWidth: pageWidth,
+        pageHeight: pageHeight,
+        rotationDeg: 0,
+        deskew: 'none'
+      }
+    };
+  }
+
   async function recognizeCanvas(session, canvas, scale, pageWidth, pageHeight) {
     return enqueueOcr(async function () {
     try {
@@ -782,7 +986,7 @@
       var pageHeight = canvas.height / 2;
       session.textCovered = 1;
       session.pagesTotal = 1;
-      return recognizeCanvas(session, canvas, canvas.width / pageWidth, pageWidth, pageHeight);
+      return recognizeCard(session, canvas, canvas.width / pageWidth, pageWidth, pageHeight);
     }
     var text = await textLayer(bytes, session);
     if (text.replace(/\s+/g, '').length >= 40) {

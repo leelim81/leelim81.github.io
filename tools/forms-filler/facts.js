@@ -22,18 +22,36 @@
     var weights = [2, 7, 6, 5, 4, 3, 2];
     var sum = 0;
     for (var i = 0; i < 7; i++) sum += Number(id.charAt(i + 1)) * weights[i];
-    if (id.charAt(0) === 'T' || id.charAt(0) === 'G') sum += 4;
-    var table = (id.charAt(0) === 'S' || id.charAt(0) === 'T') ? 'JZIHGFEDCBA' : 'XWUTRQPNMLK';
+    var prefix = id.charAt(0);
+    // ICA publishes the M prefix and the shape (1 Jan 2022 media release,
+    // example M1234567B is a format sketch, not a checksum). The arithmetic
+    // is the published validator method: weights 2,7,6,5,4,3,2; offset 0 for
+    // S/F, 4 for T/G, 3 for M. M reads the table KLJNPQRTUWX from the other
+    // end, so remainder 0 is X and remainder 10 is K (XWUTRQPNJLK).
+    // https://www.ica.gov.sg/about-ica/news-and-publications/media-room/new-m-fin-series-to-be-introduced-from-1-january-2022
+    // https://github.com/ionbazan/go-nric/blob/v1.0.0/nric.go
+    if (prefix === 'T' || prefix === 'G') sum += 4;
+    if (prefix === 'M') sum += 3;
+    var table = (prefix === 'S' || prefix === 'T') ? 'JZIHGFEDCBA'
+      : (prefix === 'M' ? 'KLJNPQRTUWX'.split('').reverse().join('') : 'XWUTRQPNMLK');
     return table.charAt(sum % 11) === id.charAt(8);
   }
 
-  function nricFrom(text) {
+  function nricTokens(text) {
     var hits = [];
-    var re = /(?:^|[^A-Z0-9$~])([STFGM])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
+    var re = /(?:^|[^A-Z0-9])([STFGM$5])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
     var match;
     while ((match = re.exec(String(text || '')))) {
-      hits.push((match[1] + match[2] + match[3]).toUpperCase());
+      var head = match[1].toUpperCase();
+      if (head === '$' || head === '5') head = 'S';
+      var token = head + match[2] + match[3].toUpperCase();
+      if (/^[STFGM]\d{7}[A-Z]$/.test(token)) hits.push(token);
     }
+    return unique(hits);
+  }
+
+  function nricFrom(text) {
+    var hits = nricTokens(text);
     if (!hits.length) return '';
     var valid = hits.filter(nricChecksum);
     return (valid[0] || hits[0]);
@@ -239,11 +257,7 @@
       if (name) facts.name = name;
     }
     var nricSource = scoped ? scope : text;
-    var nricHits = [];
-    var nricRe = /(?:^|[^A-Z0-9$~])([STFGM])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
-    var nricMatch;
-    while ((nricMatch = nricRe.exec(String(nricSource || '')))) nricHits.push((nricMatch[1] + nricMatch[2] + nricMatch[3]).toUpperCase());
-    nricHits = unique(nricHits);
+    var nricHits = nricTokens(nricSource);
     if (nricHits.length > 1) facts.conflict = true;
     else if (nricHits.length === 1) facts.nric = nricHits[0];
     else if (!scoped) {
@@ -718,6 +732,134 @@
     return out;
   }
 
+  function tokenConfidence(words, value) {
+    var parts = String(value || '').toUpperCase().split(/\s+/).filter(Boolean);
+    if (!parts.length || !words || !words.length) return null;
+    var scores = [];
+    parts.forEach(function (part) {
+      var key = part.replace(/[^A-Z0-9]/g, '');
+      var hit = null;
+      words.forEach(function (word) {
+        var text = String(word.text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (text && text === key) hit = word;
+      });
+      if (hit && hit.confidence != null) scores.push(Number(hit.confidence));
+    });
+    if (!scores.length) return null;
+    var total = 0;
+    scores.forEach(function (score) { total += score; });
+    return total / scores.length;
+  }
+
+  function soleLeader(counts) {
+    var best = '';
+    var seen = 0;
+    var tie = false;
+    Object.keys(counts).forEach(function (key) {
+      if (counts[key] > seen) { seen = counts[key]; best = key; tie = false; }
+      else if (counts[key] === seen) tie = true;
+    });
+    return tie ? '' : best;
+  }
+
+  function agreedName(names) {
+    var unique = [];
+    (names || []).forEach(function (name) {
+      var clean = String(name || '').replace(/\s+/g, ' ').trim();
+      if (clean && unique.indexOf(clean) < 0) unique.push(clean);
+    });
+    if (!unique.length) return '';
+    var longest = unique.slice().sort(function (a, b) { return b.length - a.length; })[0];
+    var ok = unique.every(function (name) {
+      if (name === longest) return true;
+      var small = name.split(' ');
+      var large = longest.split(' ');
+      if (small.length > large.length) return false;
+      for (var i = 0; i < small.length; i++) {
+        if (large[i] !== small[i] && large[i].indexOf(small[i]) !== 0) return false;
+        if (small[i].length < 2) return false;
+      }
+      return true;
+    });
+    return ok ? longest : '';
+  }
+
+  function identityVote(reads) {
+    var list = reads || [];
+    var nricCounts = {};
+    list.forEach(function (read) {
+      var id = read && read.nric;
+      if (!id || !nricChecksum(id)) return;
+      nricCounts[id] = (nricCounts[id] || 0) + 1;
+    });
+    var nric = soleLeader(nricCounts);
+    var paired = [];
+    if (nric) {
+      list.forEach(function (read) {
+        if (read && read.nric === nric && nricChecksum(read.nric) && read.name) paired.push(read.name);
+      });
+    }
+    var name = agreedName(paired);
+    if (!name) {
+      var repeated = [];
+      var counts = {};
+      list.forEach(function (read) {
+        if (!read || !read.name) return;
+        counts[read.name] = (counts[read.name] || 0) + 1;
+      });
+      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
+      name = agreedName(repeated);
+    }
+    var tokens = String(name || '').split(' ').filter(Boolean);
+    var nameUnconfirmed = false;
+    if (name) {
+      list.forEach(function (read) {
+        if (!read || !read.name || read.name === name) {
+          if (read && read.name === name && read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
+          return;
+        }
+        var other = String(read.name).split(' ').filter(Boolean);
+        if (other.length > tokens.length) nameUnconfirmed = true;
+        if (tokens.length && tokens.every(function (word) { return other.indexOf(word) >= 0; })) nameUnconfirmed = true;
+      });
+    }
+    return {
+      name: name || '',
+      nric: nric || '',
+      nricValid: !!nric,
+      nameConf: null,
+      nricConf: null,
+      nameUnconfirmed: nameUnconfirmed,
+      nricUnconfirmed: false
+    };
+  }
+
+  function identityRead(text, words) {
+    var raw = String(text || '');
+    var name = nameFrom(raw);
+    var hits = nricTokens(raw);
+    var valid = hits.filter(nricChecksum);
+    var nric = '';
+    var nricValid = false;
+    if (valid.length === 1) {
+      nric = valid[0];
+      nricValid = true;
+    } else if (!valid.length && hits.length === 1) {
+      nric = hits[0];
+    }
+    var nameConf = tokenConfidence(words, name);
+    var nricConf = tokenConfidence(words, nric);
+    return {
+      name: name,
+      nric: nric,
+      nricValid: nricValid,
+      nameConf: nameConf,
+      nricConf: nricConf,
+      nameUnconfirmed: !!(name && nameConf != null && nameConf < 55),
+      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55)))
+    };
+  }
+
   function preview(facts) {
     var items = [];
     function push(label, value) {
@@ -750,6 +892,8 @@
     modelFields: modelFields,
     preview: preview,
     accept: accept,
-    nricChecksum: nricChecksum
+    nricChecksum: nricChecksum,
+    identityRead: identityRead,
+    identityVote: identityVote
   };
 });

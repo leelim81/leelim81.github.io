@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import assert from 'assert';
 
 const require = createRequire(import.meta.url);
-const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject } = require('./facts.js');
+const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject, nricChecksum, identityVote } = require('./facts.js');
 
 const ocr = `REPUBLIC OF SINGAPORE
 IDENTITY CARD NO. S1234567D
@@ -259,6 +259,24 @@ assert.equal(modelScalar(null), '');
 assert.equal(modelScalar('null'), '');
 assert.equal(modelScalar('Not specified'), 'Not specified');
 assert.deepEqual(coerceModelObject({ dob: null, citizenship: 'null', name: 'Alex Example' }), { dob: '', citizenship: '', name: 'Alex Example' });
+assert.equal(nricChecksum('S1234567D'), true);
+assert.equal(nricChecksum('S1234567E'), false);
+assert.equal(nricChecksum('T1680536F'), true);
+assert.equal(nricChecksum('F5221211K'), true);
+assert.equal(nricChecksum('G8169811U'), true);
+assert.equal(nricChecksum('M9612050P'), true);
+assert.equal(nricChecksum('M2200054X'), true);
+assert.equal(nricChecksum('M1234567K'), true);
+assert.equal(nricChecksum('M9612050Q'), false);
+assert.equal(nricChecksum('M1234567B'), false);
+const partialName = identityVote([
+  { name: 'WEI MING', nric: 'S1234567D', nricValid: true, nameConf: 90 },
+  { name: 'TAN WEI MING', nric: 'S1234567D', nricValid: true, nameConf: 80 },
+  { name: 'WEI MING', nric: 'S1234567D', nricValid: true, nameConf: 90 }
+]);
+assert.equal(partialName.name, 'WEI MING');
+assert.equal(partialName.nameUnconfirmed, true);
+assert.equal(partialName.nric, 'S1234567D');
 console.log('facts tests ok');
 
 // Supported false negatives, not model scores:
