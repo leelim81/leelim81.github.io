@@ -2678,7 +2678,13 @@
       var session = await idbGet('session');
       var usable = pdf && session && session.pages && session.pages.length && session.source !== (desk === 'forms' ? 'edit' : 'forms');
       if (usable) {
-        await loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
+        try {
+          await loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
+        } catch (err) {
+          showEmpty();
+          toast('A saved document was found but could not be restored.');
+          return;
+        }
         if (session.reviewNote) toast(session.reviewNote);
         setSaveStatus('Saved');
         $('saveState').dataset.gen = '1';
@@ -2688,7 +2694,7 @@
       }
     } catch (err) {
       showEmpty();
-      toast('A saved document was found but could not be restored.');
+      toast('This browser could not open saved documents. Nothing was restored.');
     }
   }
   window.addEventListener('pageshow', function (event) {
