@@ -451,6 +451,7 @@
       unread = spatial.unread || '';
       ref.channel = spatial.channel || 'text-layer';
       ref.words = spatial.words || [];
+      ref.identity = spatial.identity || null;
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
@@ -1140,6 +1141,22 @@
           if (ref.channel === 'ocr' && ref.words) ref.words.forEach(function (word) { photoWords.push(word); });
         });
         var idn = FormFacts.identityRead(notesAll, photoWords);
+        var chosen = null;
+        state.refs.forEach(function (ref) {
+          var voted = ref && ref.identity;
+          if (!voted || (!voted.name && !voted.nric)) return;
+          if (!chosen || (voted.nricValid && !chosen.nricValid)) chosen = voted;
+          else if (chosen && voted.name && voted.name === chosen.name && voted.nameUnconfirmed) chosen.nameUnconfirmed = true;
+        });
+        if (chosen) {
+          if (chosen.name) idn.name = chosen.name;
+          if (chosen.nric && chosen.nricValid) {
+            idn.nric = chosen.nric;
+            idn.nricValid = true;
+          }
+          if (chosen.nameUnconfirmed) idn.nameUnconfirmed = true;
+          if (chosen.nricUnconfirmed) idn.nricUnconfirmed = true;
+        }
         if (!idn.name && !idn.nric) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
         var matched = false;
         decisions.forEach(function (row) {
@@ -1207,6 +1224,14 @@
       if (reviews.length && $('reviewBox')) {
         confirmed = await confirmReviews(reviews);
         if (!current()) return;
+        if (identityPhoto) {
+          state.refs.forEach(function (ref) {
+            if (String(ref.mime || '').indexOf('image/') === 0 || /\.(png|jpe?g|webp)$/i.test(ref.name || '')) ref.bytes = new Uint8Array(0);
+          });
+          clearTimeout(saveTimer);
+          draftEpoch++;
+          await persistDraft();
+        }
         if (confirmed.length && state.profileId && window.FormProfiles) {
           try {
             var live = await FormProfiles.load();

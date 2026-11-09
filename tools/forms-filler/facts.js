@@ -22,8 +22,18 @@
     var weights = [2, 7, 6, 5, 4, 3, 2];
     var sum = 0;
     for (var i = 0; i < 7; i++) sum += Number(id.charAt(i + 1)) * weights[i];
-    if (id.charAt(0) === 'T' || id.charAt(0) === 'G') sum += 4;
-    var table = (id.charAt(0) === 'S' || id.charAt(0) === 'T') ? 'JZIHGFEDCBA' : 'XWUTRQPNMLK';
+    var prefix = id.charAt(0);
+    // ICA publishes the M prefix and the shape (1 Jan 2022 media release,
+    // example M1234567B is a format sketch, not a checksum). The arithmetic
+    // is the published validator method: weights 2,7,6,5,4,3,2; offset 0 for
+    // S/F, 4 for T/G, 3 for M. M reads the table KLJNPQRTUWX from the other
+    // end, so remainder 0 is X and remainder 10 is K (XWUTRQPNJLK).
+    // https://www.ica.gov.sg/about-ica/news-and-publications/media-room/new-m-fin-series-to-be-introduced-from-1-january-2022
+    // https://github.com/ionbazan/go-nric/blob/v1.0.0/nric.go
+    if (prefix === 'T' || prefix === 'G') sum += 4;
+    if (prefix === 'M') sum += 3;
+    var table = (prefix === 'S' || prefix === 'T') ? 'JZIHGFEDCBA'
+      : (prefix === 'M' ? 'KLJNPQRTUWX'.split('').reverse().join('') : 'XWUTRQPNMLK');
     return table.charAt(sum % 11) === id.charAt(8);
   }
 
@@ -800,13 +810,26 @@
       Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
       name = agreedName(repeated);
     }
+    var tokens = String(name || '').split(' ').filter(Boolean);
+    var nameUnconfirmed = false;
+    if (name) {
+      list.forEach(function (read) {
+        if (!read || !read.name || read.name === name) {
+          if (read && read.name === name && read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
+          return;
+        }
+        var other = String(read.name).split(' ').filter(Boolean);
+        if (other.length > tokens.length) nameUnconfirmed = true;
+        if (tokens.length && tokens.every(function (word) { return other.indexOf(word) >= 0; })) nameUnconfirmed = true;
+      });
+    }
     return {
       name: name || '',
       nric: nric || '',
       nricValid: !!nric,
       nameConf: null,
       nricConf: null,
-      nameUnconfirmed: false,
+      nameUnconfirmed: nameUnconfirmed,
       nricUnconfirmed: false
     };
   }

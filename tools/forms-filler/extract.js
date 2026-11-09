@@ -771,6 +771,7 @@
               text: votedCardText(vote),
               channel: 'ocr',
               words: words,
+              identity: vote,
               transform: {
                 kind: 'render-ocr',
                 scale: scale,
@@ -787,6 +788,7 @@
           text: votedCardText(finalVote),
           channel: 'ocr',
           words: words,
+          identity: finalVote,
           transform: {
             kind: 'render-ocr',
             scale: scale,

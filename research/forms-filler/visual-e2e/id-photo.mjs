@@ -325,6 +325,24 @@ await clearPage.reload({ waitUntil: 'domcontentloaded' });
 await clearPage.waitForSelector('#pages .ann-body');
 const again = await clearPage.locator('#pages .ann-body').allInnerTexts();
 check('reload keeps the confirmed name and ID', again.includes('TAN WEI MING') && again.includes(GOOD) && again.length === 2, again.join(' | '));
+const keptBytes = await clearPage.evaluate(async () => {
+  const db = await new Promise((resolve, reject) => {
+    const req = indexedDB.open('tools-forms-filler');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  const draft = await new Promise((resolve, reject) => {
+    const req = db.transaction('kv', 'readonly').objectStore('kv').get('draft');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  const refs = (draft && draft.refs) || [];
+  return refs.reduce((total, ref) => {
+    const image = String(ref.mime || '').indexOf('image/') === 0 || /\.png$/i.test(ref.name || '');
+    return total + (image && ref.bytes ? ref.bytes.length : 0);
+  }, 0);
+});
+check('the confirmed photo is not kept in the saved draft', keptBytes === 0, String(keptBytes));
 await clearPage.close();
 
 const badPage = await openDesk();
@@ -381,11 +399,20 @@ async function probe(label, files, want) {
   check(label + ' proposes no failed checksum', invalid.length === 0 && !/pdf-editor/.test(page.url()), shown.slice(0, 180));
   if (want.id) check(label + ' reads the name and checksum-valid ID', hit, shown.slice(0, 180));
   if (want.none) check(label + ' does not invent an ID', ids.length === 0, shown.slice(0, 180));
+  if (want.partial) {
+    check(label + ' shows the partial name unconfirmed and unwritten', /Unconfirmed/i.test(shown) && shown.includes(want.partial) && !/pdf-editor/.test(page.url()), shown.slice(0, 200));
+    await page.locator('#reviewList input[type="checkbox"]').evaluateAll((boxes) => boxes.forEach((box) => { box.checked = true; }));
+    await page.click('#reviewUse');
+    await page.waitForURL(/pdf-editor/);
+    await page.waitForSelector('#pages .ann-body');
+    const marks = await page.locator('#pages .ann-body').allInnerTexts();
+    check(label + ' writes the partial name only after it is confirmed', marks.some((mark) => mark.includes(want.partial)), marks.join(' | '));
+  }
   await page.close();
 }
 await probe('faint rotated', '/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', id: GOOD });
 await probe('quarter turn', '/tmp/synthetic-id-turn.png', { name: 'TAN WEI MING', id: GOOD });
-await probe('phone skew', '/tmp/synthetic-id-skew.png', { report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('phone skew', '/tmp/synthetic-id-skew.png', { partial: 'WEI MING', report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('glare', '/tmp/synthetic-id-glare.png', { report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('low resolution', '/tmp/synthetic-id-low.png', { report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('blur', '/tmp/synthetic-id-blur.png', { report: { name: 'TAN WEI MING', id: GOOD } });
