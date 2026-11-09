@@ -1753,13 +1753,32 @@
     await refreshMaps();
     recoverSay('Saved ' + saved.map.name + ' for this exact file, role ' + saved.map.role + '. It does not keep the person or the values.');
   }
+  function mapClickIntent() {
+    return {
+      doc: state.docSerial,
+      panel: recoverPanelGen,
+      person: ($('recoverPerson') && $('recoverPerson').value) || '',
+      bytes: state.pdfBytes
+    };
+  }
+  function mapClickCurrent(intent) {
+    var personNow = ($('recoverPerson') && $('recoverPerson').value) || '';
+    return !!intent && intent.doc === state.docSerial && intent.panel === recoverPanelGen && intent.person === personNow && intent.bytes === state.pdfBytes && !!state.pdfBytes;
+  }
   async function previewMap() {
     var map = chosenMap();
     var box = $('mapPreviewText');
     if (!map) { if (box) box.textContent = 'No map for this exact file.'; return; }
+    var intent = mapClickIntent();
     var support = await pagesSupported();
+    if (!mapClickCurrent(intent)) return;
     if (!support.ok) { if (box) box.textContent = support.reason; return; }
-    if (map.fileSha256 !== await fileSha()) { if (box) box.textContent = 'This is not the same file. Open the exact blank original.'; return; }
+    if (map.fileSha256 !== await fileSha()) {
+      if (!mapClickCurrent(intent)) return;
+      if (box) box.textContent = 'This is not the same file. Open the exact blank original.';
+      return;
+    }
+    if (!mapClickCurrent(intent)) return;
     if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
       var refused = 'This photo opened onto a different sheet. The map was not used.';
       if (box) box.textContent = refused;
@@ -1769,6 +1788,7 @@
     var person = $('recoverPerson');
     var fact = selectedRecoverFact();
     var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
+    if (!mapClickCurrent(intent)) return;
     var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
     var lines = [];
     var ready = 0;
@@ -1794,9 +1814,16 @@
   async function applyMap() {
     var map = chosenMap();
     if (!map) { recoverSay('Choose a map for this exact file.'); return; }
+    var intent = mapClickIntent();
     var support = await pagesSupported();
+    if (!mapClickCurrent(intent)) return;
     if (!support.ok) { recoverSay(support.reason); return; }
-    if (map.fileSha256 !== await fileSha()) { recoverSay('This is not the same file the map was saved from. Open the exact blank original. A changed copy is not used.'); return; }
+    if (map.fileSha256 !== await fileSha()) {
+      if (!mapClickCurrent(intent)) return;
+      recoverSay('This is not the same file the map was saved from. Open the exact blank original. A changed copy is not used.');
+      return;
+    }
+    if (!mapClickCurrent(intent)) return;
     if (map.sheet && !window.FormMaps.matchesSheet(map.sheet, state.sheet)) {
       recoverSay('This photo opened onto a different sheet. The map was not used.');
       return;
@@ -1807,8 +1834,10 @@
     }
     var person = $('recoverPerson');
     var loaded = window.FormProfiles ? await FormProfiles.load() : { ok: false };
-    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === (person && person.value); })[0] : null;
+    if (!mapClickCurrent(intent)) return;
+    var profile = loaded.ok ? (loaded.vault.profiles || []).filter(function (item) { return item.id === intent.person; })[0] : null;
     if (!profile) { recoverSay('Choose a person before applying a map.'); return; }
+    if (!mapClickCurrent(intent)) return;
     pushUndo();
     var parked = state.withheld ? state.withheld.slice() : [];
     state.pages.forEach(function (rec, index) {
