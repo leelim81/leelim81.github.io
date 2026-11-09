@@ -57,7 +57,57 @@
     return (valid[0] || hits[0]);
   }
 
+  function plainOf(name) {
+    return String(name || '').replace(/\s+\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function aliasOf(name) {
+    var match = String(name || '').match(/\(([A-Za-z][A-Za-z'’.\- ]*)\)\s*$/);
+    return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function acceptableMain(words) {
+    if (!words || words.length < 2 || words.length > 8) return false;
+    if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD'; })) return false;
+    if (words.filter(function (word) { return JUNK[word.toLowerCase()]; }).length >= words.length - 1) return false;
+    if (words.every(function (word) { return JUNK[word.toLowerCase()]; })) return false;
+    return true;
+  }
+
+  function parseNameLine(line) {
+    var raw = String(line || '').replace(/\s+/g, ' ').trim();
+    var match = raw.match(/^([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){1,7})(?: +\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,5})\))?$/);
+    if (!match) return null;
+    var main = match[1].split(' ').filter(Boolean);
+    if (!acceptableMain(main)) return null;
+    var alias = match[2] ? match[2].replace(/\s+/g, ' ').trim() : '';
+    var plain = main.join(' ');
+    return { full: alias ? plain + ' (' + alias + ')' : plain, plain: plain, alias: alias };
+  }
+
+  function isNameLabel(line) {
+    var text = String(line || '').replace(/[:.\s]+$/g, '').trim();
+    if (/debit|account|bank/i.test(text)) return false;
+    return /^(full name|name)$/i.test(text);
+  }
+
+  function printedName(text) {
+    var lines = linesOf(text);
+    for (var i = 0; i < lines.length; i++) {
+      if (!isNameLabel(lines[i])) continue;
+      var parsed = parseNameLine(lines[i + 1] || '');
+      if (!parsed) continue;
+      var wrapped = String(lines[i + 2] || '').replace(/\s+/g, ' ').trim();
+      var wrap = wrapped.match(/^\(([A-Z][A-Z'’.\-]+(?: +[A-Z][A-Z'’.\-]+){0,5})\)$/);
+      if (!parsed.alias && wrap) parsed = { full: parsed.plain + ' (' + wrap[1] + ')', plain: parsed.plain, alias: wrap[1] };
+      return parsed;
+    }
+    return { full: '', plain: '', alias: '' };
+  }
+
   function nameFrom(text) {
+    var printed = printedName(text);
+    if (printed.full) return printed.full;
     var inline = String(text || '').match(/\bfull name\b[ \t]*[:\-][ \t]*([A-Za-z][A-Za-z'’.\-]+(?:[ \t]+[A-Za-z][A-Za-z'’.\-]+){1,5})/i);
     if (inline) return inline[1].replace(/\s+/g, ' ').trim();
     var lines = linesOf(text);
@@ -799,44 +849,69 @@
         if (read && read.nric === nric && nricChecksum(read.nric) && read.name) paired.push(read.name);
       });
     }
-    var name = agreedName(paired);
-    if (!name) {
-      var repeated = [];
+    function plainPool(reads) {
+      return (reads || []).map(function (read) {
+        var name = '';
+        if (typeof read === 'string') name = read;
+        else if (read && typeof read.name === 'string') name = read.name;
+        return plainOf(name);
+      }).filter(Boolean);
+    }
+    var namePool = paired.length ? paired.map(plainOf) : plainPool(list);
+    var plain = agreedName(namePool);
+    if (!plain) {
       var counts = {};
+      namePool.forEach(function (item) { counts[item] = (counts[item] || 0) + 1; });
+      var repeated = [];
+      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
+      plain = agreedName(repeated);
+    }
+    var aliasCounts = {};
+    if (plain) {
+      list.forEach(function (read) {
+        if (!read || plainOf(read.name) !== plain) return;
+        var alias = aliasOf(read.name);
+        if (alias) aliasCounts[alias] = (aliasCounts[alias] || 0) + 1;
+      });
+    }
+    var alias = soleLeader(aliasCounts);
+    var name = plain ? (alias ? plain + ' (' + alias + ')' : plain) : '';
+    var support = 0;
+    if (plain) list.forEach(function (read) { if (read && plainOf(read.name) === plain) support++; });
+    var tokens = plain ? plain.split(' ').filter(Boolean) : [];
+    var nameUnconfirmed = false;
+    if (plain) {
       list.forEach(function (read) {
         if (!read || !read.name) return;
-        counts[read.name] = (counts[read.name] || 0) + 1;
-      });
-      Object.keys(counts).forEach(function (item) { if (counts[item] >= 2) repeated.push(item); });
-      name = agreedName(repeated);
-    }
-    var tokens = String(name || '').split(' ').filter(Boolean);
-    var nameUnconfirmed = false;
-    if (name) {
-      list.forEach(function (read) {
-        if (!read || !read.name || read.name === name) {
-          if (read && read.name === name && read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
+        var otherPlain = plainOf(read.name);
+        if (otherPlain === plain) {
+          if (read.nameConf != null && read.nameConf < 55) nameUnconfirmed = true;
           return;
         }
-        var other = String(read.name).split(' ').filter(Boolean);
+        var other = otherPlain.split(' ').filter(Boolean);
         if (other.length > tokens.length) nameUnconfirmed = true;
         if (tokens.length && tokens.every(function (word) { return other.indexOf(word) >= 0; })) nameUnconfirmed = true;
       });
     }
     return {
       name: name || '',
+      namePlain: plain || '',
+      nameAlias: alias || '',
       nric: nric || '',
       nricValid: !!nric,
       nameConf: null,
       nricConf: null,
       nameUnconfirmed: nameUnconfirmed,
-      nricUnconfirmed: false
+      nricUnconfirmed: false,
+      nameChecked: !!(name && !nameUnconfirmed && !alias && support >= 2),
+      nricChecked: !!(nric && nricCounts[nric] >= 2)
     };
   }
 
   function identityRead(text, words) {
     var raw = String(text || '');
-    var name = nameFrom(raw);
+    var printed = printedName(raw);
+    var name = printed.full || nameFrom(raw);
     var hits = nricTokens(raw);
     var valid = hits.filter(nricChecksum);
     var nric = '';
@@ -851,12 +926,16 @@
     var nricConf = tokenConfidence(words, nric);
     return {
       name: name,
+      namePlain: printed.plain || plainOf(name),
+      nameAlias: printed.alias || '',
       nric: nric,
       nricValid: nricValid,
       nameConf: nameConf,
       nricConf: nricConf,
       nameUnconfirmed: !!(name && nameConf != null && nameConf < 55),
-      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55)))
+      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55))),
+      nameChecked: false,
+      nricChecked: false
     };
   }
 

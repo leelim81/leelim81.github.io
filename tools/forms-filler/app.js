@@ -150,11 +150,11 @@
       return;
     }
     if (snap.phase === 'unavailable') {
-      el.textContent = 'Private model unavailable. This browser has no WebGPU, so nothing is downloaded.';
+      el.textContent = 'Photo and text reading still work on this device. The optional private model is off because this browser has no WebGPU, so nothing is downloaded.';
       return;
     }
     if (snap.phase === 'checking') {
-      el.textContent = 'Checking whether this browser can run the private model…';
+      el.textContent = 'Photo and text reading work on this device. Checking the optional private model…';
       return;
     }
     if (snap.phase === 'selected') {
@@ -608,13 +608,14 @@
     var box = $('reviewBox');
     var list = $('reviewList');
     list.textContent = '';
-    $('reviewLead').textContent = reviews.length + ' value' + (reviews.length === 1 ? ' is' : 's are') + ' not written until you check ' + (reviews.length === 1 ? 'it' : 'them') + '.';
+    $('reviewLead').textContent = 'Nothing is written until you use the checked values. Uncheck any you do not want.';
     reviews.forEach(function (row) {
       var li = document.createElement('li');
       var label = document.createElement('label');
       var boxIn = document.createElement('input');
       boxIn.type = 'checkbox';
       boxIn.value = row.fieldId;
+      boxIn.checked = !!row.checked;
       var field = null;
       for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
       var text = document.createElement('span');
@@ -655,6 +656,22 @@
         label.appendChild(quote);
       }
       li.appendChild(label);
+      if (row.plain && row.plain !== row.value) {
+        var alt = document.createElement('button');
+        alt.type = 'button';
+        alt.className = 'review-quote';
+        alt.textContent = 'Without bracketed name';
+        alt.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          var editor = li.querySelector('input[type="text"]');
+          if (editor) editor.value = row.plain;
+          else text.textContent = (row.kind || 'field') + ': ' + row.plain;
+          row.value = row.plain;
+          boxIn.checked = true;
+        });
+        li.appendChild(alt);
+      }
       list.appendChild(li);
     });
     box.hidden = false;
@@ -1157,6 +1174,10 @@
           }
           if (chosen.nameUnconfirmed) idn.nameUnconfirmed = true;
           if (chosen.nricUnconfirmed) idn.nricUnconfirmed = true;
+          idn.namePlain = chosen.namePlain || idn.namePlain || '';
+          idn.nameAlias = chosen.nameAlias || '';
+          idn.nameChecked = !!chosen.nameChecked && !idn.nameUnconfirmed;
+          idn.nricChecked = !!chosen.nricChecked && !idn.nricUnconfirmed;
         }
         if (!idn.name && !idn.nric) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
         var matched = false;
@@ -1180,6 +1201,8 @@
             row.value = idn.name;
             row.kind = 'name';
             row.editable = !!idn.nameUnconfirmed;
+            row.checked = !!idn.nameChecked;
+            row.plain = idn.namePlain && idn.namePlain !== idn.name ? idn.namePlain : '';
             row.reason = idn.nameUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
             row.quote = 'Read from the photo';
           }
@@ -1189,6 +1212,7 @@
             row.value = idn.nric;
             row.kind = 'nric';
             row.editable = !!idn.nricUnconfirmed;
+            row.checked = !!idn.nricChecked;
             row.reason = idn.nricUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
             row.quote = idn.nricValid ? 'Read from the photo' : 'Checksum not confirmed';
           }

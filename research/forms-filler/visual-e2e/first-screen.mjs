@@ -33,7 +33,7 @@ const screen = await page.evaluate(() => {
   };
 });
 check('the duplicate WebGPU box is not on the first screen', screen.gpu.hidden && screen.gpu.bottom === 0, JSON.stringify(screen.gpu));
-check('the model status still says it is unavailable and nothing is downloaded', /Private model unavailable/.test(screen.model) && /nothing is downloaded/.test(screen.model) && !/autofill/i.test(screen.model), screen.model);
+check('the model status still says photo reading works and the private model is off', /Photo and text reading still work/.test(screen.model) && /optional private model is off/.test(screen.model) && /nothing is downloaded/.test(screen.model) && !/autofill/i.test(screen.model), screen.model);
 check('Fill from the papers fits in the 390 by 700 window', screen.fill.bottom <= screen.vh && screen.fill.top >= 0, JSON.stringify({ fill: screen.fill, vh: screen.vh }));
 check('Saved values stays before the extension, and the privacy line stays', screen.saved.top < screen.ext.top && /Nothing is uploaded/.test(screen.privacy), JSON.stringify({ saved: screen.saved.top, ext: screen.ext.top }));
 await page.click('#profileToggle');
