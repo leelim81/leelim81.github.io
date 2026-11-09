@@ -179,7 +179,12 @@ const placed = await page.evaluate(() => Array.from(document.querySelectorAll('.
 check('the placed mark is Bea’s value and not Ada’s', placed.join('|') === 'Bea Other', placed.join('|'));
 await page.waitForFunction(() => document.getElementById('saveState').textContent === 'Saved');
 await page.reload({ waitUntil: 'domcontentloaded' });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Other/.test(node.innerText)));
+await page.waitForFunction((id) => {
+  const mark = Array.from(document.querySelectorAll('.ann-body')).some((node) => /Bea Other/.test(node.innerText));
+  const person = document.getElementById('recoverPerson');
+  const selected = person && person.selectedOptions && person.selectedOptions[0];
+  return mark && person && person.value === id && selected && selected.textContent === 'Bea Shore';
+}, beaId);
 const resumed = await page.evaluate((id) => ({
   person: document.getElementById('recoverPerson').value,
   text: Array.from(document.querySelectorAll('.ann-body')).map((node) => node.innerText.replace(/\s+/g, ' ').trim()).join('|')
