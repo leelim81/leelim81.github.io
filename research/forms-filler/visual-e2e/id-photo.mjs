@@ -43,6 +43,19 @@ const malanNext = facts.identityRead('Name\nTAN WEI MING\n(MALAN)\nS1234567D\n')
 check('next-line MALAN stays an alias', malanNext.name === 'TAN WEI MING (MALAN)' && malanNext.nameAlias === 'MALAN', JSON.stringify(malanNext));
 const noor = facts.identityRead('Name\nTAN WEI MING (NOOR)\nS1234567D\n');
 check('NOOR is not blocked by the word NO', noor.nameAlias === 'NOOR', JSON.stringify(noor));
+const unlabeled = facts.identityRead('REPUBLIC OF SINGAPORE\nIDENTITY CARD NO. S1234567D\nab\nTANG WEI MING\n(ALEX KENNETH)\n| Ab\nRace\n');
+check('an unlabeled card keeps the alias on the next line and does not pre-check it', unlabeled.name === 'TANG WEI MING (ALEX KENNETH)' && unlabeled.namePlain === 'TANG WEI MING' && unlabeled.nameAlias === 'ALEX KENNETH' && unlabeled.unlabeled && !unlabeled.nameChecked, JSON.stringify(unlabeled));
+const unlabeledVote = facts.identityVote([unlabeled, unlabeled]);
+check('votes do not pre-check an unlabeled alias name', unlabeledVote.name === 'TANG WEI MING (ALEX KENNETH)' && unlabeledVote.nameChecked === false && unlabeledVote.nricChecked === true, JSON.stringify(unlabeledVote));
+function noAlias(text) {
+  const read = facts.identityRead(text);
+  return read.name === 'TANG WEI MING' && !read.nameAlias && !read.nameRepaired;
+}
+check('an unlabeled (RACE) line is not attached', noAlias('TANG WEI MING\n(RACE)\n'), JSON.stringify(facts.identityRead('TANG WEI MING\n(RACE)\n')));
+check('digits in the brackets are not an alias', noAlias('TANG WEI MING\n(ALEX 9KENNETH)\n'), JSON.stringify(facts.identityRead('TANG WEI MING\n(ALEX 9KENNETH)\n')));
+check('an unbalanced bracket is not repaired on the unlabeled path', noAlias('TANG WEI MING\n(99/99/9999\n'), JSON.stringify(facts.identityRead('TANG WEI MING\n(99/99/9999\n')));
+check('an alias that is not the next line is not attached', noAlias('TANG WEI MING\nRace\n(ALEX KENNETH)\n'), JSON.stringify(facts.identityRead('TANG WEI MING\nRace\n(ALEX KENNETH)\n')));
+check('an unbalanced name alias is not attached without a label', noAlias('TANG WEI MING\n(ALEX KENNETH\n'), JSON.stringify(facts.identityRead('TANG WEI MING\n(ALEX KENNETH\n')));
 const junkLabels = ['RACE', 'MALE', 'FEMALE', 'CHINESE', 'MALAY', 'INDIAN', 'DATE OF BIRTH', 'BLOOD GROUP', 'IDENTITY CARD', 'SINGAPORE', 'COUNTRY OF BIRTH', 'SEX', 'NAME', 'OTHERS', 'PR', 'POSTAL CODE', 'ADDRESS', 'NRIC', 'FIN', 'CITIZEN', 'EURASIAN', 'NATIONALITY', 'PLACE', 'ISSUE', 'EXPIRY', 'DATE', 'CARD', 'NO', 'NUMBER', 'REPUBLIC', 'BIRTH', 'BLK', 'STREET', 'UNIT'];
 junkLabels.forEach((label) => {
   const same = facts.identityRead('Name\nTAN WEI MING (' + label + ')\nS1234567D\n');
@@ -162,8 +175,10 @@ async function paintCard(file, spec) {
     ctx.font = '28px sans-serif';
     ctx.fillText('REPUBLIC OF SINGAPORE', 80, 90);
     ctx.fillText('IDENTITY CARD', 80, 140);
-    ctx.font = '22px sans-serif';
-    ctx.fillText('Name', 80, 230);
+    if (!spec.hideLabel) {
+      ctx.font = '22px sans-serif';
+      ctx.fillText('Name', 80, 230);
+    }
     if (spec.alias && !spec.aliasWrap) {
       ctx.font = 'bold 42px sans-serif';
       ctx.fillText(spec.name + ' (' + spec.alias + ')', 80, 300);
@@ -276,6 +291,7 @@ await paintCard('/tmp/synthetic-id-clear.png', front);
 await paintCard('/tmp/synthetic-id-alias.png', Object.assign({}, front, { alias: 'CHEN WEIMING' }));
 await paintCard('/tmp/synthetic-id-alias-wrap.png', Object.assign({}, front, { alias: 'CHEN WEIMING', aliasWrap: true }));
 await paintCard('/tmp/synthetic-id-long.png', Object.assign({}, front, { name: 'SITI NUR ALEESYA BINTI MOHAMED ABDUL RAHMAN', chinese: '' }));
+await paintCard('/tmp/synthetic-id-nolabel.png', Object.assign({}, front, { name: 'TANG WEI MING', alias: 'ALEX KENNETH', aliasWrap: true, hideLabel: true, chinese: '' }));
 await paintCard('/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: GOOD, paper: '#d5d5d5', ink: '#6e6e6e', rotate: 0.1 });
 await paintCard('/tmp/synthetic-id-bad.png', { name: 'TAN WEI MING', chinese: '陈伟明', nric: BAD, paper: '#ffffff', ink: '#111111', rotate: 0 });
 await paintCard('/tmp/synthetic-id-turn.png', Object.assign({}, front, { turn: 90 }));
@@ -358,6 +374,8 @@ await attach(clearPage, '/tmp/synthetic-id-clear.png');
 const clearReadMs = Date.now() - clearStarted;
 await clearPage.click('#fillBtn');
 await clearPage.waitForSelector('#reviewBox:not([hidden])');
+const reviewStatus = await clearPage.locator('#readStatus').evaluate((el) => ({ busy: el.classList.contains('busy'), text: el.textContent || '' }));
+check('the review prompt is not the busy reading status', !reviewStatus.busy && /Use checked values/.test(reviewStatus.text), reviewStatus.text);
 console.log('CLEAR_PHOTO_MS', Date.now() - clearStarted, 'READ_MS', clearReadMs);
 async function draftBytes(page) {
   return page.evaluate(async () => {
@@ -546,6 +564,23 @@ const longReview = await reviewText(longPage);
 check('a long name is offered whole and without an invented alias', longReview.includes('SITI NUR ALEESYA BINTI MOHAMED ABDUL RAHMAN') && !/Without bracketed name/.test(longReview) && !/\(/.test(longReview), longReview.slice(0, 240));
 await longPage.close();
 
+const barePage = await openDesk();
+await barePage.locator('#formInput').setInputFiles('/tmp/synthetic-bank-form.pdf');
+await barePage.waitForFunction(() => /Form ready|No lines were found/.test((document.getElementById('readStatus') || {}).textContent || ''));
+await barePage.locator('#refInput').setInputFiles('/tmp/synthetic-id-nolabel.png');
+await barePage.waitForFunction(() => {
+  const row = document.querySelector('.ref-preview');
+  return row && row.textContent && row.textContent !== 'Reading…';
+});
+await barePage.click('#fillBtn');
+await barePage.waitForSelector('#reviewBox:not([hidden])');
+const bareRows = await reviewRows(barePage);
+const bareText = bareRows.map((row) => row.text).join(' | ');
+check('a card with no Name label still offers the alias and leaves it unticked', bareText.includes('TANG WEI MING (ALEX KENNETH)') && bareRows.some((row) => row.button && /TANG WEI MING \(ALEX KENNETH\)/.test(row.text) && !row.checked), bareText.slice(0, 260));
+const bareStatus = await barePage.locator('#readStatus').evaluate((el) => ({ busy: el.classList.contains('busy'), text: el.textContent || '' }));
+check('that review is not left on the reading status', !bareStatus.busy && /Use checked values/.test(bareStatus.text), bareStatus.text);
+await barePage.close();
+
 async function probe(label, files, want) {
   const page = await openDesk();
   const started = Date.now();
@@ -589,7 +624,7 @@ async function probe(label, files, want) {
 }
 await probe('faint rotated', '/tmp/synthetic-id-faint.png', { name: 'TAN WEI MING', id: GOOD });
 await probe('quarter turn', '/tmp/synthetic-id-turn.png', { name: 'TAN WEI MING', id: GOOD });
-await probe('phone skew', '/tmp/synthetic-id-skew.png', { partial: 'WEI MING', report: { name: 'TAN WEI MING', id: GOOD } });
+await probe('phone skew', '/tmp/synthetic-id-skew.png', { report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('glare', '/tmp/synthetic-id-glare.png', { report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('low resolution', '/tmp/synthetic-id-low.png', { report: { name: 'TAN WEI MING', id: GOOD } });
 await probe('blur', '/tmp/synthetic-id-blur.png', { report: { name: 'TAN WEI MING', id: GOOD } });

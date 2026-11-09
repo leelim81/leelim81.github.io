@@ -761,6 +761,17 @@
           var packed = linesFromWords(result && result.data && result.data.words);
           var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
           bag.push(read);
+          if (read.labeled) session._ffSawNameLabel = true;
+          if (!read.labeled && !session._ffSawNameLabel && !session._ffSparseName) {
+            session._ffSparseName = true;
+            await applyParams(session, worker, { tessedit_pageseg_mode: '11' });
+            worker = await ocrWorker(session);
+            var sparse = await recognizeBounded(session, worker, variant);
+            var sparsePacked = linesFromWords(sparse && sparse.data && sparse.data.words);
+            var sparseRead = FormFacts.identityRead(sparsePacked.text, mapWords(sparsePacked.items, scale, pageHeight));
+            bag.push(sparseRead);
+            if (sparseRead.labeled) read = sparseRead;
+          }
           if (read.nricValid || (read.name && read.name.split(' ').length >= 3)) {
             words = mapWords(packed.items, scale, pageHeight);
             used = jobs[i];

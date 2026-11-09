@@ -1265,6 +1265,7 @@
       var reviews = decisions.filter(function (row) { return row.decision === 'review' && row.value; });
       var confirmed = [];
       if (reviews.length && $('reviewBox')) {
+        status('Check the values below, then tap Use checked values.', false);
         confirmed = await confirmReviews(reviews);
         if (!current()) return;
         if (identityPhoto) await forgetIdentityPhotos();
