@@ -1131,7 +1131,10 @@
           row.reason = 'scan_location_unconfirmed';
         }
       });
-      if (channel === 'ocr' && window.FormFacts && FormFacts.identityRead) {
+      var identityPhoto = state.refs.some(function (ref) {
+        return ref.channel === 'ocr' && (String(ref.mime || '').indexOf('image/') === 0 || /\.(png|jpe?g|webp)$/i.test(ref.name || ''));
+      });
+      if (identityPhoto && window.FormFacts && FormFacts.identityRead) {
         var photoWords = [];
         state.refs.forEach(function (ref) {
           if (ref.channel === 'ocr' && ref.words) ref.words.forEach(function (word) { photoWords.push(word); });
