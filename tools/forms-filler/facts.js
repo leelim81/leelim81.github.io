@@ -27,13 +27,21 @@
     return table.charAt(sum % 11) === id.charAt(8);
   }
 
-  function nricFrom(text) {
+  function nricTokens(text) {
     var hits = [];
-    var re = /(?:^|[^A-Z0-9$~])([STFGM])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
+    var re = /(?:^|[^A-Z0-9])([STFGM$5])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
     var match;
     while ((match = re.exec(String(text || '')))) {
-      hits.push((match[1] + match[2] + match[3]).toUpperCase());
+      var head = match[1].toUpperCase();
+      if (head === '$' || head === '5') head = 'S';
+      var token = head + match[2] + match[3].toUpperCase();
+      if (/^[STFGM]\d{7}[A-Z]$/.test(token)) hits.push(token);
     }
+    return unique(hits);
+  }
+
+  function nricFrom(text) {
+    var hits = nricTokens(text);
     if (!hits.length) return '';
     var valid = hits.filter(nricChecksum);
     return (valid[0] || hits[0]);
@@ -239,11 +247,7 @@
       if (name) facts.name = name;
     }
     var nricSource = scoped ? scope : text;
-    var nricHits = [];
-    var nricRe = /(?:^|[^A-Z0-9$~])([STFGM])\s?(\d{7})\s?([A-Z])(?![A-Z0-9])/gi;
-    var nricMatch;
-    while ((nricMatch = nricRe.exec(String(nricSource || '')))) nricHits.push((nricMatch[1] + nricMatch[2] + nricMatch[3]).toUpperCase());
-    nricHits = unique(nricHits);
+    var nricHits = nricTokens(nricSource);
     if (nricHits.length > 1) facts.conflict = true;
     else if (nricHits.length === 1) facts.nric = nricHits[0];
     else if (!scoped) {
@@ -718,6 +722,51 @@
     return out;
   }
 
+  function tokenConfidence(words, value) {
+    var parts = String(value || '').toUpperCase().split(/\s+/).filter(Boolean);
+    if (!parts.length || !words || !words.length) return null;
+    var scores = [];
+    parts.forEach(function (part) {
+      var key = part.replace(/[^A-Z0-9]/g, '');
+      var hit = null;
+      words.forEach(function (word) {
+        var text = String(word.text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (text && text === key) hit = word;
+      });
+      if (hit && hit.confidence != null) scores.push(Number(hit.confidence));
+    });
+    if (!scores.length) return null;
+    var total = 0;
+    scores.forEach(function (score) { total += score; });
+    return total / scores.length;
+  }
+
+  function identityRead(text, words) {
+    var raw = String(text || '');
+    var name = nameFrom(raw);
+    var hits = nricTokens(raw);
+    var valid = hits.filter(nricChecksum);
+    var nric = '';
+    var nricValid = false;
+    if (valid.length === 1) {
+      nric = valid[0];
+      nricValid = true;
+    } else if (!valid.length && hits.length === 1) {
+      nric = hits[0];
+    }
+    var nameConf = tokenConfidence(words, name);
+    var nricConf = tokenConfidence(words, nric);
+    return {
+      name: name,
+      nric: nric,
+      nricValid: nricValid,
+      nameConf: nameConf,
+      nricConf: nricConf,
+      nameUnconfirmed: !!(name && nameConf != null && nameConf < 55),
+      nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55)))
+    };
+  }
+
   function preview(facts) {
     var items = [];
     function push(label, value) {
@@ -750,6 +799,7 @@
     modelFields: modelFields,
     preview: preview,
     accept: accept,
-    nricChecksum: nricChecksum
+    nricChecksum: nricChecksum,
+    identityRead: identityRead
   };
 });
