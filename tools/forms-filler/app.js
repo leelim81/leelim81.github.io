@@ -1259,7 +1259,7 @@
           if (slot === 'nationality') return idn.nationality || '';
           if (slot === 'race') return idn.race || '';
           if (slot === 'birthCountry') return idn.birthCountry || '';
-          if (slot === 'address' || slot === 'blk') return (window.FormEvidence.identityCardOffer(idn, slot) || {}).value || '';
+          if (slot === 'address' || slot === 'blk') return (window.FormEvidence.identityCardOffer(idn, slot, state.fields) || {}).value || '';
           if (slot === 'postal') return idn.postal || '';
           if (slot === 'street') return idn.street || '';
           if (slot === 'unit') return idn.unit ? '#' + idn.unit : '';
@@ -1274,7 +1274,7 @@
           if (slot === 'race') return !!idn.raceChecked;
           if (slot === 'birthCountry') return !!idn.birthCountryChecked;
           if (slot === 'postal') return !!idn.postalChecked;
-          if (slot === 'blk' || slot === 'address') return !!(window.FormEvidence.identityCardOffer(idn, slot) || {}).checked;
+          if (slot === 'blk' || slot === 'address') return !!(window.FormEvidence.identityCardOffer(idn, slot, state.fields) || {}).checked;
           if (slot === 'street') return !!idn.streetChecked;
           if (slot === 'unit') return !!idn.unitChecked;
           return false;
@@ -1320,8 +1320,8 @@
           row.decision = 'review';
           row.value = value;
           row.kind = slot;
-          var blkOffer = slot === 'blk' ? window.FormEvidence.identityCardOffer(idn, 'blk') : null;
-          row.editable = !!(blkOffer && blkOffer.editable);
+          var cardOffer = (slot === 'blk' || slot === 'address') ? window.FormEvidence.identityCardOffer(idn, slot, state.fields) : null;
+          row.editable = !!(cardOffer && cardOffer.editable);
           row.checked = slotChecked(slot);
           row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
           row.quote = 'Read from the photo';
