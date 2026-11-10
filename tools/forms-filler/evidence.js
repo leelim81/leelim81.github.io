@@ -192,10 +192,10 @@
   }
 
   function organisationNameLabel(text) {
-    var s = String(text || '');
-    var org = 'company|business|organi[sz]ation|employer|trading|firm|corporate|brand|merchant';
-    if (new RegExp('\\b(?:' + org + ')\\s+name\\b', 'i').test(s)) return true;
-    return new RegExp('\\bname\\s+of\\s+(?:the\\s+)?(?:' + org + ')\\b', 'i').test(s);
+    var s = labelWords(text);
+    var org = 'compan(?:y|ies)|business(?:es)?|organi[sz]ations?|employers?|trading|firms?|corporate|brands?|merchants?|banks?|branch(?:es)?|institutions?|agencies|agency';
+    if (new RegExp('\\b(?:' + org + ')\\s+(?:full\\s+)?(?:name|nama)\\b', 'i').test(s)) return true;
+    return new RegExp('\\b(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + org + ')\\b', 'i').test(s);
   }
 
   function bareName(label) {

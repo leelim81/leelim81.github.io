@@ -1411,12 +1411,14 @@
           if (slot === 'blk') row.blockCandidates = (idn.blkCandidates || []).slice(0, 2);
         });
         decisions.forEach(function (row) {
-          if (!row || !row.value || !window.FormEvidence || !FormEvidence.fittedSize) return;
+          if (!row || !row.value || !window.FormEvidence || !FormEvidence.fitInBox) return;
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
           if (!field || !field.rect || !(field.rect.width > 0)) return;
           var start = row.fontSize || Math.max(9, Math.min(13, ((field.lineH || 12) * 0.85)));
-          var fit = FormEvidence.fittedSize(row.value, field.rect.width, start);
+          var fit = field.rect.height > 0
+            ? FormEvidence.fitInBox(row.value, field.rect.width, field.rect.height, start)
+            : FormEvidence.fittedSize(row.value, field.rect.width, start);
           row.fontSize = fit.size;
           if (fit.fits) return;
           row.checked = false;

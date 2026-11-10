@@ -334,14 +334,42 @@ function hasName(label) {
   'Employer name',
   'Business name',
   'Organisation name',
-  'Organization name'
+  'Organization name',
+  'Bank name',
+  "Bank's name",
+  'Name of bank',
+  'Name of the bank',
+  'Branch name',
+  'Name of branch',
+  'Institution name',
+  'Name of agency'
 ].forEach((label) => {
   assert.equal(fieldKind({ label: label, type: 'text' }), 'other', label);
   const decision = row([{ id: 'org', label: label, type: 'text' }], 'org');
   assert.equal(decision.decision, 'abstain', label);
   assert.equal(decision.value, '', label);
+  assert.notEqual(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
   assert.equal(decision.reason, 'placement_refused', label);
+  const alone = [{ id: 's', label: label, type: 'text' }];
+  assert.equal(identityPhotoSlot(alone[0], alone), '', label);
 });
+const bankAccount = row([{ id: 'bank', label: 'Name as per Example Bank Account (Underline surname)', type: 'text' }], 'bank');
+assert.equal(bankAccount.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.equal(fieldKind({ label: 'Name as per Example Bank Account (Underline surname)', type: 'text' }), 'name');
+
+const fitRows = [
+  { text: '10 EXAMPLE ROAD SINGAPORE 123456 BLOCK 123 UNIT 04-12', width: 90, height: 12, start: 10, fits: false },
+  { text: '10 EXAMPLE ROAD', width: 200, height: 36, start: 10, fits: true },
+  { text: '15/01/1990', width: 36.8, height: 14, start: 10.2, fits: true }
+];
+fitRows.forEach((item) => {
+  const boxed = fitInBox(item.text, item.width, item.height, item.start);
+  assert.equal(boxed.fits, item.fits, item.text);
+  if (item.height > 0 && boxed.fits) assert.ok(boxed.lines * boxed.size * 1.3 <= item.height + 0.5, item.text);
+});
+const wrapped = '10 EXAMPLE ROAD SINGAPORE 123456 BLOCK 123 UNIT 04-12';
+assert.equal(fitInBox(wrapped, 80, 40, 10).fits, true);
+assert.equal(fittedSize(wrapped, 80, 10).fits, false);
 
 const nricBox = row([{ id: 'nric-box', label: 'NRIC', type: 'checkbox' }], 'nric-box');
 assert.equal(nricBox.value, '');
