@@ -1273,10 +1273,7 @@
           if (slot === 'nationality') return !!idn.nationalityChecked;
           if (slot === 'race') return !!idn.raceChecked;
           if (slot === 'birthCountry') return !!idn.birthCountryChecked;
-          if (slot === 'postal') return !!idn.postalChecked;
-          if (slot === 'blk' || slot === 'address') return !!(window.FormEvidence.identityCardOffer(idn, slot, state.fields) || {}).checked;
-          if (slot === 'street') return !!idn.streetChecked;
-          if (slot === 'unit') return !!idn.unitChecked;
+          if (slot === 'blk' || slot === 'address' || slot === 'street' || slot === 'unit' || slot === 'postal') return !!(window.FormEvidence.identityCardOffer(idn, slot, state.fields) || {}).checked;
           return false;
         }
         decisions.forEach(function (row) {

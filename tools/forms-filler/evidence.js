@@ -138,8 +138,14 @@
     }
     if (slot === 'blk') {
       if (!idn.blk) return { value: '', checked: false, editable: false };
-      var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk);
-      return { value: idn.blk, checked: !!idn.blkChecked && !unconfirmed, editable: unconfirmed };
+      var blockUnconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk);
+      return { value: idn.blk, checked: !!idn.blkChecked && !blockUnconfirmed, editable: blockUnconfirmed };
+    }
+    if (slot === 'street' || slot === 'unit' || slot === 'postal') {
+      var part = idn[slot] || '';
+      if (!part) return { value: '', checked: false, editable: false };
+      var hold = (!!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '')) && formHasSlot(fields, 'address') && formHasSlot(fields, 'blk');
+      return { value: part, checked: hold ? false : !!idn[slot + 'Checked'], editable: false };
     }
     return null;
   }

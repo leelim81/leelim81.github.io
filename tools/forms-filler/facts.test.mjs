@@ -455,15 +455,21 @@ assert.equal(fiveDigit.street, '');
 assert.equal(fiveDigit.address, '');
 assert.equal(identityRead('JOHN LANE #12-34').street, '');
 assert.equal(identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\n').street, '');
-assert.equal(identityRead('EXAMPLE RD SINGAPORE 018956').street, 'EXAMPLE RD');
+assert.equal(identityRead('JOHN LANE SINGAPORE 018956').street, '');
+assert.equal(identityRead('EXAMPLE RD SINGAPORE 018956').street, '');
+assert.equal(identityRead('EXAMPLE RD #12-34 SINGAPORE 018956').street, 'EXAMPLE RD');
+assert.equal(identityRead('12 EXAMPLE RD SINGAPORE 018956').street, 'EXAMPLE RD');
+assert.equal(identityRead('12 EXAMPLE RD SINGAPORE 018956').blk, '12');
 assert.equal(identityRead('EXAMPLE RD\nSINGAPORE 018956\n').street, '');
 assert.equal(identityRead('TAN WEI MING #12-34\nSINGAPORE 018956\n').street, '');
 assert.equal(identityRead('Name\nTAN AH KOW (JOHN LANE)\nBLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n').street, 'JOHN LANE');
 assert.equal(identityRead('12 EXAMPLE PL').blk, '12');
 assert.equal(identityRead('12 EXAMPLE PL').street, 'EXAMPLE PL');
-assert.equal(identityRead('EXAMPLE GDNS SINGAPORE 121212').street, 'EXAMPLE GDNS');
-assert.equal(identityRead('EXAMPLE HTS SINGAPORE 131313').street, 'EXAMPLE HTS');
-assert.equal(identityRead('EXAMPLE CTRL SINGAPORE 141414').street, 'EXAMPLE CTRL');
+assert.equal(identityRead('EXAMPLE GDNS SINGAPORE 121212').street, '');
+assert.equal(identityRead('EXAMPLE GDNS #01-02 SINGAPORE 121212').street, 'EXAMPLE GDNS');
+assert.equal(identityRead('EXAMPLE HTS #02-03 SINGAPORE 131313').street, 'EXAMPLE HTS');
+assert.equal(identityRead('EXAMPLE CTRL #03-04 SINGAPORE 141414').street, 'EXAMPLE CTRL');
+assert.equal(identityRead('Date of birth\n15 JAN 1990\nDate of issue 02 AUG 2015\n').dob, '15-01-1990');
 const aliasBlk = identityVote([
   identityRead('Name\nTAN AH KOW (JOHN LANE)\nS8523146D\n'),
   identityRead('BLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n')
