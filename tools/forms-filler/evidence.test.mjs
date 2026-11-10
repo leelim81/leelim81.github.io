@@ -460,6 +460,13 @@ const heldBlock = Object.assign({}, looseParts, { blk: '1234', blkUnconfirmed: t
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).checked, false);
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).editable, false);
 assert.equal(identityCardOffer(heldBlock, 'postal', partFields).editable, false);
+const crossedRead = identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\nBLK 88\nOTHER RD\n');
+const crossedParts = identityVote([crossedRead, crossedRead]);
+const crossedFields = [{ id: 'b', label: 'Blk' }, { id: 's', label: 'Street' }, { id: 'u', label: 'Unit' }, { id: 'p', label: 'Postal code' }];
+assert.equal(crossedParts.blkUnconfirmed, true);
+['street', 'unit', 'postal', 'blk'].forEach(function (slot) {
+  assert.equal(identityCardOffer(crossedParts, slot, crossedFields).checked, false, slot);
+});
 const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);
 assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
 assert.equal(addressOnly.checked, false);
