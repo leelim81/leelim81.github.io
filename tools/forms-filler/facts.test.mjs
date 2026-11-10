@@ -413,6 +413,28 @@ assert.equal(inlineHome.postal, '238801');
 assert.equal(identityRead('S8523146D\n018956\n').postal, '');
 assert.equal(identityRead('S 018956\n').postal, '018956');
 assert.equal(identityRead('SINGAPORE 018956\n482913\n').postal, '018956');
+assert.equal(identityRead('Country of residence\nSINGAPORE\n').birthCountry, '');
+assert.equal(identityRead('Country of residence').birthCountry, '');
+const fiveDigit = identityRead('BLK 12345 EXAMPLE RD\n#12-34\nSINGAPORE 018956\n');
+assert.equal(fiveDigit.blk, '');
+assert.equal(fiveDigit.street, '');
+assert.equal(fiveDigit.address, '');
+assert.equal(identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\n').street, 'EXAMPLE RD');
+assert.equal(identityRead('EXAMPLE RD SINGAPORE 018956').street, 'EXAMPLE RD');
+assert.equal(identityRead('EXAMPLE RD\nSINGAPORE 018956\n').street, '');
+assert.equal(identityRead('TAN WEI MING #12-34\nSINGAPORE 018956\n').street, '');
+assert.equal(identityRead('Name\nTAN AH KOW (JOHN LANE)\nBLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n').street, '');
+['EXAMPLE RD', 'EXAMPLE ST', 'EXAMPLE DR', 'JLN EXAMPLE', 'LOR EXAMPLE', 'TESTVILLE NORTH GREEN'].forEach(function (street) {
+  const back = identityRead('IDENTITY CARD\nBACK\nAddress\nBLK 88 ' + street + '\n#12-34\nSINGAPORE 018956\n');
+  assert.equal(back.street, street, street);
+  assert.equal(back.name, '', street);
+  assert.equal(back.address, '88 ' + street + ' #12-34 SINGAPORE 018956', street);
+  const front = identityRead('Name\nTAN WEI MING\nS8523146D\n');
+  const both = identityVote([front, back]);
+  assert.equal(both.name, 'TAN WEI MING', street);
+  assert.equal(both.street, street, 'vote ' + street);
+  assert.equal(both.address, '88 ' + street + ' #12-34 SINGAPORE 018956', 'vote ' + street);
+});
 
 function assertAlias(text, alias) {
   const read = identityRead(text);

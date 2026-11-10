@@ -80,7 +80,7 @@
     road: 1, street: 1, avenue: 1, ave: 1, drive: 1, lane: 1, crescent: 1,
     blk: 1, block: 1, singapore: 1, close: 1, place: 1, walk: 1, terrace: 1,
     boulevard: 1, blvd: 1, highway: 1, parkway: 1, expressway: 1, quay: 1,
-    jalan: 1, lorong: 1
+    jalan: 1, lorong: 1, jln: 1, lor: 1
   };
   var PLACE_SHORT = { st: 1, rd: 1, dr: 1 };
   /* These street types are also surnames. A short personal alias may end in
@@ -282,8 +282,9 @@
       if (words.filter(function (word) { return word.length === 1; }).length >= 2) continue;
       if (words.filter(function (word) { return JUNK[word.toLowerCase()]; }).length >= words.length - 1) continue;
       if (words.every(function (word) { return JUNK[word.toLowerCase()]; })) continue;
-      if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD'; })) continue;
-      if (/\b\d{6}\b/.test(lines[i]) || /\b(lane|road|street|avenue|ave|walk|close|quay|drive|crescent)\b/i.test(lines[i])) continue;
+      if (words.some(function (word) { return word === 'REPUBLIC' || word === 'SINGAPORE' || word === 'IDENTITY' || word === 'CARD' || word === 'BLK' || word === 'BLOCK'; })) continue;
+      if (placeAlias(words)) continue;
+      if (/\b\d{6}\b/.test(lines[i]) || /\b(lane|road|street|avenue|ave|walk|close|quay|drive|crescent|jln|lor)\b/i.test(lines[i])) continue;
       return words.join(' ');
     }
     return '';
@@ -1273,7 +1274,7 @@
 
   function countryValue(line) {
     var cleaned = String(line || '').replace(/[^A-Za-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
-    var tokens = cleaned.split(' ').filter(function (word) { return word.length >= 3; });
+    var tokens = cleaned.split(' ').filter(function (word) { return word.length >= 3 && word.toLowerCase() !== 'residence'; });
     if (!tokens.length || tokens.length > 3) return '';
     var value = tokens.join(' ');
     return value.length <= 30 ? value : '';
@@ -1283,7 +1284,7 @@
     var lines = String(text || '').split(/\n/);
     var cue = /\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b/i;
     for (var i = 0; i < lines.length; i++) {
-      if (!cue.test(lines[i]) || /issue|expiry|blood/i.test(lines[i])) continue;
+      if (!cue.test(lines[i]) || /issue|expiry|blood|residence/i.test(lines[i])) continue;
       var same = lines[i].replace(/^.*\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b[:\s-]*/i, '').trim();
       var choices = [same, lines[i + 1] || '', lines[i + 2] || '', lines[i + 3] || ''];
       for (var n = 0; n < choices.length; n++) {
@@ -1312,13 +1313,24 @@
       if (prefixed || whole) out.postal = (prefixed || whole)[1];
       var unit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
       if (unit) out.unit = unit[1] + '-' + unit[2];
+      if (/\bBLK\.?\s*\d{5,}/i.test(t)) return;
       var blk = t.match(/\bBLK\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
-      if (!blk) return;
-      var number = blk[1];
-      out.blk = (number + (blk[2] || '')).toUpperCase();
-      if (number.length === 4 && !blk[2]) out.blkUnconfirmed = true;
-      var rest = blk[3].replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim();
-      if (rest && !usedByName(rest, phrases)) out.street = rest.toUpperCase();
+      if (blk) {
+        var number = blk[1];
+        out.blk = (number + (blk[2] || '')).toUpperCase();
+        if (number.length === 4 && !blk[2]) out.blkUnconfirmed = true;
+        var rest = blk[3].replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim();
+        if (rest && !usedByName(rest, phrases)) out.street = rest.toUpperCase();
+        return;
+      }
+      if (out.street) return;
+      var anchored = /#\s?\d{1,4}\s*-\s*\d{1,4}/.test(t) || /\bSINGAPORE\s+S?\s?\d{6}\b/i.test(t);
+      if (!anchored) return;
+      var bare = t.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
+      var streetWords = bare.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+      if (!bare || !placeAlias(streetWords) || usedByName(bare, phrases)) return;
+      if (streetWords.some(function (word) { return word.toUpperCase() === 'BLK' || word.toUpperCase() === 'BLOCK'; })) return;
+      out.street = bare.toUpperCase();
     });
     if (out.blk && !out.blkUnconfirmed && out.street && out.postal) {
       out.address = [out.blk, out.street, out.unit ? '#' + out.unit : '', 'SINGAPORE ' + out.postal].filter(Boolean).join(' ');
@@ -1342,7 +1354,10 @@
     }
     var nameConf = tokenConfidence(words, name);
     var nricConf = tokenConfidence(words, nric);
-    var home = cardAddress(raw, [printed.plain, printed.alias, name]);
+    var namePhrases = [];
+    if (printed.labeled && printed.plain) namePhrases.push(printed.plain);
+    if (printed.alias) namePhrases.push(printed.alias);
+    var home = cardAddress(raw, namePhrases);
     return {
       name: name,
       namePlain: printed.plain || plainOf(name),

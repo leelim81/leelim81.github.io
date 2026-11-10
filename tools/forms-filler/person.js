@@ -39,7 +39,7 @@
     if (/^(?:for )?official use(?: only)?$/i.test(s)) return true;
     if (/^office use(?: only)?$/i.test(s)) return true;
     if (/^part [bcd](?:\s+[a-z]+){0,3}$/i.test(s)) return true;
-    if (/^acknowledg(?:e)?ment(?:\s+[a-z]+){0,2}$/i.test(s)) return true;
+    if (/^acknowledge(?:ment)?(?:\s+[a-z]+){0,2}$/i.test(s) || /^acknowledgment(?:\s+[a-z]+){0,2}$/i.test(s)) return true;
     if (/^authoris(?:e|ation)(?:\s+[a-z]+){0,2}$/i.test(s) || /^authoriz(?:e|ation)(?:\s+[a-z]+){0,2}$/i.test(s)) return true;
     if (/^terms(?: and)? conditions$/i.test(s)) return true;
     return false;

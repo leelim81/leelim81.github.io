@@ -286,7 +286,7 @@ const stillRepeated = [
 stillRepeated.forEach(function (field) {
   assert.equal(identityPhotoSlot(field, stillRepeated), '', 'unnamed repeated names still abstain');
 });
-['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'Declaration of the applicant', "Applicant's declaration", 'Part B continued', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
+['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'Declaration of the applicant', "Applicant's declaration", 'Part B continued', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Acknowledge', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
   assert.equal(sectionKind(heading), 'reset', heading);
   assert.notEqual(personOf(heading), 'applicant', heading);
   const only = [{ id: 'n', label: 'Name', section: heading }, { id: 'i', label: 'NRIC', section: heading }];
