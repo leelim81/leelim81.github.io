@@ -768,6 +768,155 @@
     return lines.join('\n');
   }
 
+  function blockWordOf(words, block) {
+    var found = null;
+    (words || []).forEach(function (word) {
+      var text = String(word && word.text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (text === block || text === 'BLK' + block || text === 'BLOCK' + block) found = word;
+    });
+    return found;
+  }
+
+  function lastGlyphBox(word) {
+    var symbols = word && word.symbols || [];
+    var last = null;
+    for (var i = symbols.length - 1; i >= 0; i--) {
+      if (/[0-9A-Za-z]/.test(symbols[i] && symbols[i].text || '')) last = symbols[i];
+      if (last) break;
+    }
+    var box = last && (last.bbox || last);
+    if (box && box.x1 > box.x0 && box.y1 > box.y0) return { x0: box.x0, y0: box.y0, x1: box.x1, y1: box.y1 };
+    var wordBox = word && (word.bbox || word);
+    if (!wordBox || !(wordBox.x1 > wordBox.x0)) return null;
+    var span = wordBox.x1 - wordBox.x0;
+    return { x0: wordBox.x1 - span / 4, y0: wordBox.y0, x1: wordBox.x1, y1: wordBox.y1 };
+  }
+
+  function headDigitsStable(word, block) {
+    var symbols = (word && word.symbols || []).filter(function (symbol) {
+      return /[0-9A-Za-z]/.test(symbol && symbol.text || '');
+    });
+    if (symbols.length < 4) return true;
+    var head = symbols.slice(-4, -1);
+    return head.every(function (symbol, index) {
+      return String(symbol.text || '').toUpperCase() === block.charAt(index);
+    });
+  }
+
+  function cropGlyph(canvas, box, scaleUp, binarise, pad) {
+    if (pad == null) pad = 16;
+    var x0 = Math.max(0, Math.floor(box.x0 - pad));
+    var y0 = Math.max(0, Math.floor(box.y0 - pad));
+    var x1 = Math.min(canvas.width, Math.ceil(box.x1 + pad));
+    var y1 = Math.min(canvas.height, Math.ceil(box.y1 + pad));
+    var width = Math.max(1, x1 - x0);
+    var height = Math.max(1, y1 - y0);
+    var scale = scaleUp || 1;
+    var out = document.createElement('canvas');
+    out.width = Math.max(1, Math.round(width * scale));
+    out.height = Math.max(1, Math.round(height * scale));
+    var ctx = out.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(canvas, x0, y0, width, height, 0, 0, out.width, out.height);
+    if (binarise) {
+      var image = ctx.getImageData(0, 0, out.width, out.height);
+      var gray = adaptiveGray(stretchGray(grayPixels(image)), out.width, out.height);
+      ctx.putImageData(paintGray(image, gray), 0, 0);
+    }
+    return out;
+  }
+
+  function letterFromGlyph(result) {
+    var data = result && result.data;
+    if (!data) return null;
+    var symbols = [];
+    (data.words || []).forEach(function (word) {
+      (word.symbols || []).forEach(function (symbol) {
+        var text = String(symbol.text || '').toUpperCase();
+        if (/^[A-Z]$/.test(text)) symbols.push({ letter: text, confidence: Number(symbol.confidence || 0) });
+      });
+    });
+    if (symbols.length) {
+      symbols.sort(function (a, b) { return b.confidence - a.confidence; });
+      var best = symbols[0];
+      if (!(best.confidence >= 40)) return null;
+      var rival = symbols.some(function (item) {
+        return item.letter !== best.letter && item.confidence >= 50 && item.confidence >= best.confidence - 15;
+      });
+      if (rival) return null;
+      return best;
+    }
+    var flat = String(data.text || '').toUpperCase().replace(/[^A-Z]/g, '');
+    var confidence = data.confidence == null ? 0 : Number(data.confidence);
+    if (flat.length === 1 && confidence >= 40) return { letter: flat, confidence: confidence };
+    return null;
+  }
+
+  async function recognizeGlyph(session, worker, source) {
+    if (session && (session.cancelled || session.released)) throw cancelledError();
+    enterOcr();
+    try {
+      return await bind(session, worker.recognize(source));
+    } finally {
+      leaveOcr();
+    }
+  }
+
+  async function rereadBlockLetter(session, worker, canvas, word) {
+    var box = lastGlyphBox(word);
+    if (!box || !canvas) return '';
+    var started = Date.now();
+    var crops = [
+      cropGlyph(canvas, box, 4, false, 10),
+      cropGlyph(canvas, box, 6, false, 10),
+      cropGlyph(canvas, box, 2, true, 16)
+    ];
+    var hits = [];
+    for (var i = 0; i < crops.length; i++) {
+      if (Date.now() - started > 900) break;
+      if (session.cancelled || session.released) throw cancelledError();
+      var result = await recognizeGlyph(session, worker, crops[i]);
+      var hit = letterFromGlyph(result);
+      if (!hit) continue;
+      hits.push(hit);
+      var agreed = hits.filter(function (item) { return item.letter === hit.letter && item.confidence >= 40; });
+      if (agreed.length >= 2) return hit.letter;
+      if (hit.confidence >= 60) {
+        var rivals = hits.some(function (item) {
+          return item.letter !== hit.letter && item.confidence >= hit.confidence - 15;
+        });
+        if (!rivals) return hit.letter;
+      }
+    }
+    return '';
+  }
+
+  async function maybeRereadBlock(session, worker, canvas, read, rawWords) {
+    if (!read || !/^\d{4}$/.test(read.blk) || read.blkSuggest) return;
+    if (session._ffGlyphDone || session._ffGlyphTries >= 2) return;
+    var word = blockWordOf(rawWords, read.blk);
+    if (!word || !headDigitsStable(word, read.blk)) return;
+    session._ffGlyphTries = (session._ffGlyphTries || 0) + 1;
+    var letter = '';
+    try {
+      await applyParams(session, worker, {
+        tessedit_pageseg_mode: '10',
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      });
+      letter = await rereadBlockLetter(session, worker, canvas, word);
+    } finally {
+      await applyParams(session, worker, {
+        tessedit_pageseg_mode: '6',
+        tessedit_char_whitelist: ''
+      });
+    }
+    if (!/^[A-Z]$/.test(letter)) return;
+    read.blkSuggest = read.blk.slice(0, 3) + letter;
+    read.blkSuggestKind = 'reread';
+    session._ffGlyphDone = true;
+  }
+
   async function recognizeCard(session, canvas, scale, pageWidth, pageHeight) {
     return enqueueOcr(async function () {
       try {
@@ -788,6 +937,11 @@
           var result = await recognizeBounded(session, worker, variant);
           var packed = linesFromWords(result && result.data && result.data.words);
           var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
+          try {
+            await maybeRereadBlock(session, worker, variant, read, result && result.data && result.data.words);
+          } catch (err) {
+            if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
+          }
           bag.push(read);
           if (read.labeled) session._ffSawNameLabel = true;
           if (!read.labeled && !session._ffSawNameLabel && !session._ffSparseName) {
@@ -1119,6 +1273,7 @@
   }
 
   global.FormExtract = {
+    cardVariant: cardVariant,
     fromPdf: fromPdf,
     imageText: imageText,
     wordBoxes: wordBoxes,

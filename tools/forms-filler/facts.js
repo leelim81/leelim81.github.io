@@ -1000,6 +1000,10 @@
     return letters.indexOf(letter.charAt(3)) >= 0;
   }
 
+  function stemMatches(four, letter) {
+    return /^\d{4}$/.test(four) && /^\d{3}[A-Z]$/.test(letter) && letter.slice(0, 3) === four.slice(0, 3);
+  }
+
   function blockGlyphs(word) {
     if (!word) return [];
     if (word.glyphs && word.glyphs.length) return word.glyphs;
@@ -1069,16 +1073,27 @@
       if (/^\d{4}$/.test(read.blk) && fours.indexOf(read.blk) < 0) fours.push(read.blk);
     });
     if (!fours.length) return null;
-    if (present.some(function (read) {
-      return !/^\d{4}$/.test(read.blk) && !fours.some(function (four) { return letterExplains(four, read.blk); });
-    })) return null;
+    var counts = {};
+    present.forEach(function (read) { counts[read.blk] = (counts[read.blk] || 0) + 1; });
+    var fourCount = 0;
+    fours.forEach(function (four) { fourCount += counts[four] || 0; });
+    var otherMax = 0;
+    Object.keys(counts).forEach(function (key) {
+      var related = fours.some(function (four) { return key === four || letterExplains(four, key) || stemMatches(four, key); });
+      if (!related && counts[key] > otherMax) otherMax = counts[key];
+    });
+    if (otherMax >= fourCount) return null;
+    var stems = fours.map(function (four) { return four.slice(0, 3); });
+    if (stems.some(function (stem) { return stem !== stems[0]; })) return null;
     var matched = [];
     present.forEach(function (read) {
       if (/^\d{3}[A-Z]$/.test(read.blk) && fours.some(function (four) { return letterExplains(four, read.blk); })) {
         matched.push({ value: read.blk, kind: 'read', raw: '' });
       }
-      if (/^\d{4}$/.test(read.blk) && read.blkSuggest && letterExplains(read.blk, read.blkSuggest)) {
-        matched.push({ value: read.blkSuggest, kind: read.blkSuggestKind || 'confidence', raw: read.blk });
+      if (/^\d{4}$/.test(read.blk) && read.blkSuggest) {
+        var kind = read.blkSuggestKind || 'confidence';
+        var explains = kind === 'reread' ? stemMatches(read.blk, read.blkSuggest) : letterExplains(read.blk, read.blkSuggest);
+        if (explains) matched.push({ value: read.blkSuggest, kind: kind, raw: read.blk });
       }
     });
     var unique = [];
@@ -1087,14 +1102,13 @@
     });
     if (unique.length !== 1) return null;
     var candidate = unique[0].value;
-    var raws = fours.filter(function (four) { return letterExplains(four, candidate); });
+    var raws = fours.filter(function (four) { return stemMatches(four, candidate); });
     if (raws.length !== 1) return null;
-    var strong = matched.some(function (item) {
-      return item.value === candidate && (item.kind === 'choice' || item.kind === 'read');
-    });
+    if (present.some(function (read) {
+      return /^\d{3}[A-Z]$/.test(read.blk) && stemMatches(raws[0], read.blk) && read.blk !== candidate;
+    })) return null;
     var postalKnown = postal && postal.checked && /^\d{6}$/.test(postal.value || '');
-    var postalOk = !postalKnown || String(postal.value).slice(-3) === candidate.slice(0, 3);
-    if (!strong && !postalOk) return null;
+    if (postalKnown && String(postal.value).slice(-3) !== candidate.slice(0, 3)) return null;
     return { value: candidate, hint: raws[0] };
   }
 
