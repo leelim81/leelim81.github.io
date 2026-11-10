@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const { extract, identityPhotoSlot } = require('./evidence.js');
+const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
 
 const packet = `Patient
@@ -272,5 +273,19 @@ const stillRepeated = [
 stillRepeated.forEach(function (field) {
   assert.equal(identityPhotoSlot(field, stillRepeated), '', 'unnamed repeated names still abstain');
 });
+['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
+  assert.equal(sectionKind(heading), 'reset', heading);
+  assert.notEqual(personOf(heading), 'applicant', heading);
+  const only = [{ id: 'n', label: 'Name', section: heading }, { id: 'i', label: 'NRIC', section: heading }];
+  only.forEach(function (field) {
+    assert.equal(identityPhotoSlot(field, only), '', heading + ' ' + field.label);
+  });
+});
+['Owner', "Owner's particulars"].forEach(function (heading) {
+  const only = [{ id: 'n', label: 'Name', section: heading }];
+  assert.equal(identityPhotoSlot(only[0], only), '', heading);
+});
+assert.equal(personOf('Sum insured'), '');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Sum insured' }, [{ id: 'n', label: 'Name', section: 'Sum insured' }]), 'name');
 
 console.log('evidence tests ok');

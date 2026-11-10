@@ -344,6 +344,7 @@
     if (!/\b(full\s*)?name\b|\bnric\b|\bfin\b|\baddress\b|\bpostal\b|\be-?mail\b|\bphone\b|\btel\b|\bhandset\b|\bcallback\b|\bmobile\b|\binbox\b|\bmailbox\b|\bpremises\b|\bdwelling\b|\bh\s*\/\s*p\b|\bdate\b|\bbirth\b|\bdob\b|\bsignature\b|\bmember\b|\bsex\b|\bmale\b|\bfemale\b|\brace\b|\bcontact\b|\bhospital\b|\badmit|\bdischarge|\bsalary\b|\bdesignation\b|\bdepartment\b|\boffice\b|\bapplicant\b|\bpassport\b|\bcompany\b|\bunion\b|\bcode\b|\bgender\b|\bmarital\b|\bemployer\b|\boccupation\b|\bnationality\b|\bbank\b|\baccount\b|\bsection\b|\bdepot\b|\bpolicy\b|\bofficer\b|\brelationship\b|\bplan\b|\bemail\b|\bstreet\b|\bunit\b|\bblk\b|\bhouse\b|\bjoined\b|\bservice\b|\bidentification\b|\bidentity\b|\b(off|res|pgr|hp)\s*no\b/i.test(slot.label)) return false;
     if (/^(job|contact details|your contact|address in singapore|personal particulars|residential status|marital status|highest education( level)?|ntuc|race|gender)$/i.test(slot.label)) return false;
     if (/fairprice|ntuc|understand|rebates|dividend|entrance fee|this section/i.test(slot.label)) return false;
+    if (/^(contacts?)$/i.test(String(slot.label || '').trim())) return false;
     if (/^[a-z]/.test(slot.label)) return false;
     if (/^\(/.test(slot.label) && !/^\(hp\)$/i.test(slot.label)) return false;
     var onLine = 0;
@@ -370,60 +371,71 @@
     return String(label || '').replace(/[:\s]+$/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
-  function personOf(text) {
+  function personApi() {
     var api = (typeof globalThis !== 'undefined' && globalThis.FormPerson) || null;
     if (!api && typeof require === 'function') {
       try { api = require('./person.js'); } catch (err) { api = null; }
     }
+    return api;
+  }
+
+  function personOf(text) {
+    var api = personApi();
     return api && api.personOf ? api.personOf(text) : '';
   }
 
-  /* The nearest person heading above a blank owns that blank. A field label
-     such as "Name of Member" is not a heading. A heading in another column
-     does not own this blank. */
+  function sectionKind(text) {
+    var api = personApi();
+    if (api && api.sectionKind) return api.sectionKind(text);
+    return personOf(text);
+  }
+
+  function headingTitle(text, slots) {
+    var line = String(text && text.str || '').replace(/\s+/g, ' ').trim();
+    if (!line || words(line).length > 8 || line.length > 48) return null;
+    var kind = sectionKind(line);
+    if (!kind) return null;
+    var want = normLabel(line);
+    if (slots.some(function (other) { return normLabel(other.label) === want; })) return null;
+    return { kind: kind, line: line.replace(/[:.\s]+$/g, '').trim() };
+  }
+
+  /* The nearest section title above a blank wins. A form-part title such as
+     Declaration or For bank use resets the person, even when it mentions the
+     applicant. An applicant heading owns a blank only within 420pt. Another
+     person's heading still owns a blank further down the same page. */
   function personHeading(slot, slots, texts, carried) {
     var y = slot.lineY != null ? slot.lineY : slot.y;
-    var best = '';
-    var bestDy = 1e9;
-    var bestDx = 1e9;
+    var best = null;
     texts.forEach(function (text) {
-      var line = String(text.str || '').replace(/\s+/g, ' ').trim();
-      if (!line || words(line).length > 8 || line.length > 48) return;
-      if (!personOf(line)) return;
-      var want = normLabel(line);
-      var claimed = slots.some(function (other) { return normLabel(other.label) === want; });
-      if (claimed) return;
+      var title = headingTitle(text, slots);
+      if (!title) return;
       var dy = text.y - y;
       if (dy < 8 || dy > 980) return;
       if (text.x > slot.x + 80) return;
       if (slot.x - text.x > 260) return;
       var dx = Math.abs(text.x - slot.x);
-      if (dy < bestDy || (dy === bestDy && dx < bestDx)) {
-        best = line.replace(/[:.\s]+$/g, '').trim();
-        bestDy = dy;
-        bestDx = dx;
-      }
+      if (!best || dy < best.dy || (dy === best.dy && dx < best.dx)) best = { kind: title.kind, line: title.line, dy: dy, dx: dx };
     });
-    return best || carried || '';
+    if (best) {
+      if (best.kind === 'reset') return best.line;
+      if (best.kind === 'applicant' && best.dy > 420) return '';
+      return best.line;
+    }
+    if (carried && personOf(carried) === 'other') return carried;
+    return '';
   }
 
   function lastPersonHeading(texts, slots, carried) {
-    var best = '';
-    var bestY = 1e9;
-    var found = false;
+    var best = null;
     texts.forEach(function (text) {
-      var line = String(text.str || '').replace(/\s+/g, ' ').trim();
-      if (!line || words(line).length > 8 || line.length > 48) return;
-      if (!personOf(line)) return;
-      var want = normLabel(line);
-      if (slots.some(function (other) { return normLabel(other.label) === want; })) return;
-      found = true;
-      if (text.y < bestY) {
-        best = line.replace(/[:.\s]+$/g, '').trim();
-        bestY = text.y;
-      }
+      var title = headingTitle(text, slots);
+      if (!title) return;
+      if (!best || text.y < best.y) best = { kind: title.kind, line: title.line, y: text.y };
     });
-    return found ? best : (carried || '');
+    if (!best) return carried && personOf(carried) === 'other' ? carried : '';
+    if (best.kind === 'other') return best.line;
+    return '';
   }
 
   function dedupeSlots(slots, texts) {

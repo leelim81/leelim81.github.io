@@ -67,6 +67,12 @@
     return api && api.personOf ? api.personOf(text) : '';
   }
 
+  function sectionKind(text) {
+    var api = personApi();
+    if (api && api.sectionKind) return api.sectionKind(text);
+    return personOf(text);
+  }
+
   function fieldContext(field) {
     return [field && field.group, field && field.heading, field && field.section]
       .filter(Boolean)
@@ -86,7 +92,8 @@
      its Name or NRIC is the only one on the form. A repeated name or NRIC
      abstains when no applicant section can be told apart. */
   function applicantIdentitySlot(field) {
-    if (!field || namesOtherRole(field.label) || namesOtherRole(fieldContext(field)) || namesOtherRole(field.id)) return '';
+    if (!field || sectionKind(field.label) === 'reset' || sectionKind(fieldContext(field)) === 'reset' || sectionKind(field.id) === 'reset') return '';
+    if (namesOtherRole(field.label) || namesOtherRole(fieldContext(field)) || namesOtherRole(field.id)) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s]+$/g, '');
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';

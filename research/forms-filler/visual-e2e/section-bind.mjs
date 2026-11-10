@@ -93,6 +93,22 @@ const continued = await drawForm([
     { box: true, x: 36, y: 660, w: 240 }
   ]
 ]);
+const declared = await drawForm([
+  [
+    { text: "Applicant's particulars", x: 36, y: 760 },
+    { text: 'Full name', x: 36, y: 720 },
+    { box: true, x: 36, y: 690, w: 240 },
+    { text: 'NRIC', x: 36, y: 650 },
+    { box: true, x: 36, y: 620, w: 240 }
+  ],
+  [
+    { text: 'Declaration', x: 36, y: 760 },
+    { text: 'Name', x: 36, y: 720 },
+    { box: true, x: 36, y: 690, w: 240 },
+    { text: 'NRIC', x: 36, y: 650 },
+    { box: true, x: 36, y: 620, w: 240 }
+  ]
+]);
 const partA = await drawForm([[
   { text: 'Part A', x: 36, y: 760 },
   { text: 'Full name', x: 36, y: 720 },
@@ -105,6 +121,7 @@ const partA = await drawForm([[
 writeFileSync('/tmp/section-columns.pdf', columns);
 writeFileSync('/tmp/section-continued.pdf', continued);
 writeFileSync('/tmp/section-part-a.pdf', partA);
+writeFileSync('/tmp/section-declaration.pdf', declared);
 void font;
 
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
@@ -186,6 +203,13 @@ check('the continued guarantor lines are not offered', /TAN WEI MING/.test(nextR
 const nextOut = await exportPdf(nextPage, '/tmp/section-continued-out.pdf');
 check('the exported two-page PDF writes the applicant only once', countOf(nextOut.pdf, 'TAN WEI MING') === 1 && countOf(nextOut.pdf, 'S8523146D') === 1, nextOut.marks.join(' | '));
 await nextPage.close();
+
+const declarePage = await openDesk();
+const declareRead = await place(declarePage, '/tmp/section-declaration.pdf');
+check('a later Declaration is not offered as the applicant', /TAN WEI MING/.test(declareRead.review) && /S8523146D/.test(declareRead.review) && (declareRead.review.match(/TAN WEI MING/g) || []).length === 1 && (declareRead.review.match(/S8523146D/g) || []).length === 1, declareRead.review.slice(0, 320));
+const declareOut = await exportPdf(declarePage, '/tmp/section-declaration-out.pdf');
+check('the exported declaration form writes the applicant only once', countOf(declareOut.pdf, 'TAN WEI MING') === 1 && countOf(declareOut.pdf, 'S8523146D') === 1, declareOut.marks.join(' | '));
+await declarePage.close();
 
 const partPage = await openDesk();
 const partRead = await place(partPage, '/tmp/section-part-a.pdf');
