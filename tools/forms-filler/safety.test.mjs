@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 
 const require = createRequire(import.meta.url);
 const { decideAll } = require('./select.js');
-const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fitInBox, allowsValue, fieldKind, keepAgreedName } = require('./evidence.js');
+const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fitInBox, allowsValue, fieldKind, keepAgreedName, chineseScript } = require('./evidence.js');
 const { extendsName } = require('./facts.js');
 const { annotations, layout } = require('./spots.js');
 
@@ -390,6 +390,11 @@ function hasName(label) {
   ['Name in full', 'offered'],
   ['Name in BLOCK LETTERS', 'offered'],
   ['Name in capitals', 'offered'],
+  ['Name in Capital Letters', 'offered'],
+  ['English full name', 'offered'],
+  ['Nama seperti di dalam MyKad', 'offered'],
+  ['Name as appearing on PAN card', 'offered'],
+  ['Name (Mr/Mrs/Ms)', 'offered'],
   ['Your name', 'offered'],
   ['Your full name', 'offered'],
   ['Print name', 'offered'],
@@ -479,13 +484,21 @@ assert.equal(fieldKind({ label: 'Name as per Example Bank Account (Underline sur
   const alone = [{ id: 's', label: label, type: 'text' }];
   assert.equal(identityPhotoSlot(alone[0], alone), '', label);
 });
-['Chinese Name', '中文姓名'].forEach((label) => {
+['Chinese Name', '中文姓名', 'Name (Chinese)', 'Chinese full name'].forEach((label) => {
   const decision = row([{ id: 'cn', label: label, type: 'text' }], 'cn');
   assert.equal(decision.value, '', label);
+  assert.notEqual(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
+  assert.equal(decision.reason, 'script_mismatch', label);
   assert.notEqual(fieldKind({ label: label, type: 'text' }), 'name', label);
+  assert.equal(fieldKind({ label: label, type: 'text' }), 'chineseName', label);
   const alone = [{ id: 's', label: label, type: 'text' }];
   assert.equal(identityPhotoSlot(alone[0], alone), 'chineseName', label);
 });
+assert.equal(chineseScript('李明'), true);
+assert.equal(chineseScript('Ada Lane'), false);
+assert.equal(chineseScript('LEE MING WEI'), false);
+assert.equal(row([{ id: 'titles', label: 'Name (Mr/Mrs/Ms)', type: 'text' }], 'titles').value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.equal(row([{ id: 'slash', label: 'Name / NRIC', type: 'text' }], 'slash').value, '');
 
 const fitRows = [
   { text: '10 EXAMPLE ROAD SINGAPORE 123456 BLOCK 123 UNIT 04-12', width: 90, height: 12, start: 10, fits: false },

@@ -140,7 +140,7 @@
   }
 
   var DOC_WORD = '(?:identification\\s+card|identity\\s+card|driving\\s+licen[cs]e|work\\s+pass|hkid|my\\s*kad|aadhaar|aadhar|nric|passport|fin|ic|pan|\\bid\\b)';
-  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+printed\\s+on|as\\s+shown\\s+on|as\\s+shown\\s+in|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+dalam|mengikut|\\bin\\b)';
+  var DOC_QUAL = '(?:as\\s+appearing\\s+on|as\\s+appearing\\s+in|as\\s+printed\\s+on|as\\s+shown\\s+on|as\\s+shown\\s+in|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+di\\s+dalam|seperti\\s+dalam|\\bdi\\s+dalam\\b|\\bdalam\\b|mengikut|\\bin\\b)';
 
   function plainNameWord(text) {
     var s = headPhrase(text);
@@ -322,9 +322,20 @@
     return /\b(?:life\s+)?(?:insured|assured)s?\b/.test(s);
   }
 
+  function chineseScript(text) {
+    return /[\u3400-\u9fff]/.test(String(text || ''));
+  }
+
+  /* A Chinese-script name line. A title in parentheses is not part of the
+     head, but "(Chinese)" still marks the line. */
   function chineseNameLabel(text) {
-    if (/中文姓名/.test(String(text || ''))) return true;
-    return /^chinese\s+name$/.test(headPhrase(text));
+    var raw = String(text || '');
+    if (/中文姓名/.test(raw)) return true;
+    var head = headPhrase(raw);
+    if (/^(?:chinese\s+(?:full\s+)?name|full\s+chinese\s+name|name\s+in\s+chinese)$/.test(head)) return true;
+    var paren = raw.match(/\(([^)]*)\)/);
+    if (paren && /^\s*(?:in\s+)?chinese\s*$/i.test(paren[1]) && /^(?:full\s+)?(?:name|nama)$/.test(head)) return true;
+    return false;
   }
 
   function allowOne(text) {
@@ -332,8 +343,8 @@
     if (!s) return false;
     if (/^(?:full name|name|nama penuh|nama|姓名|英文姓名)$/.test(s)) return true;
     if (/^(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
-    if (/^name in (?:full|block letters|capitals|english|bahasa malaysia)$/.test(s)) return true;
-    if (/^(?:full legal name|full name in english|english name|legal name|official name)$/.test(s)) return true;
+    if (/^name in (?:full|block letters|capital letters|capitals|english|bahasa malaysia)$/.test(s)) return true;
+    if (/^(?:full legal name|full name in english|english full name|english name|legal name|official name)$/.test(s)) return true;
     if (/^(?:please\s+)?print(?:ed)?\s+(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
     if (/^name to appear on (?:the\s+)?(?:debit\s+|atm\s+)?cards?$/.test(s)) return true;
     if (/^name of accountholders?(?:\s+in\s+english)?$/.test(s)) return true;
@@ -350,7 +361,9 @@
   function applicantNameLabel(text) {
     if (!text || chineseNameLabel(text) || lifePartyName(text)) return false;
     if (splitKind(text) || userOrNickName(text) || accountHolderName(text) || placeName(text) || organisationNameLabel(text)) return false;
-    var pieces = String(text || '').split(/\s*\/\s*/);
+    var pieces = String(text || '').replace(/\([^)]*\)/g, ' ').split(/\s*\/\s*/).filter(function (part) {
+      return String(part || '').trim();
+    });
     if (pieces.length > 1) {
       if (combinedNameAndId(text)) return false;
       return pieces.some(allowOne);
@@ -669,6 +682,7 @@
     nearestSectionHeading: nearestSectionHeading,
     applySectionContext: applySectionContext,
     identityCardOffer: identityCardOffer,
+    chineseScript: chineseScript,
     addressSlotsBlank: addressSlotsBlank,
     normValue: normValue,
     kindOfLabel: kindOfLabel,

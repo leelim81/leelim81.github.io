@@ -130,6 +130,9 @@
       if (kind === 'mailbox') {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'mailbox_not_address', hard: 'type' });
       }
+      if (kind === 'chineseName') {
+        return Object.assign(base, { decision: 'abstain', value: '', reason: 'script_mismatch', hard: 'script' });
+      }
       if ((field.type === 'checkbox' || field.type === 'radio') && /^(name|given|surname|nric|dob|phone|email|address|postal)$/.test(kind)) {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'placement_refused', refusal: 'not-a-text-line', hard: 'destination' });
       }
