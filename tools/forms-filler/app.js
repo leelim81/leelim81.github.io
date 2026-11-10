@@ -1231,9 +1231,11 @@
               idn[key] = extra[key];
               idn[key + 'Checked'] = !!extra[key + 'Checked'];
               if (key === 'blk') idn.blkUnconfirmed = !!extra.blkUnconfirmed;
+              if (key === 'dob') idn.dobUnconfirmed = !!extra.dobUnconfirmed;
             }
           });
           if (extra.blk && extra.blk === idn.blk && extra.blkUnconfirmed) idn.blkUnconfirmed = true;
+          if (extra.dob && extra.dob === idn.dob && extra.dobUnconfirmed) idn.dobUnconfirmed = true;
         });
         if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
         if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {
@@ -1266,7 +1268,7 @@
         function slotChecked(slot) {
           if (slot === 'name') return !!idn.nameChecked;
           if (slot === 'nric') return !!idn.nricChecked;
-          if (slot === 'dob') return !!idn.dobChecked;
+          if (slot === 'dob') return !!idn.dobChecked && !idn.dobUnconfirmed;
           if (slot === 'sex') return !!idn.sexChecked;
           if (slot === 'nationality') return !!idn.nationalityChecked;
           if (slot === 'race') return !!idn.raceChecked;
@@ -1315,6 +1317,13 @@
           row.decision = 'review';
           row.value = value;
           row.kind = slot;
+          if (slot === 'dob') {
+            row.editable = !!idn.dobUnconfirmed;
+            row.checked = !!idn.dobChecked && !idn.dobUnconfirmed;
+            row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
+            row.quote = 'Read from the photo';
+            return;
+          }
           var cardOffer = (slot === 'blk' || slot === 'address' || slot === 'street' || slot === 'unit' || slot === 'postal') ? window.FormEvidence.identityCardOffer(idn, slot, state.fields) : null;
           row.editable = !!(cardOffer && cardOffer.editable);
           row.checked = slotChecked(slot);
