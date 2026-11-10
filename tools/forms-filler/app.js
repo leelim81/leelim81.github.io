@@ -288,6 +288,7 @@
     state.formName = image ? String(name || 'form').replace(/\.[^.]+$/, '') + '.pdf' : (name || 'form.pdf');
     state.proposals = [];
     state.fields = read.fields;
+    if (window.FormEvidence && FormEvidence.markRegions) FormEvidence.markRegions(state.fields);
     state.kind = read.kind;
     state.placementBlocked = read.placementBlock || '';
     state.scanReview = read.reviewTransport || null;
@@ -690,6 +691,7 @@
         note('Label binding: ' + (field.label || 'unlabeled') + ' as ' + (row.kind || 'unknown') + '.');
         note('Location: scan estimate on page ' + ((field.page || 0) + 1) + '. Unchecked lines are not written.');
         if (row.quote) note('Source: ' + row.quote);
+        if (row.note) note(row.note);
         list.appendChild(li);
         return;
       } else {
@@ -710,6 +712,12 @@
         label.appendChild(quote);
       }
       li.appendChild(label);
+      if (row.note) {
+        var fitNote = document.createElement('span');
+        fitNote.className = 'review-quote';
+        fitNote.textContent = row.note;
+        li.appendChild(fitNote);
+      }
       if (row.plain && row.plain !== row.value) {
         var alt = document.createElement('button');
         alt.type = 'button';
@@ -1295,6 +1303,16 @@
           if (extra && extra.blkCandidates && extra.blkCandidates.length) idn.blkCandidates = extra.blkCandidates.slice(0, 2);
         });
         if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
+        if (idn.name && window.FormFacts && FormFacts.extendsName && window.FormEvidence && FormEvidence.extract) {
+          var longer = [];
+          FormEvidence.extract(notesAll).facts.forEach(function (fact) {
+            if (fact.kind === 'name' && fact.role === 'applicant' && FormFacts.extendsName(idn.name, fact.value)) longer.push(fact.value);
+          });
+          if (longer.length === 1) {
+            idn.name = longer[0];
+            idn.namePlain = longer[0];
+          }
+        }
         if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {
           idn.address = '';
           idn.addressChecked = false;
@@ -1387,6 +1405,20 @@
           row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
           row.quote = slot === 'blk' && idn.blkHint ? 'Read as ' + idn.blkHint : 'Read from the photo';
           if (slot === 'blk') row.blockCandidates = (idn.blkCandidates || []).slice(0, 2);
+        });
+        decisions.forEach(function (row) {
+          if (!row || !row.value || !window.FormEvidence || !FormEvidence.fittedSize) return;
+          var field = null;
+          for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
+          if (!field || !field.rect || !(field.rect.width > 0)) return;
+          var start = row.fontSize || Math.max(9, Math.min(13, ((field.lineH || 12) * 0.85)));
+          var fit = FormEvidence.fittedSize(row.value, field.rect.width, start);
+          row.fontSize = fit.size;
+          if (fit.fits) return;
+          row.checked = false;
+          row.decision = 'review';
+          row.note = 'Does not fit in the box. Left unticked.';
+          row.reason = 'does_not_fit';
         });
         if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
       }
@@ -1515,8 +1547,10 @@
       });
     }
     var bytes = state.formBytes;
+    var missed = [];
     if (!blank && state.kind === 'acro') {
       bytes = await FormFields.fill(state.formBytes, state.fields, values, { flatten: true });
+      if (bytes && bytes.unplaced) missed = missed.concat(bytes.unplaced);
     }
     var probe = await PDFLib.PDFDocument.load(bytes.slice(0));
     if (window.FormEvidence) {
@@ -1532,6 +1566,30 @@
       return !!(row && row.value);
     });
     var boxes = state.kind === 'flat' && window.FormSpots ? FormSpots.annotations(carried, values) : {};
+    if (boxes && boxes.unplaced) {
+      missed = missed.concat(boxes.unplaced);
+      delete boxes.unplaced;
+    }
+    var ticked = Object.keys(values).filter(function (id) { return String(values[id] || '').trim(); });
+    if (missed.length) {
+      var placeNote = 'Could not place ' + missed.map(function (row) { return row.label || row.id; }).join(', ') + '. Those ticked values were not written.';
+      var wrote = 0;
+      Object.keys(boxes).forEach(function (key) {
+        if (Array.isArray(boxes[key])) wrote += boxes[key].length;
+      });
+      var nothingWritten = state.kind === 'flat' ? wrote === 0 && ticked.length > 0 : missed.length >= ticked.length && ticked.length > 0;
+      if (nothingWritten) {
+        status(placeNote, false);
+        if ($('failText')) $('failText').textContent = placeNote;
+        if ($('failBox')) $('failBox').hidden = false;
+        state.running = false;
+        refreshLabels();
+        return;
+      }
+      state.placeNote = placeNote;
+    } else {
+      state.placeNote = '';
+    }
     var pages = [];
     for (var i = 0; i < probe.getPageCount(); i++) {
       pages.push({
@@ -1552,7 +1610,9 @@
     }
     var editorSession;
     try {
-      editorSession = { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: reviewNote(state.fields), sourceSha256: await sourceIdentity(), pdfSha256: await sha256Hex(bytes), sheet: sheetStamp(), editedAt: Date.now() };
+      var heldNote = reviewNote(state.fields);
+      if (state.placeNote) heldNote = heldNote ? heldNote + ' ' + state.placeNote : state.placeNote;
+      editorSession = { fileName: fileName, zoom: 1, fit: true, current: 0, pages: pages, epoch: Date.now(), source: 'forms', reviewNote: heldNote, sourceSha256: await sourceIdentity(), pdfSha256: await sha256Hex(bytes), sheet: sheetStamp(), editedAt: Date.now() };
       await DeskDB.putAll(EDITOR_DB, [
         { key: 'pdf', value: bytes },
         { key: 'session', value: editorSession }
@@ -1972,6 +2032,7 @@
         state.formBytes = draft.formBytes;
         state.formName = draft.formName || 'form.pdf';
         state.fields = draft.fields || [];
+        if (window.FormEvidence && FormEvidence.markRegions) FormEvidence.markRegions(state.fields);
         state.kind = draft.kind || '';
         state.placementBlocked = draft.placementBlocked || '';
         state.imageFrame = draft.imageFrame || null;

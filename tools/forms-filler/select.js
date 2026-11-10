@@ -55,7 +55,23 @@
       if (Object.keys(values).length > 1) conflicts[key] = true;
     });
     var allow = channel === 'ocr' ? ((frozen && frozen.ocrAutofill) || {}) : ((frozen && frozen.autofill) || {});
+    if (ev.markRegions) ev.markRegions(fields);
     return (fields || []).map(function (field) {
+      var refusal = ev.unsafeDestination ? ev.unsafeDestination(field) : '';
+      if (refusal) {
+        return {
+          fieldId: field.id,
+          kind: ev.fieldKind(field),
+          geometryTrusted: !(field && field.untrusted),
+          channel: channel,
+          candidates: [],
+          decision: 'abstain',
+          value: '',
+          reason: 'placement_refused',
+          refusal: refusal,
+          hard: 'destination'
+        };
+      }
       var kind = ev.fieldKind(field);
       var matches = packet.facts.filter(function (fact) { return eligible(fact, field, packet); });
       var trusted = !(field && field.untrusted);
@@ -71,6 +87,9 @@
       if (kind === 'mailbox') {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'mailbox_not_address', hard: 'type' });
       }
+      if ((field.type === 'checkbox' || field.type === 'radio') && /^(name|given|surname|nric|dob|phone|email|address|postal)$/.test(kind)) {
+        return Object.assign(base, { decision: 'abstain', value: '', reason: 'placement_refused', refusal: 'not-a-text-line', hard: 'destination' });
+      }
       if (kind === 'other') {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'unknown_field_type', hard: 'destination' });
       }
@@ -85,29 +104,53 @@
       }
       var fact = matches[0];
       if (!trusted) {
-        return Object.assign(base, {
+        return noteFit(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'placement_untrusted', hard: null
-        });
+        }));
       }
       if (!allow[kind]) {
-        return Object.assign(base, {
+        return noteFit(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'type_not_cleared', hard: null
-        });
+        }));
       }
       var label = String((field && field.label) || '').toLowerCase();
       if ((/name as per/.test(label) && /bank account/.test(label)) || (/nric/.test(label) && /passport|fin/.test(label))) {
-        return Object.assign(base, {
+        return noteFit(field, Object.assign(base, {
+          decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
+          reason: 'identity_needs_review', hard: null
+        }));
+      }
+      if (kind === 'name' || kind === 'given' || kind === 'surname') {
+        var named = Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'identity_needs_review', hard: null
         });
+        return noteFit(field, named);
       }
-      return Object.assign(base, {
+      var placed = Object.assign(base, {
         decision: 'autofill', value: fact.value, factId: fact.id, quote: fact.quote,
         reason: 'explicit_single_source', hard: null
       });
+      return noteFit(field, placed);
     });
+  }
+
+  function noteFit(field, row) {
+    if (!ev.fittedSize || !field || !field.rect || !(field.rect.width > 0) || !row.value) return row;
+    var start = Math.max(9, Math.min(13, ((field.lineH || 12) * 0.85)));
+    var fit = ev.fittedSize(row.value, field.rect.width, start);
+    if (fit.fits) {
+      row.fontSize = fit.size;
+      return row;
+    }
+    row.decision = 'review';
+    row.checked = false;
+    row.fontSize = fit.size;
+    row.note = 'Does not fit in the box. Left unticked.';
+    row.reason = 'does_not_fit';
+    return row;
   }
 
   return {
