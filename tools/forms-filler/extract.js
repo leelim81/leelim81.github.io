@@ -864,10 +864,7 @@
   }
 
   function glyphRoom(session) {
-    if (!session) return false;
-    if ((session._ffGlyphCrops || 0) >= 4) return false;
-    if (session._ffGlyphT0 && Date.now() - session._ffGlyphT0 > 900) return false;
-    return true;
+    return !!session && (session._ffGlyphCrops || 0) < 4;
   }
 
   async function rereadBlockLetter(session, worker, canvas, word) {
@@ -883,18 +880,22 @@
       if (!glyphRoom(session)) break;
       if (session.cancelled || session.released) throw cancelledError();
       session._ffGlyphCrops = (session._ffGlyphCrops || 0) + 1;
+      var started = Date.now();
       var result = await recognizeGlyph(session, worker, crops[i]);
       var hit = letterFromGlyph(result);
-      if (!hit) continue;
-      hits.push(hit);
-      var agreed = hits.filter(function (item) { return item.letter === hit.letter && item.confidence >= 40; });
-      if (agreed.length >= 2) return hit.letter;
-      if (hit.confidence >= 60) {
-        var rivals = hits.some(function (item) {
-          return item.letter !== hit.letter && item.confidence >= hit.confidence - 15;
-        });
-        if (!rivals) return hit.letter;
+      var slow = Date.now() - started > 600;
+      if (hit) {
+        hits.push(hit);
+        var agreed = hits.filter(function (item) { return item.letter === hit.letter && item.confidence >= 40; });
+        if (agreed.length >= 2) return hit.letter;
+        if (hit.confidence >= 60) {
+          var rivals = hits.some(function (item) {
+            return item.letter !== hit.letter && item.confidence >= hit.confidence - 15;
+          });
+          if (!rivals) return hit.letter;
+        }
       }
+      if (slow) break;
     }
     return '';
   }
@@ -931,7 +932,8 @@
         }
         var worker = await ocrWorker(session);
         session._ffGlyphCrops = 0;
-        session._ffGlyphT0 = Date.now();
+        session._ffSawFour = false;
+        session._ffGlyphExtra = false;
         var bag = [];
         var words = [];
         var used = { rotate: 0, tilt: 0 };
@@ -944,6 +946,7 @@
           var result = await recognizeBounded(session, worker, variant);
           var packed = linesFromWords(result && result.data && result.data.words);
           var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
+          if (/^\d{4}$/.test(read.blk)) session._ffSawFour = true;
           try {
             await maybeRereadBlock(session, worker, variant, read, result && result.data && result.data.words);
           } catch (err) {
@@ -958,6 +961,12 @@
             var sparse = await recognizeBounded(session, worker, variant);
             var sparsePacked = linesFromWords(sparse && sparse.data && sparse.data.words);
             var sparseRead = FormFacts.identityRead(sparsePacked.text, mapWords(sparsePacked.items, scale, pageHeight));
+            if (/^\d{4}$/.test(sparseRead.blk)) session._ffSawFour = true;
+            try {
+              await maybeRereadBlock(session, worker, variant, sparseRead, sparse && sparse.data && sparse.data.words);
+            } catch (err) {
+              if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
+            }
             bag.push(sparseRead);
             if (sparseRead.labeled) read = sparseRead;
           }
@@ -967,6 +976,10 @@
           }
           var vote = bag.length >= 2 ? FormFacts.identityVote(bag) : null;
           if (vote && vote.nric && vote.name && vote.nricChecked) {
+            if (session._ffSawFour && !session._ffGlyphExtra) {
+              session._ffGlyphExtra = true;
+              continue;
+            }
             return {
               text: votedCardText(vote),
               channel: 'ocr',

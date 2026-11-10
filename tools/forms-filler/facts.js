@@ -1004,6 +1004,13 @@
     return /^\d{4}$/.test(four) && /^\d{3}[A-Z]$/.test(letter) && letter.slice(0, 3) === four.slice(0, 3);
   }
 
+  function stemDistance(left, right) {
+    if (!/^\d{3}$/.test(left) || !/^\d{3}$/.test(right)) return 3;
+    var diff = 0;
+    for (var i = 0; i < 3; i++) if (left.charAt(i) !== right.charAt(i)) diff += 1;
+    return diff;
+  }
+
   function blockGlyphs(word) {
     if (!word) return [];
     if (word.glyphs && word.glyphs.length) return word.glyphs;
@@ -1083,7 +1090,11 @@
         groups[stem] = [];
         order.push(stem);
       }
-      groups[stem].push({ raw: raw, letter: letter });
+      groups[stem].push({
+        raw: raw,
+        letter: letter,
+        reread: /^\d{4}$/.test(read.blk) && read.blkSuggestKind === 'reread' && !!letter
+      });
     });
     return { groups: groups, order: order };
   }
@@ -1126,13 +1137,39 @@
     var groups = grouped.groups;
     var order = grouped.order;
     if (!order.length) return null;
-    var postalStem = postal && postal.checked && /^\d{6}$/.test(postal.value || '') ? String(postal.value).slice(-3) : '';
+    var postalValue = postal && /^\d{6}$/.test(postal.value || '') ? postal.value : '';
+    var anyTail = postalValue ? postalValue.slice(-3) : '';
+    var postalStem = postal && postal.checked ? anyTail : '';
     function offer(stem) {
       var letters = lettersOnStem(groups[stem]);
       if (letters.length !== 1) return null;
       var hint = hintForStem(groups[stem], letters[0]);
       if (!hint) return null;
       return { value: stem + letters[0], hint: hint };
+    }
+    if (anyTail) {
+      var letters = [];
+      var sawFarReread = false;
+      var sawNearReread = false;
+      var nearHint = '';
+      order.forEach(function (stem) {
+        var distance = stemDistance(stem, anyTail);
+        groups[stem].forEach(function (row) {
+          if (!row.letter) return;
+          if (row.reread && distance >= 2) sawFarReread = true;
+          if (row.reread && distance <= 1) sawNearReread = true;
+          if (distance <= 1 && (row.reread || !row.raw) && letters.indexOf(row.letter) < 0) letters.push(row.letter);
+        });
+        if (distance <= 1 && !nearHint) nearHint = hintForStem(groups[stem], letters[0] || '');
+      });
+      if (groups[anyTail]) {
+        var exactHint = hintForStem(groups[anyTail], letters[0] || '');
+        if (exactHint) nearHint = exactHint;
+      }
+      var farAgreed = order.some(function (stem) {
+        return stemDistance(stem, anyTail) >= 2 && groups[stem].length >= 2;
+      });
+      if (!sawFarReread && sawNearReread && !farAgreed && letters.length === 1 && nearHint) return { value: anyTail + letters[0], hint: nearHint };
     }
     var bestCount = 0;
     order.forEach(function (stem) {
