@@ -414,6 +414,17 @@
       else preview.textContent = 'No fields found in this file.';
       main.appendChild(name);
       main.appendChild(preview);
+      if (ref.timedOut && ref.bytes && ref.bytes.length) {
+        var retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'ref-retry';
+        retry.textContent = 'Retry';
+        retry.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          retryRef(ref);
+        });
+      }
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ref-x';
@@ -425,6 +436,7 @@
         removeRef(ref.id);
       });
       li.appendChild(main);
+      if (retry) li.appendChild(retry);
       li.appendChild(btn);
       list.appendChild(li);
     });
@@ -458,18 +470,22 @@
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
-      budget = !!(err && (err.message === 'budget' || err.message === 'cancelled'));
+      var timedOut = !!(err && err.message === 'budget');
+      budget = timedOut || !!(err && err.message === 'cancelled');
       if (budget && read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(read);
+      ref.timedOut = timedOut;
     }
     if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
     if (!live || live !== ref) return;
-      if (failed) {
+    if (failed) {
       live.status = 'error';
-      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : 'Could not read this photo. Nothing was filled.';
+      live.timedOut = !!ref.timedOut;
+      live.preview = ref.timedOut ? 'This file took too long to read. Press retry to read this photo again.' : (budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : 'Could not read this photo. Nothing was filled.');
       live.text = '';
       live.words = [];
     } else {
+      live.timedOut = false;
       live.text = text || '';
       rememberRef(live);
       if (live.channel === 'ocr' && !live.preview && live.identity) {
@@ -486,7 +502,8 @@
       if (live.channel === 'ocr' && !live.preview) live.preview = 'Could not read a name or ID from this photo. Nothing was filled.';
       if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
-    if (identityPhotoRef(live) && (failed || !live.text)) live.bytes = new Uint8Array(0);
+    var keepBytes = live.timedOut && window.FormExtract && FormExtract.keepPhotoBytes && FormExtract.keepPhotoBytes({ message: 'budget' });
+    if (identityPhotoRef(live) && (failed || !live.text) && !keepBytes) live.bytes = new Uint8Array(0);
     renderRefs();
     scheduleSave();
   }
@@ -526,10 +543,23 @@
     };
     state.refs.push(ref);
     state.proposals = [];
+    if (identityPhotoRef(ref) && window.FormExtract && FormExtract.warm) FormExtract.warm();
     ref.pending = extractOne(ref);
     refreshLabels();
     scheduleSave();
     return true;
+  }
+
+  function retryRef(ref) {
+    if (!ref || !(ref.bytes && ref.bytes.length) || ref.status === 'reading') return;
+    ref.timedOut = false;
+    ref.status = 'reading';
+    ref.preview = '';
+    ref.text = '';
+    ref.words = [];
+    ref.pending = extractOne(ref);
+    renderRefs();
+    scheduleSave();
   }
 
   function stopRead(ref) {
@@ -2096,4 +2126,10 @@
     }
   }).catch(function () {});
   window.FormBlockChoices = { add: addBlockChoices };
+  var warmSoon = function () {
+    if (window.__ffNoWarm || window.__ffCreateWorker || window.__stallMode) return;
+    if (window.FormExtract && FormExtract.warm) FormExtract.warm();
+  };
+  if (window.requestIdleCallback) window.requestIdleCallback(warmSoon, { timeout: 2000 });
+  else setTimeout(warmSoon, 1200);
 })();
