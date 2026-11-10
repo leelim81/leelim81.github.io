@@ -113,6 +113,23 @@
     return '';
   }
 
+  /* A whole address is offered only when the block, street and postal code
+     are all present and the block is confirmed. An unconfirmed block is
+     still offered on its own line, unticked, so the suffix can be corrected. */
+  function identityCardOffer(identity, slot) {
+    var idn = identity || {};
+    if (slot === 'address') {
+      if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal || !idn.address) return { value: '', checked: false, editable: false };
+      return { value: idn.address, checked: !!idn.addressChecked, editable: false };
+    }
+    if (slot === 'blk') {
+      if (!idn.blk) return { value: '', checked: false, editable: false };
+      var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk);
+      return { value: idn.blk, checked: !!idn.blkChecked && !unconfirmed, editable: unconfirmed };
+    }
+    return null;
+  }
+
   function identityPhotoSlot(field, fields) {
     var slot = applicantIdentitySlot(field);
     if (!slot) return '';
@@ -218,6 +235,7 @@
     fieldKind: fieldKind,
     fieldRole: fieldRole,
     identityPhotoSlot: identityPhotoSlot,
+    identityCardOffer: identityCardOffer,
     normValue: normValue,
     kindOfLabel: kindOfLabel
   };

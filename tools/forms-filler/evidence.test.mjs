@@ -2,7 +2,8 @@ import assert from 'assert';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { extract, identityPhotoSlot } = require('./evidence.js');
+const { extract, identityPhotoSlot, identityCardOffer } = require('./evidence.js');
+const { identityRead, identityVote } = require('./facts.js');
 const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
 
@@ -297,6 +298,21 @@ stillRepeated.forEach(function (field) {
   const only = [{ id: 'n', label: 'Name', section: heading }];
   assert.equal(identityPhotoSlot(only[0], only), '', heading);
 });
+const onlyAddress = [{ id: 'a', label: 'Address' }];
+const unconfirmedHome = identityVote([
+  identityRead('APT BLK 9999 STREET #99-999\nSINGAPORE 999999\n'),
+  identityRead('APT BLK 9999 STREET #99-999\nSINGAPORE 999999\n')
+]);
+assert.equal(identityPhotoSlot(onlyAddress[0], onlyAddress), 'address');
+assert.equal(identityCardOffer(unconfirmedHome, 'address').value, '');
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').value, '9999');
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').checked, false);
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').editable, true);
+const confirmedHome = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n')]);
+assert.equal(identityCardOffer(confirmedHome, 'address').value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
+assert.equal(identityCardOffer(confirmedHome, 'address').checked, false);
+const partialOffer = { blk: '88', street: '', postal: '018956', address: '88 SINGAPORE 018956', blkUnconfirmed: false };
+assert.equal(identityCardOffer(partialOffer, 'address').value, '');
 assert.equal(sectionKind('See Part B'), '');
 assert.equal(personOf('The insured'), 'other');
 assert.equal(personOf('Insured'), 'other');

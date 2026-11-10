@@ -1096,16 +1096,38 @@
       var value = soleLeader(counts);
       return { value: value || '', checked: !!(value && counts[value] >= 2) };
     }
+    function agreedBlock(reads) {
+      var counts = {};
+      var order = [];
+      (reads || []).forEach(function (read) {
+        var value = read && read.blk;
+        if (!value) return;
+        if (!counts[value]) order.push(value);
+        counts[value] = (counts[value] || 0) + 1;
+      });
+      var value = soleLeader(counts);
+      var bad = function (item) { return /^\d{4}$/.test(item); };
+      if (!value && order.length && order.every(bad)) {
+        var bestCount = 0;
+        order.forEach(function (item) { if (counts[item] > bestCount) bestCount = counts[item]; });
+        value = order.filter(function (item) { return counts[item] === bestCount; })[0];
+      }
+      var unconfirmed = !!(value && (bad(value) || (reads || []).some(function (read) {
+        return read && read.blk === value && read.blkUnconfirmed;
+      })));
+      return { value: value || '', checked: !!(value && counts[value] >= 2 && !unconfirmed), unconfirmed: unconfirmed };
+    }
     var dob = agreedValue('dob');
     var sex = agreedValue('sex');
     var nationality = agreedValue('nationality');
     var race = agreedValue('race');
     var birthCountry = agreedValue('birthCountry');
-    var blk = agreedValue('blk');
+    var blk = agreedBlock(list);
     var street = agreedValue('street');
     var unit = agreedValue('unit');
     var postal = agreedValue('postal');
     var address = agreedValue('address');
+    var whole = blk.value && !blk.unconfirmed && street.value && postal.value ? address.value : '';
     return {
       name: name || '',
       namePlain: plain || '',
@@ -1128,18 +1150,18 @@
       street: street.value,
       unit: unit.value,
       postal: postal.value,
-      address: address.value,
+      address: whole,
       dobChecked: dob.checked,
       sexChecked: sex.checked,
       nationalityChecked: nationality.checked,
       raceChecked: race.checked,
       birthCountryChecked: birthCountry.checked,
-      blkChecked: blk.checked && !/^\d{4}$/.test(blk.value),
+      blkChecked: blk.checked,
       streetChecked: street.checked,
       unitChecked: unit.checked,
       postalChecked: postal.checked,
-      blkUnconfirmed: /^\d{4}$/.test(blk.value) || list.some(function (read) { return read && read.blk === blk.value && read.blkUnconfirmed; }),
-      addressChecked: !!(address.checked && blk.checked && street.checked && postal.checked && !/^\d{4}$/.test(blk.value))
+      blkUnconfirmed: blk.unconfirmed,
+      addressChecked: !!(whole && address.checked && blk.checked && street.checked && postal.checked)
     };
   }
 
@@ -1298,7 +1320,7 @@
       var rest = blk[3].replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim();
       if (rest && !usedByName(rest, phrases)) out.street = rest.toUpperCase();
     });
-    if (out.blk && out.street && out.postal) {
+    if (out.blk && !out.blkUnconfirmed && out.street && out.postal) {
       out.address = [out.blk, out.street, out.unit ? '#' + out.unit : '', 'SINGAPORE ' + out.postal].filter(Boolean).join(' ');
     }
     return out;

@@ -1235,7 +1235,12 @@
           });
           if (extra.blk && extra.blk === idn.blk && extra.blkUnconfirmed) idn.blkUnconfirmed = true;
         });
-        if (!idn.name && !idn.nric && !idn.dob && !idn.sex && !idn.nationality && !idn.address && !idn.postal) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
+        if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
+        if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {
+          idn.address = '';
+          idn.addressChecked = false;
+        }
+        if (!idn.name && !idn.nric && !idn.dob && !idn.sex && !idn.nationality && !idn.address && !idn.postal && !idn.blk) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
         var matched = false;
         var asked = {};
         state.fields.forEach(function (field) {
@@ -1254,9 +1259,8 @@
           if (slot === 'nationality') return idn.nationality || '';
           if (slot === 'race') return idn.race || '';
           if (slot === 'birthCountry') return idn.birthCountry || '';
-          if (slot === 'address') return idn.address || '';
+          if (slot === 'address' || slot === 'blk') return (window.FormEvidence.identityCardOffer(idn, slot) || {}).value || '';
           if (slot === 'postal') return idn.postal || '';
-          if (slot === 'blk') return idn.blk || '';
           if (slot === 'street') return idn.street || '';
           if (slot === 'unit') return idn.unit ? '#' + idn.unit : '';
           return '';
@@ -1270,10 +1274,9 @@
           if (slot === 'race') return !!idn.raceChecked;
           if (slot === 'birthCountry') return !!idn.birthCountryChecked;
           if (slot === 'postal') return !!idn.postalChecked;
-          if (slot === 'blk') return !!idn.blkChecked && !idn.blkUnconfirmed;
+          if (slot === 'blk' || slot === 'address') return !!(window.FormEvidence.identityCardOffer(idn, slot) || {}).checked;
           if (slot === 'street') return !!idn.streetChecked;
           if (slot === 'unit') return !!idn.unitChecked;
-          if (slot === 'address') return !!idn.addressChecked;
           return false;
         }
         decisions.forEach(function (row) {
@@ -1317,9 +1320,10 @@
           row.decision = 'review';
           row.value = value;
           row.kind = slot;
-          row.editable = slot === 'blk' && !!idn.blkUnconfirmed;
+          var blkOffer = slot === 'blk' ? window.FormEvidence.identityCardOffer(idn, 'blk') : null;
+          row.editable = !!(blkOffer && blkOffer.editable);
           row.checked = slotChecked(slot);
-          row.reason = 'identity_photo';
+          row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
           row.quote = 'Read from the photo';
         });
         if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
