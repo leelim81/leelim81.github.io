@@ -1000,6 +1000,56 @@
     return letters.indexOf(letter.charAt(3)) >= 0;
   }
 
+  function stemMatches(four, letter) {
+    return /^\d{4}$/.test(four) && /^\d{3}[A-Z]$/.test(letter) && letter.slice(0, 3) === four.slice(0, 3);
+  }
+
+  function stemDistance(left, right) {
+    if (!/^\d{3}$/.test(left) || !/^\d{3}$/.test(right)) return 3;
+    var diff = 0;
+    for (var i = 0; i < 3; i++) if (left.charAt(i) !== right.charAt(i)) diff += 1;
+    return diff;
+  }
+
+  function keepCardWords(keptConf, nextConf, extraPass) {
+    if (extraPass) return false;
+    if (keptConf == null) return true;
+    if (nextConf == null) return false;
+    return Number(nextConf) >= Number(keptConf);
+  }
+
+  function blockReason(reads, postal) {
+    var sawLetter = (reads || []).some(function (read) {
+      return read && read.blkSuggestKind === 'reread' && stemMatches(read.blk, read.blkSuggest);
+    });
+    if (!sawLetter) return 'noLetter';
+    var rawPostal = postal && postal.value != null ? String(postal.value).trim() : '';
+    if (!rawPostal) return 'postalNone';
+    if (!/^\d{6}$/.test(rawPostal)) return 'postalFormat';
+    var tail = rawPostal.slice(-3);
+    var near = false;
+    var far = false;
+    (reads || []).forEach(function (read) {
+      if (!read || !/^\d{4}$/.test(read.blk) || read.blkSuggestKind !== 'reread') return;
+      var distance = stemDistance(read.blk.slice(0, 3), tail);
+      if (distance <= 1) near = true;
+      if (distance > 1) far = true;
+    });
+    if (!near || far) return 'postalDist>1';
+    var seenLetter = {};
+    var letterCount = 0;
+    (reads || []).forEach(function (read) {
+      if (!read || read.blkSuggestKind !== 'reread' || !stemMatches(read.blk, read.blkSuggest)) return;
+      var mark = read.blkSuggest.charAt(3);
+      if (!seenLetter[mark]) {
+        seenLetter[mark] = true;
+        letterCount += 1;
+      }
+    });
+    if (letterCount > 1) return 'letterConflict';
+    return 'noLetter';
+  }
+
   function blockGlyphs(word) {
     if (!word) return [];
     if (word.glyphs && word.glyphs.length) return word.glyphs;
@@ -1059,43 +1109,212 @@
     return { value: '', kind: '' };
   }
 
+  function groupBlockStems(reads) {
+    var groups = {};
+    var order = [];
+    (reads || []).forEach(function (read) {
+      if (!read || !read.blk) return;
+      var stem = '';
+      var raw = '';
+      var letter = '';
+      if (/^\d{4}$/.test(read.blk)) {
+        stem = read.blk.slice(0, 3);
+        raw = read.blk;
+        if (read.blkSuggestKind === 'reread' && stemMatches(read.blk, read.blkSuggest)) letter = read.blkSuggest.charAt(3);
+      } else if (/^\d{3}[A-Z]$/.test(read.blk)) {
+        stem = read.blk.slice(0, 3);
+        letter = read.blk.charAt(3);
+      } else return;
+      if (!groups[stem]) {
+        groups[stem] = [];
+        order.push(stem);
+      }
+      groups[stem].push({
+        raw: raw,
+        letter: letter,
+        confidence: read.blkSuggestConf == null ? null : Number(read.blkSuggestConf),
+        reread: /^\d{4}$/.test(read.blk) && read.blkSuggestKind === 'reread' && !!letter
+      });
+    });
+    return { groups: groups, order: order };
+  }
+
+  function lettersOnStem(group) {
+    var letters = [];
+    (group || []).forEach(function (row) {
+      if (row.letter && letters.indexOf(row.letter) < 0) letters.push(row.letter);
+    });
+    return letters;
+  }
+
+  function hintForStem(group, letter) {
+    var counts = {};
+    var order = [];
+    (group || []).forEach(function (row) {
+      if (!row.raw) return;
+      if (letter && row.letter && row.letter !== letter) return;
+      if (!counts[row.raw]) {
+        counts[row.raw] = 0;
+        order.push(row.raw);
+      }
+      counts[row.raw] += 1;
+    });
+    var best = '';
+    var bestCount = 0;
+    order.forEach(function (raw) {
+      if (counts[raw] > bestCount) {
+        bestCount = counts[raw];
+        best = raw;
+      }
+    });
+    return best;
+  }
+
+  function conflictCandidates(groups, order, tail) {
+    var best = {};
+    order.forEach(function (stem) {
+      if (stemDistance(stem, tail) > 1) return;
+      groups[stem].forEach(function (row) {
+        if (!row.reread || !row.letter) return;
+        var confidence = row.confidence == null ? 0 : Number(row.confidence);
+        if (!best[row.letter] || confidence > best[row.letter].confidence) {
+          best[row.letter] = { letter: row.letter, confidence: confidence };
+        }
+      });
+    });
+    var ranked = [];
+    Object.keys(best).forEach(function (letter) { ranked.push(best[letter]); });
+    ranked.sort(function (a, b) {
+      return b.confidence - a.confidence || (a.letter < b.letter ? -1 : 1);
+    });
+    return ranked.slice(0, 2).map(function (row) { return tail + row.letter; });
+  }
+
+  /* Pick a stem other reads, or a confirmed postal code, actually support.
+     A lone misread stem does not become the suggestion. */
+  function selectReread(reads, postal) {
+    var grouped = groupBlockStems(reads);
+    var groups = grouped.groups;
+    var order = grouped.order;
+    if (!order.length) return null;
+    var postalValue = postal && /^\d{6}$/.test(postal.value || '') ? postal.value : '';
+    var anyTail = postalValue ? postalValue.slice(-3) : '';
+    var postalStem = postal && postal.checked ? anyTail : '';
+    function offer(stem) {
+      var letters = lettersOnStem(groups[stem]);
+      if (letters.length !== 1) return null;
+      var hint = hintForStem(groups[stem], letters[0]);
+      if (!hint) return null;
+      return { value: stem + letters[0], hint: hint };
+    }
+    if (anyTail) {
+      var letters = [];
+      var sawFarReread = false;
+      var sawNearReread = false;
+      var nearHint = '';
+      order.forEach(function (stem) {
+        var distance = stemDistance(stem, anyTail);
+        groups[stem].forEach(function (row) {
+          if (!row.letter) return;
+          if (row.reread && distance >= 2) sawFarReread = true;
+          if (row.reread && distance <= 1) sawNearReread = true;
+          if (distance <= 1 && (row.reread || !row.raw) && letters.indexOf(row.letter) < 0) letters.push(row.letter);
+        });
+        if (distance <= 1 && !nearHint) nearHint = hintForStem(groups[stem], letters[0] || '');
+      });
+      if (groups[anyTail]) {
+        var exactHint = hintForStem(groups[anyTail], letters[0] || '');
+        if (exactHint) nearHint = exactHint;
+      }
+      var farAgreed = order.some(function (stem) {
+        return stemDistance(stem, anyTail) >= 2 && groups[stem].length >= 2;
+      });
+      if (!sawFarReread && sawNearReread && !farAgreed && letters.length === 1 && nearHint) {
+        return { value: anyTail + letters[0], hint: nearHint, reason: 'applied' };
+      }
+      if (!sawFarReread && sawNearReread && !farAgreed && letters.length > 1) {
+        return {
+          value: '',
+          hint: '',
+          reason: 'letterConflict',
+          candidates: conflictCandidates(groups, order, anyTail)
+        };
+      }
+    }
+    var bestCount = 0;
+    order.forEach(function (stem) {
+      if (groups[stem].length > bestCount) bestCount = groups[stem].length;
+    });
+    var leaders = order.filter(function (stem) { return groups[stem].length >= 2 && groups[stem].length === bestCount; });
+    if (leaders.length === 1 && (!postalStem || postalStem === leaders[0])) {
+      var agreed = offer(leaders[0]);
+      if (agreed) return agreed;
+    }
+    if (!postalStem || !groups[postalStem]) return null;
+    var support = groups[postalStem].length;
+    var stronger = order.some(function (stem) { return stem !== postalStem && groups[stem].length > support; });
+    if (stronger) return null;
+    return offer(postalStem);
+  }
+
   /* A 4-digit HDB block is implausible. Replace it only when a letter
      reading is supported, and never mark that replacement checked. */
   function repairFourBlock(reads, agreed, postal) {
     if (agreed && agreed.value && !/^\d{4}$/.test(agreed.value)) return null;
+    var hasReread = (reads || []).some(function (read) {
+      return read && read.blkSuggestKind === 'reread' && stemMatches(read.blk, read.blkSuggest);
+    });
+    if (hasReread) {
+      var picked = selectReread(reads, postal);
+      if (picked && (picked.value || (picked.candidates && picked.candidates.length))) {
+        if (picked.value) picked.reason = picked.reason || 'applied';
+        return picked;
+      }
+      return { value: '', hint: '', reason: blockReason(reads, postal) };
+    }
     var present = (reads || []).filter(function (read) { return read && read.blk; });
     var fours = [];
     present.forEach(function (read) {
       if (/^\d{4}$/.test(read.blk) && fours.indexOf(read.blk) < 0) fours.push(read.blk);
     });
     if (!fours.length) return null;
-    if (present.some(function (read) {
-      return !/^\d{4}$/.test(read.blk) && !fours.some(function (four) { return letterExplains(four, read.blk); });
-    })) return null;
+    var counts = {};
+    present.forEach(function (read) { counts[read.blk] = (counts[read.blk] || 0) + 1; });
+    var fourCount = 0;
+    fours.forEach(function (four) { fourCount += counts[four] || 0; });
+    var otherMax = 0;
+    Object.keys(counts).forEach(function (key) {
+      var related = fours.some(function (four) { return key === four || letterExplains(four, key) || stemMatches(four, key); });
+      if (!related && counts[key] > otherMax) otherMax = counts[key];
+    });
+    if (otherMax >= fourCount) return null;
+    var stems = fours.map(function (four) { return four.slice(0, 3); });
+    if (stems.some(function (stem) { return stem !== stems[0]; })) return null;
     var matched = [];
     present.forEach(function (read) {
       if (/^\d{3}[A-Z]$/.test(read.blk) && fours.some(function (four) { return letterExplains(four, read.blk); })) {
         matched.push({ value: read.blk, kind: 'read', raw: '' });
       }
-      if (/^\d{4}$/.test(read.blk) && read.blkSuggest && letterExplains(read.blk, read.blkSuggest)) {
-        matched.push({ value: read.blkSuggest, kind: read.blkSuggestKind || 'confidence', raw: read.blk });
+      if (/^\d{4}$/.test(read.blk) && read.blkSuggest) {
+        var kind = read.blkSuggestKind || 'confidence';
+        var explains = kind === 'reread' ? stemMatches(read.blk, read.blkSuggest) : letterExplains(read.blk, read.blkSuggest);
+        if (explains) matched.push({ value: read.blkSuggest, kind: kind, raw: read.blk });
       }
     });
     var unique = [];
     matched.forEach(function (item) {
       if (!unique.some(function (have) { return have.value === item.value; })) unique.push(item);
     });
-    if (unique.length !== 1) return null;
+    if (unique.length !== 1) return { value: '', hint: '', reason: 'noLetter' };
     var candidate = unique[0].value;
-    var raws = fours.filter(function (four) { return letterExplains(four, candidate); });
+    var raws = fours.filter(function (four) { return stemMatches(four, candidate); });
     if (raws.length !== 1) return null;
-    var strong = matched.some(function (item) {
-      return item.value === candidate && (item.kind === 'choice' || item.kind === 'read');
-    });
+    if (present.some(function (read) {
+      return /^\d{3}[A-Z]$/.test(read.blk) && stemMatches(raws[0], read.blk) && read.blk !== candidate;
+    })) return null;
     var postalKnown = postal && postal.checked && /^\d{6}$/.test(postal.value || '');
-    var postalOk = !postalKnown || String(postal.value).slice(-3) === candidate.slice(0, 3);
-    if (!strong && !postalOk) return null;
-    return { value: candidate, hint: raws[0] };
+    if (postalKnown && String(postal.value).slice(-3) !== candidate.slice(0, 3)) return null;
+    return { value: candidate, hint: raws[0], reason: 'applied' };
   }
 
   function identityVote(reads) {
@@ -1246,10 +1465,16 @@
     if (unit.value && unitUnconfirmed) unit = { value: unit.value, checked: false };
     var postal = agreedValue('postal');
     var blkHint = '';
+    var blkReason = '';
+    var blkCandidates = [];
     var blockRepair = repairFourBlock(list, blk, postal);
-    if (blockRepair) {
+    if (blockRepair && blockRepair.value) {
       blk = { value: blockRepair.value, checked: false, unconfirmed: true };
       blkHint = blockRepair.hint;
+      blkReason = blockRepair.reason || 'applied';
+    } else if (blockRepair && blockRepair.reason) {
+      blkReason = blockRepair.reason;
+      blkCandidates = (blockRepair.candidates || []).slice(0, 2);
     }
     var address = agreedValue('address');
     var phrases = [];
@@ -1305,6 +1530,8 @@
       postalChecked: postal.checked,
       blkUnconfirmed: blk.unconfirmed,
       blkHint: blkHint,
+      blkReason: blkReason,
+      blkCandidates: blkCandidates,
       addressChecked: !!(whole && address.checked && blk.checked && street.checked && postal.checked)
     };
   }
@@ -1721,6 +1948,7 @@
     accept: accept,
     nricChecksum: nricChecksum,
     identityRead: identityRead,
-    identityVote: identityVote
+    identityVote: identityVote,
+    keepCardWords: keepCardWords
   };
 });
