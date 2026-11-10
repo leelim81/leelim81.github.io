@@ -335,6 +335,8 @@
     if (/^name in (?:full|block letters|capitals|english|bahasa malaysia)$/.test(s)) return true;
     if (/^(?:full legal name|full name in english|english name|legal name|official name)$/.test(s)) return true;
     if (/^(?:please\s+)?print(?:ed)?\s+(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
+    if (/^name to appear on (?:the\s+)?(?:debit\s+|atm\s+)?cards?$/.test(s)) return true;
+    if (/^name of accountholders?(?:\s+in\s+english)?$/.test(s)) return true;
     if (/^nama\s+(?:pemohon|pencadang|pemegang\s+polisi|pekerja|pelanggan)$/.test(s)) return true;
     var person = 'applicants?|customers?|members?|claimants?|proposers?|policy\\s*holders?|employees?|card\\s*holders?|clients?|subscribers?|taxpayers?|principals?|account\\s+applicants?|(?:main|primary)\\s+applicants?';
     if (new RegExp('^(?:' + person + ')s?\\s+(?:full\\s+)?(?:name|nama)$').test(s)) return true;
@@ -490,6 +492,43 @@
     return null;
   }
 
+  /* The nearest section heading or table header above or to the left of a
+     field on the same page. A closer other-person heading wins over a
+     farther applicant heading. */
+  function nearestSectionHeading(field, texts) {
+    var rect = field && field.rect;
+    if (!rect) return null;
+    var top = rect.y + (rect.height || 0);
+    var best = null;
+    (texts || []).forEach(function (text) {
+      var raw = String(text && text.str || '').replace(/\s+/g, ' ').trim();
+      var kind = sectionKind(raw);
+      if (!kind) return;
+      var above = text.y >= top - 8;
+      var leftEdge = text.x + (text.w || 0);
+      var left = leftEdge <= rect.x + 20 && Math.abs(text.y - rect.y) <= 28;
+      if (!above && !left) return;
+      if (text.x > rect.x + Math.max(rect.width || 0, 40) + 36) return;
+      if (rect.x - text.x > 340) return;
+      var dy = text.y - top;
+      var limit = kind === 'applicant' ? 420 : 280;
+      if (above && (dy > limit || dy < -8)) return;
+      var dist = above ? Math.max(dy, 0) + Math.abs(text.x - rect.x) * 0.2 : Math.abs(text.y - rect.y) + Math.max(0, rect.x - leftEdge) + 12;
+      if (!best || dist < best.dist) best = { kind: kind, line: raw.replace(/[:.\s]+$/g, ''), dist: dist };
+    });
+    return best;
+  }
+
+  function applySectionContext(fields) {
+    (fields || []).forEach(function (field) {
+      if (!field || field.section) return;
+      var texts = field.texts || field.pageTexts || [];
+      var hit = nearestSectionHeading(field, texts);
+      if (hit) field.section = hit.line;
+    });
+    return fields;
+  }
+
   function identityPhotoSlot(field, fields) {
     var slot = applicantIdentitySlot(field);
     if (!slot) return '';
@@ -627,6 +666,8 @@
     fieldKind: fieldKind,
     fieldRole: fieldRole,
     identityPhotoSlot: identityPhotoSlot,
+    nearestSectionHeading: nearestSectionHeading,
+    applySectionContext: applySectionContext,
     identityCardOffer: identityCardOffer,
     addressSlotsBlank: addressSlotsBlank,
     normValue: normValue,

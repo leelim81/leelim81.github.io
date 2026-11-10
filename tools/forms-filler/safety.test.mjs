@@ -575,6 +575,88 @@ assert.equal(unsafeDestination(f24[0]), 'signature');
 assert.equal(unsafeDestination({ label: 'Name', section: 'For official use' }), 'bank-use');
 assert.equal(unsafeDestination({ label: "Father's Name" }), 'other-person');
 
+const details = packet + 'Address: 10 Example Road\n';
+function placed(fields) {
+  return Object.fromEntries(decideAll(fields, details, open).map((item) => [item.fieldId, item]));
+}
+const indiaTexts = [
+  { x: 40, y: 520, w: 150, h: 12, str: "Applicant's particulars" },
+  { x: 40, y: 420, w: 70, h: 12, str: 'Nominee' }
+];
+const india = placed([
+  { id: 'app', label: 'Name', type: 'text', page: 2, rect: { x: 87, y: 490, width: 180, height: 14 }, texts: indiaTexts },
+  { id: 'nom', label: 'Name', type: 'text', page: 2, rect: { x: 87, y: 357, width: 180, height: 14 }, texts: indiaTexts }
+]);
+assert.equal(india.nom.value, '');
+assert.equal(india.nom.refusal, 'other-person');
+assert.notEqual(india.nom.checked, true);
+assert.equal(india.app.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.equal(india.app.checked, true);
+assert.equal(india.app.decision, 'review');
+
+const tenancyTexts = [
+  { x: 36, y: 560, w: 120, h: 12, str: 'Applicant' },
+  { x: 32, y: 510, w: 80, h: 12, str: 'Occupant' }
+];
+const tenancy = placed([
+  { id: 'who', label: 'Name', type: 'text', page: 0, rect: { x: 59, y: 530, width: 180, height: 14 }, texts: tenancyTexts },
+  { id: 'occ', label: 'Name', type: 'text', page: 0, rect: { x: 59, y: 468, width: 180, height: 14 }, texts: tenancyTexts }
+]);
+assert.equal(tenancy.occ.value, '');
+assert.equal(tenancy.occ.refusal, 'other-person');
+assert.equal(tenancy.who.checked, true);
+
+const preschoolTexts = [
+  { x: 40, y: 400, w: 80, h: 12, str: 'Applicant' },
+  { x: 40, y: 280, w: 80, h: 12, str: 'Guardian' }
+];
+const preschool = placed([
+  { id: 'home', label: 'Address', type: 'text', page: 0, rect: { x: 48, y: 330, width: 200, height: 14 }, texts: preschoolTexts },
+  { id: 'guard', label: 'Address:', type: 'text', page: 0, rect: { x: 48, y: 240, width: 200, height: 14 }, texts: preschoolTexts }
+]);
+assert.equal(preschool.guard.value, '');
+assert.equal(preschool.guard.refusal, 'other-person');
+assert.equal(preschool.home.value, '10 Example Road');
+assert.equal(preschool.home.decision, 'autofill');
+
+const w4Texts = [
+  { x: 36, y: 700, w: 70, h: 11, str: 'Step 1' },
+  { x: 36, y: 180, w: 110, h: 12, str: 'Employers Only' }
+];
+const w4 = placed([
+  { id: 'emp', label: 'Address', type: 'text', page: 0, rect: { x: 36, y: 640, width: 220, height: 14 }, texts: w4Texts },
+  { id: 'er', label: 'Address', type: 'text', page: 0, rect: { x: 36, y: 140, width: 220, height: 14 }, texts: w4Texts }
+]);
+assert.equal(w4.er.value, '');
+assert.equal(w4.er.refusal, 'other-person');
+assert.equal(w4.emp.value, '10 Example Road');
+assert.equal(w4.emp.decision, 'autofill');
+
+const twinsTexts = [{ x: 40, y: 600, w: 140, h: 12, str: "Applicant's particulars" }];
+const twins = placed([
+  { id: 'low', label: 'Name', type: 'text', page: 0, rect: { x: 40, y: 420, width: 180, height: 14 }, texts: twinsTexts },
+  { id: 'high', label: 'Name', type: 'text', page: 0, rect: { x: 40, y: 560, width: 180, height: 14 }, texts: twinsTexts }
+]);
+assert.equal(twins.high.checked, true);
+assert.equal(twins.low.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.notEqual(twins.low.checked, true);
+
+[
+  ['Name (as shown on your income tax return)', 'irs-w9'],
+  ['Your name', 'uk-gp'],
+  ['Name of Accountholder in English', 'sc-personal-aof'],
+  ['Name to appear on Card', 'ocbc-card'],
+  ['Employee name', 'uscis-i9']
+].forEach((item) => {
+  const decision = row([{ id: item[1], label: item[0], type: 'text' }], item[1]);
+  assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', item[0]);
+  assert.equal(decision.decision, 'review', item[0]);
+  assert.equal(identityPhotoSlot({ id: item[1], label: item[0], type: 'text' }, [{ id: item[1], label: item[0], type: 'text' }]), 'name', item[0]);
+});
+assert.equal(fieldKind({ label: 'Last Name (Family Name)', type: 'text' }), 'surname');
+assert.equal(row([{ id: 'i9-last', label: 'Last Name (Family Name)', type: 'text' }], 'i9-last').value, '');
+assert.equal(row([{ id: 'holder', label: 'Name of account holder', type: 'text' }], 'holder').value, '');
+
 const { PDFDocument } = require('./vendor/pdf/pdf-lib.min.js');
 require('./vendor/pdf/pdf.min.js');
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf/pdf.worker.min.js', import.meta.url).pathname;

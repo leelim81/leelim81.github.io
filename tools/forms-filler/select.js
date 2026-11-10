@@ -55,10 +55,48 @@
       if (Object.keys(values).length > 1) conflicts[key] = true;
     });
     var allow = channel === 'ocr' ? ((frozen && frozen.ocrAutofill) || {}) : ((frozen && frozen.autofill) || {});
+    if (ev.applySectionContext) ev.applySectionContext(fields);
     if (ev.markRegions) ev.markRegions(fields);
+    function normLabel(label) {
+      return String(label || '').replace(/[:.*\s]+$/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+    function openForPretick(field) {
+      if (!field || (ev.unsafeDestination && ev.unsafeDestination(field))) return false;
+      var kind = ev.sectionKind ? ev.sectionKind(field.section || field.heading || field.group || '') : '';
+      return kind !== 'other' && kind !== 'reset';
+    }
+    function sameLabel(field) {
+      var want = normLabel(field && field.label);
+      return (fields || []).filter(function (item) { return normLabel(item && item.label) === want; });
+    }
+    function readingOrder(a, b) {
+      var ap = a.page || 0;
+      var bp = b.page || 0;
+      if (ap !== bp) return ap - bp;
+      var ay = a.rect ? a.rect.y : 0;
+      var by = b.rect ? b.rect.y : 0;
+      if (a.rect && b.rect && Math.abs(ay - by) > 2) return by - ay;
+      var ax = a.rect ? a.rect.x : 0;
+      var bx = b.rect ? b.rect.x : 0;
+      return ax - bx;
+    }
+    function firstOpen(field) {
+      var peers = sameLabel(field).filter(openForPretick);
+      peers.sort(readingOrder);
+      return peers[0] === field;
+    }
     function present(field, row) {
+      var kind = row.kind;
       var slot = ev.identityPhotoSlot ? ev.identityPhotoSlot(field, fields) : '';
-      if ((slot === 'name' || slot === 'nric') && slot === row.kind) row.checked = true;
+      var pretick = (kind === 'name' || kind === 'nric' || kind === 'address') && openForPretick(field) && firstOpen(field);
+      if (pretick && (slot === 'name' || slot === 'nric') && slot === kind) row.checked = true;
+      else if (pretick && (kind === 'name' || kind === 'nric') && !slot && sameLabel(field).length > 1 && row.value) row.checked = true;
+      else if ((kind === 'name' || kind === 'nric') && !pretick) row.checked = false;
+      if (kind === 'address' && row.decision === 'autofill' && !pretick && row.value) {
+        row.decision = 'review';
+        row.checked = false;
+        row.reason = 'section_not_first';
+      }
       return noteFit(field, row);
     }
     return (fields || []).map(function (field) {

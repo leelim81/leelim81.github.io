@@ -1415,6 +1415,11 @@
       });
       if (best) field.label = best;
     });
+    fields.forEach(function (field) {
+      field.texts = textsByPage[field.page || 0] || [];
+    });
+    if (global.FormEvidence && FormEvidence.applySectionContext) FormEvidence.applySectionContext(fields);
+    fields.forEach(function (field) { delete field.texts; });
   }
 
   async function read(bytes, progress) {
