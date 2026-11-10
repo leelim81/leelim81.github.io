@@ -82,7 +82,7 @@
     boulevard: 1, blvd: 1, highway: 1, parkway: 1, expressway: 1, quay: 1,
     jalan: 1, lorong: 1, jln: 1, lor: 1
   };
-  var PLACE_SHORT = { st: 1, rd: 1, dr: 1, cres: 1, cl: 1, ter: 1, av: 1 };
+  var PLACE_SHORT = { st: 1, rd: 1, dr: 1, cres: 1, cl: 1, ter: 1, av: 1, pl: 1, gdns: 1, hts: 1, ctrl: 1 };
   /* These street types are also surnames. A short personal alias may end in
      one of them. An address still has a number, a block, another street
      type, or a place word in front (Example Lane, Harbour Lane, Orchard Road). */
@@ -1140,7 +1140,10 @@
       var kept = aliasOf(read.name);
       if (kept && aliasOk(kept)) remember(kept);
     });
-    if (street.value && phrases.indexOf(String(street.value).toUpperCase()) >= 0) street = { value: '', checked: false };
+    var streetFromBlk = list.some(function (read) {
+      return read && read.streetFromBlk && String(read.street || '').toUpperCase() === String(street.value || '').toUpperCase();
+    });
+    if (street.value && !streetFromBlk && phrases.indexOf(String(street.value).toUpperCase()) >= 0) street = { value: '', checked: false };
     var whole = blk.value && !blk.unconfirmed && street.value && postal.value ? address.value : '';
     return {
       name: name || '',
@@ -1340,15 +1343,18 @@
         out.blk = (number + (blk[2] || '')).toUpperCase();
         if (number.length === 4 && !blk[2]) out.blkUnconfirmed = true;
         var rest = blk[3].replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim();
-        if (rest && !usedByName(rest, phrases)) out.street = rest.toUpperCase();
+        if (rest) {
+          out.street = rest.toUpperCase();
+          out.streetFromBlk = true;
+        }
         return;
       }
       if (out.street) return;
-      var anchored = /#\s?\d{1,4}\s*-\s*\d{1,4}/.test(t) || /\bSINGAPORE\s+S?\s?\d{6}\b/i.test(t);
-      if (!anchored) return;
+      var prefixedHere = /\bSINGAPORE\s+S?\s?\d{6}\b/i.test(t);
       var bare = t.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
       if (!bare || /^\d{4,}\b/.test(bare)) return;
       var lead = bare.match(/^(\d{1,3}[A-Z]?)\s+(\S(?:.*\S)?)$/i);
+      if (!prefixedHere && !lead) return;
       var streetText = lead ? lead[2] : bare;
       var streetWords = streetText.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
       if (!streetWords.length || streetWords[0].length < 2 || !placeAlias(streetWords) || usedByName(streetText, phrases)) return;
@@ -1407,6 +1413,7 @@
       birthCountry: cardBirthCountry(raw),
       blk: home.blk,
       street: home.street,
+      streetFromBlk: !!home.streetFromBlk,
       unit: home.unit,
       postal: home.postal,
       address: home.address,

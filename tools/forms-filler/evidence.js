@@ -122,15 +122,15 @@
   }
 
   /* A confirmed whole address needs the block, street and postal code.
-     When the form has nowhere else to correct an unconfirmed block, that
-     same complete line is offered unticked and editable. */
+     An unconfirmed block still shows that complete line, unticked and
+     editable, including when the form also has a separate block field. */
   function identityCardOffer(identity, slot, fields) {
     var idn = identity || {};
     if (slot === 'address') {
       var complete = !!(idn.blk && idn.street && idn.postal);
       var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
       if (unconfirmed) {
-        if (!complete || !formHasSlot(fields, 'address') || formHasSlot(fields, 'blk')) return { value: '', checked: false, editable: false };
+        if (!complete || !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
         return { value: idn.address || wholeAddressLine(idn), checked: false, editable: true };
       }
       if (!complete || !idn.address) return { value: '', checked: false, editable: false };
