@@ -247,6 +247,25 @@
     return '';
   }
 
+  function spanOf(rect) {
+    if (!rect) return null;
+    var x = rect.x || 0;
+    var w = rect.width != null ? rect.width : (rect.w || 0);
+    return { x0: x, x1: x + w, w: Math.max(w, 0) };
+  }
+
+  /* A heading covers a field when the field's x-range overlaps that column
+     by at least half, or sits inside the heading. A neighbour table does not. */
+  function sameColumn(fieldRect, headRect) {
+    var field = spanOf(fieldRect);
+    var head = spanOf(headRect);
+    if (!field || !head || !(field.w > 0) || !(head.w > 0)) return false;
+    var overlap = Math.min(field.x1, head.x1) - Math.max(field.x0, head.x0);
+    if (!(overlap > 0)) return false;
+    if (field.x0 >= head.x0 - 0.5 && field.x1 <= head.x1 + 0.5) return true;
+    return overlap / field.w >= 0.5;
+  }
+
   function markRegions(fields) {
     var list = fields || [];
     list.forEach(function (field) {
@@ -257,12 +276,15 @@
     });
     list.forEach(function (field) {
       if (field.region || !field.rect || !bareName(field.label)) return;
+      var bestGap = 29;
       var hit = '';
       list.forEach(function (other) {
-        if (hit || other === field || !other.region || !other.rect) return;
+        if (other === field || !other.region || !other.rect) return;
         if ((other.page || 0) !== (field.page || 0)) return;
+        if (!sameColumn(field.rect, other.rect)) return;
         var gap = boxGap(field.rect, other.rect);
-        if (gap > 28) return;
+        if (gap > 28 || gap >= bestGap) return;
+        bestGap = gap;
         hit = other.region;
       });
       if (hit) field.region = hit;
@@ -505,9 +527,8 @@
     return null;
   }
 
-  /* The nearest section heading or table header above or to the left of a
-     field on the same page. A closer other-person heading wins over a
-     farther applicant heading. */
+  /* The nearest section heading above the field in the same column. A
+     heading in the next table does not own this field. */
   function nearestSectionHeading(field, texts) {
     var rect = field && field.rect;
     if (!rect) return null;
@@ -517,17 +538,11 @@
       var raw = String(text && text.str || '').replace(/\s+/g, ' ').trim();
       var kind = sectionKind(raw);
       if (!kind) return;
-      var above = text.y >= top - 8;
-      var leftEdge = text.x + (text.w || 0);
-      var left = leftEdge <= rect.x + 20 && Math.abs(text.y - rect.y) <= 28;
-      if (!above && !left) return;
-      if (text.x > rect.x + Math.max(rect.width || 0, 40) + 36) return;
-      if (rect.x - text.x > 340) return;
+      if (!sameColumn(rect, { x: text.x, width: text.w || 0 })) return;
       var dy = text.y - top;
       var limit = kind === 'applicant' ? 420 : 280;
-      if (above && (dy > limit || dy < -8)) return;
-      var dist = above ? Math.max(dy, 0) + Math.abs(text.x - rect.x) * 0.2 : Math.abs(text.y - rect.y) + Math.max(0, rect.x - leftEdge) + 12;
-      if (!best || dist < best.dist) best = { kind: kind, line: raw.replace(/[:.\s]+$/g, ''), dist: dist };
+      if (dy < -8 || dy > limit) return;
+      if (!best || dy < best.dy) best = { kind: kind, line: raw.replace(/[:.\s]+$/g, ''), dy: dy };
     });
     return best;
   }

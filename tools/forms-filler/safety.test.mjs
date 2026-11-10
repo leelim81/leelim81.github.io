@@ -593,8 +593,8 @@ function placed(fields) {
   return Object.fromEntries(decideAll(fields, details, open).map((item) => [item.fieldId, item]));
 }
 const indiaTexts = [
-  { x: 40, y: 520, w: 150, h: 12, str: "Applicant's particulars" },
-  { x: 40, y: 420, w: 70, h: 12, str: 'Nominee' }
+  { x: 40, y: 520, w: 240, h: 12, str: "Applicant's particulars" },
+  { x: 40, y: 420, w: 240, h: 12, str: 'Nominee' }
 ];
 const india = placed([
   { id: 'app', label: 'Name', type: 'text', page: 2, rect: { x: 87, y: 490, width: 180, height: 14 }, texts: indiaTexts },
@@ -608,8 +608,8 @@ assert.equal(india.app.checked, true);
 assert.equal(india.app.decision, 'review');
 
 const tenancyTexts = [
-  { x: 36, y: 560, w: 120, h: 12, str: 'Applicant' },
-  { x: 32, y: 510, w: 80, h: 12, str: 'Occupant' }
+  { x: 32, y: 560, w: 220, h: 12, str: 'Applicant' },
+  { x: 32, y: 510, w: 220, h: 12, str: 'Occupant' }
 ];
 const tenancy = placed([
   { id: 'who', label: 'Name', type: 'text', page: 0, rect: { x: 59, y: 530, width: 180, height: 14 }, texts: tenancyTexts },
@@ -620,8 +620,8 @@ assert.equal(tenancy.occ.refusal, 'other-person');
 assert.equal(tenancy.who.checked, true);
 
 const preschoolTexts = [
-  { x: 40, y: 400, w: 80, h: 12, str: 'Applicant' },
-  { x: 40, y: 280, w: 80, h: 12, str: 'Guardian' }
+  { x: 40, y: 400, w: 220, h: 12, str: 'Applicant' },
+  { x: 40, y: 280, w: 220, h: 12, str: 'Guardian' }
 ];
 const preschool = placed([
   { id: 'home', label: 'Address', type: 'text', page: 0, rect: { x: 48, y: 330, width: 200, height: 14 }, texts: preschoolTexts },
@@ -633,8 +633,8 @@ assert.equal(preschool.home.value, '10 Example Road');
 assert.equal(preschool.home.decision, 'autofill');
 
 const w4Texts = [
-  { x: 36, y: 700, w: 70, h: 11, str: 'Step 1' },
-  { x: 36, y: 180, w: 110, h: 12, str: 'Employers Only' }
+  { x: 36, y: 700, w: 220, h: 11, str: 'Step 1' },
+  { x: 36, y: 180, w: 220, h: 12, str: 'Employers Only' }
 ];
 const w4 = placed([
   { id: 'emp', label: 'Address', type: 'text', page: 0, rect: { x: 36, y: 640, width: 220, height: 14 }, texts: w4Texts },
@@ -645,7 +645,25 @@ assert.equal(w4.er.refusal, 'other-person');
 assert.equal(w4.emp.value, '10 Example Road');
 assert.equal(w4.emp.decision, 'autofill');
 
-const twinsTexts = [{ x: 40, y: 600, w: 140, h: 12, str: "Applicant's particulars" }];
+const twinsTexts = [{ x: 40, y: 600, w: 200, h: 12, str: "Applicant's particulars" }];
+['Nominee', 'Witness', 'Occupant', 'Guardian'].forEach((heading) => {
+  const texts = [
+    { x: 32, y: 480, w: 200, h: 12, str: 'Applicant' },
+    { x: 340, y: 480, w: 200, h: 12, str: heading }
+  ];
+  const columns = placed([
+    { id: 'name', label: 'Name', type: 'text', page: 0, rect: { x: 32, y: 430, width: 180, height: 16 }, texts: texts },
+    { id: 'full', label: 'Full name', type: 'text', page: 0, rect: { x: 32, y: 400, width: 180, height: 16 }, texts: texts },
+    { id: 'tag', label: heading, type: 'text', page: 0, rect: { x: 340, y: 430, width: 180, height: 16 }, texts: texts },
+    { id: 'other', label: 'Name', type: 'text', page: 0, rect: { x: 340, y: 400, width: 180, height: 16 }, texts: texts }
+  ]);
+  assert.equal(columns.name.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', heading + ' name');
+  assert.equal(columns.full.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', heading + ' full name');
+  assert.notEqual(columns.name.refusal, 'other-person', heading);
+  assert.equal(columns.other.value, '', heading + ' other name');
+  assert.equal(columns.other.refusal, 'other-person', heading);
+  assert.equal(columns.tag.value, '', heading + ' tag');
+});
 const twins = placed([
   { id: 'low', label: 'Name', type: 'text', page: 0, rect: { x: 40, y: 420, width: 180, height: 14 }, texts: twinsTexts },
   { id: 'high', label: 'Name', type: 'text', page: 0, rect: { x: 40, y: 560, width: 180, height: 14 }, texts: twinsTexts }
