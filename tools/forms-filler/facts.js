@@ -1123,25 +1123,7 @@
     if (dob.value) {
       var holders = list.filter(function (read) { return read && read.dob; });
       var doubtful = holders.some(function (read) { return read.dob === dob.value && read.dobUnconfirmed; });
-      var labeled = holders.some(function (read) { return read.dob === dob.value && !read.dobUnconfirmed; });
-      var same = holders.length >= 2 && holders.every(function (read) { return read.dob === dob.value; });
-      function olderThanIssues(value) {
-        var issues = [];
-        list.forEach(function (read) {
-          (read && read.issueDates || []).forEach(function (item) {
-            if (issues.indexOf(item) < 0) issues.push(item);
-          });
-        });
-        if (!issues.length) return false;
-        var bornParts = value.split('-');
-        var born = new Date(Number(bornParts[2]), Number(bornParts[1]) - 1, Number(bornParts[0]));
-        return issues.every(function (item) {
-          var parts = item.split('-');
-          var issued = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-          return new Date(born.getFullYear() + 10, born.getMonth(), born.getDate()) <= issued;
-        });
-      }
-      if (doubtful && !(labeled && dob.checked) && !(same && dob.checked && olderThanIssues(dob.value))) {
+      if (doubtful) {
         dob = { value: dob.value, checked: false };
         dobUnconfirmed = true;
       }
@@ -1153,6 +1135,8 @@
     var blk = agreedBlock(list);
     var street = agreedValue('street');
     var unit = agreedValue('unit');
+    var unitUnconfirmed = list.some(function (read) { return read && read.unit === unit.value && read.unitUnconfirmed; });
+    if (unit.value && unitUnconfirmed) unit = { value: unit.value, checked: false };
     var postal = agreedValue('postal');
     var address = agreedValue('address');
     var phrases = [];
@@ -1204,6 +1188,7 @@
       blkChecked: blk.checked,
       streetChecked: street.checked,
       unitChecked: unit.checked,
+      unitUnconfirmed: unitUnconfirmed,
       postalChecked: postal.checked,
       blkUnconfirmed: blk.unconfirmed,
       addressChecked: !!(whole && address.checked && blk.checked && street.checked && postal.checked)
@@ -1413,8 +1398,26 @@
     return mark[1] + '-' + mark[2] + (mark[3] || '').toUpperCase();
   }
 
+  function yearLikeUnit(value) {
+    var mark = String(value || '').match(/^(\d+)-(\d+)/);
+    if (!mark || Number(mark[1]) > 31 || mark[2].length !== 4) return false;
+    var year = Number(mark[2]);
+    return year >= 1800 && year <= 2199;
+  }
+
+  function unlockUnit(line) {
+    var unit = unitFrom(line);
+    if (!unit || yearLikeUnit(unit)) return '';
+    var mark = unit.match(/^(\d+)-(\d+)/);
+    if (mark && mark[2].length === 4 && Number(mark[1]) <= 31) {
+      var second = Number(mark[2]);
+      if (second >= 1700 && second <= 2299) return '';
+    }
+    return unit;
+  }
+
   function cardAddress(text, phrases) {
-    var out = { blk: '', street: '', unit: '', postal: '', address: '', blkUnconfirmed: false };
+    var out = { blk: '', street: '', unit: '', postal: '', address: '', blkUnconfirmed: false, unitUnconfirmed: false };
     var lines = String(text || '').split(/\n/);
     function streetPhrase(line) {
       var raw = String(line || '').replace(/\s+/g, ' ').trim();
@@ -1434,7 +1437,10 @@
       var unitNo = unitFrom(t);
       if (unitNo) {
         if (out.unit && out.unit !== unitNo) out.blkUnconfirmed = true;
-        else out.unit = unitNo;
+        else {
+          out.unit = unitNo;
+          if (yearLikeUnit(unitNo)) out.unitUnconfirmed = true;
+        }
       }
       if (/\b(?:BLK|BLOCK)\.?\s*\d{5,}/i.test(t)) continue;
       var blk = t.match(/\b(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
@@ -1457,7 +1463,7 @@
         var nextTrim = String(lines[look]).replace(/\s+/g, ' ').trim();
         if (isIssueDateLine(nextTrim) || /\b[STFGM]\d{7}[A-Z]\b/i.test(nextTrim) || /\bCAN\b/i.test(nextTrim)) continue;
         var follow = streetPhrase(nextTrim);
-        var unitNext = /^#/.test(nextTrim) ? unitFrom(nextTrim) : '';
+        var unitNext = /^#/.test(nextTrim) ? unlockUnit(nextTrim) : '';
         if (!follow && !unitNext) continue;
         var blockNo = (alone[1] + (alone[2] || '')).toUpperCase();
         var four = alone[1].length === 4 && !alone[2];
@@ -1551,6 +1557,7 @@
       street: home.street,
       streetFromBlk: !!home.streetFromBlk,
       unit: home.unit,
+      unitUnconfirmed: !!home.unitUnconfirmed,
       postal: home.postal,
       address: home.address,
       blkUnconfirmed: !!home.blkUnconfirmed,

@@ -1232,10 +1232,12 @@
               idn[key + 'Checked'] = !!extra[key + 'Checked'];
               if (key === 'blk') idn.blkUnconfirmed = !!extra.blkUnconfirmed;
               if (key === 'dob') idn.dobUnconfirmed = !!extra.dobUnconfirmed;
+              if (key === 'unit') idn.unitUnconfirmed = !!extra.unitUnconfirmed;
             }
           });
           if (extra.blk && extra.blk === idn.blk && extra.blkUnconfirmed) idn.blkUnconfirmed = true;
           if (extra.dob && extra.dob === idn.dob && extra.dobUnconfirmed) idn.dobUnconfirmed = true;
+          if (extra.unit && extra.unit === idn.unit && extra.unitUnconfirmed) idn.unitUnconfirmed = true;
         });
         if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
         if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {

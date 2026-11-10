@@ -176,7 +176,7 @@
       var part = idn[slot] || '';
       if (!part) return { value: '', checked: false, editable: false };
       var open = blockOpen(idn);
-      var checked = !open && !!idn[slot + 'Checked'];
+      var checked = !open && !!idn[slot + 'Checked'] && !(slot === 'unit' && idn.unitUnconfirmed);
       return { value: part, checked: checked, editable: !checked && !open };
     }
     return null;
