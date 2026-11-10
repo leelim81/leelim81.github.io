@@ -1222,7 +1222,15 @@
       var got = dateIn(after);
       if (got) return got;
       var next = lines[i + 1] || '';
-      if (/issue|expiry|blood/i.test(next)) continue;
+      if (/issue|expiry|blood/i.test(next)) {
+        if (!dateIn(next)) continue;
+        var later = lines[i + 2] || '';
+        if (/issue|expiry|blood/i.test(later)) continue;
+        if (!/^\s*\d{1,2}(?:[\/.\- ]\d{1,2}[\/.\- ]\d{4}|\s+[A-Za-z]{3,9}\s+\d{4})\s*$/.test(later)) continue;
+        got = dateIn(later);
+        if (got) return got;
+        continue;
+      }
       got = dateIn(next);
       if (got) return got;
     }
@@ -1349,8 +1357,12 @@
       var prefixed = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i);
       var whole = t.match(/^S\s?(\d{6})$/i);
       if (prefixed || whole) out.postal = (prefixed || whole)[1];
-      var unit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
-      if (unit) out.unit = unit[1] + '-' + unit[2];
+      var unit = t.match(/#\s?(\d{1,3})\s*-\s*(\d{1,3})([A-Za-z]?)(?!\d)/);
+      if (unit) {
+        var unitNo = unit[1] + '-' + unit[2] + (unit[3] || '').toUpperCase();
+        if (out.unit && out.unit !== unitNo) out.blkUnconfirmed = true;
+        else out.unit = unitNo;
+      }
       if (/\b(?:BLK|BLOCK)\.?\s*\d{5,}/i.test(t)) continue;
       var blk = t.match(/\b(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
       if (blk) {
@@ -1366,17 +1378,30 @@
       }
       var alone = t.match(/^(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?$/i);
       if (alone) {
-        var nextRaw = lines[i + 1] || '';
-        if (isIssueDateLine(nextRaw)) continue;
-        var follow = streetPhrase(nextRaw);
-        var unitNext = /^#\s?\d{1,4}\s*-\s*\d{1,4}$/.test(String(nextRaw).replace(/\s+/g, ' ').trim());
-        if (!follow && !unitNext) continue;
+        var nextRaw = String(lines[i + 1] || '');
+        var nextTrim = nextRaw.replace(/\s+/g, ' ').trim();
+        if (isIssueDateLine(nextTrim)) continue;
+        var follow = streetPhrase(nextTrim);
+        var unitNext = nextTrim.match(/^#\s?(\d{1,3})\s*-\s*(\d{1,3})([A-Za-z]?)(?!\d)/i);
+        var blankNext = !nextTrim;
+        if (!follow && !unitNext && !blankNext) continue;
         var blockNo = (alone[1] + (alone[2] || '')).toUpperCase();
         var four = alone[1].length === 4 && !alone[2];
+        if (out.blk && out.blk !== blockNo) {
+          out.blkUnconfirmed = true;
+          continue;
+        }
         if (follow && out.street && out.street !== follow.toUpperCase()) {
           out.blk = blockNo;
           out.blkUnconfirmed = true;
           continue;
+        }
+        if (unitNext) {
+          var nextUnit = unitNext[1] + '-' + unitNext[2] + (unitNext[3] || '').toUpperCase();
+          if (out.unit && out.unit !== nextUnit) {
+            out.blkUnconfirmed = true;
+            continue;
+          }
         }
         out.blk = blockNo;
         if (four) out.blkUnconfirmed = true;

@@ -501,6 +501,35 @@ assert.equal(identityRead('EXAMPLE RD #04-12\nBLK 88\nJOHN LANE\n').blk, '');
 assert.equal(identityRead('BLK 88\n#12-34\nDate of issue 02 AUG 2015\n').street, '');
 assert.equal(identityRead('BLK 1234\n#12-34\nSINGAPORE 018956\n').blkUnconfirmed, true);
 assert.equal(identityRead('BLK 12345\n#12-34\nSINGAPORE 018956\n').blk, '');
+const houseThenBlock = identityRead('10 EXAMPLE RD\nBLK 88\n#12-34\nSINGAPORE 018956\n');
+assert.equal(houseThenBlock.blk, '10');
+assert.equal(houseThenBlock.street, 'EXAMPLE RD');
+assert.equal(houseThenBlock.blkUnconfirmed, true);
+assert.equal(houseThenBlock.address, '');
+assert.notEqual(houseThenBlock.blk + ' ' + houseThenBlock.street, '88 EXAMPLE RD');
+const keptUnit = identityRead('10 EXAMPLE RD #12-34\nBLK 88\n#99-99\nSINGAPORE 018956\n');
+assert.equal(keptUnit.unit, '12-34');
+assert.equal(keptUnit.blk, '10');
+assert.equal(keptUnit.blkUnconfirmed, true);
+assert.equal(identityRead('BLK 88\n#15-1990\nSINGAPORE 018956\n').blk, '');
+assert.equal(identityRead('BLK 88\n#15-1990\n').unit, '');
+const sameLineUnit = identityRead('BLK 88\n#12-34 SINGAPORE 018956\n');
+assert.equal(sameLineUnit.blk, '88');
+assert.equal(sameLineUnit.unit, '12-34');
+assert.equal(sameLineUnit.postal, '018956');
+const blankAfter = identityRead('BLK 88\n\n#12-34\nSINGAPORE 018956\n');
+assert.equal(blankAfter.blk, '88');
+assert.equal(blankAfter.unit, '12-34');
+assert.equal(identityRead('BLK 88\n#12-34A\nSINGAPORE 018956\n').blk, '88');
+assert.equal(identityRead('BLK 88\n#12-34A\nSINGAPORE 018956\n').unit, '12-34A');
+assert.equal(identityRead('BLK 88\nS8523146D\n').blk, '');
+assert.equal(identityRead('BLK 88\nCAN 100001\n').blk, '');
+assert.equal(identityVote([
+  identityRead('BLK 88\nEXAMPLE RD\n#12-34\nSINGAPORE 018956\n'),
+  identityRead('BLK 99\nEXAMPLE RD\n#12-34\nSINGAPORE 018956\n')
+]).blkChecked, false);
+assert.equal(identityVote([sameLineUnit, sameLineUnit]).blkChecked, true);
+assert.equal(identityVote([sameLineUnit]).blkChecked, false);
 assert.equal(identityRead('EXAMPLE RD #12-34').street, 'EXAMPLE RD');
 assert.equal(identityRead('EXAMPLE RD #12-34').postal, '');
 assert.equal(identityRead('JOHN LANE #12-34').street, '');
@@ -526,6 +555,8 @@ assert.equal(identityRead('EXAMPLE GDNS #01-02 SINGAPORE 121212').street, 'EXAMP
 assert.equal(identityRead('EXAMPLE HTS #02-03 SINGAPORE 131313').street, 'EXAMPLE HTS');
 assert.equal(identityRead('EXAMPLE CTRL #03-04 SINGAPORE 141414').street, 'EXAMPLE CTRL');
 assert.equal(identityRead('Date of birth\n15 JAN 1990\nDate of issue 02 AUG 2015\n').dob, '15-01-1990');
+assert.equal(identityRead('Date of birth\nDate of issue 02 AUG 2015\n15 JAN 1990\n').dob, '15-01-1990');
+assert.equal(identityRead('Date of birth\nDate of issue\n02 AUG 2015\n').dob, '');
 const aliasBlk = identityVote([
   identityRead('Name\nTAN AH KOW (JOHN LANE)\nS8523146D\n'),
   identityRead('BLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n')

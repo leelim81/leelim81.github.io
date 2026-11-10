@@ -460,6 +460,16 @@ const heldBlock = Object.assign({}, looseParts, { blk: '1234', blkUnconfirmed: t
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).checked, false);
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).editable, false);
 assert.equal(identityCardOffer(heldBlock, 'postal', partFields).editable, false);
+const houseConflict = identityVote([
+  identityRead('10 EXAMPLE RD\nBLK 88\n#12-34\nSINGAPORE 018956\n'),
+  identityRead('10 EXAMPLE RD\nBLK 88\n#12-34\nSINGAPORE 018956\n')
+]);
+const houseFields = [{ id: 'b', label: 'Blk' }, { id: 's', label: 'Street' }, { id: 'u', label: 'Unit' }, { id: 'p', label: 'Postal code' }];
+assert.equal(houseConflict.blk, '10');
+assert.equal(houseConflict.blkUnconfirmed, true);
+['street', 'unit', 'postal', 'blk'].forEach(function (slot) {
+  assert.equal(identityCardOffer(houseConflict, slot, houseFields).checked, false, 'conflict ' + slot);
+});
 const crossedRead = identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\nBLK 88\nOTHER RD\n');
 const crossedParts = identityVote([crossedRead, crossedRead]);
 const crossedFields = [{ id: 'b', label: 'Blk' }, { id: 's', label: 'Street' }, { id: 'u', label: 'Unit' }, { id: 'p', label: 'Postal code' }];
