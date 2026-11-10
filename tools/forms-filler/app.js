@@ -625,6 +625,39 @@
     });
   }
 
+  function addBlockChoices(li, row) {
+    var choices = (row.blockCandidates || []).slice(0, 2).filter(Boolean);
+    if (!choices.length || !li) return;
+    var group = document.createElement('div');
+    group.className = 'review-quote';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Did you mean');
+    var lead = document.createElement('span');
+    lead.textContent = 'Did you mean: ';
+    group.appendChild(lead);
+    choices.forEach(function (candidate, index) {
+      if (index) {
+        var sep = document.createElement('span');
+        sep.textContent = ' / ';
+        group.appendChild(sep);
+      }
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'review-quote';
+      button.textContent = candidate;
+      button.setAttribute('aria-label', 'Use suggested block ' + candidate + '. This does not tick the row.');
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var editor = li.querySelector('input[type="text"]');
+        if (editor) editor.value = candidate;
+        row.value = candidate;
+      });
+      group.appendChild(button);
+    });
+    li.appendChild(group);
+  }
+
   function confirmReviews(reviews) {
     var box = $('reviewBox');
     var list = $('reviewList');
@@ -709,6 +742,7 @@
         });
         li.appendChild(repair);
       }
+      addBlockChoices(li, row);
       list.appendChild(li);
     });
     box.hidden = false;
@@ -1256,6 +1290,10 @@
           idn.blkChecked = false;
           idn.blkUnconfirmed = true;
         }
+        state.refs.forEach(function (ref) {
+          var extra = ref && ref.identity;
+          if (extra && extra.blkCandidates && extra.blkCandidates.length) idn.blkCandidates = extra.blkCandidates.slice(0, 2);
+        });
         if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
         if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {
           idn.address = '';
@@ -1348,6 +1386,7 @@
           row.checked = slotChecked(slot);
           row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
           row.quote = slot === 'blk' && idn.blkHint ? 'Read as ' + idn.blkHint : 'Read from the photo';
+          if (slot === 'blk') row.blockCandidates = (idn.blkCandidates || []).slice(0, 2);
         });
         if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
       }
@@ -1987,4 +2026,5 @@
       status(err && err.message ? err.message : 'The saved form could not be opened.', false);
     }
   }).catch(function () {});
+  window.FormBlockChoices = { add: addBlockChoices };
 })();

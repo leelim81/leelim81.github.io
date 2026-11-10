@@ -1036,8 +1036,8 @@
       if (distance > 1) far = true;
     });
     if (!near || far) return 'postalDist>1';
-    var letterCount = 0;
     var seenLetter = {};
+    var letterCount = 0;
     (reads || []).forEach(function (read) {
       if (!read || read.blkSuggestKind !== 'reread' || !stemMatches(read.blk, read.blkSuggest)) return;
       var mark = read.blkSuggest.charAt(3);
@@ -1170,38 +1170,24 @@
     return best;
   }
 
-  function resolveLetterConflict(groups, order, tail) {
-    var rows = [];
-    order.forEach(function (stem) {
-      var distance = stemDistance(stem, tail);
-      if (distance > 1) return;
-      groups[stem].forEach(function (row) {
-        if (!row.letter || (row.raw && !row.reread)) return;
-        rows.push({
-          stem: stem,
-          letter: row.letter,
-          raw: row.raw,
-          confidence: row.reread && row.confidence != null ? Number(row.confidence) : null,
-          distance: distance
-        });
-      });
-    });
-    var exact = rows.filter(function (row) { return row.distance === 0; });
-    if (exact.length === 1 && exact[0].raw) {
-      return { value: exact[0].stem + exact[0].letter, hint: exact[0].raw, reason: 'postalExactLetter' };
-    }
+  function conflictCandidates(groups, order, tail) {
     var best = {};
-    rows.forEach(function (row) {
-      if (row.confidence == null) return;
-      if (!best[row.letter] || row.confidence > best[row.letter].confidence) best[row.letter] = row;
+    order.forEach(function (stem) {
+      if (stemDistance(stem, tail) > 1) return;
+      groups[stem].forEach(function (row) {
+        if (!row.reread || !row.letter) return;
+        var confidence = row.confidence == null ? 0 : Number(row.confidence);
+        if (!best[row.letter] || confidence > best[row.letter].confidence) {
+          best[row.letter] = { letter: row.letter, confidence: confidence };
+        }
+      });
     });
     var ranked = [];
     Object.keys(best).forEach(function (letter) { ranked.push(best[letter]); });
-    ranked.sort(function (a, b) { return b.confidence - a.confidence; });
-    if (ranked.length >= 2 && ranked[0].raw && ranked[0].confidence - ranked[1].confidence >= 15) {
-      return { value: tail + ranked[0].letter, hint: ranked[0].raw, reason: 'confidenceLetter' };
-    }
-    return null;
+    ranked.sort(function (a, b) {
+      return b.confidence - a.confidence || (a.letter < b.letter ? -1 : 1);
+    });
+    return ranked.slice(0, 2).map(function (row) { return tail + row.letter; });
   }
 
   /* Pick a stem other reads, or a confirmed postal code, actually support.
@@ -1247,8 +1233,12 @@
         return { value: anyTail + letters[0], hint: nearHint, reason: 'applied' };
       }
       if (!sawFarReread && sawNearReread && !farAgreed && letters.length > 1) {
-        var resolved = resolveLetterConflict(groups, order, anyTail);
-        if (resolved) return resolved;
+        return {
+          value: '',
+          hint: '',
+          reason: 'letterConflict',
+          candidates: conflictCandidates(groups, order, anyTail)
+        };
       }
     }
     var bestCount = 0;
@@ -1276,8 +1266,8 @@
     });
     if (hasReread) {
       var picked = selectReread(reads, postal);
-      if (picked && picked.value) {
-        picked.reason = picked.reason || 'applied';
+      if (picked && (picked.value || (picked.candidates && picked.candidates.length))) {
+        if (picked.value) picked.reason = picked.reason || 'applied';
         return picked;
       }
       return { value: '', hint: '', reason: blockReason(reads, postal) };
@@ -1476,6 +1466,7 @@
     var postal = agreedValue('postal');
     var blkHint = '';
     var blkReason = '';
+    var blkCandidates = [];
     var blockRepair = repairFourBlock(list, blk, postal);
     if (blockRepair && blockRepair.value) {
       blk = { value: blockRepair.value, checked: false, unconfirmed: true };
@@ -1483,6 +1474,7 @@
       blkReason = blockRepair.reason || 'applied';
     } else if (blockRepair && blockRepair.reason) {
       blkReason = blockRepair.reason;
+      blkCandidates = (blockRepair.candidates || []).slice(0, 2);
     }
     var address = agreedValue('address');
     var phrases = [];
@@ -1539,6 +1531,7 @@
       blkUnconfirmed: blk.unconfirmed,
       blkHint: blkHint,
       blkReason: blkReason,
+      blkCandidates: blkCandidates,
       addressChecked: !!(whole && address.checked && blk.checked && street.checked && postal.checked)
     };
   }

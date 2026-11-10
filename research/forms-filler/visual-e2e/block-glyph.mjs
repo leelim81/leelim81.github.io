@@ -231,6 +231,42 @@ check('a 4-digit house number on a street line is not rewritten', !houseLetter &
 const exported = pdfVisible('/tmp/glyph-application.pdf');
 check('the blank form is unchanged', !/123H|123A|1235/.test(exported), exported.slice(0, 200));
 
+const choicePage = await browser.newPage();
+await choicePage.goto('http://127.0.0.1:8865/tools/forms-filler/?glyph=choices', { waitUntil: 'domcontentloaded' });
+await choicePage.waitForFunction(() => window.FormBlockChoices);
+await choicePage.evaluate(() => {
+  const box = document.getElementById('reviewBox');
+  if (box) box.hidden = false;
+  const list = document.getElementById('reviewList');
+  list.textContent = '';
+  const li = document.createElement('li');
+  const tick = document.createElement('input');
+  tick.type = 'checkbox';
+  const edit = document.createElement('input');
+  edit.type = 'text';
+  edit.value = '1294';
+  li.appendChild(tick);
+  li.appendChild(edit);
+  list.appendChild(li);
+  window.FormBlockChoices.add(li, { value: '1294', blockCandidates: ['123H', '123A'], checked: false });
+});
+const choiceButtons = choicePage.locator('#reviewList button');
+check('the conflict offers two labeled block buttons', await choiceButtons.count() === 2, String(await choiceButtons.count()));
+await choiceButtons.nth(0).focus();
+await choicePage.keyboard.press('Enter');
+const afterKey = await choicePage.evaluate(() => ({
+  value: document.querySelector('#reviewList input[type="text"]').value,
+  checked: document.querySelector('#reviewList input[type="checkbox"]').checked
+}));
+check('a keyboard choice fills the block field and leaves it unticked', afterKey.value === '123H' && afterKey.checked === false, JSON.stringify(afterKey));
+await choiceButtons.nth(1).click();
+const afterClick = await choicePage.evaluate(() => ({
+  value: document.querySelector('#reviewList input[type="text"]').value,
+  checked: document.querySelector('#reviewList input[type="checkbox"]').checked
+}));
+check('a tap fills the other block suggestion and leaves it unticked', afterClick.value === '123A' && afterClick.checked === false, JSON.stringify(afterClick));
+await choicePage.close();
+
 console.log('SUMMARY', checks.filter((item) => item.ok).length, '/', checks.length);
 await browser.close();
 if (checks.some((item) => !item.ok)) process.exit(1);
