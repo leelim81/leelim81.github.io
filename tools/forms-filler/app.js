@@ -1230,8 +1230,10 @@
             if (!idn[key] || (extra[key + 'Checked'] && !idn[key + 'Checked'])) {
               idn[key] = extra[key];
               idn[key + 'Checked'] = !!extra[key + 'Checked'];
+              if (key === 'blk') idn.blkUnconfirmed = !!extra.blkUnconfirmed;
             }
           });
+          if (extra.blk && extra.blk === idn.blk && extra.blkUnconfirmed) idn.blkUnconfirmed = true;
         });
         if (!idn.name && !idn.nric && !idn.dob && !idn.sex && !idn.nationality && !idn.address && !idn.postal) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
         var matched = false;
@@ -1244,7 +1246,7 @@
         var wholeAddress = !!asked.address;
         var addressUnsure = splitAddress && wholeAddress;
         function slotValue(slot) {
-          if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit')) return '';
+          if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
           if (slot === 'nric') return idn.nric || '';
           if (slot === 'dob') return idn.dob || '';
@@ -1267,8 +1269,11 @@
           if (slot === 'nationality') return !!idn.nationalityChecked;
           if (slot === 'race') return !!idn.raceChecked;
           if (slot === 'birthCountry') return !!idn.birthCountryChecked;
-          if (slot === 'postal') return !!idn.addressChecked;
-          if (slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'address') return !!idn.addressChecked;
+          if (slot === 'postal') return !!idn.postalChecked;
+          if (slot === 'blk') return !!idn.blkChecked && !idn.blkUnconfirmed;
+          if (slot === 'street') return !!idn.streetChecked;
+          if (slot === 'unit') return !!idn.unitChecked;
+          if (slot === 'address') return !!idn.addressChecked;
           return false;
         }
         decisions.forEach(function (row) {
@@ -1312,7 +1317,7 @@
           row.decision = 'review';
           row.value = value;
           row.kind = slot;
-          row.editable = false;
+          row.editable = slot === 'blk' && !!idn.blkUnconfirmed;
           row.checked = slotChecked(slot);
           row.reason = 'identity_photo';
           row.quote = 'Read from the photo';

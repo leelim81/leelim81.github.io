@@ -33,13 +33,14 @@
     var s = normalize(text);
     if (!s || s.split(' ').length > 6) return false;
     if (/^(see|refer|read|go|as|per|under|in|to)\b/i.test(s)) return false;
-    if (/^declarat(?:ion|ions)(?: by(?: the)? applicants?)?$/i.test(s)) return true;
+    if (/^declarat(?:ion|ions)\b/i.test(s)) return true;
+    if (/^applicants?(?:\s+s)?\s+declaration$/i.test(s)) return true;
     if (/^(?:for )?bank use(?: only)?$/i.test(s)) return true;
     if (/^(?:for )?official use(?: only)?$/i.test(s)) return true;
     if (/^office use(?: only)?$/i.test(s)) return true;
-    if (/^part [bcd]$/i.test(s)) return true;
-    if (/^acknowledg(?:e)?ment$/i.test(s)) return true;
-    if (/^authoris(?:e|ation)$/i.test(s) || /^authoriz(?:e|ation)$/i.test(s)) return true;
+    if (/^part [bcd](?:\s+[a-z]+){0,3}$/i.test(s)) return true;
+    if (/^acknowledg(?:e)?ment(?:\s+[a-z]+){0,2}$/i.test(s)) return true;
+    if (/^authoris(?:e|ation)(?:\s+[a-z]+){0,2}$/i.test(s) || /^authoriz(?:e|ation)(?:\s+[a-z]+){0,2}$/i.test(s)) return true;
     if (/^terms(?: and)? conditions$/i.test(s)) return true;
     return false;
   }

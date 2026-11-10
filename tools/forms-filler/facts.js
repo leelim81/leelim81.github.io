@@ -1134,7 +1134,12 @@
       nationalityChecked: nationality.checked,
       raceChecked: race.checked,
       birthCountryChecked: birthCountry.checked,
-      addressChecked: !!(address.checked && blk.checked && street.checked && postal.checked)
+      blkChecked: blk.checked && !/^\d{4}$/.test(blk.value),
+      streetChecked: street.checked,
+      unitChecked: unit.checked,
+      postalChecked: postal.checked,
+      blkUnconfirmed: /^\d{4}$/.test(blk.value) || list.some(function (read) { return read && read.blk === blk.value && read.blkUnconfirmed; }),
+      addressChecked: !!(address.checked && blk.checked && street.checked && postal.checked && !/^\d{4}$/.test(blk.value))
     };
   }
 
@@ -1158,30 +1163,55 @@
     return [lines[index] || '', lines[index + 1] || '', lines[index + 2] || ''].join(' ');
   }
 
+  function dateIn(text) {
+    var named = String(text || '').match(/(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/);
+    var numeric = String(text || '').match(/(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})/);
+    var got = named ? validCardDob(named[1] + ' ' + named[2] + ' ' + named[3]) : '';
+    if (!got && numeric) got = validCardDob(numeric[1] + '/' + numeric[2] + '/' + numeric[3]);
+    return got;
+  }
+
   function cardDob(text) {
     var lines = String(text || '').split(/\n/);
     for (var i = 0; i < lines.length; i++) {
-      if (!/date of birth|\bdob\b|\bborn\b/i.test(lines[i])) continue;
-      var window = lineWindow(lines, i);
-      var named = window.match(/(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/);
-      var numeric = window.match(/(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})/);
-      var got = named ? validCardDob(named[1] + ' ' + named[2] + ' ' + named[3]) : '';
-      if (!got && numeric) got = validCardDob(numeric[1] + '/' + numeric[2] + '/' + numeric[3]);
+      var line = lines[i];
+      if (/issue|expiry|blood/i.test(line) && !/\bdate\s+of\s+b[a-z]{2,4}\b|\bdob\b|\bborn\b/i.test(line)) continue;
+      var cue = line.match(/\bdate\s+of\s+b[a-z]{2,4}\b|\bdob\b|\bborn\b/i);
+      var dropped = !cue && /\bdate\s+of\s*(?:sex\b)?\s*$/i.test(line) && !/issue|expiry|blood/i.test(line);
+      if (!cue && !dropped) continue;
+      var after = cue ? line.slice(cue.index + cue[0].length) : '';
+      var got = dateIn(after);
+      if (got) return got;
+      var next = lines[i + 1] || '';
+      if (/issue|expiry|blood/i.test(next)) continue;
+      got = dateIn(next);
       if (got) return got;
     }
     return '';
+  }
+
+  function sexMark(text) {
+    var raw = String(text || '');
+    if (/\bmale\b/i.test(raw) && /\bfemale\b/i.test(raw)) return '';
+    if (/\bfemale\b/i.test(raw)) return 'F';
+    if (/\bmale\b/i.test(raw)) return 'M';
+    var lone = raw.match(/(?:^|[\s:])([MF])(?:\s|$)/);
+    return lone ? lone[1].toUpperCase() : '';
   }
 
   function cardSex(text) {
     var lines = String(text || '').split(/\n/);
     for (var i = 0; i < lines.length; i++) {
       if (!/\bsex\b|\bgender\b/i.test(lines[i])) continue;
-      var window = lineWindow(lines, i);
-      var mark = window.match(/\b(female|male|[mf])\b/i);
-      if (!mark) continue;
-      var token = mark[1].toLowerCase();
-      if (token === 'f' || token === 'female') return 'F';
-      if (token === 'm' || token === 'male') return 'M';
+      var after = lines[i].replace(/^.*\b(?:sex|gender)\b[:\s-]*/i, '');
+      var same = sexMark(after);
+      if (same) return same;
+      var next = String(lines[i + 1] || '').trim();
+      if (/^(?:male|female|[mf])$/i.test(next)) return sexMark(next);
+      if (dateIn(next) && !looksLikeName(next)) {
+        var token = next.match(/\b(female|male|[mf])\b/i);
+        if (token && !( /\bmale\b/i.test(next) && /\bfemale\b/i.test(next) )) return sexMark(token[1]);
+      }
     }
     return '';
   }
@@ -1193,60 +1223,84 @@
     return text;
   }
 
+  function looksLikeName(line) {
+    return /^[A-Za-z][A-Za-z'’.\-]+(?:\s+[A-Za-z][A-Za-z'’.\-]+){1,5}$/.test(String(line || '').trim()) && !/citizen|national/i.test(line);
+  }
+
+  function looksLikeLabel(line) {
+    return /\b(country of|date of|nationality|citizenship|race|sex|gender|name|address|nric|birth)\b/i.test(line);
+  }
+
   function cardNationality(text) {
     var lines = String(text || '').split(/\n/);
     for (var i = 0; i < lines.length; i++) {
       if (!/\bnationality\b|\bcitizenship\b/i.test(lines[i])) continue;
       var same = lines[i].replace(/^.*(?:nationality|citizenship)\b[:\s-]*/i, '').trim();
-      var value = tidyNationality(same || lines[i + 1] || '');
-      if (value) return value;
+      var nearby = [same, lines[i + 1] || ''];
+      for (var n = 0; n < nearby.length; n++) {
+        var candidate = nearby[n];
+        if (!candidate) continue;
+        if (n > 0 && (looksLikeLabel(candidate) || looksLikeName(candidate))) continue;
+        if (/\bsingapore\s+citizen\b/i.test(candidate)) return 'Singapore citizen';
+        var value = tidyNationality(candidate);
+        if (value) return value;
+      }
     }
-    if (/\bsingapore\s+citizen\b/i.test(text)) return 'Singapore citizen';
     return '';
+  }
+
+  function countryValue(line) {
+    var cleaned = String(line || '').replace(/[^A-Za-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    var tokens = cleaned.split(' ').filter(function (word) { return word.length >= 3; });
+    if (!tokens.length || tokens.length > 3) return '';
+    var value = tokens.join(' ');
+    return value.length <= 30 ? value : '';
   }
 
   function cardBirthCountry(text) {
     var lines = String(text || '').split(/\n/);
+    var cue = /\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b/i;
     for (var i = 0; i < lines.length; i++) {
-      if (!/country of birth/i.test(lines[i])) continue;
-      var same = lines[i].replace(/^.*country of birth\b[:\s-]*/i, '').trim();
-      var value = String(same || lines[i + 1] || '').replace(/\s+/g, ' ').trim();
-      if (value && value.length <= 40 && !/\d/.test(value)) return value;
+      if (!cue.test(lines[i]) || /issue|expiry|blood/i.test(lines[i])) continue;
+      var same = lines[i].replace(/^.*\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b[:\s-]*/i, '').trim();
+      var choices = [same, lines[i + 1] || '', lines[i + 2] || '', lines[i + 3] || ''];
+      for (var n = 0; n < choices.length; n++) {
+        var value = countryValue(choices[n]);
+        if (value) return value;
+      }
     }
     return '';
   }
 
-  function cardAddress(text) {
-    var out = { blk: '', street: '', unit: '', postal: '', address: '' };
+  function usedByName(phrase, phrases) {
+    var text = String(phrase || '').replace(/\s+/g, ' ').trim().toUpperCase();
+    if (!text) return false;
+    return (phrases || []).some(function (item) {
+      var other = String(item || '').replace(/\s+/g, ' ').trim().toUpperCase();
+      return other && (other === text || other.indexOf(text) >= 0);
+    });
+  }
+
+  function cardAddress(text, phrases) {
+    var out = { blk: '', street: '', unit: '', postal: '', address: '', blkUnconfirmed: false };
     String(text || '').split(/\n/).forEach(function (line) {
       var t = line.replace(/\s+/g, ' ').trim();
-      var blk = t.match(/^BLK\s+([0-9]{1,5}[A-Z]?)\s+(.+)$/i);
-      if (blk && !out.blk) {
-        out.blk = blk[1].toUpperCase();
-        out.street = blk[2].replace(/\s+#.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim().toUpperCase();
-      }
-      var unit = t.match(/^#\s?(\d{1,4})\s*-\s*(\d{1,4})$/);
-      if (unit && !out.unit) out.unit = unit[1] + '-' + unit[2];
-      var post = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i) || t.match(/^S\s?(\d{6})$/i);
-      if (post && !out.postal) out.postal = post[1];
-      if (!out.street) {
-        var street = t.match(/((?:[0-9]{1,5}[A-Z]?\s+)?[A-Z][A-Z0-9' ./-]{1,40}\b(?:LANE|ROAD|STREET|WALK|AVENUE|DRIVE|CLOSE|CRESCENT|TERRACE)\b)/i);
-        if (street) out.street = street[1].replace(/\s+#.*$/, '').replace(/\s+/g, ' ').trim().toUpperCase();
-      }
-      var inlineUnit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
-      if (inlineUnit && !out.unit) out.unit = inlineUnit[1] + '-' + inlineUnit[2];
-      var inlinePost = t.match(/\b(?:SINGAPORE\s+)?S?\s?(\d{6})\b/i);
-      if (inlinePost && !out.postal && !/\b[STFGM]\d{7}[A-Z]\b/i.test(t)) out.postal = inlinePost[1];
+      var prefixed = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i);
+      var whole = t.match(/^S\s?(\d{6})$/i);
+      if (prefixed || whole) out.postal = (prefixed || whole)[1];
+      var unit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
+      if (unit) out.unit = unit[1] + '-' + unit[2];
+      var blk = t.match(/\bBLK\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
+      if (!blk) return;
+      var number = blk[1];
+      out.blk = (number + (blk[2] || '')).toUpperCase();
+      if (number.length === 4 && !blk[2]) out.blkUnconfirmed = true;
+      var rest = blk[3].replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim();
+      if (rest && !usedByName(rest, phrases)) out.street = rest.toUpperCase();
     });
-    if (out.street) {
-      var lead = out.street.match(/^([0-9]{1,5}[A-Z]?)\s+(.+)$/);
-      if (lead) {
-        if (!out.blk) out.blk = lead[1].toUpperCase();
-        out.street = lead[2];
-      }
+    if (out.blk && out.street && out.postal) {
+      out.address = [out.blk, out.street, out.unit ? '#' + out.unit : '', 'SINGAPORE ' + out.postal].filter(Boolean).join(' ');
     }
-    var line = [out.blk, out.street, out.unit ? '#' + out.unit : '', out.postal ? 'SINGAPORE ' + out.postal : ''].filter(Boolean).join(' ');
-    out.address = line;
     return out;
   }
 
@@ -1266,7 +1320,7 @@
     }
     var nameConf = tokenConfidence(words, name);
     var nricConf = tokenConfidence(words, nric);
-    var home = cardAddress(raw);
+    var home = cardAddress(raw, [printed.plain, printed.alias, name]);
     return {
       name: name,
       namePlain: printed.plain || plainOf(name),
@@ -1295,6 +1349,7 @@
       unit: home.unit,
       postal: home.postal,
       address: home.address,
+      blkUnconfirmed: !!home.blkUnconfirmed,
       dobChecked: false,
       sexChecked: false,
       nationalityChecked: false,

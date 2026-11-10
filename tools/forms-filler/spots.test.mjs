@@ -339,4 +339,8 @@ const withNote = layout({
   squares: []
 });
 assert.ok(withNote.some(function (field) { return field.label === 'Full name' && identityPhotoSlot(field, withNote); }), 'See Part B does not reset the applicant name ' + withNote.map(function (field) { return field.label + '=' + (field.section || ''); }).join('|'));
+["Declaration of the applicant", "Applicant's declaration", 'Part B continued'].forEach(function (heading) {
+  const only = linedForm([{ heading: heading, y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }]);
+  assert.equal(offeredIds(only).length, 0, heading + ' is a reset ' + offeredIds(only).join(','));
+});
 console.log('spots tests ok', fields.length, 'fields');

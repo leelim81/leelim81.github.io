@@ -94,7 +94,7 @@
   function applicantIdentitySlot(field) {
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
-    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s]+$/g, '');
+    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
     if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
@@ -107,9 +107,9 @@
     if (/^race$/.test(s)) return 'race';
     if (/^(?:residential address|home address|address)$/.test(s)) return 'address';
     if (/^(?:postal|postal code)$/.test(s)) return 'postal';
-    if (/^(?:blk(?:\/house no\.?)?|block)$/.test(s)) return 'blk';
+    if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
-    if (/^unit(?: no\.?)?$/.test(s)) return 'unit';
+    if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
     return '';
   }
 

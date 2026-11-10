@@ -142,6 +142,8 @@ assert.equal(identityPhotoSlot({ id: 'postal', label: 'Postal code' }), 'postal'
 assert.equal(identityPhotoSlot({ id: 'blk', label: 'Blk/House No.' }), 'blk');
 assert.equal(identityPhotoSlot({ id: 'street', label: 'Street' }), 'street');
 assert.equal(identityPhotoSlot({ id: 'unit', label: 'Unit' }), 'unit');
+assert.equal(identityPhotoSlot({ id: 'unit_no', label: 'Unit No. #' }), 'unit');
+assert.equal(identityPhotoSlot({ id: 'blk_house', label: 'Blk / House No.' }), 'blk');
 assert.equal(identityPhotoSlot({ id: 'race', label: 'Race' }), 'race');
 assert.equal(identityPhotoSlot({ id: 'born', label: 'Country of birth' }), 'birthCountry');
 assert.equal(identityPhotoSlot({ id: 'gdob', label: 'Date of birth', section: 'Guarantor' }), '');
@@ -283,7 +285,7 @@ const stillRepeated = [
 stillRepeated.forEach(function (field) {
   assert.equal(identityPhotoSlot(field, stillRepeated), '', 'unnamed repeated names still abstain');
 });
-['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
+['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'Declaration of the applicant', "Applicant's declaration", 'Part B continued', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
   assert.equal(sectionKind(heading), 'reset', heading);
   assert.notEqual(personOf(heading), 'applicant', heading);
   const only = [{ id: 'n', label: 'Name', section: heading }, { id: 'i', label: 'NRIC', section: heading }];
