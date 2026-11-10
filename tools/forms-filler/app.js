@@ -1357,6 +1357,10 @@
           var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
           var value = slotValue(slot);
           if (!slot || !value) {
+            if (window.FormEvidence.keepAgreedName && FormEvidence.keepAgreedName(row, field, idn.name)) {
+              matched = true;
+              return;
+            }
             if (row.decision !== 'abstain') {
               row.decision = 'abstain';
               row.value = '';

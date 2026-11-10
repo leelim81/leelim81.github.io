@@ -64,19 +64,29 @@
     return '';
   }
 
-  /* "Name as in NRIC" and "Name (as per NRIC/Passport)" name the person.
-     Parentheses are optional. An ID number on its own stays an ID. */
+  /* A name word qualified by "as in" or "as per" an ID document names the
+     person. Parentheses are optional. An ID number on its own stays an ID. */
   function documentNameLabel(text) {
-    var s = String(text || '').toLowerCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!/^(?:full\s+)?name\b/.test(s)) return false;
-    if (!/\bas\s+(?:in|per)\b/.test(s)) return false;
-    return /\b(?:nric|fin|passport)\b/.test(s);
+    var s = String(text || '').toLowerCase().replace(/['’]/g, '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+    var nameAt = s.search(/\b(?:applicant\s+name|customer\s+(?:full\s+)?name|full\s+name|name)\b/);
+    if (nameAt < 0) return false;
+    var rest = s.slice(nameAt);
+    var qual = rest.search(/\bas\s+(?:in|per)\b/);
+    if (qual < 0) return false;
+    return /\b(?:nric|fin|passport)\b/.test(rest.slice(qual));
+  }
+
+  /* One line that joins the name and the ID. It is not an ID box. */
+  function combinedNameAndId(text) {
+    var s = String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    return /\bname\b\s*(?:\/|&)\s*(?:nric|fin|passport)\b/.test(s) || /\b(?:nric|fin|passport)\b\s*(?:\/|&)\s*name\b/.test(s);
   }
 
   function organisationNameLabel(text) {
     var s = String(text || '');
-    if (/\b(?:company|business|organi[sz]ation|employer)\s+name\b/i.test(s)) return true;
-    return /\bname\s+of\s+(?:the\s+)?(?:company|business|organi[sz]ation|employer)\b/i.test(s);
+    var org = 'company|business|organi[sz]ation|employer|trading|firm|corporate|brand|merchant';
+    if (new RegExp('\\b(?:' + org + ')\\s+name\\b', 'i').test(s)) return true;
+    return new RegExp('\\bname\\s+of\\s+(?:the\\s+)?(?:' + org + ')\\b', 'i').test(s);
   }
 
   function bareName(label) {
@@ -143,6 +153,7 @@
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
     if (documentNameLabel(field && field.label)) return 'name';
+    if (combinedNameAndId(field && field.label)) return 'other';
     if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
@@ -203,6 +214,7 @@
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
+    if (documentNameLabel(field.label)) return 'name';
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
     if (/^name \(as in nric\b/.test(s)) return 'name';
@@ -383,6 +395,38 @@
     return { facts: facts, samePerson: same, people: people(facts) };
   }
 
+  function factsApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormFacts && globalThis.FormFacts.extendsName) return globalThis.FormFacts;
+    if (typeof require === 'function') {
+      try { return require('./facts.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
+  function normName(text) {
+    return String(text || '').toUpperCase().replace(/[^A-Z'\- ]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function namesAgree(detailsName, cardName) {
+    var left = normName(detailsName);
+    var right = normName(cardName);
+    if (!left || !right) return false;
+    if (left === right) return true;
+    var facts = factsApi();
+    if (!facts || !facts.extendsName) return false;
+    return facts.extendsName(left, right) || facts.extendsName(right, left);
+  }
+
+  /* A photo read replaces other offers. A details name that is the same
+     person as the card stays. */
+  function keepAgreedName(row, field, cardName) {
+    if (!row || row.decision === 'abstain' || !row.value || !cardName) return false;
+    var kind = row.kind || fieldKind(field);
+    if (kind !== 'name') return false;
+    if (unsafeDestination(field) || combinedNameAndId(field && field.label)) return false;
+    return namesAgree(row.value, cardName);
+  }
+
   function people(facts) {
     var roles = {};
     facts.forEach(function (fact) {
@@ -404,6 +448,7 @@
     unsafeDestination: unsafeDestination,
     markRegions: markRegions,
     splitKind: splitKind,
-    fittedSize: fittedSize
+    fittedSize: fittedSize,
+    keepAgreedName: keepAgreedName
   };
 });

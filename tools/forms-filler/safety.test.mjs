@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 
 const require = createRequire(import.meta.url);
 const { decideAll } = require('./select.js');
-const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fieldKind } = require('./evidence.js');
+const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fieldKind, keepAgreedName } = require('./evidence.js');
 const { extendsName } = require('./facts.js');
 const { annotations, layout } = require('./spots.js');
 
@@ -121,6 +121,56 @@ assert.equal(identityPhotoSlot({ id: 'english', label: 'Name in English (Surname
 });
 assert.equal(fieldKind({ label: 'Existing NRIC/Passport No', type: 'text' }), 'nric');
 assert.equal(fieldKind({ label: 'Name as per Debiting Account', type: 'text' }), 'other');
+[
+  'Applicant Name as in NRIC',
+  "Customer's full name as per NRIC/Passport",
+  'Customer name as per FIN'
+].forEach((label) => {
+  assert.equal(fieldKind({ label: label, type: 'text' }), 'name', label);
+  const decision = row([{ id: 'who', label: label, type: 'text' }], 'who');
+  assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
+  assert.equal(identityPhotoSlot({ id: 'who', label: label, type: 'text' }, [{ id: 'who', label: label, type: 'text' }]), 'name', label);
+});
+['Name as in NRIC', 'Name as per NRIC', 'Name as per NRIC/Passport'].forEach((label) => {
+  assert.equal(identityPhotoSlot({ id: 'slot', label: label, type: 'text' }, [{ id: 'slot', label: label, type: 'text' }]), 'name', label);
+});
+
+['Name / NRIC', 'Name & NRIC No.', 'Name/NRIC'].forEach((label) => {
+  assert.notEqual(fieldKind({ label: label, type: 'text' }), 'nric', label);
+  const decision = row([{ id: 'both', label: label, type: 'text' }], 'both');
+  assert.equal(decision.value, '', label);
+});
+const splitId = [
+  { id: 'both', label: 'Name / NRIC', type: 'text' },
+  { id: 'who', label: 'Name', type: 'text' },
+  { id: 'id', label: 'NRIC', type: 'text' }
+];
+const splitIdRows = Object.fromEntries(decideAll(splitId, packet, open).map((item) => [item.fieldId, item]));
+assert.equal(splitIdRows.both.value, '');
+assert.equal(splitIdRows.who.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.equal(splitIdRows.id.value, 'S1234567D');
+
+[
+  'Trading name',
+  'Firm name',
+  'Corporate name',
+  'Brand name',
+  'Merchant name',
+  'Name of Firm',
+  'Name of the Merchant'
+].forEach((label) => {
+  assert.equal(fieldKind({ label: label, type: 'text' }), 'other', label);
+  const decision = row([{ id: 'trade', label: label, type: 'text' }], 'trade');
+  assert.equal(decision.value, '', label);
+  assert.equal(decision.reason, 'placement_refused', label);
+});
+
+const agreed = { decision: 'review', kind: 'name', value: 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL' };
+assert.equal(keepAgreedName(agreed, { label: 'Preferred name', type: 'text' }, 'NURUL AISHAH BINTE'), true);
+assert.equal(keepAgreedName(agreed, { label: 'Preferred name', type: 'text' }, 'LEE MING WEI'), false);
+assert.equal(keepAgreedName({ decision: 'review', kind: 'nric', value: 'S1234567D' }, { label: 'NRIC', type: 'text' }, 'NURUL AISHAH BINTE'), false);
+assert.equal(keepAgreedName(agreed, { label: "Father's Name", type: 'text' }, agreed.value), false);
+assert.equal(keepAgreedName(agreed, { label: 'Name / NRIC', type: 'text' }, agreed.value), false);
 
 [
   'Name of Company',
