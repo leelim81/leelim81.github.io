@@ -1222,7 +1222,16 @@
       var got = dateIn(after);
       if (got) return got;
       var next = lines[i + 1] || '';
-      if (/issue|expiry|blood/i.test(next)) continue;
+      if (/issue|expiry|blood/i.test(next)) {
+        var issueOnNext = dateIn(next);
+        if (!issueOnNext) continue;
+        var later = lines[i + 2] || '';
+        if (/issue|expiry|blood/i.test(later)) continue;
+        if (!/^\s*\d{1,2}(?:[\/.\- ]\d{1,2}[\/.\- ]\d{4}|\s+[A-Za-z]{3,9}\s+\d{4})\s*$/.test(later)) continue;
+        got = birthAfterIssue(later, next);
+        if (got) return got;
+        continue;
+      }
       got = dateIn(next);
       if (got) return got;
     }
@@ -1327,8 +1336,34 @@
     });
   }
 
+  function birthAfterIssue(birthText, issueText) {
+    var birth = dateIn(birthText);
+    var issue = dateIn(issueText);
+    if (!birth || (issue && birth === issue)) return '';
+    var bornParts = birth.split('-');
+    var born = new Date(Number(bornParts[2]), Number(bornParts[1]) - 1, Number(bornParts[0]));
+    var now = new Date();
+    var limit = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+    if (born > limit) return '';
+    if (issue) {
+      var issueParts = issue.split('-');
+      var issued = new Date(Number(issueParts[2]), Number(issueParts[1]) - 1, Number(issueParts[0]));
+      if (born >= issued) return '';
+    }
+    return birth;
+  }
+
   function isIssueDateLine(line) {
     return /\b(?:issue|expiry)\b/i.test(line) || /^\d{1,2}(?:\s+[A-Za-z]{3,9}\s+\d{4}|[\/.\-]\d{1,2}[\/.\-]\d{4})$/.test(String(line || '').trim());
+  }
+
+  function unitFrom(line) {
+    var raw = String(line || '');
+    if (/#\s?\d{1,2}\s*[-\/.]\s*\d{1,2}\s*[-\/.]\s*\d{4}\b/.test(raw)) return '';
+    if (/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|day|month)\b/i.test(raw) && /\b(?:19|20)\d{2}\b/.test(raw)) return '';
+    var mark = raw.match(/#\s?(\d{1,3})\s*-\s*(\d{1,4})([A-Za-z]?)(?!\d)/);
+    if (!mark || /^(?:19|20)\d{2}$/.test(mark[2])) return '';
+    return mark[1] + '-' + mark[2] + (mark[3] || '').toUpperCase();
   }
 
   function cardAddress(text, phrases) {
@@ -1349,8 +1384,11 @@
       var prefixed = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i);
       var whole = t.match(/^S\s?(\d{6})$/i);
       if (prefixed || whole) out.postal = (prefixed || whole)[1];
-      var unit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
-      if (unit) out.unit = unit[1] + '-' + unit[2];
+      var unitNo = unitFrom(t);
+      if (unitNo) {
+        if (out.unit && out.unit !== unitNo) out.blkUnconfirmed = true;
+        else out.unit = unitNo;
+      }
       if (/\b(?:BLK|BLOCK)\.?\s*\d{5,}/i.test(t)) continue;
       var blk = t.match(/\b(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
       if (blk) {
@@ -1366,15 +1404,26 @@
       }
       var alone = t.match(/^(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?$/i);
       if (alone) {
-        var nextRaw = lines[i + 1] || '';
-        if (isIssueDateLine(nextRaw)) continue;
-        var follow = streetPhrase(nextRaw);
-        var unitNext = /^#\s?\d{1,4}\s*-\s*\d{1,4}$/.test(String(nextRaw).replace(/\s+/g, ' ').trim());
+        var look = i + 1;
+        while (look < lines.length && !String(lines[look]).replace(/\s+/g, ' ').trim()) look++;
+        if (look >= lines.length) continue;
+        var nextTrim = String(lines[look]).replace(/\s+/g, ' ').trim();
+        if (isIssueDateLine(nextTrim) || /\b[STFGM]\d{7}[A-Z]\b/i.test(nextTrim) || /\bCAN\b/i.test(nextTrim)) continue;
+        var follow = streetPhrase(nextTrim);
+        var unitNext = /^#/.test(nextTrim) ? unitFrom(nextTrim) : '';
         if (!follow && !unitNext) continue;
         var blockNo = (alone[1] + (alone[2] || '')).toUpperCase();
         var four = alone[1].length === 4 && !alone[2];
+        if (out.blk && out.blk !== blockNo) {
+          out.blkUnconfirmed = true;
+          continue;
+        }
         if (follow && out.street && out.street !== follow.toUpperCase()) {
           out.blk = blockNo;
+          out.blkUnconfirmed = true;
+          continue;
+        }
+        if (unitNext && out.unit && out.unit !== unitNext) {
           out.blkUnconfirmed = true;
           continue;
         }
