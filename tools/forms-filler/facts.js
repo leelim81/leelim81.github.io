@@ -1366,11 +1366,21 @@
       }
       var alone = t.match(/^(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?$/i);
       if (alone) {
-        var follow = streetPhrase(lines[i + 1] || '');
-        if (!follow) continue;
-        out.blk = (alone[1] + (alone[2] || '')).toUpperCase();
-        if (alone[1].length === 4 && !alone[2]) out.blkUnconfirmed = true;
-        if (!out.street) {
+        var nextRaw = lines[i + 1] || '';
+        if (isIssueDateLine(nextRaw)) continue;
+        var follow = streetPhrase(nextRaw);
+        var unitNext = /^#\s?\d{1,4}\s*-\s*\d{1,4}$/.test(String(nextRaw).replace(/\s+/g, ' ').trim());
+        if (!follow && !unitNext) continue;
+        var blockNo = (alone[1] + (alone[2] || '')).toUpperCase();
+        var four = alone[1].length === 4 && !alone[2];
+        if (follow && out.street && out.street !== follow.toUpperCase()) {
+          out.blk = blockNo;
+          out.blkUnconfirmed = true;
+          continue;
+        }
+        out.blk = blockNo;
+        if (four) out.blkUnconfirmed = true;
+        if (follow && !out.street) {
           out.street = follow.toUpperCase();
           out.streetFromBlk = true;
         }
