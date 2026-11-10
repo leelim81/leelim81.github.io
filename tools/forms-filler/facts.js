@@ -991,6 +991,113 @@
     return ok ? longest : '';
   }
 
+  var BLOCK_LETTER = { '0': ['D', 'O'], '1': ['I'], '2': ['Z'], '4': ['A'], '5': ['S'], '6': ['G'], '8': ['B'] };
+
+  function letterExplains(four, letter) {
+    if (!/^\d{4}$/.test(four) || !/^\d{3}[A-Z]$/.test(letter)) return false;
+    if (letter.slice(0, 3) !== four.slice(0, 3)) return false;
+    var letters = BLOCK_LETTER[four.charAt(3)] || [];
+    return letters.indexOf(letter.charAt(3)) >= 0;
+  }
+
+  function blockGlyphs(word) {
+    if (!word) return [];
+    if (word.glyphs && word.glyphs.length) return word.glyphs;
+    var symbols = word.symbols || [];
+    return symbols.map(function (symbol) {
+      var choices = (symbol.choices || []).map(function (choice) {
+        return {
+          text: String(choice.text || ''),
+          confidence: choice.confidence == null ? null : choice.confidence
+        };
+      }).filter(function (choice) { return choice.text; });
+      return {
+        text: String(symbol.text || ''),
+        confidence: symbol.confidence == null ? null : symbol.confidence,
+        choices: choices
+      };
+    });
+  }
+
+  function glyphsForBlock(words, block) {
+    var found = [];
+    (words || []).forEach(function (word) {
+      var text = String(word && word.text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (text !== block && text !== 'BLK' + block && text !== 'BLOCK' + block) return;
+      var glyphs = blockGlyphs(word);
+      if (glyphs.length < 4) return;
+      found = glyphs.slice(-4);
+    });
+    return found;
+  }
+
+  function blockLetterSuggestion(block, words) {
+    var raw = String(block || '').toUpperCase();
+    if (!/^\d{4}$/.test(raw)) return { value: '', kind: '' };
+    var letters = BLOCK_LETTER[raw.charAt(3)];
+    if (!letters) return { value: '', kind: '' };
+    var glyphs = glyphsForBlock(words, raw);
+    if (glyphs.length !== 4) return { value: '', kind: '' };
+    var last = glyphs[3] || {};
+    var picked = '';
+    var best = -1;
+    (last.choices || []).forEach(function (choice) {
+      var letter = String(choice.text || '').toUpperCase();
+      if (letters.indexOf(letter) < 0) return;
+      var score = choice.confidence == null ? 0 : Number(choice.confidence);
+      if (score > best || (score === best && (picked === '' || letters.indexOf(letter) < letters.indexOf(picked)))) {
+        best = score;
+        picked = letter;
+      }
+    });
+    if (picked && best >= 20) return { value: raw.slice(0, 3) + picked, kind: 'choice' };
+    var headOk = glyphs.slice(0, 3).every(function (glyph) {
+      return glyph && /[0-9]/.test(glyph.text || '') && glyph.confidence != null && Number(glyph.confidence) >= 70;
+    });
+    var weak = last.confidence != null && Number(last.confidence) < 60 && String(last.text || '') === raw.charAt(3);
+    if (headOk && weak) return { value: raw.slice(0, 3) + letters[0], kind: 'confidence' };
+    return { value: '', kind: '' };
+  }
+
+  /* A 4-digit HDB block is implausible. Replace it only when a letter
+     reading is supported, and never mark that replacement checked. */
+  function repairFourBlock(reads, agreed, postal) {
+    if (agreed && agreed.value && !/^\d{4}$/.test(agreed.value)) return null;
+    var present = (reads || []).filter(function (read) { return read && read.blk; });
+    var fours = [];
+    present.forEach(function (read) {
+      if (/^\d{4}$/.test(read.blk) && fours.indexOf(read.blk) < 0) fours.push(read.blk);
+    });
+    if (!fours.length) return null;
+    if (present.some(function (read) {
+      return !/^\d{4}$/.test(read.blk) && !fours.some(function (four) { return letterExplains(four, read.blk); });
+    })) return null;
+    var matched = [];
+    present.forEach(function (read) {
+      if (/^\d{3}[A-Z]$/.test(read.blk) && fours.some(function (four) { return letterExplains(four, read.blk); })) {
+        matched.push({ value: read.blk, kind: 'read', raw: '' });
+      }
+      if (/^\d{4}$/.test(read.blk) && read.blkSuggest && letterExplains(read.blk, read.blkSuggest)) {
+        matched.push({ value: read.blkSuggest, kind: read.blkSuggestKind || 'confidence', raw: read.blk });
+      }
+    });
+    var unique = [];
+    matched.forEach(function (item) {
+      if (!unique.some(function (have) { return have.value === item.value; })) unique.push(item);
+    });
+    if (unique.length !== 1) return null;
+    var candidate = unique[0].value;
+    var raws = fours.filter(function (four) { return letterExplains(four, candidate); });
+    if (raws.length !== 1) return null;
+    var strong = matched.some(function (item) {
+      return item.value === candidate && (item.kind === 'choice' || item.kind === 'read');
+    });
+    var postalKnown = postal && postal.checked && /^\d{6}$/.test(postal.value || '');
+    var postalOk = !postalKnown || String(postal.value).slice(-3) === candidate.slice(0, 3);
+    if (!strong && !postalOk) return null;
+    return { value: candidate, hint: raws[0] };
+  }
+
   function identityVote(reads) {
     var list = reads || [];
     var nricCounts = {};
@@ -1138,6 +1245,12 @@
     var unitUnconfirmed = list.some(function (read) { return read && read.unit === unit.value && read.unitUnconfirmed; });
     if (unit.value && unitUnconfirmed) unit = { value: unit.value, checked: false };
     var postal = agreedValue('postal');
+    var blkHint = '';
+    var blockRepair = repairFourBlock(list, blk, postal);
+    if (blockRepair) {
+      blk = { value: blockRepair.value, checked: false, unconfirmed: true };
+      blkHint = blockRepair.hint;
+    }
     var address = agreedValue('address');
     var phrases = [];
     function remember(value) {
@@ -1191,6 +1304,7 @@
       unitUnconfirmed: unitUnconfirmed,
       postalChecked: postal.checked,
       blkUnconfirmed: blk.unconfirmed,
+      blkHint: blkHint,
       addressChecked: !!(whole && address.checked && blk.checked && street.checked && postal.checked)
     };
   }
@@ -1528,6 +1642,7 @@
     if (printed.labeled && printed.plain) namePhrases.push(printed.plain);
     if (printed.alias) namePhrases.push(printed.alias);
     var home = cardAddress(raw, namePhrases);
+    var suggested = blockLetterSuggestion(home.blk, words);
     return {
       name: name,
       namePlain: printed.plain || plainOf(name),
@@ -1561,6 +1676,8 @@
       postal: home.postal,
       address: home.address,
       blkUnconfirmed: !!home.blkUnconfirmed,
+      blkSuggest: suggested.value,
+      blkSuggestKind: suggested.kind,
       dobChecked: false,
       sexChecked: false,
       nationalityChecked: false,

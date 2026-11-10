@@ -536,6 +536,25 @@
     return parts.join('\n');
   }
 
+  function compactGlyphs(word) {
+    var symbols = word && word.symbols;
+    var text = String(word && word.text || '').replace(/[^A-Za-z0-9]/g, '');
+    if (!symbols || !symbols.length || !/\d{4}/.test(text)) return null;
+    return symbols.slice(0, 12).map(function (symbol) {
+      var choices = (symbol.choices || []).slice(0, 4).map(function (choice) {
+        return {
+          text: String(choice.text || ''),
+          confidence: choice.confidence == null ? null : choice.confidence
+        };
+      }).filter(function (choice) { return choice.text; });
+      return {
+        text: String(symbol.text || ''),
+        confidence: symbol.confidence == null ? null : symbol.confidence,
+        choices: choices
+      };
+    });
+  }
+
   function linesFromWords(words) {
     var items = (words || []).map(function (word) {
       var box = word.bbox || {};
@@ -545,7 +564,8 @@
         y0: box.y0 || 0,
         x1: box.x1 || box.x0 || 0,
         y1: box.y1 || box.y0 || 0,
-        confidence: word.confidence == null ? null : word.confidence
+        confidence: word.confidence == null ? null : word.confidence,
+        glyphs: compactGlyphs(word)
       };
     }).filter(function (word) {
       return word.text && (word.confidence == null || word.confidence >= 20);
@@ -579,7 +599,7 @@
 
   function mapWords(items, scale, pageHeight) {
     return items.map(function (word) {
-      return {
+      var mapped = {
         text: word.text,
         confidence: word.confidence,
         x: word.x0 / scale,
@@ -587,6 +607,8 @@
         w: Math.max(0, word.x1 - word.x0) / scale,
         h: Math.max(0, word.y1 - word.y0) / scale
       };
+      if (word.glyphs) mapped.glyphs = word.glyphs;
+      return mapped;
     });
   }
 

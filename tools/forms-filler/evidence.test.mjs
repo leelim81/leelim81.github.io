@@ -460,6 +460,26 @@ const heldBlock = Object.assign({}, looseParts, { blk: '1234', blkUnconfirmed: t
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).checked, false);
 assert.equal(identityCardOffer(heldBlock, 'unit', partFields).editable, false);
 assert.equal(identityCardOffer(heldBlock, 'postal', partFields).editable, false);
+const suggestedBlk = identityVote([
+  identityRead('BLK 1234 EXAMPLE RD\n#12-34\nSINGAPORE 560123\n', [{
+    text: '1234',
+    glyphs: [
+      { text: '1', confidence: 96 },
+      { text: '2', confidence: 96 },
+      { text: '3', confidence: 96 },
+      { text: '4', confidence: 40, choices: [{ text: '4', confidence: 40 }, { text: 'A', confidence: 36 }] }
+    ]
+  }]),
+  identityRead('BLK 123A EXAMPLE RD\n#12-34\nSINGAPORE 560123\n')
+]);
+const suggestedFields = [{ id: 'b', label: 'Blk' }, { id: 's', label: 'Street' }, { id: 'u', label: 'Unit' }, { id: 'p', label: 'Postal code' }];
+assert.equal(suggestedBlk.blk, '123A');
+assert.equal(suggestedBlk.blkHint, '1234');
+assert.equal(identityCardOffer(suggestedBlk, 'blk', suggestedFields).value, '123A');
+assert.equal(identityCardOffer(suggestedBlk, 'blk', suggestedFields).checked, false);
+assert.equal(identityCardOffer(suggestedBlk, 'blk', suggestedFields).editable, true);
+assert.equal(identityCardOffer(suggestedBlk, 'street', suggestedFields).checked, false);
+assert.equal(identityCardOffer(suggestedBlk, 'postal', suggestedFields).checked, false);
 const houseConflict = identityVote([
   identityRead('10 EXAMPLE RD\nBLK 88\n#12-34\nSINGAPORE 018956\n'),
   identityRead('10 EXAMPLE RD\nBLK 88\n#12-34\nSINGAPORE 018956\n')

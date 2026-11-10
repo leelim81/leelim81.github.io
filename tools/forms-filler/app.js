@@ -1230,7 +1230,10 @@
             if (!idn[key] || (extra[key + 'Checked'] && !idn[key + 'Checked'])) {
               idn[key] = extra[key];
               idn[key + 'Checked'] = !!extra[key + 'Checked'];
-              if (key === 'blk') idn.blkUnconfirmed = !!extra.blkUnconfirmed;
+              if (key === 'blk') {
+                idn.blkUnconfirmed = !!extra.blkUnconfirmed;
+                if (extra.blkHint) idn.blkHint = extra.blkHint;
+              }
               if (key === 'dob') idn.dobUnconfirmed = !!extra.dobUnconfirmed;
               if (key === 'unit') idn.unitUnconfirmed = !!extra.unitUnconfirmed;
             }
@@ -1239,6 +1242,20 @@
           if (extra.dob && extra.dob === idn.dob && extra.dobUnconfirmed) idn.dobUnconfirmed = true;
           if (extra.unit && extra.unit === idn.unit && extra.unitUnconfirmed) idn.unitUnconfirmed = true;
         });
+        var hinted = null;
+        var hintClash = false;
+        state.refs.forEach(function (ref) {
+          var extra = ref && ref.identity;
+          if (!extra || !extra.blkHint || !extra.blk) return;
+          if (!hinted) hinted = { blk: extra.blk, hint: extra.blkHint };
+          else if (hinted.blk !== extra.blk || hinted.hint !== extra.blkHint) hintClash = true;
+        });
+        if (hinted && !hintClash) {
+          idn.blk = hinted.blk;
+          idn.blkHint = hinted.hint;
+          idn.blkChecked = false;
+          idn.blkUnconfirmed = true;
+        }
         if (/^\d{4}$/.test(idn.blk)) idn.blkUnconfirmed = true;
         if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal) {
           idn.address = '';
@@ -1330,7 +1347,7 @@
           row.editable = !!(cardOffer && cardOffer.editable);
           row.checked = slotChecked(slot);
           row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
-          row.quote = 'Read from the photo';
+          row.quote = slot === 'blk' && idn.blkHint ? 'Read as ' + idn.blkHint : 'Read from the photo';
         });
         if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
       }
