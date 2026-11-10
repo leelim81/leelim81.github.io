@@ -543,6 +543,7 @@
     return ready.then(function (font) { applyPaint(el, ann, font); }).catch(function () {});
   }
   function fitTextHeight(el, ann) {
+    if (ann && ann.lockBox) return;
     var body = el.querySelector('.ann-body');
     var mirror = el.querySelector('.ann-mirror');
     if (!body || !el.parentElement) return;
@@ -947,6 +948,15 @@
       if (!ann.text) return;
       var size = ann.fontSize || 16;
       var lines = wrapText(ann.text, font, size, Math.max(8, box.width - 2));
+      var lineStep = size * 1.3;
+      var kept = [];
+      var used = 0;
+      for (var li = 0; li < lines.length; li++) {
+        if (used + size > height + 0.5) break;
+        kept.push(lines[li]);
+        used += lineStep;
+      }
+      lines = kept;
       var ok = lines.every(function (line) { return !line || canEncode(font, line); });
       if (!ok) {
         var scale = 3;

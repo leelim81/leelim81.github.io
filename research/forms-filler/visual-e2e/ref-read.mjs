@@ -25,6 +25,7 @@ const ui = await browser.newPage({ viewport: { width: 1100, height: 800 } });
 ui.setDefaultTimeout(30000);
 await ui.goto('http://127.0.0.1:8788/tools/forms-filler/?read=' + Date.now(), { waitUntil: 'domcontentloaded' });
 await ui.waitForFunction(() => window.FormExtract);
+await ui.evaluate(() => { window.__ffNoWarm = true; });
 const paired = await ui.evaluate(async (b64) => {
   const bin = atob(b64);
   const data = new Uint8Array(bin.length);
@@ -236,14 +237,21 @@ async function installReaderHooks() {
     };
     window.__ffCreateWorker = function (real) {
       if (window.__stallMode === 'init') {
-        const created = {
-          terminated: false,
-          setParameters() { return Promise.resolve(); },
-          recognize() { window.__stall.recognizes += 1; return new Promise(() => {}); },
-          terminate() { this.terminated = true; window.__stall.terminated += 1; return Promise.resolve(); }
-        };
-        window.__stall.worker = created;
-        return new Promise((resolve) => { window.__releaseWorker = () => resolve(created); });
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            const created = {
+              terminated: false,
+              setParameters() { return Promise.resolve(); },
+              recognize() {
+                window.__stall.recognizes += 1;
+                return Promise.resolve({ data: { text: 'full name: Zoe Late', words: [] } });
+              },
+              terminate() { this.terminated = true; window.__stall.terminated += 1; return Promise.resolve(); }
+            };
+            window.__stall.worker = created;
+            resolve(created);
+          }, 2000);
+        });
       }
       if (window.__stallMode === 'params' || window.__stallMode === 'late') {
         const created = {
@@ -341,20 +349,17 @@ await ui.locator('#refInput').setInputFiles('/tmp/ref-init-stall.png');
 await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-init-stall.png' && item.status === 'reading'));
 copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-init.pdf');
 await ui.locator('#refInput').setInputFiles('/tmp/ref-after-init.pdf');
-await waitRow('ref-after-init.pdf');
-const initBeforeRelease = await ui.evaluate(() => ({ released: !!window.__stall.worker, terminated: window.__stall.terminated, recognizes: window.__stall.recognizes }));
 await waitRow('ref-init-stall.png');
+await waitRow('ref-after-init.pdf');
 const initMs = Date.now() - initStarted;
-await ui.evaluate(() => window.__releaseWorker && window.__releaseWorker());
-await ui.waitForTimeout(200);
-const initStall = await ui.evaluate(() => ({ terminated: window.__stall.terminated, worker: window.__stall.worker && window.__stall.worker.terminated, recognizes: window.__stall.recognizes }));
+const initStall = await ui.evaluate(() => ({ terminated: window.__stall.terminated, recognizes: window.__stall.recognizes }));
 const initTrace = await idleTrace();
 const inited = await peopleAndRows();
 const initRow = inited.refs.find((item) => item.name === 'ref-init-stall.png');
 const afterInit = inited.refs.find((item) => item.name === 'ref-after-init.pdf');
-check('a hung worker start is dropped and the next reference finishes first', initBeforeRelease.terminated === 0 && afterInit && afterInit.status !== 'reading' && afterInit.status !== 'error' && initRow && initRow.status === 'error' && initStall.terminated >= 1 && initStall.recognizes === 0 && initTrace.peakSpatial === 1 && initTrace.spatialInflight === 0 && initTrace.peakOcr <= 1 && initMs < 15000, JSON.stringify({ initMs, initBeforeRelease, initStall, initTrace, initRow, afterInit }));
+check('a slow worker start is outside the read budget and the photo read finishes', initRow && initRow.status !== 'error' && initRow.status !== 'reading' && afterInit && afterInit.status !== 'reading' && afterInit.status !== 'error' && initStall.recognizes >= 1 && initTrace.spatialInflight === 0 && initMs >= 1200 && initMs < 15000, JSON.stringify({ initMs, initStall, initTrace, initRow, afterInit }));
 
-await ui.evaluate(() => { window.__stallMode = 'params'; window.__ffReadBudgetMs = 1200; FormExtract.resetTrace(); });
+await ui.evaluate(() => { window.__stallMode = 'params'; window.__ffReadBudgetMs = 1200; FormExtract.resetTrace(); FormExtract.resetWorker(); });
 const paramsStarted = Date.now();
 await ui.locator('#refInput').setInputFiles('/tmp/ref-params-stall.png');
 await ui.waitForFunction(() => FormDesk.refs().some((item) => item.name === 'ref-params-stall.png' && item.status === 'reading'));
@@ -370,7 +375,7 @@ const paramsRow = paramRows.refs.find((item) => item.name === 'ref-params-stall.
 const afterParams = paramRows.refs.find((item) => item.name === 'ref-after-params.pdf');
 check('a hung setParameters terminates the worker and the next reference finishes', paramsRow && paramsRow.status === 'error' && paramsStall.terminated >= 1 && paramsStall.recognizes === 0 && afterParams && afterParams.status !== 'reading' && afterParams.status !== 'error' && paramsTrace.peakOcr <= 1 && paramsTrace.peakSpatial === 1 && paramsTrace.ocrInflight === 0 && paramsMs < 12000 && paramRows.email.value === 'cora.fixed@example.com', JSON.stringify({ paramsMs, paramsStall, paramsTrace, paramsRow, afterParams }));
 
-await ui.evaluate(() => { window.__stallMode = 'late'; window.__ffReadBudgetMs = 15000; window.__ffOcrBudgetMs = 500; FormExtract.resetTrace(); });
+await ui.evaluate(() => { window.__stallMode = 'late'; window.__ffReadBudgetMs = 15000; window.__ffOcrBudgetMs = 500; FormExtract.resetTrace(); FormExtract.resetWorker(); });
 await ui.locator('#refInput').setInputFiles('/tmp/ref-late-stall.png');
 await waitRow('ref-late-stall.png');
 copyFileSync('/tmp/ref-text.pdf', '/tmp/ref-after-late.pdf');

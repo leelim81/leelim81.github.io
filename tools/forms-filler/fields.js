@@ -1382,6 +1382,9 @@
         };
       });
     }
+    function wordsOfSentence(s) {
+      return String(s || '').split(/\s+/).length > 10;
+    }
     function clipLabel(str) {
       var cut = String(str || '').replace(/\s+/g, ' ').trim().split('.')[0];
       var parts = cut.split(/\s+/).filter(Boolean);
@@ -1389,7 +1392,8 @@
       if (parts.length > 8) parts = parts.slice(0, 6);
       var s = parts.join(' ').replace(/[:,\s]+$/, '');
       if (s.length < 3 || s.length > 72) return '';
-      if (!/^[A-Za-z]/.test(s)) return '';
+      if (!/^[A-Z]/.test(s)) return '';
+      if (wordsOfSentence(s)) return '';
       if (parts.length < 6 && /^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
       return s;
     }
@@ -1415,6 +1419,11 @@
       });
       if (best) field.label = best;
     });
+    fields.forEach(function (field) {
+      field.texts = textsByPage[field.page || 0] || [];
+    });
+    if (global.FormEvidence && FormEvidence.applySectionContext) FormEvidence.applySectionContext(fields);
+    fields.forEach(function (field) { delete field.texts; });
   }
 
   async function read(bytes, progress) {

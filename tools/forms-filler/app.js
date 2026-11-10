@@ -414,6 +414,17 @@
       else preview.textContent = 'No fields found in this file.';
       main.appendChild(name);
       main.appendChild(preview);
+      if (ref.timedOut && ref.bytes && ref.bytes.length) {
+        var retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'ref-retry';
+        retry.textContent = 'Retry';
+        retry.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          retryRef(ref);
+        });
+      }
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ref-x';
@@ -425,6 +436,7 @@
         removeRef(ref.id);
       });
       li.appendChild(main);
+      if (retry) li.appendChild(retry);
       li.appendChild(btn);
       list.appendChild(li);
     });
@@ -458,18 +470,22 @@
       ref.transform = spatial.transform || null;
     } catch (err) {
       failed = true;
-      budget = !!(err && (err.message === 'budget' || err.message === 'cancelled'));
+      var timedOut = !!(err && err.message === 'budget');
+      budget = timedOut || !!(err && err.message === 'cancelled');
       if (budget && read && window.FormExtract && FormExtract.cancelRead) FormExtract.cancelRead(read);
+      ref.timedOut = timedOut;
     }
     if ((state.readEpoch || 0) !== epoch) return;
     var live = refById(id);
     if (!live || live !== ref) return;
-      if (failed) {
+    if (failed) {
       live.status = 'error';
-      live.preview = budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : 'Could not read this photo. Nothing was filled.';
+      live.timedOut = !!ref.timedOut;
+      live.preview = ref.timedOut ? 'This file took too long to read. Press retry to read this photo again.' : (budget ? 'This file took too long to read. Remove it or choose a smaller page. Nothing new was confirmed.' : 'Could not read this photo. Nothing was filled.');
       live.text = '';
       live.words = [];
     } else {
+      live.timedOut = false;
       live.text = text || '';
       rememberRef(live);
       if (live.channel === 'ocr' && !live.preview && live.identity) {
@@ -486,7 +502,8 @@
       if (live.channel === 'ocr' && !live.preview) live.preview = 'Could not read a name or ID from this photo. Nothing was filled.';
       if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
-    if (identityPhotoRef(live) && (failed || !live.text)) live.bytes = new Uint8Array(0);
+    var keepBytes = live.timedOut && window.FormExtract && FormExtract.keepPhotoBytes && FormExtract.keepPhotoBytes({ message: 'budget' });
+    if (identityPhotoRef(live) && (failed || !live.text) && !keepBytes) live.bytes = new Uint8Array(0);
     renderRefs();
     scheduleSave();
   }
@@ -526,10 +543,23 @@
     };
     state.refs.push(ref);
     state.proposals = [];
+    if (identityPhotoRef(ref) && window.FormExtract && FormExtract.warm) FormExtract.warm();
     ref.pending = extractOne(ref);
     refreshLabels();
     scheduleSave();
     return true;
+  }
+
+  function retryRef(ref) {
+    if (!ref || !(ref.bytes && ref.bytes.length) || ref.status === 'reading') return;
+    ref.timedOut = false;
+    ref.status = 'reading';
+    ref.preview = '';
+    ref.text = '';
+    ref.words = [];
+    ref.pending = extractOne(ref);
+    renderRefs();
+    scheduleSave();
   }
 
   function stopRead(ref) {
@@ -1328,6 +1358,10 @@
         function slotValue(slot) {
           if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
+          if (slot === 'chineseName') {
+            var chinese = idn.chineseName || '';
+            return window.FormEvidence.chineseScript && FormEvidence.chineseScript(chinese) ? chinese : '';
+          }
           if (slot === 'nric') return idn.nric || '';
           if (slot === 'dob') return idn.dob || '';
           if (slot === 'sex') return idn.sex || '';
@@ -1357,6 +1391,10 @@
           var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
           var value = slotValue(slot);
           if (!slot || !value) {
+            if (window.FormEvidence.keepAgreedName && FormEvidence.keepAgreedName(row, field, idn.name)) {
+              matched = true;
+              return;
+            }
             if (row.decision !== 'abstain') {
               row.decision = 'abstain';
               row.value = '';
@@ -1407,12 +1445,14 @@
           if (slot === 'blk') row.blockCandidates = (idn.blkCandidates || []).slice(0, 2);
         });
         decisions.forEach(function (row) {
-          if (!row || !row.value || !window.FormEvidence || !FormEvidence.fittedSize) return;
+          if (!row || !row.value || !window.FormEvidence || !FormEvidence.fitInBox) return;
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
           if (!field || !field.rect || !(field.rect.width > 0)) return;
           var start = row.fontSize || Math.max(9, Math.min(13, ((field.lineH || 12) * 0.85)));
-          var fit = FormEvidence.fittedSize(row.value, field.rect.width, start);
+          var fit = field.rect.height > 0
+            ? FormEvidence.fitInBox(row.value, field.rect.width, field.rect.height, start)
+            : FormEvidence.fittedSize(row.value, field.rect.width, start);
           row.fontSize = fit.size;
           if (fit.fits) return;
           row.checked = false;
@@ -1544,6 +1584,7 @@
         }
         values[row.id] = FormSanitize.sanitize(row.value, field || row);
         if (row.source !== 'facts' && window.FormFacts && !FormFacts.accept(field || row, values[row.id])) values[row.id] = '';
+        if (values[row.id] && window.FormEvidence && FormEvidence.allowsValue && !FormEvidence.allowsValue(field || row, values[row.id])) values[row.id] = '';
       });
     }
     var bytes = state.formBytes;
@@ -2088,4 +2129,10 @@
     }
   }).catch(function () {});
   window.FormBlockChoices = { add: addBlockChoices };
+  var warmSoon = function () {
+    if (window.__ffNoWarm || window.__ffCreateWorker || window.__stallMode) return;
+    if (window.FormExtract && FormExtract.warm) FormExtract.warm();
+  };
+  if (window.requestIdleCallback) window.requestIdleCallback(warmSoon, { timeout: 2000 });
+  else setTimeout(warmSoon, 1200);
 })();

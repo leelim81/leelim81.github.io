@@ -25,8 +25,90 @@
     return new Error('cancelled');
   }
 
-  function budgetError() {
-    return new Error('budget');
+  function budgetError(session) {
+    var err = new Error('budget');
+    err.recognizeDone = session && session._ffRecognizeDone ? session._ffRecognizeDone : 0;
+    return err;
+  }
+
+  function now() {
+    return typeof global.__ffNow === 'function' ? global.__ffNow() : Date.now();
+  }
+
+  function readBudgetMs() {
+    return global.__ffReadBudgetMs > 0 ? global.__ffReadBudgetMs : 15000;
+  }
+
+  function glyphBudgetMs() {
+    return global.__ffGlyphBudgetMs > 0 ? global.__ffGlyphBudgetMs : 1200;
+  }
+
+  function clearReadTimer(session) {
+    if (!session || session._ffTimer == null) return;
+    clearTimeout(session._ffTimer);
+    clearInterval(session._ffTimer);
+    session._ffTimer = null;
+  }
+
+  function onReadBudget(session) {
+    if (!session || session.released || session.cancelled) return;
+    if (session._ffRecognizeStarted && !(session._ffRecognizeDone > 0) && !session._ffAutoRetried && session._ffRecognizeReject) {
+      var rejectRecognize = session._ffRecognizeReject;
+      session._ffRecognizeReject = null;
+      rejectRecognize(budgetError(session));
+      return;
+    }
+    session.reason = 'budget';
+    cancelRead(session);
+  }
+
+  function armReadTimer(session, ms) {
+    clearReadTimer(session);
+    if (!session || session.cancelled || session.released) return;
+    var wait = ms > 0 ? ms : 1;
+    session._ffBudgetUntil = now() + wait;
+    if (typeof global.__ffNow === 'function') {
+      session._ffTimer = setInterval(function () {
+        if (now() >= session._ffBudgetUntil) {
+          clearReadTimer(session);
+          onReadBudget(session);
+        }
+      }, 5);
+      return;
+    }
+    session._ffTimer = setTimeout(function () {
+      onReadBudget(session);
+    }, wait);
+  }
+
+  function parkReadBudget(session) {
+    if (!session || session._ffRecognizeStarted || session.cancelled || session.released) return;
+    clearReadTimer(session);
+    session._ffParked = true;
+  }
+
+  function resumeReadBudget(session) {
+    if (!session || session._ffWarm || session._ffRecognizeStarted || session.cancelled || session.released) return;
+    session._ffParked = false;
+    armReadTimer(session, readBudgetMs());
+  }
+
+  function beginRecognizeBudget(session) {
+    if (!session || session.cancelled || session.released || session._ffRecognizeStarted) return;
+    session._ffRecognizeStarted = true;
+    session._ffParked = false;
+    session._ffRecognizeAt = now();
+    armReadTimer(session, readBudgetMs());
+  }
+
+  function mainBudgetLeft(session) {
+    if (!session || !session._ffRecognizeAt) return readBudgetMs();
+    if (session._ffBudgetUntil) return session._ffBudgetUntil - now();
+    return readBudgetMs() - (now() - session._ffRecognizeAt);
+  }
+
+  function keepPhotoBytes(err) {
+    return !!(err && err.message === 'budget');
   }
 
   function enterSpatial() {
@@ -177,7 +259,7 @@
         fn(value);
       }
       function onCancel() {
-        finish(reject, session.reason === 'budget' ? budgetError() : cancelledError());
+        finish(reject, session.reason === 'budget' ? budgetError(session) : cancelledError());
       }
       session.waiters.push(onCancel);
       Promise.resolve(promise).then(function (value) {
@@ -203,21 +285,56 @@
 
   async function recognizeBounded(session, worker, source) {
     if (session && (session.cancelled || session.released)) throw cancelledError();
+    beginRecognizeBudget(session);
     if (global.__ffHoldOcr) await bind(session, global.__ffHoldOcr);
     var budget = global.__ffOcrBudgetMs > 0 ? global.__ffOcrBudgetMs : OCR_BUDGET_MS;
-    var timer;
-    var timeout = new Promise(function (_, reject) {
-      timer = setTimeout(function () { reject(budgetError()); }, budget);
-    });
-    enterOcr();
+    async function once() {
+      var timer;
+      var timeout = new Promise(function (_, reject) {
+        timer = setTimeout(function () { reject(budgetError(session)); }, budget);
+      });
+      timeout.catch(function () {});
+      var race = new Promise(function (resolve, reject) {
+        if (session) session._ffRecognizeReject = reject;
+        Promise.race([worker.recognize(source), timeout]).then(function (value) {
+          if (session && session._ffRecognizeReject === reject) session._ffRecognizeReject = null;
+          resolve(value);
+        }, function (err) {
+          if (session && session._ffRecognizeReject === reject) session._ffRecognizeReject = null;
+          reject(err);
+        });
+      });
+      enterOcr();
+      try {
+        return await bind(session, race);
+      } finally {
+        clearTimeout(timer);
+        if (session && session._ffRecognizeReject) session._ffRecognizeReject = null;
+        leaveOcr();
+      }
+    }
     try {
-      return await bind(session, Promise.race([worker.recognize(source), timeout]));
+      var value = await once();
+      if (session) session._ffRecognizeDone = (session._ffRecognizeDone || 0) + 1;
+      return value;
     } catch (err) {
+      var retry = err && err.message === 'budget' && session && !(session._ffRecognizeDone > 0) && !session._ffAutoRetried && !session.released && !session.cancelled;
+      if (retry) {
+        session._ffAutoRetried = true;
+        session.reason = '';
+        session._ffRecognizeStarted = false;
+        beginRecognizeBudget(session);
+        try {
+          var again = await once();
+          session._ffRecognizeDone = (session._ffRecognizeDone || 0) + 1;
+          return again;
+        } catch (err2) {
+          if (err2 && err2.message === 'budget' && session) cancelRead(session);
+          throw err2;
+        }
+      }
       if (err && err.message === 'budget' && session) cancelRead(session);
       throw err;
-    } finally {
-      clearTimeout(timer);
-      leaveOcr();
     }
   }
 
@@ -319,6 +436,7 @@
 
   function ocrWorker(session) {
     if (session && (session.cancelled || session.released)) return Promise.reject(cancelledError());
+    if (session && !session._ffRecognizeStarted) parkReadBudget(session);
     if (!workerPromise) {
       if (!global.Tesseract) {
         var missing = Promise.reject(new Error('OCR is not loaded'));
@@ -332,7 +450,13 @@
         corePath: base + 'tesseract-core-simd-lstm.wasm.js',
         langPath: base.replace(/\/$/, ''),
         gzip: true,
-        cacheMethod: 'none'
+        cacheMethod: 'write'
+      };
+      global.__ffOcrOptions = {
+        workerPath: options.workerPath,
+        corePath: options.corePath,
+        langPath: options.langPath,
+        cacheMethod: options.cacheMethod
       };
       function realWorker() { return Tesseract.createWorker('eng', 1, options); }
       var created = typeof global.__ffCreateWorker === 'function' ? global.__ffCreateWorker(realWorker) : realWorker();
@@ -359,27 +483,43 @@
         session.worker = worker;
         workerLease = session;
       }
+      if (session && !session._ffRecognizeStarted) resumeReadBudget(session);
       return worker;
     });
   }
 
   function armDeadline(session) {
-    var budgetMs = global.__ffReadBudgetMs > 0 ? global.__ffReadBudgetMs : 15000;
-    return setTimeout(function () {
-      session.reason = 'budget';
-      cancelRead(session);
-    }, budgetMs);
+    armReadTimer(session, readBudgetMs());
+    return session && session._ffTimer;
   }
 
   function withDeadline(session, work) {
-    var timer = armDeadline(session);
+    armDeadline(session);
     var job = Promise.resolve().then(work);
     job.catch(function () {});
     return bind(session, job).then(function (value) {
-      clearTimeout(timer);
+      clearReadTimer(session);
       return value;
     }, function (err) {
-      clearTimeout(timer);
+      clearReadTimer(session);
+      throw err;
+    });
+  }
+
+  function warm() {
+    if (workerPromise || liveWorker) return workerPromise || Promise.resolve(liveWorker);
+    if (!global.Tesseract && typeof global.__ffCreateWorker !== 'function') return Promise.resolve();
+    var session = openRead();
+    session._ffWarm = true;
+    return ocrWorker(session).then(function (worker) {
+      clearReadTimer(session);
+      if (workerLease === session) releaseLease(session);
+      finishRead(session);
+      return worker;
+    }, function (err) {
+      clearReadTimer(session);
+      if (workerLease === session) releaseLease(session);
+      if (!session.released) finishRead(session);
       throw err;
     });
   }
@@ -855,17 +995,34 @@
 
   async function recognizeGlyph(session, worker, source) {
     if (session && (session.cancelled || session.released)) throw cancelledError();
+    if (!glyphRoom(session)) return null;
+    var left = session._ffGlyphOwnUntil ? session._ffGlyphOwnUntil - now() : glyphBudgetMs();
+    if (left < 40) return null;
+    var frozen = mainBudgetLeft(session);
+    clearReadTimer(session);
+    var timer;
     enterOcr();
     try {
-      return await bind(session, worker.recognize(source));
+      var timeout = new Promise(function (_, reject) {
+        timer = setTimeout(function () { reject(budgetError(session)); }, Math.max(40, left));
+      });
+      timeout.catch(function () {});
+      return await Promise.race([worker.recognize(source), timeout]);
+    } catch (err) {
+      if (err && err.message === 'cancelled') throw err;
+      return null;
     } finally {
+      clearTimeout(timer);
       leaveOcr();
+      if (session && !session.cancelled && !session.released && frozen > 0) armReadTimer(session, frozen);
     }
   }
 
   function glyphRoom(session) {
     if (!session || (session._ffGlyphCrops || 0) >= 4) return false;
-    if (session._ffGlyphDeadline && Date.now() >= session._ffGlyphDeadline) return false;
+    if (session._ffGlyphOwnUntil && now() >= session._ffGlyphOwnUntil) return false;
+    if (mainBudgetLeft(session) < 500) return false;
+    if (session._ffGlyphDeadline && now() >= session._ffGlyphDeadline) return false;
     return true;
   }
 
@@ -904,6 +1061,9 @@
 
   async function maybeRereadBlock(session, worker, canvas, read, rawWords) {
     if (!read || !/^\d{4}$/.test(read.blk)) return;
+    var own = Math.min(glyphBudgetMs(), mainBudgetLeft(session));
+    if (!(own > 40) || mainBudgetLeft(session) < 500) return;
+    session._ffGlyphOwnUntil = now() + own;
     if (!glyphRoom(session)) return;
     var word = blockWordOf(rawWords, read.blk);
     if (!word || !headDigitsStable(word, read.blk)) return;
@@ -954,11 +1114,11 @@
           var packed = linesFromWords(result && result.data && result.data.words);
           var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
           if (read.blk && !session._ffFirstBlk) session._ffFirstBlk = read.blk;
-          if (/^\d{4}$/.test(read.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = Date.now() + 1200;
+          if (/^\d{4}$/.test(read.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = now() + 1200;
           try {
             await maybeRereadBlock(session, worker, variant, read, result && result.data && result.data.words);
           } catch (err) {
-            if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
+            if (err && err.message === 'cancelled') throw err;
           }
           bag.push(extraPass ? { blk: read.blk, blkSuggest: read.blkSuggest, blkSuggestKind: read.blkSuggestKind, blkSuggestConf: read.blkSuggestConf, blkUnconfirmed: true, postal: '' } : read);
           if (!extraPass && (read.nricValid || (read.name && read.name.split(' ').length >= 3 && keptNricConf == null))) {
@@ -978,18 +1138,18 @@
             var sparsePacked = linesFromWords(sparse && sparse.data && sparse.data.words);
             var sparseRead = FormFacts.identityRead(sparsePacked.text, mapWords(sparsePacked.items, scale, pageHeight));
             if (sparseRead.blk && !session._ffFirstBlk) session._ffFirstBlk = sparseRead.blk;
-            if (/^\d{4}$/.test(sparseRead.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = Date.now() + 1200;
+            if (/^\d{4}$/.test(sparseRead.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = now() + 1200;
             try {
               await maybeRereadBlock(session, worker, variant, sparseRead, sparse && sparse.data && sparse.data.words);
             } catch (err) {
-              if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
+              if (err && err.message === 'cancelled') throw err;
             }
             bag.push(sparseRead);
             if (sparseRead.labeled) read = sparseRead;
           }
           var vote = bag.length >= 2 ? FormFacts.identityVote(bag) : null;
           if (vote && vote.nric && vote.name && vote.nricChecked) {
-            var extraRoom = !session._ffGlyphDeadline || Date.now() + 900 < session._ffGlyphDeadline;
+            var extraRoom = !session._ffGlyphDeadline || now() + 900 < session._ffGlyphDeadline;
             if (!extraPass && /^\d{4}$/.test(session._ffFirstBlk) && extraRoom) {
               session._ffGlyphExtra = true;
               continue;
@@ -1174,22 +1334,19 @@
     var read = session || openRead();
     return enqueueRead(function () {
       if (read.cancelled || read.released) return Promise.reject(cancelledError());
-      var budgetMs = global.__ffReadBudgetMs > 0 ? global.__ffReadBudgetMs : 15000;
-      var timer = setTimeout(function () {
-        read.reason = 'budget';
-        cancelRead(read);
-      }, budgetMs);
+      var isPdf = !mime || mime === 'application/pdf';
+      if (isPdf) armReadTimer(read, readBudgetMs());
       enterSpatial();
       var job = Promise.resolve().then(function () { return spatialNow(bytes, mime, read); });
       job.catch(function () {});
       return bind(read, job).then(function (value) {
-        clearTimeout(timer);
+        clearReadTimer(read);
         leaveSpatial();
         var unread = withUnread(read, value);
         finishRead(read);
         return unread;
       }, function (err) {
-        clearTimeout(timer);
+        clearReadTimer(read);
         leaveSpatial();
         if (!read.released) finishRead(read);
         throw err;
@@ -1312,6 +1469,10 @@
     imageText: imageText,
     wordBoxes: wordBoxes,
     spatial: spatial,
+    warm: warm,
+    resetWorker: function () { invalidateWorker(); },
+    glyphRoom: glyphRoom,
+    keepPhotoBytes: keepPhotoBytes,
     openRead: openRead,
     cancelRead: cancelRead,
     cancelAll: cancelAll,
