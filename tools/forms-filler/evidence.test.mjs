@@ -304,11 +304,11 @@ const unconfirmedHome = identityVote([
   identityRead('APT BLK 9999 STREET #99-999\nSINGAPORE 999999\n')
 ]);
 assert.equal(identityPhotoSlot(onlyAddress[0], onlyAddress), 'address');
-assert.equal(identityCardOffer(unconfirmedHome, 'address').value, '');
+assert.equal(identityCardOffer(unconfirmedHome, 'address').value, '9999 STREET #99-999 SINGAPORE 999999');
 const bothSlots = [{ id: 'b', label: 'Blk' }, { id: 'a', label: 'Address' }];
 const bothAddress = identityCardOffer(unconfirmedHome, 'address', bothSlots);
 const bothBlk = identityCardOffer(unconfirmedHome, 'blk', bothSlots);
-assert.equal(bothAddress.value, '9999 STREET #99-999 SINGAPORE 999999');
+assert.equal(bothAddress.value, 'STREET #99-999 SINGAPORE 999999');
 assert.equal(bothAddress.checked, false);
 assert.equal(bothAddress.editable, true);
 assert.equal(bothBlk.value, '9999');
@@ -364,15 +364,44 @@ assert.equal(addressSlotsBlank(confirmedParts, addressAndStreet), false);
 assert.equal(addressSlotsBlank(confirmedParts, addressAndBlk), false);
 assert.equal(identityCardOffer(confirmedParts, 'street', addressAndStreet).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'postal', addressAndStreet).checked, true);
-assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).value, '');
-assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).checked, false);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).value, '88 #12-34');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'blk', addressAndBlk).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'street', addressAndBlk).checked, true);
-assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).value, '');
-assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).checked, false);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).value, '#12-34');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).checked, true);
 const addressLine = identityCardOffer(confirmedParts, 'address', onlyAddress);
 assert.equal(addressLine.value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
 assert.equal(addressLine.checked, true);
+const addressBlk = [{ id: 'a', label: 'Address' }, { id: 'b', label: 'Blk' }];
+const addressPostal = [{ id: 'a', label: 'Address' }, { id: 'p', label: 'Postal code' }];
+const addressUnit = [{ id: 'a', label: 'Address' }, { id: 'u', label: 'Unit' }];
+assert.equal(identityCardOffer(confirmedParts, 'blk', addressBlk).value, '88');
+assert.equal(identityCardOffer(confirmedParts, 'blk', addressBlk).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressBlk).value, 'EXAMPLE WALK #12-34 SINGAPORE 018956');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressBlk).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'postal', addressPostal).value, '018956');
+assert.equal(identityCardOffer(confirmedParts, 'postal', addressPostal).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressPostal).value, '88 EXAMPLE WALK #12-34');
+assert.equal(identityCardOffer(confirmedParts, 'unit', addressUnit).value, '12-34');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressUnit).value, '88 EXAMPLE WALK SINGAPORE 018956');
+const singleStreet = {
+  blk: '88', blkChecked: true, blkUnconfirmed: false,
+  street: 'EXAMPLE WALK', streetChecked: false,
+  unit: '12-34', unitChecked: true,
+  postal: '018956', postalChecked: true,
+  address: '88 EXAMPLE WALK #12-34 SINGAPORE 018956',
+  addressChecked: false
+};
+assert.equal(addressSlotsBlank(singleStreet, addressAndStreet), false);
+const looseStreet = identityCardOffer(singleStreet, 'street', addressAndStreet);
+assert.equal(looseStreet.value, 'EXAMPLE WALK');
+assert.equal(looseStreet.checked, false);
+assert.equal(looseStreet.editable, true);
+assert.equal(identityCardOffer(singleStreet, 'postal', addressAndStreet).checked, true);
+assert.equal(identityCardOffer(singleStreet, 'address', addressPostal).value, '88 EXAMPLE WALK #12-34');
+assert.equal(identityCardOffer(singleStreet, 'address', addressPostal).checked, false);
+assert.equal(identityCardOffer(singleStreet, 'address', addressPostal).editable, true);
 function usedValues(identity, fields) {
   if (addressSlotsBlank(identity, fields)) return [];
   return fields.map(function (field) {
@@ -408,7 +437,8 @@ assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
 assert.equal(addressOnly.checked, false);
 assert.equal(addressOnly.editable, true);
 const incomplete = Object.assign({}, unconfirmedHome, { postal: '' });
-assert.equal(identityCardOffer(incomplete, 'address', onlyAddress).value, '');
+assert.equal(identityCardOffer(incomplete, 'address', onlyAddress).value, '9999 STREET #99-999');
+assert.equal(identityCardOffer(incomplete, 'address', onlyAddress).checked, false);
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').value, '9999');
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').checked, false);
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').editable, true);
@@ -416,7 +446,8 @@ const confirmedHome = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nS
 assert.equal(identityCardOffer(confirmedHome, 'address').value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
 assert.equal(identityCardOffer(confirmedHome, 'address').checked, false);
 const partialOffer = { blk: '88', street: '', postal: '018956', address: '88 SINGAPORE 018956', blkUnconfirmed: false };
-assert.equal(identityCardOffer(partialOffer, 'address').value, '');
+assert.equal(identityCardOffer(partialOffer, 'address').value, '88 SINGAPORE 018956');
+assert.equal(identityCardOffer(partialOffer, 'address').checked, false);
 assert.equal(sectionKind('See Part B'), '');
 assert.equal(personOf('The insured'), 'other');
 assert.equal(personOf('Insured'), 'other');
