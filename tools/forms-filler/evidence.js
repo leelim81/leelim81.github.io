@@ -144,8 +144,8 @@
     if (slot === 'street' || slot === 'unit' || slot === 'postal') {
       var part = idn[slot] || '';
       if (!part) return { value: '', checked: false, editable: false };
-      var hold = (!!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '')) && formHasSlot(fields, 'address') && formHasSlot(fields, 'blk');
-      return { value: part, checked: hold ? false : !!idn[slot + 'Checked'], editable: false };
+      var blockOpen = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
+      return { value: part, checked: blockOpen ? false : !!idn[slot + 'Checked'], editable: false };
     }
     return null;
   }
