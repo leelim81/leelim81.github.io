@@ -247,27 +247,105 @@
     return '';
   }
 
-  function spanOf(rect) {
-    if (!rect) return null;
-    var x = rect.x || 0;
-    var w = rect.width != null ? rect.width : (rect.w || 0);
-    return { x0: x, x1: x + w, w: Math.max(w, 0) };
+  var COLUMN_TOL = 12;
+
+  function rectWidth(rect) {
+    if (!rect) return 0;
+    return rect.width != null ? rect.width : (rect.w || 0);
   }
 
-  /* A heading covers a field when the field's x-range overlaps that column
-     by at least half, or sits inside the heading. A neighbour table does not. */
-  function sameColumn(fieldRect, headRect) {
-    var field = spanOf(fieldRect);
-    var head = spanOf(headRect);
-    if (!field || !head || !(field.w > 0) || !(head.w > 0)) return false;
-    var overlap = Math.min(field.x1, head.x1) - Math.max(field.x0, head.x0);
-    if (!(overlap > 0)) return false;
-    if (field.x0 >= head.x0 - 0.5 && field.x1 <= head.x1 + 0.5) return true;
-    return overlap / field.w >= 0.5;
+  function centreX(rect) {
+    return (rect.x || 0) + rectWidth(rect) / 2;
+  }
+
+  function topY(rect) {
+    return (rect.y || 0) + (rect.height != null ? rect.height : (rect.h || 0));
+  }
+
+  /* A heading's column runs from just left of its text to the next heading
+     on that row, or to the page or table edge. A short label still owns the
+     fields centred in that column. */
+  function columnSpan(heading, headings, rightEdge) {
+    var box = heading.table || heading.cell;
+    if (box && rectWidth(box) > 0) {
+      var x = box.x || 0;
+      return { left: x, right: x + rectWidth(box) };
+    }
+    var nextX = null;
+    (headings || []).forEach(function (other) {
+      if (other === heading || other.page !== heading.page) return;
+      if (Math.abs((other.y || 0) - (heading.y || 0)) > 8) return;
+      if (other.x <= heading.x + 4) return;
+      if (nextX == null || other.x < nextX) nextX = other.x;
+    });
+    return { left: heading.x - COLUMN_TOL, right: nextX == null ? rightEdge : nextX };
+  }
+
+  function pageEdge(fields, page) {
+    var right = 0;
+    (fields || []).forEach(function (field) {
+      if ((field.page || 0) !== page) return;
+      if (field.pageWidth > right) right = field.pageWidth;
+      if (field.rect) right = Math.max(right, (field.rect.x || 0) + rectWidth(field.rect));
+      var texts = field.texts || field.pageTexts || [];
+      texts.forEach(function (text) {
+        right = Math.max(right, (text.x || 0) + (text.w || 0));
+        if (text.table) right = Math.max(right, (text.table.x || 0) + rectWidth(text.table));
+      });
+    });
+    return right > 0 ? right + 16 : 595;
+  }
+
+  function gatherHeadings(fields) {
+    var seen = {};
+    var headings = [];
+    function add(item) {
+      var key = (item.page || 0) + '|' + Math.round(item.x) + '|' + Math.round(item.y) + '|' + item.raw;
+      if (seen[key]) return;
+      seen[key] = true;
+      headings.push(item);
+    }
+    (fields || []).forEach(function (field) {
+      var page = field.page || 0;
+      (field.texts || field.pageTexts || []).forEach(function (text) {
+        var raw = String(text && text.str || '').replace(/\s+/g, ' ').trim();
+        var kind = sectionKind(raw);
+        if (!kind) return;
+        add({
+          x: text.x || 0,
+          y: text.y || 0,
+          w: text.w || 0,
+          h: text.h || 0,
+          raw: raw,
+          kind: kind,
+          page: page,
+          table: text.table || text.cell || null
+        });
+      });
+    });
+    return headings;
+  }
+
+  function headingOwns(field, heading, headings, rightEdge) {
+    if (!field || !field.rect || (field.page || 0) !== (heading.page || 0)) return false;
+    var fieldTop = topY(field.rect);
+    var dy = heading.y - fieldTop;
+    var limit = heading.kind === 'applicant' ? 420 : 280;
+    if (dy < -8 || dy > limit) return false;
+    var span = columnSpan(heading, headings, rightEdge);
+    var cx = centreX(field.rect);
+    return cx >= span.left && cx < span.right;
   }
 
   function markRegions(fields) {
     var list = fields || [];
+    var headings = gatherHeadings(list);
+    var rightEdge = pageEdge(list, 0);
+    list.forEach(function (field) {
+      var edge = pageEdge(list, field.page || 0);
+      if (edge > rightEdge) rightEdge = edge;
+    });
+    headings.rightEdge = rightEdge;
     list.forEach(function (field) {
       var blob = [field.label, field.group, field.section, field.heading].filter(Boolean).join(' ');
       if (/for bank use|bank use only|for official use|official use only|office use only/i.test(blob)) field.region = 'bank-use';
@@ -276,30 +354,39 @@
     });
     list.forEach(function (field) {
       if (field.region || !field.rect || !bareName(field.label)) return;
-      var bestGap = 29;
+      var bestDy = Infinity;
       var hit = '';
       list.forEach(function (other) {
         if (other === field || !other.region || !other.rect) return;
         if ((other.page || 0) !== (field.page || 0)) return;
-        if (!sameColumn(field.rect, other.rect)) return;
-        var gap = boxGap(field.rect, other.rect);
-        if (gap > 28 || gap >= bestGap) return;
-        bestGap = gap;
-        hit = other.region;
+        var sourceTop = topY(other.rect);
+        var fieldTop = topY(field.rect);
+        if (!(fieldTop < sourceTop - 2)) return;
+        var between = headings.some(function (heading) {
+          if ((heading.page || 0) !== (field.page || 0)) return false;
+          if (heading.y <= fieldTop - 8 || heading.y >= sourceTop - 2) return false;
+          return headingOwns(field, heading, headings, rightEdge);
+        });
+        if (between) return;
+        var synthetic = {
+          x: other.rect.x || 0,
+          y: sourceTop,
+          raw: other.label || other.region,
+          kind: other.region === 'other-person' ? 'other' : 'reset',
+          page: other.page || 0,
+          table: other.table || null
+        };
+        var span = columnSpan(synthetic, headings, rightEdge);
+        if (centreX(field.rect) < span.left || centreX(field.rect) >= span.right) return;
+        var dy = sourceTop - fieldTop;
+        if (dy < bestDy) {
+          bestDy = dy;
+          hit = other.region;
+        }
       });
       if (hit) field.region = hit;
     });
     return list;
-  }
-
-  function boxGap(a, b) {
-    var a0 = a.y;
-    var a1 = a.y + (a.height || 0);
-    var b0 = b.y;
-    var b1 = b.y + (b.height || 0);
-    if (a1 < b0) return b0 - a1;
-    if (b1 < a0) return a0 - b1;
-    return 0;
   }
 
   function fieldKind(field) {
@@ -527,32 +614,35 @@
     return null;
   }
 
-  /* The nearest section heading above the field in the same column. A
-     heading in the next table does not own this field. */
-  function nearestSectionHeading(field, texts) {
-    var rect = field && field.rect;
-    if (!rect) return null;
-    var top = rect.y + (rect.height || 0);
+  /* The nearest heading above the field whose column contains the field's
+     x-centre. The column is not the width of the heading text. */
+  function nearestSectionHeading(field, texts, fields) {
+    var source = fields && fields.length ? fields : [Object.assign({}, field, { texts: texts || field.texts || [] })];
+    var headings = gatherHeadings(source);
+    var rightEdge = pageEdge(source, field && field.page || 0);
     var best = null;
-    (texts || []).forEach(function (text) {
-      var raw = String(text && text.str || '').replace(/\s+/g, ' ').trim();
-      var kind = sectionKind(raw);
-      if (!kind) return;
-      if (!sameColumn(rect, { x: text.x, width: text.w || 0 })) return;
-      var dy = text.y - top;
-      var limit = kind === 'applicant' ? 420 : 280;
-      if (dy < -8 || dy > limit) return;
-      if (!best || dy < best.dy) best = { kind: kind, line: raw.replace(/[:.\s]+$/g, ''), dy: dy };
+    headings.forEach(function (heading) {
+      if (!headingOwns(field, heading, headings, rightEdge)) return;
+      var dy = heading.y - topY(field.rect);
+      if (!best || dy < best.dy - 0.5 || (Math.abs(dy - best.dy) <= 0.5 && heading.x > best.x)) {
+        best = { kind: heading.kind, line: String(heading.raw || '').replace(/[:.\s]+$/g, ''), dy: dy, x: heading.x };
+      }
     });
     return best;
   }
 
   function applySectionContext(fields) {
+    var headings = gatherHeadings(fields);
     (fields || []).forEach(function (field) {
-      if (!field || field.section) return;
-      var texts = field.texts || field.pageTexts || [];
-      var hit = nearestSectionHeading(field, texts);
-      if (hit) field.section = hit.line;
+      if (!field || field.section || !field.rect) return;
+      var rightEdge = pageEdge(fields, field.page || 0);
+      var best = null;
+      headings.forEach(function (heading) {
+        if (!headingOwns(field, heading, headings, rightEdge)) return;
+        var dy = heading.y - topY(field.rect);
+        if (!best || dy < best.dy - 0.5 || (Math.abs(dy - best.dy) <= 0.5 && heading.x > best.x)) best = { line: String(heading.raw || '').replace(/[:.\s]+$/g, ''), dy: dy, x: heading.x };
+      });
+      if (best) field.section = best.line;
     });
     return fields;
   }
