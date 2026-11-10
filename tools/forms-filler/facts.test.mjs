@@ -440,7 +440,7 @@ assert.equal(fiveHouse.street, '');
 ['JOHN LANE', 'MARY CLOSE'].forEach(function (alias) {
   const front = identityRead('Name\nTAN AH KOW (' + alias + ')\nS8523146D\n');
   const back = identityRead(alias + ' #12-34\nSINGAPORE 018956\n');
-  assert.equal(back.street, alias, alias);
+  assert.equal(back.street, '', alias);
   const voted = identityVote([front, back]);
   assert.equal(voted.nameAlias, alias, alias);
   assert.equal(voted.street, '', alias);
@@ -453,11 +453,31 @@ const fiveDigit = identityRead('BLK 12345 EXAMPLE RD\n#12-34\nSINGAPORE 018956\n
 assert.equal(fiveDigit.blk, '');
 assert.equal(fiveDigit.street, '');
 assert.equal(fiveDigit.address, '');
-assert.equal(identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\n').street, 'EXAMPLE RD');
+assert.equal(identityRead('JOHN LANE #12-34').street, '');
+assert.equal(identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\n').street, '');
 assert.equal(identityRead('EXAMPLE RD SINGAPORE 018956').street, 'EXAMPLE RD');
 assert.equal(identityRead('EXAMPLE RD\nSINGAPORE 018956\n').street, '');
 assert.equal(identityRead('TAN WEI MING #12-34\nSINGAPORE 018956\n').street, '');
-assert.equal(identityRead('Name\nTAN AH KOW (JOHN LANE)\nBLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n').street, '');
+assert.equal(identityRead('Name\nTAN AH KOW (JOHN LANE)\nBLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n').street, 'JOHN LANE');
+assert.equal(identityRead('12 EXAMPLE PL').blk, '12');
+assert.equal(identityRead('12 EXAMPLE PL').street, 'EXAMPLE PL');
+assert.equal(identityRead('EXAMPLE GDNS SINGAPORE 121212').street, 'EXAMPLE GDNS');
+assert.equal(identityRead('EXAMPLE HTS SINGAPORE 131313').street, 'EXAMPLE HTS');
+assert.equal(identityRead('EXAMPLE CTRL SINGAPORE 141414').street, 'EXAMPLE CTRL');
+const aliasBlk = identityVote([
+  identityRead('Name\nTAN AH KOW (JOHN LANE)\nS8523146D\n'),
+  identityRead('BLK 88 JOHN LANE\n#12-34\nSINGAPORE 018956\n')
+]);
+assert.equal(aliasBlk.street, 'JOHN LANE');
+assert.equal(aliasBlk.address, '88 JOHN LANE #12-34 SINGAPORE 018956');
+const aliasPostal = identityVote([
+  identityRead('Name\nTAN AH KOW (MARY CLOSE)\nS8523146D\n'),
+  identityRead('MARY CLOSE SINGAPORE 018956\n')
+]);
+assert.equal(aliasPostal.street, '');
+assert.equal(identityRead('Date of birth\nDate of issue 02 AUG 2015\n').dob, '');
+assert.equal(identityRead('Date of birth\n02 AUG 2015 Date of expiry\n').dob, '');
+assert.equal(identityRead('Date of birth\n15 JAN 1990\nDate of issue\n02 AUG 2015\n').dob, '15-01-1990');
 ['EXAMPLE RD', 'EXAMPLE ST', 'EXAMPLE DR', 'JLN EXAMPLE', 'LOR EXAMPLE', 'TESTVILLE NORTH GREEN'].forEach(function (street) {
   const back = identityRead('IDENTITY CARD\nBACK\nAddress\nBLK 88 ' + street + '\n#12-34\nSINGAPORE 018956\n');
   assert.equal(back.street, street, street);

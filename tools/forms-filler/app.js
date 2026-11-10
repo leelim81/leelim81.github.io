@@ -1249,7 +1249,7 @@
         });
         var splitAddress = !!(asked.blk || asked.street || asked.unit);
         var wholeAddress = !!asked.address;
-        var addressUnsure = splitAddress && wholeAddress;
+        var addressUnsure = splitAddress && wholeAddress && !idn.blkUnconfirmed;
         function slotValue(slot) {
           if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
