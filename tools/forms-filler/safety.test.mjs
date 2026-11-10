@@ -337,10 +337,18 @@ function hasName(label) {
   'Organization name',
   'Bank name',
   "Bank's name",
+  'Bank’s name',
   'Name of bank',
   'Name of the bank',
   'Branch name',
+  "Branch's name",
+  'Branch’s name',
   'Name of branch',
+  "Agency's name",
+  'Agency’s name',
+  'agencys name',
+  "Employer's name",
+  'Employer’s name',
   'Institution name',
   'Name of agency'
 ].forEach((label) => {
@@ -356,6 +364,26 @@ function hasName(label) {
 const bankAccount = row([{ id: 'bank', label: 'Name as per Example Bank Account (Underline surname)', type: 'text' }], 'bank');
 assert.equal(bankAccount.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
 assert.equal(fieldKind({ label: 'Name as per Example Bank Account (Underline surname)', type: 'text' }), 'name');
+[
+  ['Name of bank account', 'account-holder'],
+  ['Account name', 'account-holder'],
+  ['Account holder name', 'account-holder'],
+  ['Name of account holder', 'account-holder'],
+  ['Building name', 'address-part'],
+  ['Estate name', 'address-part'],
+  ['Display name', 'not-offered'],
+  ['Nickname', 'not-offered']
+].forEach((item) => {
+  const label = item[0];
+  const decision = row([{ id: 'held', label: label, type: 'text' }], 'held');
+  assert.equal(decision.value, '', label);
+  assert.notEqual(decision.checked, true, label);
+  assert.equal(decision.reason, 'placement_refused', label);
+  assert.equal(decision.refusal, item[1], label);
+  assert.notEqual(decision.refusal, 'organisation', label);
+  const alone = [{ id: 's', label: label, type: 'text' }];
+  assert.equal(identityPhotoSlot(alone[0], alone), '', label);
+});
 
 const fitRows = [
   { text: '10 EXAMPLE ROAD SINGAPORE 123456 BLOCK 123 UNIT 04-12', width: 90, height: 12, start: 10, fits: false },

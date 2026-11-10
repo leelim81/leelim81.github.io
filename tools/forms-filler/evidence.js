@@ -151,7 +151,20 @@
   }
 
   function userOrNickName(text) {
-    return /\b(?:user\s*name|username|nick\s*name|nickname)\b/.test(headPhrase(text));
+    return /\b(?:user\s*name|username|nick\s*name|nickname|display\s+name)\b/.test(headPhrase(text));
+  }
+
+  function accountHolderName(text) {
+    var s = labelWords(text);
+    if (/\baccount\s+holders?\s+(?:full\s+)?(?:name|nama)\b/.test(s)) return true;
+    if (/\b(?:name|nama)\s+of\s+(?:the\s+)?account\s+holders?\b/.test(s)) return true;
+    if (/\baccount\s+(?:full\s+)?(?:name|nama)\b/.test(s)) return true;
+    return /\b(?:name|nama)\s+of\s+(?:the\s+)?bank\s+accounts?\b/.test(s);
+  }
+
+  function placeName(text) {
+    var s = labelWords(text);
+    return /\b(?:buildings?|estates?)\s+(?:full\s+)?(?:name|nama)\b/.test(s) || /\b(?:name|nama)\s+of\s+(?:the\s+)?(?:buildings?|estates?)\b/.test(s);
   }
 
   function documentNameLabel(text) {
@@ -193,9 +206,10 @@
 
   function organisationNameLabel(text) {
     var s = labelWords(text);
-    var org = 'compan(?:y|ies)|business(?:es)?|organi[sz]ations?|employers?|trading|firms?|corporate|brands?|merchants?|banks?|branch(?:es)?|institutions?|agencies|agency';
+    if (accountHolderName(text)) return false;
+    var org = 'compan(?:y|ys|ies)|business(?:es)?|organi[sz]ations?|employers?|trading|firms?|corporate|brands?|merchants?|banks?|branch(?:s|es)?|institutions?|agenc(?:y|ys|ies)';
     if (new RegExp('\\b(?:' + org + ')\\s+(?:full\\s+)?(?:name|nama)\\b', 'i').test(s)) return true;
-    return new RegExp('\\b(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + org + ')\\b', 'i').test(s);
+    return new RegExp('\\b(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + org + ')(?!\\s+accounts?)\\b', 'i').test(s);
   }
 
   function bareName(label) {
@@ -213,6 +227,9 @@
     var region = String((field && field.region) || '');
     var blob = [label, group, section, heading].join('\n');
     if (region === 'signature' || region === 'bank-use' || region === 'other-person') return region;
+    if (accountHolderName(label)) return 'account-holder';
+    if (placeName(label)) return 'address-part';
+    if (userOrNickName(label)) return 'not-offered';
     if (organisationNameLabel(label)) return 'organisation';
     if (/for bank use|bank use only|for official use|official use only|office use only/i.test(blob)) return 'bank-use';
     if (/signature verified|\bapproved by\b|name of signatory|\bsignatory\b|\bsignature\b/i.test(blob)) return 'signature';
