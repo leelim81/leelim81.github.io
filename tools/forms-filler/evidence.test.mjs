@@ -2,7 +2,7 @@ import assert from 'assert';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { extract, identityPhotoSlot, identityCardOffer } = require('./evidence.js');
+const { extract, identityPhotoSlot, identityCardOffer, addressSlotsBlank } = require('./evidence.js');
 const { identityRead, identityVote } = require('./facts.js');
 const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
@@ -349,6 +349,31 @@ const confirmedParts = identityVote([
 assert.equal(identityCardOffer(confirmedParts, 'street', splitOnly).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'unit', addressStreet).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'postal', onlyAddress).checked, true);
+const addressAndStreet = [
+  { id: 'a', label: 'Address' },
+  { id: 's', label: 'Street' },
+  { id: 'p', label: 'Postal code' }
+];
+const addressAndBlk = [
+  { id: 'a', label: 'Address' },
+  { id: 'b', label: 'Blk' },
+  { id: 's', label: 'Street' },
+  { id: 'p', label: 'Postal code' }
+];
+assert.equal(addressSlotsBlank(confirmedParts, addressAndStreet), false);
+assert.equal(addressSlotsBlank(confirmedParts, addressAndBlk), false);
+assert.equal(identityCardOffer(confirmedParts, 'street', addressAndStreet).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'postal', addressAndStreet).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'blk', addressAndBlk).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'street', addressAndBlk).checked, true);
+assert.equal(addressSlotsBlank(agreedParts, addressAndStreet), false);
+assert.equal(addressSlotsBlank(agreedParts, addressAndBlk), false);
+assert.equal(identityCardOffer(agreedParts, 'street', addressAndStreet).checked, false);
+assert.equal(identityCardOffer(agreedParts, 'postal', addressAndBlk).checked, false);
+assert.equal(identityCardOffer(agreedParts, 'address', addressAndBlk).checked, false);
+const oneConfirmed = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n')]);
+assert.equal(addressSlotsBlank(oneConfirmed, addressAndStreet), true);
 const noBlock = { blk: '', blkUnconfirmed: false, street: 'EXAMPLE RD', streetChecked: true, unit: '12-34', unitChecked: true, postal: '018956', postalChecked: true };
 assert.equal(identityCardOffer(noBlock, 'street', splitOnly).checked, true);
 const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);

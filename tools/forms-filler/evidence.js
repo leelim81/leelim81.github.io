@@ -124,6 +124,18 @@
   /* A confirmed whole address needs the block, street and postal code.
      An unconfirmed block still shows that complete line, unticked and
      editable, including when the form also has a separate block field. */
+  /* Mixed address shapes stay blank until the block, street and postal code
+     are confirmed together. An unconfirmed block is not blanked: its parts
+     stay visible and unticked. */
+  function addressSlotsBlank(identity, fields) {
+    var idn = identity || {};
+    var split = formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit');
+    var whole = formHasSlot(fields, 'address');
+    if (!split || !whole) return false;
+    if (idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '')) return false;
+    return !(idn.blk && idn.streetChecked && idn.postalChecked);
+  }
+
   function identityCardOffer(identity, slot, fields) {
     var idn = identity || {};
     if (slot === 'address') {
@@ -256,6 +268,7 @@
     fieldRole: fieldRole,
     identityPhotoSlot: identityPhotoSlot,
     identityCardOffer: identityCardOffer,
+    addressSlotsBlank: addressSlotsBlank,
     normValue: normValue,
     kindOfLabel: kindOfLabel
   };
