@@ -305,6 +305,13 @@ const unconfirmedHome = identityVote([
 ]);
 assert.equal(identityPhotoSlot(onlyAddress[0], onlyAddress), 'address');
 assert.equal(identityCardOffer(unconfirmedHome, 'address').value, '');
+assert.equal(identityCardOffer(unconfirmedHome, 'address', [{ id: 'b', label: 'Blk' }, { id: 'a', label: 'Address' }]).value, '');
+const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);
+assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
+assert.equal(addressOnly.checked, false);
+assert.equal(addressOnly.editable, true);
+const incomplete = Object.assign({}, unconfirmedHome, { postal: '' });
+assert.equal(identityCardOffer(incomplete, 'address', onlyAddress).value, '');
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').value, '9999');
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').checked, false);
 assert.equal(identityCardOffer(unconfirmedHome, 'blk').editable, true);

@@ -82,7 +82,7 @@
     boulevard: 1, blvd: 1, highway: 1, parkway: 1, expressway: 1, quay: 1,
     jalan: 1, lorong: 1, jln: 1, lor: 1
   };
-  var PLACE_SHORT = { st: 1, rd: 1, dr: 1 };
+  var PLACE_SHORT = { st: 1, rd: 1, dr: 1, cres: 1, cl: 1, ter: 1, av: 1 };
   /* These street types are also surnames. A short personal alias may end in
      one of them. An address still has a number, a block, another street
      type, or a place word in front (Example Lane, Harbour Lane, Orchard Road). */
@@ -1128,6 +1128,19 @@
     var unit = agreedValue('unit');
     var postal = agreedValue('postal');
     var address = agreedValue('address');
+    var phrases = [];
+    function remember(value) {
+      var text = String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
+      if (text && phrases.indexOf(text) < 0) phrases.push(text);
+    }
+    list.forEach(function (read) {
+      if (!read) return;
+      if (read.labeled) remember(read.namePlain || plainOf(read.name));
+      if (read.nameAlias) remember(read.nameAlias);
+      var kept = aliasOf(read.name);
+      if (kept && aliasOk(kept)) remember(kept);
+    });
+    if (street.value && phrases.indexOf(String(street.value).toUpperCase()) >= 0) street = { value: '', checked: false };
     var whole = blk.value && !blk.unconfirmed && street.value && postal.value ? address.value : '';
     return {
       name: name || '',
@@ -1272,17 +1285,24 @@
     return '';
   }
 
+  var COUNTRY_LABEL = {
+    origin: 1, residence: 1, birth: 1, nationality: 1, citizenship: 1, citizen: 1,
+    country: 1, place: 1, issue: 1, expiry: 1, sex: 1, gender: 1, name: 1, address: 1,
+    race: 1, blood: 1, group: 1, date: 1, card: 1, identity: 1
+  };
+
   function countryValue(line) {
     var cleaned = String(line || '').replace(/[^A-Za-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
-    var tokens = cleaned.split(' ').filter(function (word) { return word.length >= 3 && word.toLowerCase() !== 'residence'; });
+    var tokens = cleaned.split(' ').filter(function (word) { return word.length >= 3; });
     if (!tokens.length || tokens.length > 3) return '';
+    if (tokens.every(function (word) { return COUNTRY_LABEL[word.toLowerCase()]; })) return '';
     var value = tokens.join(' ');
     return value.length <= 30 ? value : '';
   }
 
   function cardBirthCountry(text) {
     var lines = String(text || '').split(/\n/);
-    var cue = /\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b/i;
+    var cue = /\b(?:country|place)\s+of(?:\s+(?:b[a-z]{2,4}))?\s*$|\b(?:country|place)\s+of\s+b[a-z]{2,4}\b/i;
     for (var i = 0; i < lines.length; i++) {
       if (!cue.test(lines[i]) || /issue|expiry|blood|residence/i.test(lines[i])) continue;
       var same = lines[i].replace(/^.*\b(?:country|place)\s+of(?:\s+b[a-z]{2,4})?\b[:\s-]*/i, '').trim();
@@ -1327,10 +1347,14 @@
       var anchored = /#\s?\d{1,4}\s*-\s*\d{1,4}/.test(t) || /\bSINGAPORE\s+S?\s?\d{6}\b/i.test(t);
       if (!anchored) return;
       var bare = t.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
-      var streetWords = bare.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
-      if (!bare || !placeAlias(streetWords) || usedByName(bare, phrases)) return;
+      if (!bare || /^\d{4,}\b/.test(bare)) return;
+      var lead = bare.match(/^(\d{1,3}[A-Z]?)\s+(\S(?:.*\S)?)$/i);
+      var streetText = lead ? lead[2] : bare;
+      var streetWords = streetText.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+      if (!streetWords.length || streetWords[0].length < 2 || !placeAlias(streetWords) || usedByName(streetText, phrases)) return;
       if (streetWords.some(function (word) { return word.toUpperCase() === 'BLK' || word.toUpperCase() === 'BLOCK'; })) return;
-      out.street = bare.toUpperCase();
+      if (lead && !out.blk) out.blk = lead[1].toUpperCase();
+      out.street = streetText.toUpperCase();
     });
     if (out.blk && !out.blkUnconfirmed && out.street && out.postal) {
       out.address = [out.blk, out.street, out.unit ? '#' + out.unit : '', 'SINGAPORE ' + out.postal].filter(Boolean).join(' ');

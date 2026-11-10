@@ -113,13 +113,27 @@
     return '';
   }
 
-  /* A whole address is offered only when the block, street and postal code
-     are all present and the block is confirmed. An unconfirmed block is
-     still offered on its own line, unticked, so the suffix can be corrected. */
-  function identityCardOffer(identity, slot) {
+  function formHasSlot(fields, slot) {
+    return (fields || []).some(function (field) { return applicantIdentitySlot(field) === slot; });
+  }
+
+  function wholeAddressLine(idn) {
+    return [idn.blk, idn.street, idn.unit ? '#' + String(idn.unit).replace(/^#/, '') : '', idn.postal ? 'SINGAPORE ' + idn.postal : ''].filter(Boolean).join(' ');
+  }
+
+  /* A confirmed whole address needs the block, street and postal code.
+     When the form has nowhere else to correct an unconfirmed block, that
+     same complete line is offered unticked and editable. */
+  function identityCardOffer(identity, slot, fields) {
     var idn = identity || {};
     if (slot === 'address') {
-      if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal || !idn.address) return { value: '', checked: false, editable: false };
+      var complete = !!(idn.blk && idn.street && idn.postal);
+      var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
+      if (unconfirmed) {
+        if (!complete || !formHasSlot(fields, 'address') || formHasSlot(fields, 'blk')) return { value: '', checked: false, editable: false };
+        return { value: idn.address || wholeAddressLine(idn), checked: false, editable: true };
+      }
+      if (!complete || !idn.address) return { value: '', checked: false, editable: false };
       return { value: idn.address, checked: !!idn.addressChecked, editable: false };
     }
     if (slot === 'blk') {
