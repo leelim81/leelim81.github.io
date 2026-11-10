@@ -1327,17 +1327,32 @@
     });
   }
 
+  function isIssueDateLine(line) {
+    return /\b(?:issue|expiry)\b/i.test(line) || /^\d{1,2}(?:\s+[A-Za-z]{3,9}\s+\d{4}|[\/.\-]\d{1,2}[\/.\-]\d{4})$/.test(String(line || '').trim());
+  }
+
   function cardAddress(text, phrases) {
     var out = { blk: '', street: '', unit: '', postal: '', address: '', blkUnconfirmed: false };
-    String(text || '').split(/\n/).forEach(function (line) {
-      var t = line.replace(/\s+/g, ' ').trim();
+    var lines = String(text || '').split(/\n/);
+    function streetPhrase(line) {
+      var raw = String(line || '').replace(/\s+/g, ' ').trim();
+      if (!raw || isIssueDateLine(raw)) return '';
+      var bare = raw.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
+      var lead = bare.match(/^(\d{1,3}[A-Z]?)\s+(\S(?:.*\S)?)$/i);
+      if (lead) bare = lead[2];
+      var words = bare.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
+      if (!words.length || words[0].length < 2 || !placeAlias(words) || personalStreetSurname(words) || usedByName(bare, phrases)) return '';
+      return bare;
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].replace(/\s+/g, ' ').trim();
       var prefixed = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i);
       var whole = t.match(/^S\s?(\d{6})$/i);
       if (prefixed || whole) out.postal = (prefixed || whole)[1];
       var unit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
       if (unit) out.unit = unit[1] + '-' + unit[2];
-      if (/\bBLK\.?\s*\d{5,}/i.test(t)) return;
-      var blk = t.match(/\bBLK\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
+      if (/\b(?:BLK|BLOCK)\.?\s*\d{5,}/i.test(t)) continue;
+      var blk = t.match(/\b(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?\s+(.+)$/i);
       if (blk) {
         var number = blk[1];
         out.blk = (number + (blk[2] || '')).toUpperCase();
@@ -1347,21 +1362,33 @@
           out.street = rest.toUpperCase();
           out.streetFromBlk = true;
         }
-        return;
+        continue;
       }
-      if (out.street) return;
+      var alone = t.match(/^(?:BLK|BLOCK)\.?\s*(\d{1,4})([A-Z])?$/i);
+      if (alone) {
+        var follow = streetPhrase(lines[i + 1] || '');
+        if (!follow) continue;
+        out.blk = (alone[1] + (alone[2] || '')).toUpperCase();
+        if (alone[1].length === 4 && !alone[2]) out.blkUnconfirmed = true;
+        if (!out.street) {
+          out.street = follow.toUpperCase();
+          out.streetFromBlk = true;
+        }
+        continue;
+      }
+      if (out.street) continue;
       var hasUnit = /#\s?\d{1,4}\s*-\s*\d{1,4}/.test(t);
       var bare = t.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
-      if (!bare || /^\d{4,}\b/.test(bare)) return;
+      if (!bare || /^\d{4,}\b/.test(bare)) continue;
       var lead = bare.match(/^(\d{1,3}[A-Z]?)\s+(\S(?:.*\S)?)$/i);
-      if (!lead && !hasUnit) return;
+      if (!lead && !hasUnit) continue;
       var streetText = lead ? lead[2] : bare;
       var streetWords = streetText.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
-      if (!streetWords.length || streetWords[0].length < 2 || !placeAlias(streetWords) || personalStreetSurname(streetWords) || usedByName(streetText, phrases)) return;
-      if (streetWords.some(function (word) { return word.toUpperCase() === 'BLK' || word.toUpperCase() === 'BLOCK'; })) return;
+      if (!streetWords.length || streetWords[0].length < 2 || !placeAlias(streetWords) || personalStreetSurname(streetWords) || usedByName(streetText, phrases)) continue;
+      if (streetWords.some(function (word) { return word.toUpperCase() === 'BLK' || word.toUpperCase() === 'BLOCK'; })) continue;
       if (lead && !out.blk) out.blk = lead[1].toUpperCase();
       out.street = streetText.toUpperCase();
-    });
+    }
     if (out.blk && !out.blkUnconfirmed && out.street && out.postal) {
       out.address = [out.blk, out.street, out.unit ? '#' + out.unit : '', 'SINGAPORE ' + out.postal].filter(Boolean).join(' ');
     }

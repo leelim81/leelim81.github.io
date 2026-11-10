@@ -1315,7 +1315,7 @@
           row.decision = 'review';
           row.value = value;
           row.kind = slot;
-          var cardOffer = (slot === 'blk' || slot === 'address' || slot === 'street') ? window.FormEvidence.identityCardOffer(idn, slot, state.fields) : null;
+          var cardOffer = (slot === 'blk' || slot === 'address' || slot === 'street' || slot === 'unit' || slot === 'postal') ? window.FormEvidence.identityCardOffer(idn, slot, state.fields) : null;
           row.editable = !!(cardOffer && cardOffer.editable);
           row.checked = slotChecked(slot);
           row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';

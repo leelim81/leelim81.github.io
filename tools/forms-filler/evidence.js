@@ -154,7 +154,8 @@
     var idn = identity || {};
     if (!hasSplitAddress(fields) || !formHasSlot(fields, 'address')) return false;
     if (blockOpen(idn)) return false;
-    return !(idn.blk && idn.blkChecked);
+    if (idn.blk && idn.blkChecked) return false;
+    return !(idn.streetChecked && idn.postalChecked);
   }
 
   function identityCardOffer(identity, slot, fields) {
@@ -176,7 +177,7 @@
       if (!part) return { value: '', checked: false, editable: false };
       var open = blockOpen(idn);
       var checked = !open && !!idn[slot + 'Checked'];
-      return { value: part, checked: checked, editable: slot === 'street' && !checked && !open };
+      return { value: part, checked: checked, editable: !checked && !open };
     }
     return null;
   }
