@@ -338,6 +338,17 @@ assert.equal(odd.reason, 'date_format');
 assert.match(odd.note, /Left unticked/);
 assert.equal(dated('Date of birth', born, { tooltip: 'mm/dd/yyyy', id: 'dob' }).value, '03/14/1984', 'tooltip hint');
 assert.equal(dated('Date of birth', born, { comb: true, id: 'dob_mm_dd_yyyy' }).value, '03141984', 'comb drops separators');
+assert.equal(dated('Date of birth (yyyy)', born).value, '14/03/1984', 'bare yyyy is not a full hint');
+assert.notEqual(dated('Date of birth (yyyy)', born).reason, 'date_format');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'yyyy' }).value, '14/03/1984', 'lone yyyy');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'yyyy' }).blocked, false);
+assert.equal(evidence.dateForField('14/03/1984', { label: 'mm' }).value, '14/03/1984', 'lone mm');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'dd' }).value, '14/03/1984', 'lone dd');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'mmmm' }).value, '14/03/1984', 'lone mmmm');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'mm' }).blocked, false);
+assert.equal(dated('Year of birth (yyyy)', born).value, '1984', 'year of birth');
+assert.equal(dated('Born in yyyy', born).value, '1984', 'born in yyyy');
+assert.equal(dated('Date of Birth (mm/dd/yyyy)', born, { comb: true }).value, '03141984', 'comb mm/dd/yyyy');
 
 const longName = 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL';
 const nameRow = evidence.fitInBox(longName, 260, 28, 11);

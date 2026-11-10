@@ -120,15 +120,24 @@
         }
       } catch (err) {}
       var tooltip = '';
+      var comb = false;
       try {
-        var tu = widgets.length && widgets[0].dict ? widgets[0].dict.get(PDFLib.PDFName.of('TU')) : null;
+        var dict = widgets.length && widgets[0].dict ? widgets[0].dict : null;
+        var tu = dict ? dict.get(PDFLib.PDFName.of('TU')) : null;
         if (tu && typeof tu.decodeText === 'function') tooltip = tu.decodeText();
         else if (tu && typeof tu.value === 'string') tooltip = tu.value;
+        var ff = dict ? dict.get(PDFLib.PDFName.of('Ff')) : null;
+        var flags = ff && typeof ff.asNumber === 'function' ? ff.asNumber() : 0;
+        var max = dict ? dict.get(PDFLib.PDFName.of('MaxLen')) : null;
+        var maxLen = max && typeof max.asNumber === 'function' ? max.asNumber() : 0;
+        /* Comb is Ff bit 25 (1-based), and only when MaxLen is set. */
+        comb = (flags & (1 << 24)) !== 0 && maxLen > 0;
       } catch (err) {}
       fields.push({
         id: field.getName(),
         label: prettify(field.getName()),
         tooltip: tooltip,
+        comb: comb,
         type: type,
         options: options,
         source: 'acro',

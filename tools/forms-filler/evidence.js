@@ -541,7 +541,7 @@
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
-    if (/birth|\bdob\b/.test(s)) return 'dob';
+    if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
@@ -876,18 +876,35 @@
     return { parts: parts, seps: seps };
   }
 
+  /* yyyy on its own is not yy+yy. A one-part token is not a full date. */
+  function hasLoneYear(text) {
+    if (!/yyyy/i.test(text)) return false;
+    var rest = String(text).replace(/yyyy/ig, ' ');
+    return !/(?:y{2,4}|m{1,4}|d{1,4})/i.test(rest);
+  }
+
+  function asksForYear(field) {
+    var blob = [field && field.label, field && field.tooltip, field && field.name, field && field.id].filter(Boolean).join(' ');
+    if (/\byear\b/i.test(blob)) return true;
+    return /\bborn\s+in\b/i.test(blob);
+  }
+
   function dateHint(field) {
     var sources = [field && field.label, field && field.tooltip, field && field.name, field && field.id];
+    var loneYear = false;
     for (var s = 0; s < sources.length; s++) {
       var text = String(sources[s] || '');
       if (!text) continue;
       DATE_CLUSTER.lastIndex = 0;
-      var found = DATE_CLUSTER.exec(text);
-      if (!found) continue;
-      var parsed = parseDateCluster(found[0]);
-      if (!parsed || parsed.bad) return { bad: true };
-      return parsed;
+      var found;
+      while ((found = DATE_CLUSTER.exec(text))) {
+        var parsed = parseDateCluster(found[0]);
+        if (parsed && parsed.bad) return { bad: true };
+        if (parsed && parsed.parts) return parsed;
+      }
+      if (hasLoneYear(text)) loneYear = true;
     }
+    if (loneYear && asksForYear(field)) return { yearOnly: true };
     return null;
   }
 
@@ -917,6 +934,7 @@
       };
     }
     if (!source) return { value: String(value || ''), blocked: false };
+    if (hint && hint.yearOnly) return { value: String(source.y), blocked: false };
     if (!hint) {
       return {
         value: padNumber(source.d, 2) + '/' + padNumber(source.m, 2) + '/' + source.y,
