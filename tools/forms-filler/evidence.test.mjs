@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const { extract, identityPhotoSlot } = require('./evidence.js');
+const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
 
 const packet = `Patient
@@ -212,7 +213,19 @@ const otherSections = [
   'Joint applicant',
   'Particulars of Guarantor',
   "Guarantor's particulars",
-  'Section B: Joint applicant'
+  'Section B: Joint applicant',
+  'Co-borrower',
+  'Proxy',
+  'Insured person',
+  'Employer',
+  'Landlord',
+  'Tenant',
+  'Owner 2',
+  'Guardian',
+  'Trustee',
+  'Partner',
+  'Director 2',
+  'Signatory 2'
 ];
 otherSections.forEach(function (heading) {
   const only = [
@@ -241,14 +254,38 @@ assert.deepEqual(
   ordinary.filter(function (field) { return identityPhotoSlot(field, ordinary); }).map(function (field) { return field.id; }),
   ['full', 'idline']
 );
-const applicantLines = [
-  { id: 'full', label: 'Full name', section: "Applicant's particulars" },
-  { id: 'as', label: 'Name as per NRIC', section: "Applicant's particulars" },
-  { id: 'idline', label: 'NRIC/FIN/passport no.', section: "Applicant's particulars" }
+['Applicant\'s particulars', 'Part A', 'Personal details', 'Membership application'].forEach(function (heading) {
+  const lines = [
+    { id: 'full', label: 'Full name', section: heading },
+    { id: 'as', label: 'Name as per NRIC', section: heading },
+    { id: 'idline', label: 'NRIC/FIN/passport no.', section: heading }
+  ];
+  assert.deepEqual(
+    lines.filter(function (field) { return identityPhotoSlot(field, lines); }).map(function (field) { return field.id; }),
+    ['full', 'as', 'idline'],
+    heading
+  );
+});
+const stillRepeated = [
+  { id: 'n1', label: 'Full name' },
+  { id: 'n2', label: 'Name as per NRIC' }
 ];
-assert.deepEqual(
-  applicantLines.filter(function (field) { return identityPhotoSlot(field, applicantLines); }).map(function (field) { return field.id; }),
-  ['full', 'as', 'idline']
-);
+stillRepeated.forEach(function (field) {
+  assert.equal(identityPhotoSlot(field, stillRepeated), '', 'unnamed repeated names still abstain');
+});
+['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
+  assert.equal(sectionKind(heading), 'reset', heading);
+  assert.notEqual(personOf(heading), 'applicant', heading);
+  const only = [{ id: 'n', label: 'Name', section: heading }, { id: 'i', label: 'NRIC', section: heading }];
+  only.forEach(function (field) {
+    assert.equal(identityPhotoSlot(field, only), '', heading + ' ' + field.label);
+  });
+});
+['Owner', "Owner's particulars"].forEach(function (heading) {
+  const only = [{ id: 'n', label: 'Name', section: heading }];
+  assert.equal(identityPhotoSlot(only[0], only), '', heading);
+});
+assert.equal(personOf('Sum insured'), '');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Sum insured' }, [{ id: 'n', label: 'Name', section: 'Sum insured' }]), 'name');
 
 console.log('evidence tests ok');

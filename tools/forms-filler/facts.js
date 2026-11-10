@@ -90,7 +90,8 @@
   var ADDRESS_HEAD = {
     example: 1, orchard: 1, harbour: 1, harbor: 1, cedar: 1, river: 1, record: 1, dock: 1, clinic: 1,
     north: 1, south: 1, east: 1, west: 1, upper: 1, lower: 1, sungei: 1, bukit: 1,
-    circular: 1, ring: 1, market: 1
+    circular: 1, ring: 1, market: 1, bedok: 1, tanjong: 1, tampines: 1, jurong: 1,
+    clementi: 1, punggol: 1, woodlands: 1, sengkang: 1, hougang: 1, yishun: 1, bishan: 1
   };
 
   function placeAlias(words) {

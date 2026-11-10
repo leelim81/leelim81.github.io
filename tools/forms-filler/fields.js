@@ -342,8 +342,11 @@
   function layoutPages(pages) {
     if (!global.FormSpots) return [];
     var fields = [];
+    var carried = '';
     pages.forEach(function (page) {
+      page.carriedPerson = carried;
       FormSpots.layout(page).forEach(function (field) { fields.push(field); });
+      carried = page.lastPerson || '';
     });
     return fields;
   }
@@ -987,7 +990,7 @@
     };
   }
 
-  async function fieldsOnSheet(canvas, progress) {
+  async function fieldsOnSheet(canvas, progress, carried) {
     say(progress, 'Reading the words on the form…');
     var source = canvas;
     var texts = joinPhrases(await wordsOn(source));
@@ -1024,7 +1027,9 @@
       lines: geo.lines,
       squares: geo.squares
     }, scale);
+    page.carriedPerson = carried || '';
     var primary = FormSpots.layout(page);
+    primary.lastPerson = page.lastPerson || '';
     var rules = underlineRules(source).concat(strokeRules(source));
     if (!rules.length || !global.FormEvidence) return primary;
     rules.forEach(function (line) {
@@ -1175,6 +1180,7 @@
     var pdf = await pdfjs().getDocument({ data: copy(bytes) }).promise;
     var fields = [];
     var abstain = [];
+    var carried = '';
     var limit = Math.min(pdf.numPages, 2);
     for (var p = 1; p <= limit; p++) {
       say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
@@ -1189,7 +1195,8 @@
         abstain.push({ page: p - 1, reason: 'sideways-in-view', angle: angle });
         continue;
       }
-      var found = await fieldsOnSheet(canvas, progress);
+      var found = await fieldsOnSheet(canvas, progress, carried);
+      carried = found.lastPerson || '';
       var pageW = 595;
       var pageH = canvas.height * (pageW / canvas.width);
       if (!found.length) {
@@ -1295,6 +1302,7 @@
     var fields = [];
     var limit = Math.min(pdf.numPages, 2);
     var angles = [];
+    var carriedRaster = '';
     for (var p = 1; p <= limit; p++) {
       say(progress, 'Reading scan page ' + p + ' of ' + limit + '…');
       var page = await pdf.getPage(p);
@@ -1306,7 +1314,8 @@
       var angle = await bestLineAngle(canvas) || 0;
       var turned = angle ? rotateCanvas(canvas, angle) : canvas;
       angles.push({ page: p - 1, angle: angle, srcW: canvas.width, srcH: canvas.height, turnW: turned.width, turnH: turned.height });
-      var found = await fieldsOnSheet(turned, progress);
+      var found = await fieldsOnSheet(turned, progress, carriedRaster);
+      carriedRaster = found.lastPerson || '';
       var pageW = 595;
       var pageH = canvas.height * (pageW / canvas.width);
       found.forEach(function (field) {

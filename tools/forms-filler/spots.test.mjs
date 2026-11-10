@@ -179,4 +179,151 @@ assert.ok(ordinaryOffered.indexOf('Full name') >= 0, 'ordinary full name is offe
 assert.ok(ordinaryOffered.some(function (label) { return /Name as per NRIC/i.test(label); }), 'ordinary name as per NRIC is offered ' + ordinaryOffered.join('|'));
 assert.ok(ordinaryOffered.some(function (label) { return /NRIC\/FIN\/passport/i.test(label); }), 'ordinary id line is offered ' + ordinaryOffered.join('|'));
 assert.equal(ordinary.filter(function (field) { return /guarantor|nominee|spouse/i.test(field.section || ''); }).length, 0);
+
+['Co-borrower', 'Proxy', 'Insured person', 'Employer', 'Landlord', 'Tenant', 'Owner 2', 'Guardian', 'Trustee', 'Partner', 'Director 2', 'Signatory 2'].forEach(function (role) {
+  const only = linedForm([
+    { heading: role, y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }
+  ]);
+  assert.equal(offeredIds(only).length, 0, role + ' only section offers nothing ' + offeredIds(only).join(','));
+  assert.ok(only.some(function (field) { return field.label === 'Name' && (field.section === role || field.group === role); }), role + ' owns the name line');
+});
+
+['Part A', 'Personal details', 'Membership application', "Applicant's particulars"].forEach(function (heading) {
+  const block = linedForm([
+    { heading: heading, y: 720, fields: [
+      { label: 'Full name', y: 660 },
+      { label: 'Name as per NRIC', y: 600 },
+      { label: 'NRIC/FIN/passport no.', y: 540 }
+    ] }
+  ]);
+  const labels = block.filter(function (field) { return identityPhotoSlot(field, block); }).map(function (field) { return field.label; });
+  assert.ok(labels.indexOf('Full name') >= 0, heading + ' offers full name ' + labels.join('|'));
+  assert.ok(labels.some(function (label) { return /Name as per NRIC/i.test(label); }), heading + ' offers name as per NRIC ' + labels.join('|'));
+  assert.ok(labels.some(function (label) { return /NRIC\/FIN\/passport/i.test(label); }), heading + ' offers the id ' + labels.join('|'));
+});
+
+const farGuarantor = linedForm([
+  { heading: 'Guarantor', y: 760, fields: [{ label: 'Name', y: 140 }, { label: 'NRIC', y: 100 }] }
+]);
+assert.equal(offeredIds(farGuarantor).length, 0, 'a heading more than 420pt above still owns the blank ' + offeredIds(farGuarantor).join(','));
+assert.ok(/guarantor/i.test((farGuarantor.find(function (field) { return field.label === 'Name'; }) || {}).section || ''), 'far guarantor heading is kept');
+
+const columns = layout({
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 40, y: 760, w: 150, h: 11, str: "Applicant's particulars" },
+    { x: 40, y: 700, w: 70, h: 9, str: 'Full name' },
+    { x: 40, y: 640, w: 36, h: 9, str: 'NRIC' },
+    { x: 330, y: 760, w: 80, h: 11, str: 'Guarantor' },
+    { x: 330, y: 700, w: 36, h: 9, str: 'Name' },
+    { x: 330, y: 640, w: 36, h: 9, str: 'NRIC' }
+  ],
+  lines: [
+    { x: 40, y: 682, w: 200 },
+    { x: 40, y: 622, w: 200 },
+    { x: 330, y: 682, w: 200 },
+    { x: 330, y: 622, w: 200 }
+  ],
+  squares: []
+});
+assert.equal(columns.filter(function (field) { return field.label === 'NRIC'; }).length, 2, 'side-by-side NRIC lines both stay ' + columns.map(function (field) { return field.label + '@' + Math.round(field.rect.x); }).join(','));
+const columnOffer = columns.filter(function (field) { return identityPhotoSlot(field, columns); });
+assert.ok(columnOffer.some(function (field) { return field.label === 'Full name'; }) && columnOffer.some(function (field) { return field.label === 'NRIC' && field.rect.x < 200; }), 'only the applicant column is offered');
+assert.ok(!columnOffer.some(function (field) { return /guarantor/i.test(field.section || field.group || ''); }), 'the guarantor column is not offered');
+
+const firstPage = {
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 48, y: 720, w: 160, h: 11, str: "Applicant's particulars" },
+    { x: 48, y: 660, w: 70, h: 9, str: 'Full name' },
+    { x: 48, y: 160, w: 80, h: 11, str: 'Guarantor' }
+  ],
+  lines: [{ x: 160, y: 659, w: 200 }],
+  squares: []
+};
+const firstFields = layout(firstPage);
+assert.equal(firstPage.lastPerson, 'Guarantor', 'the last heading on the page is carried forward');
+const secondPage = {
+  page: 1,
+  width: 595,
+  height: 842,
+  carriedPerson: firstPage.lastPerson,
+  texts: [
+    { x: 48, y: 700, w: 36, h: 9, str: 'Name' },
+    { x: 48, y: 640, w: 36, h: 9, str: 'NRIC' }
+  ],
+  lines: [
+    { x: 120, y: 699, w: 200 },
+    { x: 120, y: 639, w: 200 }
+  ],
+  squares: []
+};
+const secondFields = layout(secondPage);
+assert.ok(secondFields.every(function (field) { return /guarantor/i.test(field.section || ''); }), 'page 2 keeps the guarantor section ' + secondFields.map(function (field) { return field.section; }).join('|'));
+const continued = firstFields.concat(secondFields);
+assert.equal(continued.filter(function (field) { return identityPhotoSlot(field, continued) && /guarantor/i.test(field.section || ''); }).length, 0, 'a continued guarantor page is not offered');
+assert.ok(continued.some(function (field) { return field.label === 'Full name' && identityPhotoSlot(field, continued); }), 'the applicant name on page 1 is still offered');
+
+const declared = linedForm([
+  { heading: "Applicant's particulars", y: 760, fields: [{ label: 'Full name', y: 710 }, { label: 'NRIC', y: 660 }] },
+  { heading: 'Declaration', y: 250, fields: [{ label: 'Name', y: 200 }, { label: 'NRIC', y: 150 }] }
+]);
+const declaredOffer = declared.filter(function (field) { return identityPhotoSlot(field, declared); }).map(function (field) { return field.label; });
+assert.ok(declaredOffer.indexOf('Full name') >= 0 && declaredOffer.some(function (label) { return label === 'NRIC'; }), 'the applicant block is still offered ' + declaredOffer.join('|'));
+assert.equal(declared.filter(function (field) { return identityPhotoSlot(field, declared) && /declaration/i.test(field.section || ''); }).length, 0, 'declaration lines are not offered ' + declared.map(function (field) { return field.label + '=' + (field.section || ''); }).join('|'));
+
+const byApplicant = linedForm([
+  { heading: 'Declaration by applicant', y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }
+]);
+assert.equal(offeredIds(byApplicant).length, 0, 'declaration by applicant is not an identity section ' + offeredIds(byApplicant).join(','));
+
+const ownerOnly = linedForm([
+  { heading: "Owner's particulars", y: 700, fields: [{ label: 'Name', y: 640 }] }
+]);
+assert.equal(offeredIds(ownerOnly).length, 0, 'owner particulars are not the applicant');
+const bareOwner = linedForm([
+  { heading: 'Owner', y: 700, fields: [{ label: 'Name', y: 640 }] }
+]);
+assert.equal(offeredIds(bareOwner).length, 0, 'a bare owner heading is not the applicant');
+
+const contactLines = layout({
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 48, y: 700, w: 60, h: 11, str: 'Contact' },
+    { x: 48, y: 640, w: 40, h: 9, str: 'Name' }
+  ],
+  lines: [
+    { x: 140, y: 699, w: 180 },
+    { x: 120, y: 639, w: 200 }
+  ],
+  squares: []
+});
+assert.equal(contactLines.filter(function (field) { return /^contact$/i.test(field.label); }).length, 0, 'a Contact heading is not a field ' + contactLines.map(function (field) { return field.label; }).join('|'));
+assert.equal(contactLines.filter(function (field) { return identityPhotoSlot(field, contactLines); }).length, 0, 'a name under Contact is not offered');
+
+const declarePage = {
+  page: 1,
+  width: 595,
+  height: 842,
+  carriedPerson: "Applicant's particulars",
+  texts: [
+    { x: 48, y: 760, w: 90, h: 11, str: 'Declaration' },
+    { x: 48, y: 700, w: 40, h: 9, str: 'Name' },
+    { x: 48, y: 640, w: 36, h: 9, str: 'NRIC' }
+  ],
+  lines: [
+    { x: 120, y: 699, w: 200 },
+    { x: 120, y: 639, w: 200 }
+  ],
+  squares: []
+};
+const declareFields = layout(declarePage);
+assert.equal(declarePage.lastPerson, '', 'a declaration clears the carried applicant');
+assert.equal(declareFields.filter(function (field) { return identityPhotoSlot(field, declareFields); }).length, 0, 'page 2 declaration lines are not offered ' + declareFields.map(function (field) { return field.section; }).join('|'));
 console.log('spots tests ok', fields.length, 'fields');
