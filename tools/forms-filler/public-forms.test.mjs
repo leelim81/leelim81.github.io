@@ -347,7 +347,12 @@ assert.equal(evidence.dateForField('14/03/1984', { label: 'dd' }).value, '14/03/
 assert.equal(evidence.dateForField('14/03/1984', { label: 'mmmm' }).value, '14/03/1984', 'lone mmmm');
 assert.equal(evidence.dateForField('14/03/1984', { label: 'mm' }).blocked, false);
 assert.equal(dated('Year of birth (yyyy)', born).value, '1984', 'year of birth');
+assert.equal(dated('Year of birth', born).value, '1984', 'year of birth without yyyy');
 assert.equal(dated('Born in yyyy', born).value, '1984', 'born in yyyy');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'Date of Birth:', id: 'about_myself_parent_legal_guardian_adminis_3' }).value, '14/03/1984', 'CIMB id is not a date hint');
+assert.equal(evidence.dateForField('14/03/1984', { label: 'Date of Birth:', id: 'about_myself_parent_legal_guardian_adminis_3' }).blocked, false);
+assert.equal(evidence.fieldKind({ label: 'Others Identity Document (Please Specify)' }), 'other');
+assert.equal(evidence.fieldKind({ label: 'Please specify:' }), 'other');
 assert.equal(dated('Date of Birth (mm/dd/yyyy)', born, { comb: true }).value, '03141984', 'comb mm/dd/yyyy');
 
 const longName = 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL';

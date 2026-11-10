@@ -50,8 +50,8 @@
     var size = start > 0 ? start : 10;
     var min = 6;
     if (!(boxWidth > 0)) return { size: size, fits: false };
-    while (size > min && textWidth(text, size) > boxWidth - 1) size = Math.round((size - 0.2) * 10) / 10;
-    return { size: size, fits: textWidth(text, size) <= boxWidth - 1 };
+    while (size > min && textWidth(text, size) > boxWidth - 3) size = Math.round((size - 0.2) * 10) / 10;
+    return { size: size, fits: textWidth(text, size) <= boxWidth - 3 };
   }
 
   function lineBoxHeight(size) {
@@ -65,7 +65,7 @@
     var line = '';
     for (var i = 0; i < words.length; i++) {
       var next = line ? line + ' ' + words[i] : words[i];
-      if (line && textWidth(next, size) > width - 1) {
+      if (line && textWidth(next, size) > width - 3) {
         lines.push(line);
         line = words[i];
       } else line = next;
@@ -87,7 +87,7 @@
     while (size >= min) {
       var lines = wrappedLines(text, size, boxWidth);
       var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
-      var wordFits = lines.every(function (line) { return textWidth(line, size) <= boxWidth - 1; });
+      var wordFits = lines.every(function (line) { return textWidth(line, size) <= boxWidth - 3; });
       if (wordFits && lines.length && lines.length <= allowed) return { size: size, fits: true, lines: lines.length };
       if (size <= min) break;
       size = Math.round((size - 0.2) * 10) / 10;
@@ -541,6 +541,8 @@
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
+    /* The specify line beside a date is not the date cell. */
+    if (/please\s+specify|others\s+identity\s+document/i.test(label)) return 'other';
     if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
@@ -872,15 +874,9 @@
       if (!role || seen[role]) return { bad: true };
       seen[role] = true;
     }
-    if (!seen.day || !seen.month || !seen.year) return { bad: true };
+    /* Day and month jammed together, as in "adminis", is not a date hint. */
+    if (!seen.day || !seen.month || !seen.year) return null;
     return { parts: parts, seps: seps };
-  }
-
-  /* yyyy on its own is not yy+yy. A one-part token is not a full date. */
-  function hasLoneYear(text) {
-    if (!/yyyy/i.test(text)) return false;
-    var rest = String(text).replace(/yyyy/ig, ' ');
-    return !/(?:y{2,4}|m{1,4}|d{1,4})/i.test(rest);
   }
 
   function asksForYear(field) {
@@ -891,7 +887,6 @@
 
   function dateHint(field) {
     var sources = [field && field.label, field && field.tooltip, field && field.name, field && field.id];
-    var loneYear = false;
     for (var s = 0; s < sources.length; s++) {
       var text = String(sources[s] || '');
       if (!text) continue;
@@ -902,9 +897,9 @@
         if (parsed && parsed.bad) return { bad: true };
         if (parsed && parsed.parts) return parsed;
       }
-      if (hasLoneYear(text)) loneYear = true;
     }
-    if (loneYear && asksForYear(field)) return { yearOnly: true };
+    /* "Year of birth" asks for the year even without a yyyy token. */
+    if (asksForYear(field)) return { yearOnly: true };
     return null;
   }
 

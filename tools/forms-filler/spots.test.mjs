@@ -343,4 +343,46 @@ assert.ok(withNote.some(function (field) { return field.label === 'Full name' &&
   const only = linedForm([{ heading: heading, y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }]);
   assert.equal(offeredIds(only).length, 0, heading + ' is a reset ' + offeredIds(only).join(','));
 });
+const birthRow = layout({
+  page: 0,
+  width: 600,
+  height: 800,
+  texts: [
+    { x: 82, y: 269, w: 110, h: 9, str: 'Others Identity Document' },
+    { x: 175, y: 269, w: 90, h: 9, str: '(Please Specify:' },
+    { x: 203, y: 257, w: 47, h: 9, str: 'Date of Birth' },
+    { x: 250, y: 257, w: 90, h: 9, str: '(DD / MM / YYYY)' }
+  ],
+  lines: [
+    { x: 197, y: 267, w: 136 },
+    { x: 197, y: 243, w: 160 }
+  ],
+  squares: []
+});
+const dobLine = birthRow.find((field) => field.label === 'Date of Birth');
+assert.ok(dobLine, 'date of birth has its own line');
+assert.ok(dobLine.rect.y < 255, 'date of birth uses the underline under the label');
+assert.ok(!birthRow.some((field) => /please specify/i.test(field.label) && field.type === 'text' && field.rect.y > 255));
+
+const digitBoxes = [85, 97, 119, 131, 156, 168, 180, 192].map((x) => ({ x: x, y: 336, w: 12, h: 12 }));
+const scBirth = layout({
+  page: 1,
+  width: 600,
+  height: 800,
+  texts: [{ x: 28, y: 348, w: 70, h: 9, str: 'Date of Birth:' }],
+  lines: [{ x: 85, y: 348, w: 30 }],
+  squares: digitBoxes
+});
+const scDob = scBirth.find((field) => /^Date of Birth:?$/i.test(field.label) && field.cells);
+assert.ok(scDob, 'date of birth finds its comb');
+assert.equal(scDob.cells.length, 8);
+const placed = annotations([scDob], { [scDob.id]: '14/03/1984' });
+const glyphs = placed[1].map((item) => item.text).join('');
+assert.equal(glyphs, '14031984');
+scDob.cells.forEach((cell, index) => {
+  const mark = placed[1][index];
+  const left = mark.x * 600;
+  assert.ok(left >= cell.x - 0.5 && left < cell.x + cell.w, 'character ' + index + ' is inside its box');
+});
+
 console.log('spots tests ok', fields.length, 'fields');
