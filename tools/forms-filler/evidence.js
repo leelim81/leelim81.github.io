@@ -64,22 +64,50 @@
     return '';
   }
 
-  /* A name word qualified by "as in" or "as per" an ID document names the
-     person. Parentheses are optional. An ID number on its own stays an ID. */
-  function documentNameLabel(text) {
-    var s = String(text || '').toLowerCase().replace(/['’]/g, '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
-    var nameAt = s.search(/\b(?:applicant\s+name|customer\s+(?:full\s+)?name|full\s+name|name)\b/);
-    if (nameAt < 0) return false;
-    var rest = s.slice(nameAt);
-    var qual = rest.search(/\bas\s+(?:in|per)\b/);
-    if (qual < 0) return false;
-    return /\b(?:nric|fin|passport)\b/.test(rest.slice(qual));
+  /* A label that contains a name word is never an ID field. A document
+     reference makes it the person's name. A name and an ID number in the
+     same box stays blank. "NRIC Name" and "IC name" are the name. */
+  function labelWords(text) {
+    return String(text || '').toLowerCase().replace(/['’]/g, '').replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  /* One line that joins the name and the ID. It is not an ID box. */
+  function hasNameWord(text) {
+    var s = labelWords(text);
+    if (s.indexOf('姓名') >= 0) return true;
+    return /\b(?:name|nama)\b/.test(s);
+  }
+
+  var DOC_WORD = '(?:nric|ic|fin|passport|identification\\s+card|identity\\s+card)';
+  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+shown\\s+in|as\\s+in|as\\s+per|\\bin\\b)';
+
+  function documentNameLabel(text) {
+    if (!hasNameWord(text)) return false;
+    return new RegExp(DOC_QUAL + '\\s+(?:the\\s+)?' + DOC_WORD + '\\b').test(labelWords(text));
+  }
+
+  function idNameLabel(text) {
+    var s = labelWords(text);
+    if (/\b(?:nric|ic)\s+(?:name|nama)\b/.test(s)) return true;
+    return /(?:nric|ic)\s*姓名/.test(s);
+  }
+
+  function hasIdNumberWord(text) {
+    var s = labelWords(text);
+    if (/\b(?:nric|ic|fin|passport)\b/.test(s)) return true;
+    if (/\b(?:id|identification|identity)(?:\s+card)?\s*(?:no|number)\b/.test(s)) return true;
+    return /\bidentification\s+card\b|\bidentity\s+card\b/.test(s);
+  }
+
   function combinedNameAndId(text) {
-    var s = String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
-    return /\bname\b\s*(?:\/|&)\s*(?:nric|fin|passport)\b/.test(s) || /\b(?:nric|fin|passport)\b\s*(?:\/|&)\s*name\b/.test(s);
+    if (!hasNameWord(text) || documentNameLabel(text) || idNameLabel(text)) return false;
+    return hasIdNumberWord(text);
+  }
+
+  function idOnlyLabel(text) {
+    if (hasNameWord(text)) return false;
+    var s = labelWords(text);
+    if (/\bnric\b|\bfin\b|\bidentification\b/.test(s)) return true;
+    return /\bidentity\s+(?:card|number)\b/.test(s);
   }
 
   function organisationNameLabel(text) {
@@ -152,17 +180,17 @@
     if (/debit/.test(s)) return 'other';
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
-    if (documentNameLabel(field && field.label)) return 'name';
+    if (documentNameLabel(field && field.label) || idNameLabel(field && field.label)) return 'name';
     if (combinedNameAndId(field && field.label)) return 'other';
     if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
     if (/birth|\bdob\b/.test(s)) return 'dob';
-    if (/nric|\bfin\b|identity number|identification/.test(s)) return 'nric';
+    if (!hasNameWord(field && field.label) && idOnlyLabel(field && field.label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
     if (/postal/.test(s)) return 'postal';
-    if (/\bname\b/.test(s) && !/user|street|bank/.test(s)) return 'name';
+    if (hasNameWord(field && field.label) && !/user|street|bank/.test(s)) return 'name';
     return 'other';
   }
 
@@ -214,7 +242,7 @@
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
-    if (documentNameLabel(field.label)) return 'name';
+    if (documentNameLabel(field.label) || idNameLabel(field.label)) return 'name';
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
     if (/^name \(as in nric\b/.test(s)) return 'name';

@@ -172,6 +172,81 @@ assert.equal(keepAgreedName({ decision: 'review', kind: 'nric', value: 'S1234567
 assert.equal(keepAgreedName(agreed, { label: "Father's Name", type: 'text' }, agreed.value), false);
 assert.equal(keepAgreedName(agreed, { label: 'Name / NRIC', type: 'text' }, agreed.value), false);
 
+const nameOrId = [
+  ['Name as in NRIC', 'name'],
+  ['Name (as in NRIC)', 'name'],
+  ['Name as per NRIC', 'name'],
+  ['Name as per NRIC/Passport', 'name'],
+  ['Name (as per NRIC/Passport)', 'name'],
+  ['Full name as in NRIC/FIN/Passport', 'name'],
+  ['Full name (as in NRIC/FIN/Passport)', 'name'],
+  ['Applicant Name as in NRIC', 'name'],
+  ["Customer's full name as per NRIC/Passport", 'name'],
+  ['Customer name as per FIN', 'name'],
+  ['Name as appearing in NRIC', 'name'],
+  ['Name as shown in NRIC', 'name'],
+  ['Name as in identification card', 'name'],
+  ['Name as shown in passport', 'name'],
+  ['Name as appearing in identification card', 'name'],
+  ['Name in NRIC', 'name'],
+  ['Name in FIN', 'name'],
+  ['Name in passport', 'name'],
+  ['Nama as in NRIC', 'name'],
+  ['姓名 as per FIN', 'name'],
+  ['NRIC Name', 'name'],
+  ['IC name', 'name'],
+  ['NRIC Nama', 'name'],
+  ['IC Nama', 'name'],
+  ['Name and NRIC', 'blank'],
+  ['Name / NRIC', 'blank'],
+  ['Name & NRIC No.', 'blank'],
+  ['Name/NRIC', 'blank'],
+  ['Name & NRIC', 'blank'],
+  ['Nama and NRIC', 'blank'],
+  ['Name and IC No.', 'blank'],
+  ['Name / Passport No.', 'blank'],
+  ['Full name & ID number', 'blank'],
+  ['Name and FIN', 'blank'],
+  ['姓名 and NRIC No.', 'blank'],
+  ['Name', 'name'],
+  ['Full name', 'name'],
+  ['Applicant name', 'name'],
+  ['Name in English (Surname first)', 'name'],
+  ['Preferred name', 'name'],
+  ['Customer name', 'name'],
+  ['NRIC No.', 'nric'],
+  ['NRIC/FIN', 'nric'],
+  ['NRIC/Passport No.', 'nric'],
+  ['Identity card number', 'nric'],
+  ['Existing NRIC/Passport No', 'nric'],
+  ['FIN', 'nric'],
+  ['NRIC', 'nric']
+];
+assert.ok(nameOrId.length >= 40, 'label table has ' + nameOrId.length);
+const tableFields = nameOrId.map((item, index) => ({ id: 'lab-' + index, label: item[0], type: 'text' }));
+const tableRows = Object.fromEntries(decideAll(tableFields, packet, open).map((item) => [item.fieldId, item]));
+nameOrId.forEach((item, index) => {
+  const label = item[0];
+  const expect = item[1];
+  const kind = fieldKind({ label: label, type: 'text' });
+  const decision = tableRows['lab-' + index];
+  if (hasName(label)) assert.notEqual(kind, 'nric', label);
+  if (expect === 'name') {
+    assert.equal(kind, 'name', label);
+    assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
+    assert.notEqual(decision.value, 'S1234567D', label);
+  } else if (expect === 'nric') {
+    assert.equal(kind, 'nric', label);
+    assert.equal(decision.value, 'S1234567D', label);
+  } else {
+    assert.notEqual(kind, 'nric', label);
+    assert.equal(decision.value, '', label);
+  }
+});
+function hasName(label) {
+  return /name|nama|姓名/i.test(label);
+}
+
 [
   'Name of Company',
   'Company name',
