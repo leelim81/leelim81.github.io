@@ -471,6 +471,17 @@
     } else {
       live.text = text || '';
       rememberRef(live);
+      if (live.channel === 'ocr' && !live.preview && live.identity) {
+        var seen = [];
+        if (live.identity.name) seen.push('Name ' + live.identity.name);
+        if (live.identity.nric) seen.push('NRIC ' + live.identity.nric);
+        if (live.identity.dob) seen.push('DOB ' + live.identity.dob);
+        if (live.identity.address) seen.push('Address ' + live.identity.address);
+        if (seen.length) live.preview = seen.join(' · ');
+      }
+      if (live.identity && live.identity.address && String(live.preview || '').indexOf(live.identity.address) < 0) {
+        live.preview = (live.preview ? live.preview + ' · ' : '') + 'Address ' + live.identity.address;
+      }
       if (live.channel === 'ocr' && !live.preview) live.preview = 'Could not read a name or ID from this photo. Nothing was filled.';
       if (unread) live.preview = live.preview ? (live.preview + ' · ' + unread) : unread;
     }
@@ -1211,14 +1222,61 @@
           idn.nameChecked = !!chosen.nameChecked && !idn.nameUnconfirmed;
           idn.nricChecked = !!chosen.nricChecked && !idn.nricUnconfirmed;
         }
-        if (!idn.name && !idn.nric) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
+        state.refs.forEach(function (ref) {
+          var extra = ref && ref.identity;
+          if (!extra) return;
+          ['dob', 'sex', 'nationality', 'race', 'birthCountry', 'blk', 'street', 'unit', 'postal', 'address'].forEach(function (key) {
+            if (!extra[key]) return;
+            if (!idn[key] || (extra[key + 'Checked'] && !idn[key + 'Checked'])) {
+              idn[key] = extra[key];
+              idn[key + 'Checked'] = !!extra[key + 'Checked'];
+            }
+          });
+        });
+        if (!idn.name && !idn.nric && !idn.dob && !idn.sex && !idn.nationality && !idn.address && !idn.postal) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
         var matched = false;
+        var asked = {};
+        state.fields.forEach(function (field) {
+          var kind = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
+          if (kind) asked[kind] = true;
+        });
+        var splitAddress = !!(asked.blk || asked.street || asked.unit);
+        var wholeAddress = !!asked.address;
+        var addressUnsure = splitAddress && wholeAddress;
+        function slotValue(slot) {
+          if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit')) return '';
+          if (slot === 'name') return idn.name || '';
+          if (slot === 'nric') return idn.nric || '';
+          if (slot === 'dob') return idn.dob || '';
+          if (slot === 'sex') return idn.sex || '';
+          if (slot === 'nationality') return idn.nationality || '';
+          if (slot === 'race') return idn.race || '';
+          if (slot === 'birthCountry') return idn.birthCountry || '';
+          if (slot === 'address') return idn.address || '';
+          if (slot === 'postal') return idn.postal || '';
+          if (slot === 'blk') return idn.blk || '';
+          if (slot === 'street') return idn.street || '';
+          if (slot === 'unit') return idn.unit ? '#' + idn.unit : '';
+          return '';
+        }
+        function slotChecked(slot) {
+          if (slot === 'name') return !!idn.nameChecked;
+          if (slot === 'nric') return !!idn.nricChecked;
+          if (slot === 'dob') return !!idn.dobChecked;
+          if (slot === 'sex') return !!idn.sexChecked;
+          if (slot === 'nationality') return !!idn.nationalityChecked;
+          if (slot === 'race') return !!idn.raceChecked;
+          if (slot === 'birthCountry') return !!idn.birthCountryChecked;
+          if (slot === 'postal') return !!idn.addressChecked;
+          if (slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'address') return !!idn.addressChecked;
+          return false;
+        }
         decisions.forEach(function (row) {
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
           var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
-          var slotValue = slot === 'name' ? idn.name : (slot === 'nric' ? idn.nric : '');
-          if (!slot || !slotValue) {
+          var value = slotValue(slot);
+          if (!slot || !value) {
             if (row.decision !== 'abstain') {
               row.decision = 'abstain';
               row.value = '';
@@ -1248,7 +1306,16 @@
             row.checked = !!idn.nricChecked;
             row.reason = idn.nricUnconfirmed ? 'identity_unconfirmed' : 'identity_photo';
             row.quote = idn.nricValid ? 'Read from the photo' : 'Checksum not confirmed';
+            return;
           }
+          matched = true;
+          row.decision = 'review';
+          row.value = value;
+          row.kind = slot;
+          row.editable = false;
+          row.checked = slotChecked(slot);
+          row.reason = 'identity_photo';
+          row.quote = 'Read from the photo';
         });
         if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
       }

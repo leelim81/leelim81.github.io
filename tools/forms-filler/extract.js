@@ -737,6 +737,12 @@
     var lines = [];
     if (vote && vote.name) lines.push('Name', vote.name);
     if (vote && vote.nric) lines.push(vote.nric);
+    if (vote && vote.dob) lines.push('Date of birth', vote.dob);
+    if (vote && vote.sex) lines.push('Sex', vote.sex);
+    if (vote && vote.nationality) lines.push('Nationality', vote.nationality);
+    if (vote && vote.race) lines.push('Race', vote.race);
+    if (vote && vote.birthCountry) lines.push('Country of birth', vote.birthCountry);
+    if (vote && vote.address) lines.push('Address', vote.address);
     return lines.join('\n');
   }
 

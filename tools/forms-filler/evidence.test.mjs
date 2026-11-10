@@ -133,10 +133,20 @@ assert.equal(identityPhotoSlot({ id: 'debit', label: 'Name as per Debiting Accou
 assert.equal(identityPhotoSlot({ id: 'credited', label: 'Account No. to be Credited' }), '');
 assert.equal(identityPhotoSlot({ id: 'amount', label: 'Amount' }), '');
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'For Bank Use Only' }), '');
-assert.equal(identityPhotoSlot({ id: 'dob', label: 'Date of birth' }), '');
-assert.equal(identityPhotoSlot({ id: 'sex', label: 'Sex' }), '');
-assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), '');
-assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), '');
+assert.equal(identityPhotoSlot({ id: 'dob', label: 'Date of birth' }), 'dob');
+assert.equal(identityPhotoSlot({ id: 'sex', label: 'Sex' }), 'sex');
+assert.equal(identityPhotoSlot({ id: 'gender', label: 'Gender' }), 'sex');
+assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), 'nationality');
+assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), 'address');
+assert.equal(identityPhotoSlot({ id: 'postal', label: 'Postal code' }), 'postal');
+assert.equal(identityPhotoSlot({ id: 'blk', label: 'Blk/House No.' }), 'blk');
+assert.equal(identityPhotoSlot({ id: 'street', label: 'Street' }), 'street');
+assert.equal(identityPhotoSlot({ id: 'unit', label: 'Unit' }), 'unit');
+assert.equal(identityPhotoSlot({ id: 'race', label: 'Race' }), 'race');
+assert.equal(identityPhotoSlot({ id: 'born', label: 'Country of birth' }), 'birthCountry');
+assert.equal(identityPhotoSlot({ id: 'gdob', label: 'Date of birth', section: 'Guarantor' }), '');
+assert.equal(identityPhotoSlot({ id: 'gsex', label: 'Sex', section: 'Nominee' }), '');
+assert.equal(identityPhotoSlot({ id: 'gaddr', label: 'Address', section: 'Guarantor' }), '');
 assert.equal(identityPhotoSlot({ id: 'phone', label: 'Home No.' }), '');
 assert.equal(identityPhotoSlot({ id: 'emergency', label: 'Emergency contact name' }), '');
 assert.equal(identityPhotoSlot({ id: 'patient', label: 'Patient name' }), '');
@@ -285,6 +295,11 @@ stillRepeated.forEach(function (field) {
   const only = [{ id: 'n', label: 'Name', section: heading }];
   assert.equal(identityPhotoSlot(only[0], only), '', heading);
 });
+assert.equal(sectionKind('See Part B'), '');
+assert.equal(personOf('The insured'), 'other');
+assert.equal(personOf('Insured'), 'other');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'The insured' }, [{ id: 'n', label: 'Name', section: 'The insured' }]), '');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Insured' }, [{ id: 'n', label: 'Name', section: 'Insured' }]), '');
 assert.equal(personOf('Sum insured'), '');
 assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Sum insured' }, [{ id: 'n', label: 'Name', section: 'Sum insured' }]), 'name');
 

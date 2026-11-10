@@ -321,6 +321,37 @@ const labeledVote = identityVote([
 assert.equal(labeledVote.name, 'TAN WEI MING');
 assert.equal(labeledVote.nameChecked, true);
 assert.equal(labeledVote.nricChecked, true);
+[
+  ['15 JAN 1990', '15-01-1990'],
+  ['15 January 1990', '15-01-1990'],
+  ['15/01/1990', '15-01-1990'],
+  ['15-01-1990', '15-01-1990'],
+  ['15.01.1990', '15-01-1990'],
+  ['15 01 1990', '15-01-1990']
+].forEach(function (pair) {
+  assert.equal(identityRead('Date of birth\n' + pair[0] + '\n').dob, pair[1], pair[0]);
+});
+assert.equal(identityRead('Date of birth\n31 FEB 1990\n').dob, '');
+assert.equal(identityRead('Date of birth\n01 JAN 2099\n').dob, '');
+assert.equal(identityRead('Date of issue\n02 FEB 2020\n').dob, '');
+assert.equal(identityRead('Sex\nM\n').sex, 'M');
+assert.equal(identityRead('Sex\nFemale\n').sex, 'F');
+assert.equal(identityRead('Nationality\nSINGAPORE CITIZEN\n').nationality, 'Singapore citizen');
+assert.equal(identityRead('REPUBLIC OF SINGAPORE\nName\nTAN WEI MING\n').nationality, '');
+assert.equal(identityRead('Race\nCHINESE\n').race, 'Chinese');
+assert.equal(identityRead('Country of birth\nMALAYSIA\n').birthCountry, 'MALAYSIA');
+const backCard = identityRead('IDENTITY CARD\nBACK\nAddress\nBLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n');
+assert.equal(backCard.blk, '88');
+assert.equal(backCard.street, 'EXAMPLE WALK');
+assert.equal(backCard.unit, '12-34');
+assert.equal(backCard.postal, '018956');
+assert.equal(backCard.nric, '');
+assert.equal(backCard.name, '');
+const onePass = identityRead('Date of birth\n15 JAN 1990\nSex\nM\n');
+assert.equal(identityVote([onePass]).dobChecked, false);
+assert.equal(identityVote([onePass, onePass]).dob, '15-01-1990');
+assert.equal(identityVote([onePass, onePass]).dobChecked, true);
+assert.equal(identityVote([onePass, onePass]).sexChecked, true);
 
 function assertAlias(text, alias) {
   const read = identityRead(text);

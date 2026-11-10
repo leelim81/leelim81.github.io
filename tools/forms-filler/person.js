@@ -31,15 +31,16 @@
      person section above it and is not itself an identity section. */
   function isPartReset(text) {
     var s = normalize(text);
-    if (!s) return false;
-    if (/\bdeclarat(?:ion|ions)\b/i.test(s)) return true;
-    if (/\b(?:for\s+)?bank\s+use\b/i.test(s)) return true;
-    if (/\b(?:for\s+)?official\s+use\b/i.test(s)) return true;
-    if (/\boffice\s+use\b/i.test(s)) return true;
-    if (/\bpart\s+[bcd]\b/i.test(s)) return true;
-    if (/\backnowledg(?:e|ement|ment)\b/i.test(s)) return true;
-    if (/\bauthoris(?:e|ation)\b/i.test(s) || /\bauthoriz(?:e|ation)\b/i.test(s)) return true;
-    if (/\bterms(?:\s+and)?\s+conditions\b/i.test(s)) return true;
+    if (!s || s.split(' ').length > 6) return false;
+    if (/^(see|refer|read|go|as|per|under|in|to)\b/i.test(s)) return false;
+    if (/^declarat(?:ion|ions)(?: by(?: the)? applicants?)?$/i.test(s)) return true;
+    if (/^(?:for )?bank use(?: only)?$/i.test(s)) return true;
+    if (/^(?:for )?official use(?: only)?$/i.test(s)) return true;
+    if (/^office use(?: only)?$/i.test(s)) return true;
+    if (/^part [bcd]$/i.test(s)) return true;
+    if (/^acknowledg(?:e)?ment$/i.test(s)) return true;
+    if (/^authoris(?:e|ation)$/i.test(s) || /^authoriz(?:e|ation)$/i.test(s)) return true;
+    if (/^terms(?: and)? conditions$/i.test(s)) return true;
     return false;
   }
 
@@ -48,6 +49,7 @@
     if (!s) return '';
     if (isPartReset(s)) return 'reset';
     if (OTHER.test(s)) return 'other';
+    if (/^(?:the )?insured$/i.test(s)) return 'other';
     if (CONTACT_PARTY.test(s) && !CONTACT_BLOCK.test(s)) return 'other';
     if (APPLICANT.test(s)) return 'applicant';
     if (/^part a\b/i.test(s) || /\bpersonal details\b/i.test(s) || /\bmembership application\b/i.test(s)) return 'applicant';

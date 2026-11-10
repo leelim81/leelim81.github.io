@@ -104,6 +104,7 @@ await page.waitForSelector('#reviewBox:not([hidden])');
 const review = await page.locator('#reviewList').innerText();
 check('review offers the applicant name and ID', /Ada Lane/.test(review) && /S1234567D/.test(review), review.slice(0, 240));
 check('review does not offer the debiting name, account, amount, or bank-use line', !/Debit/.test(review) && !/Credited/.test(review) && !/Amount/.test(review) && !/Bank Use/.test(review) && !/Signature/.test(review), review.slice(0, 240));
+check('the bank form still offers no date, sex, nationality, or address', !/date of birth|\bsex\b|nationality|postal|example lane|block/i.test(review), review.slice(0, 240));
 await page.locator('#reviewList input').evaluateAll((boxes) => boxes.forEach((box) => { box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true })); }));
 const checked = await page.locator('#reviewList input:checked').count();
 check('the identity values can be checked before anything is written', checked >= 2, String(checked));

@@ -1086,6 +1086,26 @@
       if (plain && read.labeled && other === plain) labeledSupport++;
     });
     var sameCount = tokenCounts.length > 0 && tokenCounts.every(function (count) { return count === tokens.length; });
+    function agreedValue(key) {
+      var counts = {};
+      list.forEach(function (read) {
+        var value = read && read[key];
+        if (!value) return;
+        counts[value] = (counts[value] || 0) + 1;
+      });
+      var value = soleLeader(counts);
+      return { value: value || '', checked: !!(value && counts[value] >= 2) };
+    }
+    var dob = agreedValue('dob');
+    var sex = agreedValue('sex');
+    var nationality = agreedValue('nationality');
+    var race = agreedValue('race');
+    var birthCountry = agreedValue('birthCountry');
+    var blk = agreedValue('blk');
+    var street = agreedValue('street');
+    var unit = agreedValue('unit');
+    var postal = agreedValue('postal');
+    var address = agreedValue('address');
     return {
       name: name || '',
       namePlain: plain || '',
@@ -1098,8 +1118,136 @@
       nameUnconfirmed: nameUnconfirmed,
       nricUnconfirmed: false,
       nameChecked: !!(name && tokens.length >= 2 && sameCount && !sawBelow && !nameUnconfirmed && !anyAlias && labeledSupport >= 2),
-      nricChecked: !!(nric && nricCounts[nric] >= 2)
+      nricChecked: !!(nric && nricCounts[nric] >= 2),
+      dob: dob.value,
+      sex: sex.value,
+      nationality: nationality.value,
+      race: race.value,
+      birthCountry: birthCountry.value,
+      blk: blk.value,
+      street: street.value,
+      unit: unit.value,
+      postal: postal.value,
+      address: address.value,
+      dobChecked: dob.checked,
+      sexChecked: sex.checked,
+      nationalityChecked: nationality.checked,
+      raceChecked: race.checked,
+      birthCountryChecked: birthCountry.checked,
+      addressChecked: !!(address.checked && blk.checked && street.checked && postal.checked)
     };
+  }
+
+  function validCardDob(value) {
+    var norm = normDate(value);
+    if (!norm) return '';
+    var parts = norm.split('/');
+    var day = Number(parts[0]);
+    var month = Number(parts[1]);
+    var year = Number(parts[2]);
+    if (year < 1900 || month < 1 || month > 12 || day < 1) return '';
+    var stamped = new Date(Date.UTC(year, month - 1, day));
+    if (stamped.getUTCFullYear() !== year || stamped.getUTCMonth() !== month - 1 || stamped.getUTCDate() !== day) return '';
+    var now = new Date();
+    var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    if (Date.UTC(year, month - 1, day) > today) return '';
+    return parts[0] + '-' + parts[1] + '-' + parts[2];
+  }
+
+  function lineWindow(lines, index) {
+    return [lines[index] || '', lines[index + 1] || '', lines[index + 2] || ''].join(' ');
+  }
+
+  function cardDob(text) {
+    var lines = String(text || '').split(/\n/);
+    for (var i = 0; i < lines.length; i++) {
+      if (!/date of birth|\bdob\b|\bborn\b/i.test(lines[i])) continue;
+      var window = lineWindow(lines, i);
+      var named = window.match(/(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})/);
+      var numeric = window.match(/(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})/);
+      var got = named ? validCardDob(named[1] + ' ' + named[2] + ' ' + named[3]) : '';
+      if (!got && numeric) got = validCardDob(numeric[1] + '/' + numeric[2] + '/' + numeric[3]);
+      if (got) return got;
+    }
+    return '';
+  }
+
+  function cardSex(text) {
+    var lines = String(text || '').split(/\n/);
+    for (var i = 0; i < lines.length; i++) {
+      if (!/\bsex\b|\bgender\b/i.test(lines[i])) continue;
+      var window = lineWindow(lines, i);
+      var mark = window.match(/\b(female|male|[mf])\b/i);
+      if (!mark) continue;
+      var token = mark[1].toLowerCase();
+      if (token === 'f' || token === 'female') return 'F';
+      if (token === 'm' || token === 'male') return 'M';
+    }
+    return '';
+  }
+
+  function tidyNationality(value) {
+    var text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text || text.length > 40 || /\d/.test(text)) return '';
+    if (/singapore\s+citizen/i.test(text) || /^citizen$/i.test(text)) return 'Singapore citizen';
+    return text;
+  }
+
+  function cardNationality(text) {
+    var lines = String(text || '').split(/\n/);
+    for (var i = 0; i < lines.length; i++) {
+      if (!/\bnationality\b|\bcitizenship\b/i.test(lines[i])) continue;
+      var same = lines[i].replace(/^.*(?:nationality|citizenship)\b[:\s-]*/i, '').trim();
+      var value = tidyNationality(same || lines[i + 1] || '');
+      if (value) return value;
+    }
+    if (/\bsingapore\s+citizen\b/i.test(text)) return 'Singapore citizen';
+    return '';
+  }
+
+  function cardBirthCountry(text) {
+    var lines = String(text || '').split(/\n/);
+    for (var i = 0; i < lines.length; i++) {
+      if (!/country of birth/i.test(lines[i])) continue;
+      var same = lines[i].replace(/^.*country of birth\b[:\s-]*/i, '').trim();
+      var value = String(same || lines[i + 1] || '').replace(/\s+/g, ' ').trim();
+      if (value && value.length <= 40 && !/\d/.test(value)) return value;
+    }
+    return '';
+  }
+
+  function cardAddress(text) {
+    var out = { blk: '', street: '', unit: '', postal: '', address: '' };
+    String(text || '').split(/\n/).forEach(function (line) {
+      var t = line.replace(/\s+/g, ' ').trim();
+      var blk = t.match(/^BLK\s+([0-9]{1,5}[A-Z]?)\s+(.+)$/i);
+      if (blk && !out.blk) {
+        out.blk = blk[1].toUpperCase();
+        out.street = blk[2].replace(/\s+#.*$/, '').replace(/\s+SINGAPORE\b.*$/i, '').trim().toUpperCase();
+      }
+      var unit = t.match(/^#\s?(\d{1,4})\s*-\s*(\d{1,4})$/);
+      if (unit && !out.unit) out.unit = unit[1] + '-' + unit[2];
+      var post = t.match(/\bSINGAPORE\s+S?\s?(\d{6})\b/i) || t.match(/^S\s?(\d{6})$/i);
+      if (post && !out.postal) out.postal = post[1];
+      if (!out.street) {
+        var street = t.match(/((?:[0-9]{1,5}[A-Z]?\s+)?[A-Z][A-Z0-9' ./-]{1,40}\b(?:LANE|ROAD|STREET|WALK|AVENUE|DRIVE|CLOSE|CRESCENT|TERRACE)\b)/i);
+        if (street) out.street = street[1].replace(/\s+#.*$/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+      }
+      var inlineUnit = t.match(/#\s?(\d{1,4})\s*-\s*(\d{1,4})/);
+      if (inlineUnit && !out.unit) out.unit = inlineUnit[1] + '-' + inlineUnit[2];
+      var inlinePost = t.match(/\b(?:SINGAPORE\s+)?S?\s?(\d{6})\b/i);
+      if (inlinePost && !out.postal && !/\b[STFGM]\d{7}[A-Z]\b/i.test(t)) out.postal = inlinePost[1];
+    });
+    if (out.street) {
+      var lead = out.street.match(/^([0-9]{1,5}[A-Z]?)\s+(.+)$/);
+      if (lead) {
+        if (!out.blk) out.blk = lead[1].toUpperCase();
+        out.street = lead[2];
+      }
+    }
+    var line = [out.blk, out.street, out.unit ? '#' + out.unit : '', out.postal ? 'SINGAPORE ' + out.postal : ''].filter(Boolean).join(' ');
+    out.address = line;
+    return out;
   }
 
   function identityRead(text, words) {
@@ -1118,6 +1266,7 @@
     }
     var nameConf = tokenConfidence(words, name);
     var nricConf = tokenConfidence(words, nric);
+    var home = cardAddress(raw);
     return {
       name: name,
       namePlain: printed.plain || plainOf(name),
@@ -1135,7 +1284,23 @@
       nameUnconfirmed: !!(printed.unbalanced || (name && nameConf != null && nameConf < 55)),
       nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55))),
       nameChecked: false,
-      nricChecked: false
+      nricChecked: false,
+      dob: cardDob(raw),
+      sex: cardSex(raw),
+      nationality: cardNationality(raw),
+      race: raceFrom(raw),
+      birthCountry: cardBirthCountry(raw),
+      blk: home.blk,
+      street: home.street,
+      unit: home.unit,
+      postal: home.postal,
+      address: home.address,
+      dobChecked: false,
+      sexChecked: false,
+      nationalityChecked: false,
+      raceChecked: false,
+      birthCountryChecked: false,
+      addressChecked: false
     };
   }
 

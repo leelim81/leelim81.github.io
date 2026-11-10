@@ -326,4 +326,17 @@ const declarePage = {
 const declareFields = layout(declarePage);
 assert.equal(declarePage.lastPerson, '', 'a declaration clears the carried applicant');
 assert.equal(declareFields.filter(function (field) { return identityPhotoSlot(field, declareFields); }).length, 0, 'page 2 declaration lines are not offered ' + declareFields.map(function (field) { return field.section; }).join('|'));
+const withNote = layout({
+  page: 0,
+  width: 595,
+  height: 842,
+  texts: [
+    { x: 48, y: 720, w: 160, h: 11, str: "Applicant's particulars" },
+    { x: 48, y: 680, w: 70, h: 9, str: 'See Part B' },
+    { x: 48, y: 640, w: 70, h: 9, str: 'Full name' }
+  ],
+  lines: [{ x: 160, y: 639, w: 200 }],
+  squares: []
+});
+assert.ok(withNote.some(function (field) { return field.label === 'Full name' && identityPhotoSlot(field, withNote); }), 'See Part B does not reset the applicant name ' + withNote.map(function (field) { return field.label + '=' + (field.section || ''); }).join('|'));
 console.log('spots tests ok', fields.length, 'fields');
