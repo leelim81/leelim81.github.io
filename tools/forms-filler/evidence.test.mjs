@@ -364,9 +364,36 @@ assert.equal(addressSlotsBlank(confirmedParts, addressAndStreet), false);
 assert.equal(addressSlotsBlank(confirmedParts, addressAndBlk), false);
 assert.equal(identityCardOffer(confirmedParts, 'street', addressAndStreet).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'postal', addressAndStreet).checked, true);
-assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).value, '');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndStreet).checked, false);
 assert.equal(identityCardOffer(confirmedParts, 'blk', addressAndBlk).checked, true);
 assert.equal(identityCardOffer(confirmedParts, 'street', addressAndBlk).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).value, '');
+assert.equal(identityCardOffer(confirmedParts, 'address', addressAndBlk).checked, false);
+const addressLine = identityCardOffer(confirmedParts, 'address', onlyAddress);
+assert.equal(addressLine.value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
+assert.equal(addressLine.checked, true);
+function usedValues(identity, fields) {
+  if (addressSlotsBlank(identity, fields)) return [];
+  return fields.map(function (field) {
+    const slot = identityPhotoSlot(field, fields);
+    const offer = identityCardOffer(identity, slot, fields);
+    if (!slot || !offer || !offer.checked || !offer.value) return '';
+    return offer.value;
+  }).filter(Boolean);
+}
+function overlaps(values) {
+  return values.some(function (value, index) {
+    return values.some(function (other, otherIndex) {
+      return otherIndex !== index && String(other).indexOf(value) >= 0;
+    });
+  });
+}
+assert.equal(overlaps(usedValues(confirmedParts, addressAndStreet)), false);
+assert.equal(overlaps(usedValues(confirmedParts, addressAndBlk)), false);
+assert.equal(usedValues(confirmedParts, addressAndStreet).indexOf('88 EXAMPLE WALK #12-34 SINGAPORE 018956'), -1);
+assert.ok(usedValues(confirmedParts, addressAndStreet).indexOf('EXAMPLE WALK') >= 0);
+assert.equal(usedValues(confirmedParts, onlyAddress)[0], '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
 assert.equal(addressSlotsBlank(agreedParts, addressAndStreet), false);
 assert.equal(addressSlotsBlank(agreedParts, addressAndBlk), false);
 assert.equal(identityCardOffer(agreedParts, 'street', addressAndStreet).checked, false);

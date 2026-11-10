@@ -145,6 +145,8 @@
         if (!complete || !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
         return { value: idn.address || wholeAddressLine(idn), checked: false, editable: true };
       }
+      var split = formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
+      if (split && idn.blk && idn.streetChecked && idn.postalChecked) return { value: '', checked: false, editable: false };
       if (!complete || !idn.address) return { value: '', checked: false, editable: false };
       return { value: idn.address, checked: !!idn.addressChecked, editable: false };
     }

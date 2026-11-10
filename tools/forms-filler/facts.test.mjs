@@ -453,7 +453,10 @@ const fiveDigit = identityRead('BLK 12345 EXAMPLE RD\n#12-34\nSINGAPORE 018956\n
 assert.equal(fiveDigit.blk, '');
 assert.equal(fiveDigit.street, '');
 assert.equal(fiveDigit.address, '');
+assert.equal(identityRead('EXAMPLE RD #12-34').street, 'EXAMPLE RD');
+assert.equal(identityRead('EXAMPLE RD #12-34').postal, '');
 assert.equal(identityRead('JOHN LANE #12-34').street, '');
+assert.equal(identityRead('MARY CLOSE #12-34').street, '');
 const nextPostal = identityRead('EXAMPLE RD #12-34\nSINGAPORE 018956\n');
 assert.equal(nextPostal.street, 'EXAMPLE RD');
 assert.equal(nextPostal.postal, '018956');
