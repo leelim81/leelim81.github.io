@@ -1934,6 +1934,25 @@
     return items.join(' · ');
   }
 
+  var ROLE_TOKEN = {
+    FATHER: 1, MOTHER: 1, SPOUSE: 1, DOCTOR: 1, PHYSICIAN: 1, EMPLOYER: 1,
+    NOMINEE: 1, WITNESS: 1, GUARDIAN: 1, INTRODUCER: 1, REFERRER: 1,
+    SIGNATORY: 1, AGENT: 1, BENEFICIARY: 1
+  };
+
+  /* A details-sheet name that continues the card read, token for token. */
+  function extendsName(shortName, fullName) {
+    function words(text) {
+      return String(text || '').toUpperCase().replace(/[^A-Z'\- ]/g, ' ').split(/\s+/).filter(Boolean);
+    }
+    var shortWords = words(shortName);
+    var fullWords = words(fullName);
+    if (shortWords.length < 2 || fullWords.length <= shortWords.length || fullWords.length > 12) return false;
+    for (var i = 0; i < shortWords.length; i++) if (shortWords[i] !== fullWords[i]) return false;
+    for (var j = shortWords.length; j < fullWords.length; j++) if (ROLE_TOKEN[fullWords[j]]) return false;
+    return true;
+  }
+
   return {
     fromText: fromText,
     mapFactsToFields: mapFactsToFields,
@@ -1949,6 +1968,7 @@
     nricChecksum: nricChecksum,
     identityRead: identityRead,
     identityVote: identityVote,
-    keepCardWords: keepCardWords
+    keepCardWords: keepCardWords,
+    extendsName: extendsName
   };
 });

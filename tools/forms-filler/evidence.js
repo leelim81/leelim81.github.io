@@ -23,11 +23,102 @@
     if (/^(nric|fin|nric\/fin|identity number|identification number)$/.test(s)) return 'nric';
     if (/^(address|premises|dwelling|home address|street)$/.test(s)) return 'address';
     if (/^(postal|postal code)$/.test(s)) return 'postal';
+    if (/^(?:first|given)(?:\s*\/\s*(?:first|given))?\s+name$/.test(s)) return 'given';
+    if (/^(?:last(?:\s+name)?|family name|surname)(?:\s*\/\s*(?:surname|family name|last name))?$/.test(s)) return 'surname';
+    if (/^last name\/surname$/.test(s)) return 'surname';
     if (/^(full name|name)$/.test(s)) return 'name';
     return '';
   }
 
+  function textWidth(text, size) {
+    var width = 0;
+    var s = String(text || '');
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      var factor = 0.52;
+      if (c <= 32) factor = 0.28;
+      else if (c >= 48 && c <= 57) factor = 0.56;
+      else if (c === 45 || c === 47) factor = 0.33;
+      width += size * factor;
+    }
+    return width;
+  }
+
+  /* Shrink to the box. Below the minimum, the value does not fit. */
+  function fittedSize(text, boxWidth, start) {
+    var size = start > 0 ? start : 10;
+    var min = 6;
+    if (!(boxWidth > 0)) return { size: size, fits: false };
+    while (size > min && textWidth(text, size) > boxWidth - 1) size = Math.round((size - 0.2) * 10) / 10;
+    return { size: size, fits: textWidth(text, size) <= boxWidth - 1 };
+  }
+
+  function splitKind(label) {
+    var s = String(label || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!s) return '';
+    if (/\b(previous|maiden)\b/.test(s)) return 'previous';
+    if (/name in english|name as per|full name/.test(s)) return '';
+    if (/\b(first|given)\b/.test(s) && /\bname\b/.test(s)) return 'given';
+    if (/\b(last|family|surname)\b/.test(s) && /\bname\b/.test(s)) return 'surname';
+    if (/\bmiddle\b/.test(s) && /\bname\b/.test(s)) return 'middle';
+    return '';
+  }
+
+  function bareName(label) {
+    var s = String(label || '').toLowerCase().replace(/[*:.\s]+$/g, '').trim();
+    return s === 'name' || s === 'full name' || s === 'percentage';
+  }
+
+  /* A label or the region header names someone else, a signature, or a
+     bank-only block. This does not change which applicant lines match. */
+  function unsafeDestination(field) {
+    var label = String((field && field.label) || '');
+    var group = String((field && field.group) || '');
+    var section = String((field && field.section) || '');
+    var heading = String((field && field.heading) || '');
+    var region = String((field && field.region) || '');
+    var blob = [label, group, section, heading].join('\n');
+    if (region === 'signature' || region === 'bank-use' || region === 'other-person') return region;
+    if (/for bank use|bank use only|for official use|official use only|office use only/i.test(blob)) return 'bank-use';
+    if (/signature verified|\bapproved by\b|name of signatory|\bsignatory\b|\bsignature\b/i.test(blob)) return 'signature';
+    var parts = [label, group, section, heading];
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      if (personOf(parts[i]) === 'other') return 'other-person';
+    }
+    if (/\b(maiden|introducer|referrer|physician|emergency contact)\b/i.test(blob)) return 'other-person';
+    if (/\bpercentage\b/i.test(label) && /nominee|witness/i.test(blob)) return 'other-person';
+    if (/\binsured\b/i.test(label) && !/\bapplicant\b/i.test(label) && !/sum insured/i.test(label)) return 'other-person';
+    return '';
+  }
+
+  function markRegions(fields) {
+    var list = fields || [];
+    list.forEach(function (field) {
+      var blob = [field.label, field.group, field.section, field.heading].filter(Boolean).join(' ');
+      if (/for bank use|bank use only|for official use|official use only|office use only/i.test(blob)) field.region = 'bank-use';
+      else if (/signature|signatory|approved by|verified by/i.test(blob)) field.region = 'signature';
+      else if (/nominee|witness/i.test(blob)) field.region = 'other-person';
+    });
+    list.forEach(function (field) {
+      if (field.region || !field.rect || !bareName(field.label)) return;
+      var hit = '';
+      list.forEach(function (other) {
+        if (hit || other === field || !other.region || !other.rect) return;
+        if ((other.page || 0) !== (field.page || 0)) return;
+        if (Math.abs(other.rect.y - field.rect.y) > 160) return;
+        hit = other.region;
+      });
+      if (hit) field.region = hit;
+    });
+    return list;
+  }
+
   function fieldKind(field) {
+    if (unsafeDestination(field)) return 'other';
+    var split = splitKind(field && field.label);
+    if (split === 'given' || split === 'surname') return split;
+    if (split) return 'other';
     var s = ((field && field.label) || '') + ' ' + ((field && field.id) || '');
     s = s.toLowerCase();
     if (/bank use only|for bank use|official use only/.test(s)) return 'other';
@@ -40,6 +131,7 @@
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
     if (/birth|\bdob\b/.test(s)) return 'dob';
+    if (/^name \(as in nric\b/.test(s)) return 'name';
     if (/nric|\bfin\b|identity number|identification/.test(s)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
     if (/postal/.test(s)) return 'postal';
@@ -93,10 +185,11 @@
      abstains when no applicant section can be told apart. */
   function applicantIdentitySlot(field) {
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
-    if (!field || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
+    if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
+    if (/^name \(as in nric\b/.test(s)) return 'name';
     if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
     if (/^(?:full name|name)$/.test(s)) return 'name';
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
@@ -290,6 +383,10 @@
     identityCardOffer: identityCardOffer,
     addressSlotsBlank: addressSlotsBlank,
     normValue: normValue,
-    kindOfLabel: kindOfLabel
+    kindOfLabel: kindOfLabel,
+    unsafeDestination: unsafeDestination,
+    markRegions: markRegions,
+    splitKind: splitKind,
+    fittedSize: fittedSize
   };
 });

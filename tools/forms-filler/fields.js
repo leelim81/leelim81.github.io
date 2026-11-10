@@ -1536,23 +1536,57 @@
     if (match != null) field.select(match);
   }
 
+  function evidenceApi() {
+    if (global.FormEvidence && global.FormEvidence.fittedSize) return global.FormEvidence;
+    if (typeof require === 'function') {
+      try { return require('./evidence.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
   async function fill(bytes, fields, values, opts) {
     var doc = await PDFLib.PDFDocument.load(copy(bytes));
     var font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
     var byName = {};
+    var missed = [];
+    var evidence = evidenceApi();
     if (fields.some(function (field) { return field.source === 'acro'; })) {
       var form = doc.getForm();
       form.getFields().forEach(function (field) {
         byName[field.getName()] = field;
       });
       fields.forEach(function (meta) {
-        if (meta.source !== 'acro' || !byName[meta.id]) return;
-        applyAcro(byName[meta.id], meta, values[meta.id]);
+        var value = values ? values[meta.id] : '';
+        if (value == null || String(value).trim() === '') return;
+        if (meta.source !== 'acro' || !byName[meta.id]) {
+          missed.push({ id: meta.id, label: meta.label || meta.id, reason: 'no matching field' });
+          return;
+        }
+        if ((meta.type === 'checkbox' || meta.type === 'radio') && !truthy(value)) {
+          missed.push({ id: meta.id, label: meta.label || meta.id, reason: 'this box cannot hold that value' });
+          return;
+        }
+        if (meta.type === 'text' && meta.rect && evidence && evidence.fittedSize) {
+          var fit = evidence.fittedSize(String(value), meta.rect.width, 12);
+          if (!fit.fits) {
+            missed.push({ id: meta.id, label: meta.label || meta.id, reason: 'does not fit' });
+            return;
+          }
+          if (fit.size < 12 && typeof byName[meta.id].setFontSize === 'function') byName[meta.id].setFontSize(fit.size);
+        }
+        try {
+          applyAcro(byName[meta.id], meta, value);
+        } catch (err) {
+          missed.push({ id: meta.id, label: meta.label || meta.id, reason: 'could not be written' });
+        }
       });
       form.updateFieldAppearances(font);
-      if (opts && opts.flatten) form.flatten();
+      /* A second appearance pass drops comb text, so the export has no new words. */
+      if (opts && opts.flatten) form.flatten({ updateFieldAppearances: false });
     }
-    return new Uint8Array(await doc.save());
+    var out = new Uint8Array(await doc.save());
+    out.unplaced = missed;
+    return out;
   }
 
   function sourceToSheet(x, y, frame) {

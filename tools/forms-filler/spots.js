@@ -394,6 +394,8 @@
     var line = String(text && text.str || '').replace(/\s+/g, ' ').trim();
     if (!line || words(line).length > 8 || line.length > 48) return null;
     var kind = sectionKind(line);
+    var bare = line.replace(/[:.\s]+$/g, '');
+    if (!kind && /^(approved by|signature verified by|verified by|for bank use only|for official use(?: only)?|office use only)$/i.test(bare)) kind = 'reset';
     if (!kind) return null;
     var want = normLabel(line);
     if (slots.some(function (other) { return normLabel(other.label) === want; })) return null;
@@ -734,14 +736,32 @@
     return Math.random().toString(36).slice(2, 10);
   }
 
+  function evidenceApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormEvidence) return globalThis.FormEvidence;
+    if (typeof require === 'function') {
+      try { return require('./evidence.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
   function annotations(fields, values) {
     var byPage = {};
+    var unplaced = [];
+    var evidence = evidenceApi();
     (fields || []).forEach(function (field) {
-      if (!field.rect || field.source === 'acro') return;
       var value = values && values[field.id] != null ? String(values[field.id]) : '';
       var check = field.type === 'radio' || field.type === 'checkbox';
       if (check && !chosen(field, value)) return;
       if (!check && !value.trim()) return;
+      var refusal = evidence && evidence.unsafeDestination ? evidence.unsafeDestination(field) : '';
+      if (refusal) {
+        unplaced.push({ id: field.id, label: field.label || field.id, reason: refusal });
+        return;
+      }
+      if (!field.rect || field.source === 'acro') {
+        if (!check) unplaced.push({ id: field.id, label: field.label || field.id, reason: field.source === 'acro' ? 'not a drawn line' : 'no box' });
+        return;
+      }
       var rect = field.rect;
       var pw = field.pageWidth || 595;
       var ph = field.pageHeight || 842;
@@ -754,10 +774,18 @@
       w = Math.max(0.02, Math.min(w, 1 - x));
       h = Math.max(check ? 0.008 : 0.014, Math.min(h, 1 - y));
       var page = field.page || 0;
-      if (!byPage[page]) byPage[page] = [];
       var fontSize = check
         ? Math.max(8, Math.min(14, rect.height * 0.85))
         : Math.max(9, Math.min(13, (field.lineH || 12) * 0.85));
+      if (!check && evidence && evidence.fittedSize) {
+        var fit = evidence.fittedSize(value, rect.width, fontSize);
+        fontSize = fit.size;
+        if (!fit.fits) {
+          unplaced.push({ id: field.id, label: field.label || field.id, reason: 'does not fit' });
+          return;
+        }
+      }
+      if (!byPage[page]) byPage[page] = [];
       byPage[page].push({
         id: uid(),
         type: 'text',
@@ -773,6 +801,7 @@
         seedText: check ? '' : value
       });
     });
+    byPage.unplaced = unplaced;
     return byPage;
   }
 

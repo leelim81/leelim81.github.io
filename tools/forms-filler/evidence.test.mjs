@@ -28,7 +28,7 @@ const fields = [
 const open = { autofill: { name: true, dob: true, email: true, phone: true, address: true, nric: true } };
 const decisions = decideAll(fields, packet, open);
 const byId = Object.fromEntries(decisions.map((row) => [row.fieldId, row]));
-assert.equal(byId.name.decision, 'autofill');
+assert.equal(byId.name.decision, 'review');
 assert.equal(byId.name.value, 'Mina Fixture');
 assert.equal(byId.dob.decision, 'abstain');
 assert.equal(byId.dob.reason, 'no_source');
@@ -89,7 +89,7 @@ const claimant = decideAll(
   'Claimant\nFull name: Ulf Sample\nWitness\nFull name: Kim Voss\n',
   open
 );
-assert.equal(claimant[0].decision, 'autofill');
+assert.equal(claimant[0].decision, 'review');
 assert.equal(claimant[0].value, 'Ulf Sample');
 
 const spouse = extract('Applicant\nFull name: Ulf Sample\nSpouse\nFull name: Kim Voss\nPhone: +65 80000099\n');

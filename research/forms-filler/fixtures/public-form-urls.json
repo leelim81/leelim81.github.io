@@ -1,0 +1,16 @@
+{
+  "note": "Public form URLs used to reproduce wrong-field placement. The PDFs are not committed. Tests use synthetic labels taken from these forms and do not fetch them.",
+  "forms": [
+    { "id": "sc", "url": "https://www.sc.com/global/av/bd-personal-account-opening-form.pdf", "page": 2, "labels": ["Father's Name", "Mother's Name", "Name of Introducer"] },
+    { "id": "ocbc", "url": "https://www.ocbc.com/assets/pdf/forms/account%20opening/deposits_manual_account_opening_for_up_to_3_persons.pdf", "page": 2, "labels": ["Mother's maiden name"] },
+    { "id": "prudential", "url": "https://www.prudential.com.sg/content/dam/prudential-aem-lbu/pacs/en/prudential/pdf/claimforms/pfc_cform.pdf", "page": 4, "labels": ["Name of Doctor"] },
+    { "id": "i9", "url": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf", "page": 1, "labels": ["Employer's name"] },
+    { "id": "uob", "url": "https://www.uob.com.sg/web-resources/personal/pdf/personal/useful/personal-resource/pib/pib-new.pdf", "labels": ["Name of Signatory", "Signature Verified By", "Approved By"] },
+    { "id": "iras-f24", "url": "https://www.iras.gov.sg/docs/default-source/uploadedfiles/doc/f24-letter-of-authorisation_2025-02-19_v1-0.pdf", "labels": ["Name", "Taxpayers' Signature"] },
+    { "id": "dbs-india", "url": "https://www.dbs.bank.in/in/iwov-resources/pdf/wos/cbg/treasures-non-resident-individual-account-opening-form.pdf", "pages": [3, 4], "labels": ["Nominee: Name", "Guardian of Nominee : Name", "Percentage"] },
+    { "id": "uk-gp", "url": "https://www.poldenmp.nhs.uk/wp-content/uploads/2025/05/New-Patient-Registration-Form-NEW.pdf", "page": 2, "labels": ["First name", "Last name", "Middle name", "Previous last name"] },
+    { "id": "w4", "url": "https://www.irs.gov/pub/irs-pdf/fw4.pdf", "labels": ["First name and middle initial", "Last name"] },
+    { "id": "hsbc", "url": "https://www.hsbc.com.sg/content/dam/hsbc/sg/documents/update-personal-contact-details-form-overseas.pdf", "page": 1, "labels": ["Existing NRIC/Passport No", "Last Name/Surname", "First/Given Name"] },
+    { "id": "dbs-hk", "url": "https://www.dbs.com.hk/iwov-resources/pdf/appforms/banking/personal-aof-en.pdf", "page": 1, "labels": ["Date of birth"] }
+  ]
+}
