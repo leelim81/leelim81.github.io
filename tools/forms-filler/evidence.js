@@ -30,16 +30,17 @@
     return '';
   }
 
+  /* Helvetica widths for character codes 32–126, in thousandths of an em.
+     Measured from the font, not from one average for every capital. */
+  var HELVETICA = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+
   function textWidth(text, size) {
     var width = 0;
     var s = String(text || '');
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      var factor = 0.52;
-      if (c <= 32) factor = 0.28;
-      else if (c >= 48 && c <= 57) factor = 0.56;
-      else if (c === 45 || c === 47) factor = 0.33;
-      width += size * factor;
+      var em = c >= 32 && c <= 126 ? HELVETICA[c - 32] : 500;
+      width += size * em / 1000;
     }
     return width;
   }
@@ -73,11 +74,16 @@
     return lines;
   }
 
-  /* Wrapped lines must stay inside the field rectangle. */
+  /* Wrapped lines must stay inside the field rectangle. A value that can
+     sit on one line is shrunk until it does. Wrapping is only for a box
+     tall enough for another row, so a second line cannot cross into the
+     next table row. */
   function fitInBox(text, boxWidth, boxHeight, start) {
     var size = start > 0 ? start : 10;
     var min = 6;
     if (!(boxWidth > 0) || !(boxHeight > 0)) return { size: size, fits: false, lines: 0 };
+    var one = fittedSize(text, boxWidth, size);
+    if (one.fits && lineBoxHeight(one.size) <= boxHeight + 0.5) return { size: one.size, fits: true, lines: 1 };
     while (size >= min) {
       var lines = wrappedLines(text, size, boxWidth);
       var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
@@ -87,6 +93,16 @@
       size = Math.round((size - 0.2) * 10) / 10;
     }
     return { size: min, fits: false, lines: wrappedLines(text, min, boxWidth).length };
+  }
+
+  /* A box that asks for only part of an ID cannot take the whole number.
+     Both an ID word and a unit are required, so "first 6 months" is not one. */
+  function partialIdLabel(text) {
+    var s = String(text || '');
+    var slice = /\b(?:first|last)\s+\d+\b/i.test(s);
+    var idWord = /\b(?:nric|passport|fin|\bic\b|\bid\b|accounts?|cards?)\b/i.test(s);
+    var unit = /\b(?:characters?|digits?|letters?|chars?)\b/i.test(s);
+    return slice && idWord && unit;
   }
 
   function allowsValue(field, value) {
@@ -230,6 +246,7 @@
     var region = String((field && field.region) || '');
     var blob = [label, group, section, heading].join('\n');
     if (region === 'signature' || region === 'bank-use' || region === 'other-person') return region;
+    if (partialIdLabel(label)) return 'partial-id';
     if (accountHolderName(label)) return 'account-holder';
     if (placeName(label)) return 'address-part';
     if (userOrNickName(label)) return 'not-offered';
@@ -309,6 +326,18 @@
     return current;
   }
 
+  /* A blank's own label, such as "Mother's Name" or "Name of Employer",
+     names the value written on that line. It is not a section title, even
+     when the person word would otherwise mark someone else. */
+  function isAttributeLabel(line) {
+    var s = headPhrase(line);
+    if (!s) return false;
+    if (/\b(?:particulars|details|information|data)\b/.test(s)) return false;
+    if (/\b(?:name|nama)\b/.test(s)) return true;
+    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address|postal|postal code)$/.test(s)) return true;
+    return false;
+  }
+
   /* A section title is a short label. A sentence, a wrapped field label,
      and a row of filled-in examples are not headings. */
   function isSectionHeading(raw) {
@@ -316,7 +345,9 @@
     if (!line || line.length > 48) return '';
     var words = line.split(' ').filter(Boolean);
     if (words.length > 7) return '';
+    if (/^[a-z]/.test(line)) return '';
     if (/\([^)]*$/.test(line)) return '';
+    if (isAttributeLabel(line)) return '';
     if (/\b(full name of|name\s*&\s*address|name and address of)\b/i.test(line)) return '';
     if (/^(i|we|the|this|if|when|where|please|complete|as the|while|note)\b/i.test(line)) return '';
     if (/\b(must|shall|agree|hereby|please|complete|during|before the|after the)\b/i.test(line)) return '';
@@ -510,7 +541,7 @@
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
-    if (/birth|\bdob\b/.test(s)) return 'dob';
+    if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
@@ -624,17 +655,21 @@
   function applicantIdentitySlot(field) {
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
-    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
+    var s;
     if (splitKind(field.label)) return '';
     if (chineseNameLabel(field.label)) return 'chineseName';
     if (applicantNameLabel(field.label)) return 'name';
+    /* A format note in parentheses is not part of the label. "Date of Birth
+       (mm/dd/yyyy)" and "Address (Street Number and Name)" are still those
+       lines. */
+    s = headPhrase(field.label || '').replace(/#+$/g, '').trim();
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
-    if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';
+    if (/^(?:date of birth|dob|birth date)(?:\s+mm\s*dd\s*yyyy)?$/.test(s)) return 'dob';
     if (/^(?:sex|gender)$/.test(s)) return 'sex';
     if (/^(?:nationality|citizenship)$/.test(s)) return 'nationality';
     if (/^country of birth$/.test(s)) return 'birthCountry';
     if (/^race$/.test(s)) return 'race';
-    if (/^(?:residential address|home address|address)$/.test(s)) return 'address';
+    if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
     if (/^(?:postal|postal code)$/.test(s)) return 'postal';
     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
@@ -769,6 +804,159 @@
     var owned = same.filter(applicantSection);
     if (!owned.length) return '';
     return owned.indexOf(field) >= 0 ? slot : '';
+  }
+
+  var MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var DATE_CLUSTER = /(?:y{2,4}|m{1,4}|d{1,4})(?:[^A-Za-z0-9]*(?:y{2,4}|m{1,4}|d{1,4})){1,3}/ig;
+  var DATE_TOKEN = /^(yyyy|mmmm|mmm|mm|dd|d|m)/i;
+
+  function daysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+  }
+
+  /* Stored dates are day, then month, then year. */
+  function parseSourceDate(value) {
+    var text = String(value || '').trim();
+    var numeric = text.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})$/);
+    if (numeric) {
+      var day = parseInt(numeric[1], 10);
+      var month = parseInt(numeric[2], 10);
+      var year = parseInt(numeric[3], 10);
+      if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return null;
+      return { y: year, m: month, d: day };
+    }
+    var named = text.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/);
+    if (!named) return null;
+    var key = named[2].slice(0, 3).toLowerCase();
+    var monthIndex = -1;
+    for (var i = 0; i < MONTH_SHORT.length; i++) if (MONTH_SHORT[i].toLowerCase() === key) monthIndex = i;
+    if (monthIndex < 0) return null;
+    var namedDay = parseInt(named[1], 10);
+    var namedYear = parseInt(named[3], 10);
+    if (namedDay < 1 || namedDay > daysInMonth(namedYear, monthIndex + 1)) return null;
+    return { y: namedYear, m: monthIndex + 1, d: namedDay };
+  }
+
+  function dateTokenRole(token) {
+    var lower = token.toLowerCase();
+    if (lower === 'd' || lower === 'dd') return 'day';
+    if (lower === 'm' || lower === 'mm' || lower === 'mmm' || lower === 'mmmm') return 'month';
+    if (lower === 'yyyy') return 'year';
+    return '';
+  }
+
+  function parseDateCluster(cluster) {
+    var parts = [];
+    var seps = [];
+    var i = 0;
+    while (i < cluster.length) {
+      var token = cluster.slice(i).match(DATE_TOKEN);
+      if (!token) return /^[dmy]/i.test(cluster.charAt(i)) ? { bad: true } : null;
+      if (!dateTokenRole(token[1])) return { bad: true };
+      parts.push(token[1]);
+      i += token[1].length;
+      if (i >= cluster.length) break;
+      var sep = cluster.slice(i).match(/^[^A-Za-z0-9]+/);
+      if (sep) {
+        seps.push(sep[0]);
+        i += sep[0].length;
+      } else if (/[dmy]/i.test(cluster.charAt(i))) seps.push('');
+      else break;
+    }
+    if (i < cluster.length) return { bad: true };
+    if (parts.length < 2) return null;
+    var seen = {};
+    for (var p = 0; p < parts.length; p++) {
+      var role = dateTokenRole(parts[p]);
+      if (!role || seen[role]) return { bad: true };
+      seen[role] = true;
+    }
+    if (!seen.day || !seen.month || !seen.year) return { bad: true };
+    return { parts: parts, seps: seps };
+  }
+
+  /* yyyy on its own is not yy+yy. A one-part token is not a full date. */
+  function hasLoneYear(text) {
+    if (!/yyyy/i.test(text)) return false;
+    var rest = String(text).replace(/yyyy/ig, ' ');
+    return !/(?:y{2,4}|m{1,4}|d{1,4})/i.test(rest);
+  }
+
+  function asksForYear(field) {
+    var blob = [field && field.label, field && field.tooltip, field && field.name, field && field.id].filter(Boolean).join(' ');
+    if (/\byear\b/i.test(blob)) return true;
+    return /\bborn\s+in\b/i.test(blob);
+  }
+
+  function dateHint(field) {
+    var sources = [field && field.label, field && field.tooltip, field && field.name, field && field.id];
+    var loneYear = false;
+    for (var s = 0; s < sources.length; s++) {
+      var text = String(sources[s] || '');
+      if (!text) continue;
+      DATE_CLUSTER.lastIndex = 0;
+      var found;
+      while ((found = DATE_CLUSTER.exec(text))) {
+        var parsed = parseDateCluster(found[0]);
+        if (parsed && parsed.bad) return { bad: true };
+        if (parsed && parsed.parts) return parsed;
+      }
+      if (hasLoneYear(text)) loneYear = true;
+    }
+    if (loneYear && asksForYear(field)) return { yearOnly: true };
+    return null;
+  }
+
+  function applyCase(sample, word) {
+    if (sample === sample.toUpperCase()) return word.toUpperCase();
+    if (sample === sample.toLowerCase()) return word.toLowerCase();
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }
+
+  function padNumber(value, width) {
+    var text = String(value);
+    while (text.length < width) text = '0' + text;
+    return text;
+  }
+
+  /* Write a stored day-month-year date in the order the field asks for.
+     No hint keeps dd/mm/yyyy. A date-like hint that cannot be read is not
+     placed. */
+  function dateForField(value, field) {
+    var hint = dateHint(field);
+    var source = parseSourceDate(value);
+    if (hint && hint.bad) {
+      return {
+        value: '',
+        blocked: true,
+        note: 'This date format is not one this form can fill. Left unticked.'
+      };
+    }
+    if (!source) return { value: String(value || ''), blocked: false };
+    if (hint && hint.yearOnly) return { value: String(source.y), blocked: false };
+    if (!hint) {
+      return {
+        value: padNumber(source.d, 2) + '/' + padNumber(source.m, 2) + '/' + source.y,
+        blocked: false
+      };
+    }
+    var comb = !!(field && field.comb);
+    var out = '';
+    for (var i = 0; i < hint.parts.length; i++) {
+      var token = hint.parts[i];
+      var role = dateTokenRole(token);
+      var piece = '';
+      if (role === 'day') piece = padNumber(source.d, token.length >= 2 ? 2 : 1);
+      else if (role === 'year') piece = String(source.y);
+      else if (token.length >= 3) {
+        var name = token.length >= 4 ? MONTH_FULL[source.m - 1] : MONTH_SHORT[source.m - 1];
+        piece = applyCase(token, name);
+      } else piece = padNumber(source.m, token.length >= 2 ? 2 : 1);
+      out += piece;
+      if (i < hint.parts.length - 1 && !comb) out += hint.seps[i] || '';
+    }
+    return { value: out, blocked: false };
   }
 
   function normValue(kind, value) {
@@ -910,6 +1098,7 @@
     splitKind: splitKind,
     fittedSize: fittedSize,
     fitInBox: fitInBox,
+    dateForField: dateForField,
     allowsValue: allowsValue,
     keepAgreedName: keepAgreedName
   };

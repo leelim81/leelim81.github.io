@@ -39,7 +39,10 @@
     if (words(s).length > 6) return '';
     if (s.charAt(0) === '(' && s.length > 5) return '';
     if (/^(the|and|for|with|that|this|from|your|will|are|was|has|have|not|but|any|all|per|via)$/i.test(s)) return '';
-    if (/sumame|surname|underline|please underline/i.test(s)) return '';
+    /* "(Surname first)" and "(Underline surname)" are instructions. The
+       words in front of them are still the label. */
+    var bare = s.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    if (/sumame|surname|underline|please underline/i.test(bare)) return '';
     if (/[\\|]/.test(s)) return '';
     var letters = s.replace(/[^A-Za-z]/g, '');
     if (letters.length >= 5) {

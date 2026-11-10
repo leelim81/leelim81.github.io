@@ -1431,6 +1431,18 @@
           row.value = value;
           row.kind = slot;
           if (slot === 'dob') {
+            var shapedDob = FormEvidence.dateForField ? FormEvidence.dateForField(value, field) : { value: value };
+            if (shapedDob.blocked) {
+              row.decision = 'review';
+              row.value = '';
+              row.checked = false;
+              row.kind = 'dob';
+              row.note = shapedDob.note;
+              row.reason = 'date_format';
+              row.quote = 'Read from the photo';
+              return;
+            }
+            row.value = shapedDob.value || value;
             row.editable = !!idn.dobUnconfirmed;
             row.checked = !!idn.dobChecked && !idn.dobUnconfirmed;
             row.reason = row.editable ? 'identity_unconfirmed' : 'identity_photo';
@@ -1487,7 +1499,7 @@
           }
         } catch (err) {}
       }
-      var reviews = decisions.filter(function (row) { return row.decision === 'review' && row.value; });
+      var reviews = decisions.filter(function (row) { return row.decision === 'review' && (row.value || row.note); });
       var confirmed = [];
       if (reviews.length && $('reviewBox')) {
         status('Check the values below, then tap Use checked values.', false);
