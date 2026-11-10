@@ -117,38 +117,54 @@
     return (fields || []).some(function (field) { return applicantIdentitySlot(field) === slot; });
   }
 
-  function wholeAddressLine(idn) {
-    return [idn.blk, idn.street, idn.unit ? '#' + String(idn.unit).replace(/^#/, '') : '', idn.postal ? 'SINGAPORE ' + idn.postal : ''].filter(Boolean).join(' ');
+  function hasSplitAddress(fields) {
+    return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
   }
 
-  /* A confirmed whole address needs the block, street and postal code.
-     An unconfirmed block still shows that complete line, unticked and
-     editable, including when the form also has a separate block field. */
-  /* Mixed address shapes stay blank until the block, street and postal code
-     are confirmed together. An unconfirmed block is not blanked: its parts
-     stay visible and unticked. */
+  function blockOpen(idn) {
+    return !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
+  }
+
+  function partConfirmed(idn, slot) {
+    if (blockOpen(idn)) return false;
+    if (slot === 'blk') return !!idn.blk && !!idn.blkChecked;
+    return !!idn[slot] && !!idn[slot + 'Checked'];
+  }
+
+  /* Parts that already have their own row are left out. What remains is
+     written in block, street, unit, postal order. */
+  function addressRemainder(idn, fields) {
+    var bits = [];
+    var shaky = false;
+    function take(slot, text) {
+      if (!text || formHasSlot(fields, slot)) return;
+      bits.push(text);
+      if (!partConfirmed(idn, slot)) shaky = true;
+    }
+    take('blk', idn.blk || '');
+    take('street', idn.street || '');
+    take('unit', idn.unit ? '#' + String(idn.unit).replace(/^#/, '') : '');
+    take('postal', idn.postal ? 'SINGAPORE ' + idn.postal : '');
+    return { value: bits.join(' '), shaky: shaky };
+  }
+
+  /* A mixed form is left blank only when the block itself is not confirmed.
+     An unconfirmed block stays visible, and a confirmed block keeps its parts. */
   function addressSlotsBlank(identity, fields) {
     var idn = identity || {};
-    var split = formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit');
-    var whole = formHasSlot(fields, 'address');
-    if (!split || !whole) return false;
-    if (idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '')) return false;
-    return !(idn.blk && idn.streetChecked && idn.postalChecked);
+    if (!hasSplitAddress(fields) || !formHasSlot(fields, 'address')) return false;
+    if (blockOpen(idn)) return false;
+    return !(idn.blk && idn.blkChecked);
   }
 
   function identityCardOffer(identity, slot, fields) {
     var idn = identity || {};
     if (slot === 'address') {
-      var complete = !!(idn.blk && idn.street && idn.postal);
-      var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
-      if (unconfirmed) {
-        if (!complete || !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
-        return { value: idn.address || wholeAddressLine(idn), checked: false, editable: true };
-      }
-      var split = formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
-      if (split && idn.blk && idn.streetChecked && idn.postalChecked) return { value: '', checked: false, editable: false };
-      if (!complete || !idn.address) return { value: '', checked: false, editable: false };
-      return { value: idn.address, checked: !!idn.addressChecked, editable: false };
+      if (fields && !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
+      var rest = addressRemainder(idn, fields);
+      if (!rest.value) return { value: '', checked: false, editable: false };
+      if (blockOpen(idn) || rest.shaky) return { value: rest.value, checked: false, editable: true };
+      return { value: rest.value, checked: true, editable: false };
     }
     if (slot === 'blk') {
       if (!idn.blk) return { value: '', checked: false, editable: false };
@@ -158,8 +174,9 @@
     if (slot === 'street' || slot === 'unit' || slot === 'postal') {
       var part = idn[slot] || '';
       if (!part) return { value: '', checked: false, editable: false };
-      var blockOpen = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk || '');
-      return { value: part, checked: blockOpen ? false : !!idn[slot + 'Checked'], editable: false };
+      var open = blockOpen(idn);
+      var checked = !open && !!idn[slot + 'Checked'];
+      return { value: part, checked: checked, editable: slot === 'street' && !checked && !open };
     }
     return null;
   }
