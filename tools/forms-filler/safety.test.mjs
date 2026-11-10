@@ -104,6 +104,38 @@ assert.equal(splitRows.last.value, 'Example');
 assert.equal(splitRows.full.value, 'Alex Example');
 assert.equal(splitRows.previous.value, '');
 assert.equal(fieldKind({ label: 'Name in English (Surname first)' }), 'name');
+assert.equal(identityPhotoSlot({ id: 'english', label: 'Name in English (Surname first)', type: 'text' }, [{ id: 'english', label: 'Name in English (Surname first)', type: 'text' }]), 'name');
+
+[
+  'Name as in NRIC',
+  'Name (as in NRIC)',
+  'Name as per NRIC/Passport',
+  'Name (as per NRIC/Passport)',
+  'Full name as in NRIC/FIN/Passport',
+  'Full name (as in NRIC/FIN/Passport)'
+].forEach((label) => {
+  assert.equal(fieldKind({ label: label, type: 'text' }), 'name', label);
+  const decision = row([{ id: 'doc-name', label: label, type: 'text' }], 'doc-name');
+  assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
+  assert.notEqual(decision.value, 'S1234567D', label);
+});
+assert.equal(fieldKind({ label: 'Existing NRIC/Passport No', type: 'text' }), 'nric');
+assert.equal(fieldKind({ label: 'Name as per Debiting Account', type: 'text' }), 'other');
+
+[
+  'Name of Company',
+  'Company name',
+  'Employer name',
+  'Business name',
+  'Organisation name',
+  'Organization name'
+].forEach((label) => {
+  assert.equal(fieldKind({ label: label, type: 'text' }), 'other', label);
+  const decision = row([{ id: 'org', label: label, type: 'text' }], 'org');
+  assert.equal(decision.decision, 'abstain', label);
+  assert.equal(decision.value, '', label);
+  assert.equal(decision.reason, 'placement_refused', label);
+});
 
 const nricBox = row([{ id: 'nric-box', label: 'NRIC', type: 'checkbox' }], 'nric-box');
 assert.equal(nricBox.value, '');

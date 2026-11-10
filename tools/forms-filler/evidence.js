@@ -64,6 +64,21 @@
     return '';
   }
 
+  /* "Name as in NRIC" and "Name (as per NRIC/Passport)" name the person.
+     Parentheses are optional. An ID number on its own stays an ID. */
+  function documentNameLabel(text) {
+    var s = String(text || '').toLowerCase().replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!/^(?:full\s+)?name\b/.test(s)) return false;
+    if (!/\bas\s+(?:in|per)\b/.test(s)) return false;
+    return /\b(?:nric|fin|passport)\b/.test(s);
+  }
+
+  function organisationNameLabel(text) {
+    var s = String(text || '');
+    if (/\b(?:company|business|organi[sz]ation|employer)\s+name\b/i.test(s)) return true;
+    return /\bname\s+of\s+(?:the\s+)?(?:company|business|organi[sz]ation|employer)\b/i.test(s);
+  }
+
   function bareName(label) {
     var s = String(label || '').toLowerCase().replace(/[*:.\s]+$/g, '').trim();
     return s === 'name' || s === 'full name' || s === 'percentage';
@@ -79,6 +94,7 @@
     var region = String((field && field.region) || '');
     var blob = [label, group, section, heading].join('\n');
     if (region === 'signature' || region === 'bank-use' || region === 'other-person') return region;
+    if (organisationNameLabel(label)) return 'organisation';
     if (/for bank use|bank use only|for official use|official use only|office use only/i.test(blob)) return 'bank-use';
     if (/signature verified|\bapproved by\b|name of signatory|\bsignatory\b|\bsignature\b/i.test(blob)) return 'signature';
     var parts = [label, group, section, heading];
@@ -126,12 +142,12 @@
     if (/debit/.test(s)) return 'other';
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
+    if (documentNameLabel(field && field.label)) return 'name';
     if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
     if (/birth|\bdob\b/.test(s)) return 'dob';
-    if (/^name \(as in nric\b/.test(s)) return 'name';
     if (/nric|\bfin\b|identity number|identification/.test(s)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
     if (/postal/.test(s)) return 'postal';
@@ -190,6 +206,7 @@
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
     if (/^name \(as in nric\b/.test(s)) return 'name';
+    if (/^name in english\b/.test(s)) return 'name';
     if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
     if (/^(?:full name|name)$/.test(s)) return 'name';
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
