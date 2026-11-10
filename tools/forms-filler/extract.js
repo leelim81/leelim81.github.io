@@ -871,7 +871,7 @@
 
   async function rereadBlockLetter(session, worker, canvas, word) {
     var box = lastGlyphBox(word);
-    if (!box || !canvas) return '';
+    if (!box || !canvas) return null;
     var crops = [
       cropGlyph(canvas, box, 4, false, 10),
       cropGlyph(canvas, box, 6, false, 10),
@@ -889,17 +889,17 @@
       if (hit) {
         hits.push(hit);
         var agreed = hits.filter(function (item) { return item.letter === hit.letter && item.confidence >= 40; });
-        if (agreed.length >= 2) return hit.letter;
+        if (agreed.length >= 2) return { letter: hit.letter, confidence: hit.confidence };
         if (hit.confidence >= 60) {
           var rivals = hits.some(function (item) {
             return item.letter !== hit.letter && item.confidence >= hit.confidence - 15;
           });
-          if (!rivals) return hit.letter;
+          if (!rivals) return { letter: hit.letter, confidence: hit.confidence };
         }
       }
       if (slow) break;
     }
-    return '';
+    return null;
   }
 
   async function maybeRereadBlock(session, worker, canvas, read, rawWords) {
@@ -907,22 +907,23 @@
     if (!glyphRoom(session)) return;
     var word = blockWordOf(rawWords, read.blk);
     if (!word || !headDigitsStable(word, read.blk)) return;
-    var letter = '';
+    var found = null;
     try {
       await applyParams(session, worker, {
         tessedit_pageseg_mode: '10',
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
       });
-      letter = await rereadBlockLetter(session, worker, canvas, word);
+      found = await rereadBlockLetter(session, worker, canvas, word);
     } finally {
       await applyParams(session, worker, {
         tessedit_pageseg_mode: '6',
         tessedit_char_whitelist: ''
       });
     }
-    if (!/^[A-Z]$/.test(letter)) return;
-    read.blkSuggest = read.blk.slice(0, 3) + letter;
+    if (!found || !/^[A-Z]$/.test(found.letter)) return;
+    read.blkSuggest = read.blk.slice(0, 3) + found.letter;
     read.blkSuggestKind = 'reread';
+    read.blkSuggestConf = found.confidence;
   }
 
   async function recognizeCard(session, canvas, scale, pageWidth, pageHeight) {
@@ -959,7 +960,7 @@
           } catch (err) {
             if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
           }
-          bag.push(extraPass ? { blk: read.blk, blkSuggest: read.blkSuggest, blkSuggestKind: read.blkSuggestKind, blkUnconfirmed: true, postal: '' } : read);
+          bag.push(extraPass ? { blk: read.blk, blkSuggest: read.blkSuggest, blkSuggestKind: read.blkSuggestKind, blkSuggestConf: read.blkSuggestConf, blkUnconfirmed: true, postal: '' } : read);
           if (!extraPass && (read.nricValid || (read.name && read.name.split(' ').length >= 3 && keptNricConf == null))) {
             var nextConf = read.nricValid ? read.nricConf : null;
             if (FormFacts.keepCardWords(keptNricConf, read.nricValid ? nextConf : keptNricConf, false)) {
