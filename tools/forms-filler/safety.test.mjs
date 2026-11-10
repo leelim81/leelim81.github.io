@@ -67,15 +67,15 @@ const f24 = [
   { id: 'taxpayer', label: 'Name', type: 'text', page: 0, rect: { x: 181, y: 114, width: 380, height: 25 } },
   { id: 'signed', label: "Taxpayers' Signature", type: 'text', page: 0, rect: { x: 333, y: 64, width: 230, height: 39 } }
 ];
-assert.equal(row(f24, 'taxpayer').value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
-assert.notEqual(row(f24, 'taxpayer').refusal, 'signature');
+assert.equal(row(f24, 'taxpayer').value, '');
+assert.equal(row(f24, 'taxpayer').refusal, 'signature');
 const qcr = [
   { id: 'name', label: 'Name', type: 'text', page: 0, rect: { x: 138, y: 304, width: 395, height: 11 } },
   { id: 'sign', label: 'Signature', type: 'text', page: 0, rect: { x: 252, y: 226, width: 139, height: 40 } }
 ];
 assert.equal(row(qcr, 'name').value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
 assert.notEqual(row(qcr, 'name').refusal, 'signature');
-assert.equal(identityPhotoSlot(f24[0], f24), 'name');
+assert.equal(identityPhotoSlot(f24[0], f24), '');
 const kept = row([{ id: 'top', label: 'Name (as in NRIC/Passport*)', type: 'text' }], 'top');
 assert.equal(kept.decision, 'review');
 assert.equal(kept.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
@@ -584,7 +584,7 @@ assert.equal(decideAll(bankUseScan, packet, open)[0].value, '');
 assert.equal(decideAll(bankUseScan, packet, open)[0].refusal, 'signature');
 
 markRegions(f24);
-assert.notEqual(unsafeDestination(f24[0]), 'signature');
+assert.equal(unsafeDestination(f24[0]), 'signature');
 assert.equal(unsafeDestination({ label: 'Name', section: 'For official use' }), 'bank-use');
 assert.equal(unsafeDestination({ label: "Father's Name" }), 'other-person');
 

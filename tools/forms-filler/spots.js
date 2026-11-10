@@ -70,6 +70,26 @@
         str: label
       });
     });
+    for (var i = 0; i < out.length; i++) {
+      for (var j = 0; j < out.length; j++) {
+        if (i === j) continue;
+        var gap = out[j].x - (out[i].x + out[i].w);
+        if (gap < -1 || gap > 6) continue;
+        if (Math.abs(out[i].y - out[j].y) > 3) continue;
+        var joined = (out[i].str + ' ' + out[j].str).replace(/\s+/g, ' ').trim();
+        if (!/^your name$/i.test(joined)) continue;
+        out[i] = {
+          x: out[i].x,
+          y: out[i].y,
+          w: out[j].x + out[j].w - out[i].x,
+          h: Math.max(out[i].h, out[j].h),
+          str: 'Your name'
+        };
+        out.splice(j, 1);
+        if (j < i) i--;
+        break;
+      }
+    }
     return out;
   }
 
@@ -394,6 +414,9 @@
     var line = String(text && text.str || '').replace(/\s+/g, ' ').trim();
     if (!line || words(line).length > 8 || line.length > 48) return null;
     var kind = sectionKind(line);
+    if (typeof FormEvidence !== 'undefined' && FormEvidence.isSectionHeading) {
+      kind = FormEvidence.isSectionHeading(line);
+    }
     var bare = line.replace(/[:.\s]+$/g, '');
     if (!kind && /^(approved by|signature verified by|verified by|for bank use only|for official use(?: only)?|office use only)$/i.test(bare)) kind = 'reset';
     if (!kind) return null;
@@ -686,6 +709,8 @@
         group: slot.group || '',
         section: slot.section || '',
         untrusted: !!slot.untrusted,
+        texts: texts,
+        pageTexts: page.texts || [],
         rect: { x: slot.x, y: slot.y, width: slot.w, height: Math.max(12, slot.h) },
         lineH: 12
       });

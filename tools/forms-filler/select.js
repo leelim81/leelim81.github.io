@@ -133,6 +133,9 @@
       if (kind === 'chineseName') {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'script_mismatch', hard: 'script' });
       }
+      if (field && field.imprint && (kind === 'name' || kind === 'given' || kind === 'surname')) {
+        return Object.assign(base, { decision: 'abstain', value: '', reason: 'card_imprint', hard: 'destination' });
+      }
       if ((field.type === 'checkbox' || field.type === 'radio') && /^(name|given|surname|nric|dob|phone|email|address|postal)$/.test(kind)) {
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'placement_refused', refusal: 'not-a-text-line', hard: 'destination' });
       }

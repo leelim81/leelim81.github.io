@@ -296,9 +296,28 @@
     return right > 0 ? right + 16 : 595;
   }
 
+  /* A section title is a short label. A sentence, a wrapped field label,
+     and a row of filled-in examples are not headings. */
+  function isSectionHeading(raw) {
+    var line = String(raw || '').replace(/\s+/g, ' ').trim();
+    if (!line || line.length > 48) return '';
+    var words = line.split(' ').filter(Boolean);
+    if (words.length > 7) return '';
+    if (/\([^)]*$/.test(line)) return '';
+    if (/\b(full name of|name\s*&\s*address|name and address of)\b/i.test(line)) return '';
+    if (/^(i|we|the|this|if|when|where|please|complete|as the|while|note)\b/i.test(line)) return '';
+    if (/\b(must|shall|agree|hereby|please|complete|during|before the|after the)\b/i.test(line)) return '';
+    if (/[a-z]/.test(line) && line === line.toLowerCase()) return '';
+    if (/[.!?]$/.test(line) && words.length > 3) return '';
+    if ((line.match(/,/g) || []).length > 0) return '';
+    if (/\d{5,}|%/.test(line)) return '';
+    return sectionKind(line);
+  }
+
   function gatherHeadings(fields) {
     var seen = {};
     var headings = [];
+    var texts = [];
     function add(item) {
       var key = (item.page || 0) + '|' + Math.round(item.x) + '|' + Math.round(item.y) + '|' + item.raw;
       if (seen[key]) return;
@@ -309,19 +328,62 @@
       var page = field.page || 0;
       (field.texts || field.pageTexts || []).forEach(function (text) {
         var raw = String(text && text.str || '').replace(/\s+/g, ' ').trim();
-        var kind = sectionKind(raw);
+        if (!raw) return;
+        var item = { x: text.x || 0, y: text.y || 0, w: text.w || 0, h: text.h || 0, raw: raw, page: page, table: text.table || text.cell || null };
+        texts.push(item);
+        var kind = isSectionHeading(raw);
         if (!kind) return;
-        add({
-          x: text.x || 0,
-          y: text.y || 0,
-          w: text.w || 0,
-          h: text.h || 0,
-          raw: raw,
-          kind: kind,
-          page: page,
-          table: text.table || text.cell || null
-        });
+        item.kind = kind;
+        add(item);
       });
+    });
+    headings.forEach(function (heading) {
+      if (heading.table) return;
+      var row = texts.filter(function (text) {
+        return text.page === heading.page && Math.abs(text.y - heading.y) <= 6 && text.raw !== heading.raw;
+      });
+      var under = texts.filter(function (text) {
+        if (text.page !== heading.page) return false;
+        var dy = heading.y - text.y;
+        return dy >= 8 && dy <= 36 && text.raw.split(' ').length <= 4;
+      });
+      var band = [];
+      var bestCount = 0;
+      under.forEach(function (seed) {
+        var group = under.filter(function (text) { return Math.abs(text.y - seed.y) <= 4; });
+        if (group.length > bestCount) {
+          bestCount = group.length;
+          band = group;
+        }
+      });
+      if (band.length >= 3) {
+        var left = band[0].x;
+        var right = band[0].x + band[0].w;
+        var bottom = band[0].y;
+        var bandY = band[0].y;
+        band.forEach(function (text) {
+          if (text.x < left) left = text.x;
+          if (text.x + text.w > right) right = text.x + text.w;
+          if (text.y < bottom) bottom = text.y;
+        });
+        texts.forEach(function (text) {
+          if (text.page !== heading.page) return;
+          if (text.y > bandY + 4 || text.y < bottom - 36) return;
+          if (text.x + text.w > right) right = text.x + text.w;
+          if (text.x < left) left = text.x;
+          if (text.y < bottom) bottom = text.y;
+        });
+        heading.table = { x: left, width: Math.max(40, right - left), bottom: bottom - (band[0].h || 10) };
+        heading.header = true;
+      } else if (row.length >= 2) {
+        heading.header = true;
+        var next = null;
+        row.forEach(function (text) {
+          if (text.x <= heading.x + 4) return;
+          if (!next || text.x < next) next = text.x;
+        });
+        if (next != null) heading.table = { x: heading.x - COLUMN_TOL, width: next - (heading.x - COLUMN_TOL), bottom: heading.y - 96 };
+      }
     });
     return headings;
   }
@@ -332,6 +394,7 @@
     var dy = heading.y - fieldTop;
     var limit = heading.kind === 'applicant' ? 420 : 280;
     if (dy < -8 || dy > limit) return false;
+    if (heading.table && heading.table.bottom != null && fieldTop < heading.table.bottom - 4) return false;
     var span = columnSpan(heading, headings, rightEdge);
     var cx = centreX(field.rect);
     return cx >= span.left && cx < span.right;
@@ -385,6 +448,25 @@
         }
       });
       if (hit) field.region = hit;
+    });
+    list.forEach(function (field) {
+      if (field.region || !field.rect || !bareName(field.label)) return;
+      list.forEach(function (other) {
+        if (field.region || other === field || !other.rect) return;
+        if ((other.page || 0) !== (field.page || 0)) return;
+        if (!/signature/i.test(String(other.label || '') + ' ' + String(other.section || ''))) return;
+        var gap = field.rect.y - topY(other.rect);
+        if (gap < -2 || gap > 16) return;
+        var span = columnSpan({
+          x: other.rect.x || 0,
+          y: topY(other.rect),
+          page: other.page || 0,
+          table: other.table || null
+        }, headings, rightEdge);
+        var cx = centreX(field.rect);
+        if (cx < span.left || cx >= span.right) return;
+        field.region = 'signature';
+      });
     });
     return list;
   }
@@ -457,6 +539,7 @@
     if (/^(?:please\s+)?print(?:ed)?\s+(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
     if (/^name to appear on (?:the\s+)?(?:debit\s+|atm\s+)?cards?$/.test(s)) return true;
     if (/^name of accountholders?(?:\s+in\s+english)?$/.test(s)) return true;
+    if (/^name of (?:the )?(?:entity\/individual|individual\/entity)$/.test(s.replace(/\s*\/\s*/g, '/'))) return true;
     if (/^nama\s+(?:pemohon|pencadang|pemegang\s+polisi|pekerja|pelanggan)$/.test(s)) return true;
     var person = 'applicants?|customers?|members?|claimants?|proposers?|policy\\s*holders?|employees?|card\\s*holders?|clients?|subscribers?|taxpayers?|principals?|account\\s+applicants?|(?:main|primary)\\s+applicants?';
     if (new RegExp('^(?:' + person + ')s?\\s+(?:full\\s+)?(?:name|nama)$').test(s)) return true;
@@ -474,6 +557,7 @@
       return String(part || '').trim();
     });
     if (pieces.length > 1) {
+      if (allowOne(text)) return true;
       if (combinedNameAndId(text)) return false;
       return pieces.some(allowOne);
     }
@@ -631,10 +715,26 @@
     return best;
   }
 
+  function markCardImprint(field) {
+    if (!field || !field.rect || field.imprint) return;
+    if (!/^(?:full\s+)?name$/.test(headPhrase(field.label || ''))) return;
+    var bottom = field.rect.y;
+    (field.pageTexts || field.texts || []).forEach(function (text) {
+      var dy = bottom - (text.y || 0);
+      if (dy < -2 || dy > 20) return;
+      var overlap = Math.min((field.rect.x || 0) + rectWidth(field.rect), (text.x || 0) + (text.w || 0)) - Math.max(field.rect.x || 0, text.x || 0);
+      if (overlap < 12) return;
+      if (/name on (?:the )?(?:debit |atm )?card|not to exceed \d+ character/i.test(text.str || '')) field.imprint = true;
+    });
+  }
+
   function applySectionContext(fields) {
     var headings = gatherHeadings(fields);
     (fields || []).forEach(function (field) {
-      if (!field || field.section || !field.rect) return;
+      if (!field || !field.rect) return;
+      markCardImprint(field);
+      var hasText = (field.pageTexts && field.pageTexts.length) || (field.texts && field.texts.length);
+      if (!hasText && field.section && isSectionHeading(field.section)) return;
       var rightEdge = pageEdge(fields, field.page || 0);
       var best = null;
       headings.forEach(function (heading) {
@@ -642,7 +742,7 @@
         var dy = heading.y - topY(field.rect);
         if (!best || dy < best.dy - 0.5 || (Math.abs(dy - best.dy) <= 0.5 && heading.x > best.x)) best = { line: String(heading.raw || '').replace(/[:.\s]+$/g, ''), dy: dy, x: heading.x };
       });
-      if (best) field.section = best.line;
+      field.section = best ? best.line : '';
     });
     return fields;
   }
@@ -785,6 +885,7 @@
     fieldRole: fieldRole,
     identityPhotoSlot: identityPhotoSlot,
     nearestSectionHeading: nearestSectionHeading,
+    isSectionHeading: isSectionHeading,
     applySectionContext: applySectionContext,
     identityCardOffer: identityCardOffer,
     chineseScript: chineseScript,
