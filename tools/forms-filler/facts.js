@@ -1063,10 +1063,101 @@
     return { value: '', kind: '' };
   }
 
+  function groupBlockStems(reads) {
+    var groups = {};
+    var order = [];
+    (reads || []).forEach(function (read) {
+      if (!read || !read.blk) return;
+      var stem = '';
+      var raw = '';
+      var letter = '';
+      if (/^\d{4}$/.test(read.blk)) {
+        stem = read.blk.slice(0, 3);
+        raw = read.blk;
+        if (read.blkSuggestKind === 'reread' && stemMatches(read.blk, read.blkSuggest)) letter = read.blkSuggest.charAt(3);
+      } else if (/^\d{3}[A-Z]$/.test(read.blk)) {
+        stem = read.blk.slice(0, 3);
+        letter = read.blk.charAt(3);
+      } else return;
+      if (!groups[stem]) {
+        groups[stem] = [];
+        order.push(stem);
+      }
+      groups[stem].push({ raw: raw, letter: letter });
+    });
+    return { groups: groups, order: order };
+  }
+
+  function lettersOnStem(group) {
+    var letters = [];
+    (group || []).forEach(function (row) {
+      if (row.letter && letters.indexOf(row.letter) < 0) letters.push(row.letter);
+    });
+    return letters;
+  }
+
+  function hintForStem(group, letter) {
+    var counts = {};
+    var order = [];
+    (group || []).forEach(function (row) {
+      if (!row.raw) return;
+      if (letter && row.letter && row.letter !== letter) return;
+      if (!counts[row.raw]) {
+        counts[row.raw] = 0;
+        order.push(row.raw);
+      }
+      counts[row.raw] += 1;
+    });
+    var best = '';
+    var bestCount = 0;
+    order.forEach(function (raw) {
+      if (counts[raw] > bestCount) {
+        bestCount = counts[raw];
+        best = raw;
+      }
+    });
+    return best;
+  }
+
+  /* Pick a stem other reads, or a confirmed postal code, actually support.
+     A lone misread stem does not become the suggestion. */
+  function selectReread(reads, postal) {
+    var grouped = groupBlockStems(reads);
+    var groups = grouped.groups;
+    var order = grouped.order;
+    if (!order.length) return null;
+    var postalStem = postal && postal.checked && /^\d{6}$/.test(postal.value || '') ? String(postal.value).slice(-3) : '';
+    function offer(stem) {
+      var letters = lettersOnStem(groups[stem]);
+      if (letters.length !== 1) return null;
+      var hint = hintForStem(groups[stem], letters[0]);
+      if (!hint) return null;
+      return { value: stem + letters[0], hint: hint };
+    }
+    var bestCount = 0;
+    order.forEach(function (stem) {
+      if (groups[stem].length > bestCount) bestCount = groups[stem].length;
+    });
+    var leaders = order.filter(function (stem) { return groups[stem].length >= 2 && groups[stem].length === bestCount; });
+    if (leaders.length === 1 && (!postalStem || postalStem === leaders[0])) {
+      var agreed = offer(leaders[0]);
+      if (agreed) return agreed;
+    }
+    if (!postalStem || !groups[postalStem]) return null;
+    var support = groups[postalStem].length;
+    var stronger = order.some(function (stem) { return stem !== postalStem && groups[stem].length > support; });
+    if (stronger) return null;
+    return offer(postalStem);
+  }
+
   /* A 4-digit HDB block is implausible. Replace it only when a letter
      reading is supported, and never mark that replacement checked. */
   function repairFourBlock(reads, agreed, postal) {
     if (agreed && agreed.value && !/^\d{4}$/.test(agreed.value)) return null;
+    var hasReread = (reads || []).some(function (read) {
+      return read && read.blkSuggestKind === 'reread' && stemMatches(read.blk, read.blkSuggest);
+    });
+    if (hasReread) return selectReread(reads, postal);
     var present = (reads || []).filter(function (read) { return read && read.blk; });
     var fours = [];
     present.forEach(function (read) {

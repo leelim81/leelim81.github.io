@@ -863,10 +863,16 @@
     }
   }
 
+  function glyphRoom(session) {
+    if (!session) return false;
+    if ((session._ffGlyphCrops || 0) >= 4) return false;
+    if (session._ffGlyphT0 && Date.now() - session._ffGlyphT0 > 900) return false;
+    return true;
+  }
+
   async function rereadBlockLetter(session, worker, canvas, word) {
     var box = lastGlyphBox(word);
     if (!box || !canvas) return '';
-    var started = Date.now();
     var crops = [
       cropGlyph(canvas, box, 4, false, 10),
       cropGlyph(canvas, box, 6, false, 10),
@@ -874,8 +880,9 @@
     ];
     var hits = [];
     for (var i = 0; i < crops.length; i++) {
-      if (Date.now() - started > 900) break;
+      if (!glyphRoom(session)) break;
       if (session.cancelled || session.released) throw cancelledError();
+      session._ffGlyphCrops = (session._ffGlyphCrops || 0) + 1;
       var result = await recognizeGlyph(session, worker, crops[i]);
       var hit = letterFromGlyph(result);
       if (!hit) continue;
@@ -893,11 +900,10 @@
   }
 
   async function maybeRereadBlock(session, worker, canvas, read, rawWords) {
-    if (!read || !/^\d{4}$/.test(read.blk) || read.blkSuggest) return;
-    if (session._ffGlyphDone || session._ffGlyphTries >= 2) return;
+    if (!read || !/^\d{4}$/.test(read.blk)) return;
+    if (!glyphRoom(session)) return;
     var word = blockWordOf(rawWords, read.blk);
     if (!word || !headDigitsStable(word, read.blk)) return;
-    session._ffGlyphTries = (session._ffGlyphTries || 0) + 1;
     var letter = '';
     try {
       await applyParams(session, worker, {
@@ -914,7 +920,6 @@
     if (!/^[A-Z]$/.test(letter)) return;
     read.blkSuggest = read.blk.slice(0, 3) + letter;
     read.blkSuggestKind = 'reread';
-    session._ffGlyphDone = true;
   }
 
   async function recognizeCard(session, canvas, scale, pageWidth, pageHeight) {
@@ -925,6 +930,8 @@
           return recognizePlain(session, canvas, scale, pageWidth, pageHeight);
         }
         var worker = await ocrWorker(session);
+        session._ffGlyphCrops = 0;
+        session._ffGlyphT0 = Date.now();
         var bag = [];
         var words = [];
         var used = { rotate: 0, tilt: 0 };
