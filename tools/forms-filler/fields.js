@@ -109,8 +109,9 @@
       }
       var rect = null;
       var pageIndex = 0;
+      var widgets = [];
       try {
-        var widgets = field.acroField && field.acroField.getWidgets ? field.acroField.getWidgets() : [];
+        widgets = field.acroField && field.acroField.getWidgets ? field.acroField.getWidgets() : [];
         if (widgets.length && widgets[0].getRectangle) rect = widgets[0].getRectangle();
         var pref = widgets.length && widgets[0].dict ? widgets[0].dict.get(PDFLib.PDFName.of('P')) : null;
         var pages = doc.getPages();
@@ -118,9 +119,16 @@
           if (pref && pages[pi].ref === pref) pageIndex = pi;
         }
       } catch (err) {}
+      var tooltip = '';
+      try {
+        var tu = widgets.length && widgets[0].dict ? widgets[0].dict.get(PDFLib.PDFName.of('TU')) : null;
+        if (tu && typeof tu.decodeText === 'function') tooltip = tu.decodeText();
+        else if (tu && typeof tu.value === 'string') tooltip = tu.value;
+      } catch (err) {}
       fields.push({
         id: field.getName(),
         label: prettify(field.getName()),
+        tooltip: tooltip,
         type: type,
         options: options,
         source: 'acro',

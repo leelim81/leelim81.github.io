@@ -314,6 +314,31 @@ assert.equal(person.sectionKind('Referral'), 'other');
 
 /* DBS Hong Kong name row. The box is one row tall enough that a wrap would
    land on the next row, so a long name shrinks onto that one line. */
+const born = `Applicant
+Date of birth: 14-03-1984
+`;
+const november = `Applicant
+Date of birth: 02-11-1990
+`;
+function dated(label, packet, extra) {
+  const field = Object.assign({ id: 'dob', label: label, type: 'text' }, extra || {});
+  return decideAll([field], packet, { autofill: { dob: true } })[0];
+}
+assert.equal(dated('Date of Birth mmddyyyy', born).value, '03141984', 'I-9 mmddyyyy');
+assert.equal(dated('Date of Birth (mm/dd/yyyy)', born).value, '03/14/1984', 'US mm/dd/yyyy');
+assert.equal(dated('Date of Birth (dd/mm/yyyy)', born).value, '14/03/1984', 'SG dd/mm/yyyy');
+assert.equal(dated('Date of birth', born).value, '14/03/1984', 'default dd/mm/yyyy');
+assert.equal(dated('Date of birth (yyyy-mm-dd)', born).value, '1984-03-14', 'ISO yyyy-mm-dd');
+assert.equal(dated('Date of Birth (mm/dd/yyyy)', november).value, '11/02/1990', '2 Nov is not swapped');
+assert.notEqual(dated('Date of Birth (mm/dd/yyyy)', november).value, '02/11/1990');
+const odd = dated('Date of Birth (yy/mm/dd)', born);
+assert.equal(odd.value, '', 'unparseable date hint');
+assert.notEqual(odd.checked, true);
+assert.equal(odd.reason, 'date_format');
+assert.match(odd.note, /Left unticked/);
+assert.equal(dated('Date of birth', born, { tooltip: 'mm/dd/yyyy', id: 'dob' }).value, '03/14/1984', 'tooltip hint');
+assert.equal(dated('Date of birth', born, { comb: true, id: 'dob_mm_dd_yyyy' }).value, '03141984', 'comb drops separators');
+
 const longName = 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL';
 const nameRow = evidence.fitInBox(longName, 260, 28, 11);
 assert.equal(nameRow.fits, true, 'DBS name row fits');
@@ -322,5 +347,10 @@ const { PDFDocument, StandardFonts } = require('./vendor/pdf/pdf-lib.min.js');
 const measure = await PDFDocument.create();
 const helvetica = await measure.embedFont(StandardFonts.Helvetica);
 assert.ok(helvetica.widthOfTextAtSize(longName, nameRow.size) <= 260, 'Helvetica name stays inside the row');
+const home = 'Blk 123 Example Road #04-12 Singapore 123456';
+const homeWidth = helvetica.widthOfTextAtSize(home, 9);
+const homeFit = evidence.fitInBox(home, homeWidth + 1, 14, 11);
+assert.equal(homeFit.fits, true, 'mixed-case address that fits the font is offered');
+assert.ok(helvetica.widthOfTextAtSize(home, homeFit.size) <= homeWidth + 1);
 
 console.log('public form layouts ok');

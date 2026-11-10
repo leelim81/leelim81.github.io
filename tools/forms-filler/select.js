@@ -97,6 +97,18 @@
         row.checked = false;
         row.reason = 'section_not_first';
       }
+      if (kind === 'dob' && row.value && ev.dateForField) {
+        var shaped = ev.dateForField(row.value, field);
+        if (shaped.blocked) {
+          row.decision = 'review';
+          row.value = '';
+          row.checked = false;
+          row.note = shaped.note;
+          row.reason = 'date_format';
+          return row;
+        }
+        if (shaped.value) row.value = shaped.value;
+      }
       return noteFit(field, row);
     }
     return (fields || []).map(function (field) {

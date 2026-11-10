@@ -30,17 +30,17 @@
     return '';
   }
 
+  /* Helvetica widths for character codes 32–126, in thousandths of an em.
+     Measured from the font, not from one average for every capital. */
+  var HELVETICA = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+
   function textWidth(text, size) {
     var width = 0;
     var s = String(text || '');
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      var factor = 0.5;
-      if (c <= 32) factor = 0.28;
-      else if (c >= 48 && c <= 57) factor = 0.56;
-      else if (c >= 65 && c <= 90) factor = 0.70;
-      else if (c === 45 || c === 47) factor = 0.33;
-      width += size * factor;
+      var em = c >= 32 && c <= 126 ? HELVETICA[c - 32] : 500;
+      width += size * em / 1000;
     }
     return width;
   }
@@ -806,6 +806,141 @@
     return owned.indexOf(field) >= 0 ? slot : '';
   }
 
+  var MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var DATE_CLUSTER = /(?:y{2,4}|m{1,4}|d{1,4})(?:[^A-Za-z0-9]*(?:y{2,4}|m{1,4}|d{1,4})){1,3}/ig;
+  var DATE_TOKEN = /^(yyyy|mmmm|mmm|mm|dd|d|m)/i;
+
+  function daysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+  }
+
+  /* Stored dates are day, then month, then year. */
+  function parseSourceDate(value) {
+    var text = String(value || '').trim();
+    var numeric = text.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{4})$/);
+    if (numeric) {
+      var day = parseInt(numeric[1], 10);
+      var month = parseInt(numeric[2], 10);
+      var year = parseInt(numeric[3], 10);
+      if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return null;
+      return { y: year, m: month, d: day };
+    }
+    var named = text.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/);
+    if (!named) return null;
+    var key = named[2].slice(0, 3).toLowerCase();
+    var monthIndex = -1;
+    for (var i = 0; i < MONTH_SHORT.length; i++) if (MONTH_SHORT[i].toLowerCase() === key) monthIndex = i;
+    if (monthIndex < 0) return null;
+    var namedDay = parseInt(named[1], 10);
+    var namedYear = parseInt(named[3], 10);
+    if (namedDay < 1 || namedDay > daysInMonth(namedYear, monthIndex + 1)) return null;
+    return { y: namedYear, m: monthIndex + 1, d: namedDay };
+  }
+
+  function dateTokenRole(token) {
+    var lower = token.toLowerCase();
+    if (lower === 'd' || lower === 'dd') return 'day';
+    if (lower === 'm' || lower === 'mm' || lower === 'mmm' || lower === 'mmmm') return 'month';
+    if (lower === 'yyyy') return 'year';
+    return '';
+  }
+
+  function parseDateCluster(cluster) {
+    var parts = [];
+    var seps = [];
+    var i = 0;
+    while (i < cluster.length) {
+      var token = cluster.slice(i).match(DATE_TOKEN);
+      if (!token) return /^[dmy]/i.test(cluster.charAt(i)) ? { bad: true } : null;
+      if (!dateTokenRole(token[1])) return { bad: true };
+      parts.push(token[1]);
+      i += token[1].length;
+      if (i >= cluster.length) break;
+      var sep = cluster.slice(i).match(/^[^A-Za-z0-9]+/);
+      if (sep) {
+        seps.push(sep[0]);
+        i += sep[0].length;
+      } else if (/[dmy]/i.test(cluster.charAt(i))) seps.push('');
+      else break;
+    }
+    if (i < cluster.length) return { bad: true };
+    if (parts.length < 2) return null;
+    var seen = {};
+    for (var p = 0; p < parts.length; p++) {
+      var role = dateTokenRole(parts[p]);
+      if (!role || seen[role]) return { bad: true };
+      seen[role] = true;
+    }
+    if (!seen.day || !seen.month || !seen.year) return { bad: true };
+    return { parts: parts, seps: seps };
+  }
+
+  function dateHint(field) {
+    var sources = [field && field.label, field && field.tooltip, field && field.name, field && field.id];
+    for (var s = 0; s < sources.length; s++) {
+      var text = String(sources[s] || '');
+      if (!text) continue;
+      DATE_CLUSTER.lastIndex = 0;
+      var found = DATE_CLUSTER.exec(text);
+      if (!found) continue;
+      var parsed = parseDateCluster(found[0]);
+      if (!parsed || parsed.bad) return { bad: true };
+      return parsed;
+    }
+    return null;
+  }
+
+  function applyCase(sample, word) {
+    if (sample === sample.toUpperCase()) return word.toUpperCase();
+    if (sample === sample.toLowerCase()) return word.toLowerCase();
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }
+
+  function padNumber(value, width) {
+    var text = String(value);
+    while (text.length < width) text = '0' + text;
+    return text;
+  }
+
+  /* Write a stored day-month-year date in the order the field asks for.
+     No hint keeps dd/mm/yyyy. A date-like hint that cannot be read is not
+     placed. */
+  function dateForField(value, field) {
+    var hint = dateHint(field);
+    var source = parseSourceDate(value);
+    if (hint && hint.bad) {
+      return {
+        value: '',
+        blocked: true,
+        note: 'This date format is not one this form can fill. Left unticked.'
+      };
+    }
+    if (!source) return { value: String(value || ''), blocked: false };
+    if (!hint) {
+      return {
+        value: padNumber(source.d, 2) + '/' + padNumber(source.m, 2) + '/' + source.y,
+        blocked: false
+      };
+    }
+    var comb = !!(field && field.comb);
+    var out = '';
+    for (var i = 0; i < hint.parts.length; i++) {
+      var token = hint.parts[i];
+      var role = dateTokenRole(token);
+      var piece = '';
+      if (role === 'day') piece = padNumber(source.d, token.length >= 2 ? 2 : 1);
+      else if (role === 'year') piece = String(source.y);
+      else if (token.length >= 3) {
+        var name = token.length >= 4 ? MONTH_FULL[source.m - 1] : MONTH_SHORT[source.m - 1];
+        piece = applyCase(token, name);
+      } else piece = padNumber(source.m, token.length >= 2 ? 2 : 1);
+      out += piece;
+      if (i < hint.parts.length - 1 && !comb) out += hint.seps[i] || '';
+    }
+    return { value: out, blocked: false };
+  }
+
   function normValue(kind, value) {
     var text = String(value || '').replace(/\s+/g, ' ').trim();
     if (!text) return '';
@@ -945,6 +1080,7 @@
     splitKind: splitKind,
     fittedSize: fittedSize,
     fitInBox: fitInBox,
+    dateForField: dateForField,
     allowsValue: allowsValue,
     keepAgreedName: keepAgreedName
   };
