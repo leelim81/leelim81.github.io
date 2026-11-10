@@ -1247,9 +1247,7 @@
           var kind = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
           if (kind) asked[kind] = true;
         });
-        var splitAddress = !!(asked.blk || asked.street || asked.unit);
-        var wholeAddress = !!asked.address;
-        var addressUnsure = splitAddress && wholeAddress && !idn.blkUnconfirmed;
+        var addressUnsure = window.FormEvidence.addressSlotsBlank ? FormEvidence.addressSlotsBlank(idn, state.fields) : false;
         function slotValue(slot) {
           if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
