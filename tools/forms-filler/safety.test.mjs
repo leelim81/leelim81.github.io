@@ -194,6 +194,8 @@ const nameOrId = [
   ['Nama as in NRIC', 'name'],
   ['姓名 as per FIN', 'name'],
   ['Name as shown on NRIC', 'name'],
+  ['Name as printed on NRIC', 'name'],
+  ['Name of NRIC holder', 'name'],
   ['Name as stated in passport', 'name'],
   ['Nama seperti dalam NRIC', 'name'],
   ['Nama mengikut NRIC', 'name'],
@@ -201,6 +203,8 @@ const nameOrId = [
   ["NRIC holder's name", 'name'],
   ["IC holder's name", 'name'],
   ['Surname as in NRIC', 'split'],
+  ['Surname as per NRIC', 'split'],
+  ['First name as per NRIC', 'split'],
   ['First name as in NRIC', 'split'],
   ['Last name as in NRIC', 'split'],
   ['First/Last name as in NRIC', 'split'],
@@ -226,6 +230,8 @@ const nameOrId = [
   ['Full name & ID number', 'blank'],
   ['Name and FIN', 'blank'],
   ['姓名 and NRIC No.', 'blank'],
+  ['Username as in NRIC', 'blank'],
+  ['Nickname as in NRIC', 'blank'],
   ['Name', 'name'],
   ['Full name', 'name'],
   ['Applicant name', 'name'],
@@ -264,6 +270,7 @@ nameOrId.forEach((item, index) => {
     assert.equal(decision.value, 'S1234567D', label);
   } else {
     assert.notEqual(kind, 'nric', label);
+    assert.notEqual(kind, 'name', label);
     assert.equal(decision.value, '', label);
   }
 });
@@ -272,6 +279,8 @@ function hasName(label) {
 }
 [
   'Name as shown on NRIC',
+  'Name as printed on NRIC',
+  'Name of NRIC holder',
   'Name as stated in passport',
   'Nama seperti dalam NRIC',
   'Nama mengikut NRIC',

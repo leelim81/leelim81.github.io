@@ -53,10 +53,15 @@
     return { size: size, fits: textWidth(text, size) <= boxWidth - 1 };
   }
 
+  function headPhrase(text) {
+    return labelWords(String(text || '').replace(/\([^)]*\)/g, ' '));
+  }
+
+  /* Split words are the head noun. A parenthetical such as "(Underline
+     surname)" is not the head, and "as per" does not skip this check. */
   function splitKind(label) {
-    var s = labelWords(label);
+    var s = headPhrase(label);
     if (!s) return '';
-    if (/name in english|name as per|full name|holders?\s+(?:full\s+)?(?:name|nama)/.test(s)) return '';
     var role = '';
     function add(next) {
       if (!next) return;
@@ -86,11 +91,29 @@
   }
 
   var DOC_WORD = '(?:nric|ic|fin|passport|identification\\s+card|identity\\s+card)';
-  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+shown\\s+in|as\\s+shown\\s+on|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+dalam|mengikut|\\bin\\b)';
+  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+printed\\s+on|as\\s+shown\\s+on|as\\s+shown\\s+in|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+dalam|mengikut|\\bin\\b)';
+
+  function plainNameWord(text) {
+    var s = headPhrase(text);
+    if (s.indexOf('姓名') >= 0) return true;
+    return /\b(?:name|nama)\b/.test(s);
+  }
+
+  function hasNameToken(text) {
+    var s = labelWords(text);
+    return s.indexOf('姓名') >= 0 || s.indexOf('nama') >= 0 || s.indexOf('name') >= 0;
+  }
+
+  function userOrNickName(text) {
+    return /\b(?:user\s*name|username|nick\s*name|nickname)\b/.test(headPhrase(text));
+  }
 
   function documentNameLabel(text) {
-    if (!hasNameWord(text)) return false;
-    return new RegExp(DOC_QUAL + '\\s+(?:the\\s+)?' + DOC_WORD + '\\b').test(labelWords(text));
+    if (!plainNameWord(text) && !hasNameWord(text)) return false;
+    if (userOrNickName(text) || splitKind(text)) return false;
+    var s = labelWords(text);
+    if (new RegExp('\\bof\\s+(?:the\\s+)?' + DOC_WORD + '\\s+holders?\\b').test(s)) return true;
+    return new RegExp(DOC_QUAL + '\\s+(?:the\\s+)?' + DOC_WORD + '\\b').test(s);
   }
 
   function idNameLabel(text) {
@@ -116,7 +139,7 @@
   }
 
   function idOnlyLabel(text) {
-    if (hasNameWord(text)) return false;
+    if (hasNameToken(text) || hasNameWord(text)) return false;
     var s = labelWords(text);
     if (/\bnric\b|\bfin\b|\bidentification\b/.test(s)) return true;
     return /\bidentity\s+(?:card|number)\b/.test(s);
@@ -181,29 +204,36 @@
   }
 
   function fieldKind(field) {
-    if (unsafeDestination(field)) return 'other';
-    var split = splitKind(field && field.label);
+    var label = (field && field.label) || '';
+    var head = headPhrase(label);
+    var s = (label + ' ' + ((field && field.id) || '')).toLowerCase();
+    /* 1. Head noun: a split word wins before any document phrase. */
+    var split = splitKind(label);
     if (split === 'given' || split === 'surname') return split;
     if (split) return 'other';
-    var s = ((field && field.label) || '') + ' ' + ((field && field.id) || '');
-    s = s.toLowerCase();
+    if (unsafeDestination(field)) return 'other';
+    if (userOrNickName(label)) return 'other';
     if (/bank use only|for bank use|official use only/.test(s)) return 'other';
     if (/signature|authoris|authoriz/.test(s)) return 'other';
     if (/debit/.test(s)) return 'other';
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
-    if (holderNameLabel(field && field.label)) return 'name';
-    if (documentNameLabel(field && field.label) || idNameLabel(field && field.label)) return 'name';
-    if (combinedNameAndId(field && field.label)) return 'other';
-    if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
+    /* 2. A document reference on a plain name is the applicant's name.
+       A bank-account name is the same head noun, not an early "as per" net. */
+    if (holderNameLabel(label) || documentNameLabel(label) || idNameLabel(label)) return 'name';
+    if (combinedNameAndId(label)) return 'other';
+    if (/\b(?:name|nama)\b/.test(head) && /\bbank account\b/.test(head) && !/debit/.test(head)) return 'name';
+    /* "Name as per" with no document and no bank account is unfinished. */
+    if (/\bas\s+(?:in|per)\b/.test(head) && !documentNameLabel(label)) return 'other';
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
     if (/birth|\bdob\b/.test(s)) return 'dob';
-    if (!hasNameWord(field && field.label) && idOnlyLabel(field && field.label)) return 'nric';
+    /* 3. An ID field has no name token, including inside username. */
+    if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
     if (/postal/.test(s)) return 'postal';
-    if (hasNameWord(field && field.label) && !/user|street|bank/.test(s)) return 'name';
+    if ((/\b(?:name|nama)\b/.test(head) || head.indexOf('姓名') >= 0) && !/\b(?:user|street)\b/.test(head)) return 'name';
     return 'other';
   }
 
