@@ -193,6 +193,24 @@ const nameOrId = [
   ['Name in passport', 'name'],
   ['Nama as in NRIC', 'name'],
   ['姓名 as per FIN', 'name'],
+  ['Name as shown on NRIC', 'name'],
+  ['Name as stated in passport', 'name'],
+  ['Nama seperti dalam NRIC', 'name'],
+  ['Nama mengikut NRIC', 'name'],
+  ["Holder's name", 'name'],
+  ["NRIC holder's name", 'name'],
+  ["IC holder's name", 'name'],
+  ['Surname as in NRIC', 'split'],
+  ['First name as in NRIC', 'split'],
+  ['Last name as in NRIC', 'split'],
+  ['First/Last name as in NRIC', 'split'],
+  ['Given name as in NRIC', 'split'],
+  ['Family name as in passport', 'split'],
+  ['Middle name as in NRIC', 'split'],
+  ['Maiden name as in NRIC', 'split'],
+  ['Previous name as in NRIC', 'split'],
+  ['Alias name as in NRIC', 'split'],
+  ['Surname', 'split'],
   ['NRIC Name', 'name'],
   ['IC name', 'name'],
   ['NRIC Nama', 'name'],
@@ -235,6 +253,12 @@ nameOrId.forEach((item, index) => {
     assert.equal(kind, 'name', label);
     assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
     assert.notEqual(decision.value, 'S1234567D', label);
+  } else if (expect === 'split') {
+    assert.notEqual(kind, 'nric', label);
+    assert.notEqual(kind, 'name', label);
+    assert.equal(decision.value, '', label);
+    const alone = [{ id: 's', label: label, type: 'text' }];
+    assert.equal(identityPhotoSlot(alone[0], alone), '', label);
   } else if (expect === 'nric') {
     assert.equal(kind, 'nric', label);
     assert.equal(decision.value, 'S1234567D', label);
@@ -244,8 +268,19 @@ nameOrId.forEach((item, index) => {
   }
 });
 function hasName(label) {
-  return /name|nama|姓名/i.test(label);
+  return /name|nama|姓名|surname/i.test(label);
 }
+[
+  'Name as shown on NRIC',
+  'Name as stated in passport',
+  'Nama seperti dalam NRIC',
+  'Nama mengikut NRIC',
+  "Holder's name",
+  "NRIC holder's name"
+].forEach((label) => {
+  const alone = [{ id: 's', label: label, type: 'text' }];
+  assert.equal(identityPhotoSlot(alone[0], alone), 'name', label);
+});
 
 [
   'Name of Company',

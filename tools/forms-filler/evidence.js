@@ -54,14 +54,21 @@
   }
 
   function splitKind(label) {
-    var s = String(label || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    var s = labelWords(label);
     if (!s) return '';
-    if (/\b(previous|maiden)\b/.test(s)) return 'previous';
-    if (/name in english|name as per|full name/.test(s)) return '';
-    if (/\b(first|given)\b/.test(s) && /\bname\b/.test(s)) return 'given';
-    if (/\b(last|family|surname)\b/.test(s) && /\bname\b/.test(s)) return 'surname';
-    if (/\bmiddle\b/.test(s) && /\bname\b/.test(s)) return 'middle';
-    return '';
+    if (/name in english|name as per|full name|holders?\s+(?:full\s+)?(?:name|nama)/.test(s)) return '';
+    var role = '';
+    function add(next) {
+      if (!next) return;
+      if (!role) role = next;
+      else if (role !== next) role = 'mixed';
+    }
+    if (/\b(?:previous|maiden)\b/.test(s) && /\b(?:name|nama)\b/.test(s)) add('previous');
+    if (/\balias\b/.test(s) && /\b(?:name|nama)\b/.test(s)) add('alias');
+    if (/\b(?:first|given)\b/.test(s) && /\b(?:name|nama)\b/.test(s)) add('given');
+    if (/\bsurname\b/.test(s) || (/\b(?:last|family)\b/.test(s) && /\b(?:name|nama)\b/.test(s))) add('surname');
+    if (/\bmiddle\b/.test(s) && /\b(?:name|nama)\b/.test(s)) add('middle');
+    return role;
   }
 
   /* A label that contains a name word is never an ID field. A document
@@ -74,11 +81,12 @@
   function hasNameWord(text) {
     var s = labelWords(text);
     if (s.indexOf('姓名') >= 0) return true;
-    return /\b(?:name|nama)\b/.test(s);
+    if (/\b(?:name|nama)\b/.test(s)) return true;
+    return /\bsurname\b/.test(s) || splitKind(text) !== '';
   }
 
   var DOC_WORD = '(?:nric|ic|fin|passport|identification\\s+card|identity\\s+card)';
-  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+shown\\s+in|as\\s+in|as\\s+per|\\bin\\b)';
+  var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+shown\\s+in|as\\s+shown\\s+on|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+dalam|mengikut|\\bin\\b)';
 
   function documentNameLabel(text) {
     if (!hasNameWord(text)) return false;
@@ -98,8 +106,12 @@
     return /\bidentification\s+card\b|\bidentity\s+card\b/.test(s);
   }
 
+  function holderNameLabel(text) {
+    return /\bholders?\s+(?:full\s+)?(?:name|nama)\b/.test(labelWords(text));
+  }
+
   function combinedNameAndId(text) {
-    if (!hasNameWord(text) || documentNameLabel(text) || idNameLabel(text)) return false;
+    if (!hasNameWord(text) || documentNameLabel(text) || idNameLabel(text) || holderNameLabel(text)) return false;
     return hasIdNumberWord(text);
   }
 
@@ -180,6 +192,7 @@
     if (/debit/.test(s)) return 'other';
     if (/account\s*no|account number|to be credited/.test(s)) return 'other';
     if (/\bamount\b/.test(s) || (/\bdate\b/.test(s) && !/birth|\bdob\b/.test(s))) return 'other';
+    if (holderNameLabel(field && field.label)) return 'name';
     if (documentNameLabel(field && field.label) || idNameLabel(field && field.label)) return 'name';
     if (combinedNameAndId(field && field.label)) return 'other';
     if (/name as per/.test(s)) return /bank account/.test(s) ? 'name' : 'other';
@@ -242,6 +255,8 @@
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
+    if (splitKind(field.label)) return '';
+    if (holderNameLabel(field.label)) return 'name';
     if (documentNameLabel(field.label) || idNameLabel(field.label)) return 'name';
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
