@@ -240,7 +240,7 @@
     }
     if (/\b(maiden|introducer|referrer|physician|emergency contact)\b/i.test(blob)) return 'other-person';
     if (/\bpercentage\b/i.test(label) && /nominee|witness/i.test(blob)) return 'other-person';
-    if (/\binsured\b/i.test(label) && !/\bapplicant\b/i.test(label) && !/sum insured/i.test(label)) return 'other-person';
+    if (/\binsured\b/i.test(label) && !/\bapplicant\b/i.test(label) && !/sum insured/i.test(label) && !insuredNameLine(label)) return 'other-person';
     return '';
   }
 
@@ -307,8 +307,29 @@
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
     if (/postal/.test(s)) return 'postal';
-    if ((/\b(?:name|nama)\b/.test(head) || head.indexOf('姓名') >= 0) && !/\b(?:user|street)\b/.test(head)) return 'name';
+    if (applicantNameLabel(label)) return 'name';
     return 'other';
+  }
+
+  function insuredNameLine(text) {
+    var s = labelWords(text);
+    return /\b(?:name|nama)\s+of\s+(?:the\s+)?insured\b/.test(s) || /\binsureds?\s+(?:full\s+)?(?:name|nama)\b/.test(s);
+  }
+
+  /* The applicant name is an allowlist of person-head phrases. Any other
+     "<noun> name" or "name of <noun>" is not offered. */
+  function applicantNameLabel(text) {
+    if (!text) return false;
+    if (splitKind(text) || userOrNickName(text) || accountHolderName(text) || placeName(text) || organisationNameLabel(text)) return false;
+    var s = headPhrase(text);
+    if (!s) return false;
+    if (/^(?:full name|name|nama penuh|nama|姓名)$/.test(s)) return true;
+    if (/^name in english\b/.test(s)) return true;
+    var person = 'applicants?|customers?|members?|claimants?|policy\\s*holders?|insured|account\\s+applicants?';
+    if (new RegExp('^(?:' + person + ')s?\\s+(?:full\\s+)?(?:name|nama)$').test(s)) return true;
+    if (new RegExp('^(?:full\\s+)?(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + person + ')$').test(s)) return true;
+    if (holderNameLabel(text) || idNameLabel(text) || documentNameLabel(text)) return true;
+    return /\b(?:name|nama|姓名)\b/.test(s) && /\bas\s+per\b/.test(s) && /\bbank account\b/.test(s) && !/debit/.test(s);
   }
 
   function fieldRole(field) {
@@ -360,14 +381,7 @@
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
     if (splitKind(field.label)) return '';
-    if (holderNameLabel(field.label)) return 'name';
-    if (documentNameLabel(field.label) || idNameLabel(field.label)) return 'name';
-    if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
-    if (/^name as per nric\b/.test(s)) return 'name';
-    if (/^name \(as in nric\b/.test(s)) return 'name';
-    if (/^name in english\b/.test(s)) return 'name';
-    if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
-    if (/^(?:full name|name)$/.test(s)) return 'name';
+    if (applicantNameLabel(field.label)) return 'name';
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
     if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';
     if (/^(?:sex|gender)$/.test(s)) return 'sex';

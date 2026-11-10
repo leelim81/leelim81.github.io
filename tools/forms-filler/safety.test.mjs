@@ -273,7 +273,7 @@ const nameOrId = [
   ['Full name', 'name'],
   ['Applicant name', 'name'],
   ['Name in English (Surname first)', 'name'],
-  ['Preferred name', 'name'],
+  ['Preferred name', 'blank'],
   ['Customer name', 'name'],
   ['NRIC No.', 'nric'],
   ['NRIC/FIN', 'nric'],
@@ -360,6 +360,46 @@ function hasName(label) {
   assert.equal(decision.reason, 'placement_refused', label);
   const alone = [{ id: 's', label: label, type: 'text' }];
   assert.equal(identityPhotoSlot(alone[0], alone), '', label);
+});
+[
+  ['Name', 'offered'],
+  ['Full name', 'offered'],
+  ['Applicant name', 'offered'],
+  ["Applicant's name", 'offered'],
+  ["Applicant's full name", 'offered'],
+  ['Customer name', 'offered'],
+  ["Customer's name", 'offered'],
+  ['Name of customer', 'offered'],
+  ['Member name', 'offered'],
+  ['Name of member', 'offered'],
+  ['Claimant name', 'offered'],
+  ['Policyholder name', 'offered'],
+  ['Name of policy holder', 'offered'],
+  ['Name of insured', 'offered'],
+  ["Insured's name", 'offered'],
+  ['Name of account applicant', 'offered'],
+  ['Name in English (Surname first)', 'offered'],
+  ['Name as per Example Bank Account (Underline surname)', 'offered'],
+  ['Preferred name', 'hidden'],
+  ['Block name', 'hidden'],
+  ['School name', 'hidden'],
+  ['Condo name', 'hidden'],
+  ['Project name', 'hidden'],
+  ['Registered name', 'hidden'],
+  ['Display name', 'hidden'],
+  ['Nickname', 'hidden']
+].forEach((item) => {
+  const label = item[0];
+  const decision = row([{ id: 'who', label: label, type: 'text' }], 'who');
+  const alone = [{ id: 's', label: label, type: 'text' }];
+  if (item[1] === 'offered') {
+    assert.equal(decision.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL', label);
+    assert.equal(identityPhotoSlot(alone[0], alone), 'name', label);
+  } else {
+    assert.equal(decision.value, '', label);
+    assert.notEqual(decision.checked, true, label);
+    assert.equal(identityPhotoSlot(alone[0], alone), '', label);
+  }
 });
 const bankAccount = row([{ id: 'bank', label: 'Name as per Example Bank Account (Underline surname)', type: 'text' }], 'bank');
 assert.equal(bankAccount.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
