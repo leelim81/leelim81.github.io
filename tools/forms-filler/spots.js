@@ -370,6 +370,43 @@
     return String(label || '').replace(/[:\s]+$/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
   }
 
+  function personOf(text) {
+    var api = (typeof globalThis !== 'undefined' && globalThis.FormPerson) || null;
+    if (!api && typeof require === 'function') {
+      try { api = require('./person.js'); } catch (err) { api = null; }
+    }
+    return api && api.personOf ? api.personOf(text) : '';
+  }
+
+  /* The nearest person heading above a blank owns that blank. A field label
+     such as "Name of Member" is not a heading. A heading in another column
+     does not own this blank. */
+  function personHeading(slot, slots, texts) {
+    var y = slot.lineY != null ? slot.lineY : slot.y;
+    var best = '';
+    var bestDy = 1e9;
+    var bestDx = 1e9;
+    texts.forEach(function (text) {
+      var line = String(text.str || '').replace(/\s+/g, ' ').trim();
+      if (!line || words(line).length > 8 || line.length > 48) return;
+      if (!personOf(line)) return;
+      var want = normLabel(line);
+      var claimed = slots.some(function (other) { return normLabel(other.label) === want; });
+      if (claimed) return;
+      var dy = text.y - y;
+      if (dy < 8 || dy > 420) return;
+      if (text.x > slot.x + 80) return;
+      if (slot.x - text.x > 260) return;
+      var dx = Math.abs(text.x - slot.x);
+      if (dy < bestDy || (dy === bestDy && dx < bestDx)) {
+        best = line.replace(/[:.\s]+$/g, '').trim();
+        bestDy = dy;
+        bestDx = dx;
+      }
+    });
+    return best;
+  }
+
   function dedupeSlots(slots, texts) {
     var drop = {};
     function lineY(slot) { return slot.lineY != null ? slot.lineY : slot.y; }
@@ -575,19 +612,10 @@
         if (Math.abs((other.lineY != null ? other.lineY : other.y) - y) > 8) return;
         if (/dependant|dependent|spouse|\bchild\b|officer|nominee|referee|beneficiary|mother|father|parent|guardian|payee|witness|introducer|\bkin\b|\bagent\b/i.test(other.label)) slot.group = other.label;
       });
-      if (!slot.group) {
-        var heading = '';
-        var headingDy = 120;
-        texts.forEach(function (text) {
-          var line = String(text.str || '').replace(/[:.\s]+$/g, '').replace(/\s+/g, ' ').trim();
-          if (!/^(nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|emergency(?: contact)?|contacts?|payees?|joint(?: account(?: holder)?)?|second applicants?|holder 2|witnesses?|next of kin|kin|children|child|dependants?|dependents?|officers?|agents?|authorised persons?|authorized persons?|introducers?)$/i.test(line)) return;
-          var dy = text.y - y;
-          if (dy < 8 || dy > 110 || dy >= headingDy) return;
-          if (text.x > slot.x + 80) return;
-          heading = line;
-          headingDy = dy;
-        });
-        if (heading) slot.group = heading;
+      var heading = personHeading(slot, slots, texts);
+      if (heading) {
+        slot.section = heading;
+        if (!slot.group) slot.group = heading;
       }
       var own = normLabel(slot.label);
       var nearLabel = texts.some(function (text) {
@@ -621,6 +649,7 @@
         type: 'text',
         options: [],
         group: slot.group || '',
+        section: slot.section || '',
         untrusted: !!slot.untrusted,
         rect: { x: slot.x, y: slot.y, width: slot.w, height: Math.max(12, slot.h) },
         lineH: 12

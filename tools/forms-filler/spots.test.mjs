@@ -102,4 +102,81 @@ const memberDob = births.find((field) => field.rect.y > 470);
 const dependantDob = births.find((field) => field.rect.y < 470);
 assert.ok(memberDob && !memberDob.group, 'member date stays with the member');
 assert.ok(dependantDob && /dependant/i.test(dependantDob.group || ''), 'dependant date stays with the dependant');
+
+const { identityPhotoSlot } = require('./evidence.js');
+function linedForm(blocks) {
+  const texts = [];
+  const lines = [];
+  blocks.forEach(function (block) {
+    texts.push({ x: 48, y: block.y, w: Math.min(240, Math.max(70, block.heading.length * 6.5)), h: 11, str: block.heading });
+    block.fields.forEach(function (field) {
+      var labelW = Math.min(210, Math.max(40, field.label.length * 5.6));
+      texts.push({ x: 48, y: field.y, w: labelW, h: 9, str: field.label });
+      lines.push({ x: 48 + labelW + 16, y: field.y - 1, w: 200 });
+    });
+  });
+  return layout({ page: 0, width: 595, height: 842, texts: texts, lines: lines, squares: [] });
+}
+function offeredIds(found) {
+  return found.filter(function (field) { return identityPhotoSlot(field, found); }).map(function (field) { return field.label + '|' + (field.section || field.group || ''); });
+}
+const roles = [
+  'Guarantor',
+  'Nominee',
+  'Beneficiary',
+  'Next of kin',
+  'Emergency contact',
+  'Spouse',
+  'Witness',
+  'Referee',
+  'Authorised signatory',
+  'Joint applicant'
+];
+roles.forEach(function (role) {
+  const only = linedForm([
+    { heading: role, y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }
+  ]);
+  const names = only.filter(function (field) { return /^name$/i.test(field.label); });
+  const ids = only.filter(function (field) { return /^nric$/i.test(field.label); });
+  assert.equal(names.length, 1, role + ' keeps the name line');
+  assert.equal(ids.length, 1, role + ' keeps the id line');
+  assert.ok(names[0].section === role || names[0].group === role, role + ' owns the name line ' + JSON.stringify(names[0].section));
+  assert.equal(offeredIds(only).length, 0, role + ' only section offers nothing ' + offeredIds(only).join(','));
+});
+const guarantorOnly = linedForm([
+  { heading: 'Particulars of Guarantor', y: 700, fields: [{ label: 'Name', y: 640 }, { label: 'NRIC', y: 580 }] }
+]);
+assert.equal(offeredIds(guarantorOnly).length, 0, 'a guarantor-only form offers nothing');
+assert.ok(/guarantor/i.test((guarantorOnly.find(function (field) { return field.label === 'Name'; }) || {}).section || ''), 'guarantor particulars stay on the name line');
+roles.forEach(function (role) {
+  const mixed = linedForm([
+    { heading: "Applicant's particulars", y: 720, fields: [{ label: 'Full name', y: 670 }, { label: 'NRIC/FIN/passport no.', y: 620 }] },
+    { heading: role, y: 520, fields: [{ label: 'Name', y: 470 }, { label: 'NRIC', y: 420 }] }
+  ]);
+  const offered = mixed.filter(function (field) { return identityPhotoSlot(field, mixed); });
+  assert.ok(offered.some(function (field) { return field.label === 'Full name'; }), role + ' mixed still offers the applicant name');
+  assert.ok(offered.some(function (field) { return /NRIC\/FIN\/passport/i.test(field.label); }), role + ' mixed still offers the applicant id');
+  assert.ok(!offered.some(function (field) { return field.section === role || field.group === role; }), role + ' mixed does not offer the other person ' + offered.map(function (field) { return field.label; }).join(','));
+});
+const plain = linedForm([
+  { heading: 'Membership application', y: 720, fields: [
+    { label: 'Full name', y: 660 },
+    { label: 'NRIC/FIN/passport no.', y: 600 }
+  ] }
+]);
+const plainOffered = plain.filter(function (field) { return identityPhotoSlot(field, plain); }).map(function (field) { return field.label; });
+assert.ok(plainOffered.indexOf('Full name') >= 0, 'a form with no other person offers full name ' + plainOffered.join('|'));
+assert.ok(plainOffered.some(function (label) { return /NRIC\/FIN\/passport/i.test(label); }), 'a form with no other person offers the id line ' + plainOffered.join('|'));
+const ordinary = linedForm([
+  { heading: "Applicant's particulars", y: 720, fields: [
+    { label: 'Full name', y: 660 },
+    { label: 'Name as per NRIC', y: 600 },
+    { label: 'NRIC/FIN/passport no.', y: 540 }
+  ] }
+]);
+const ordinaryOffered = ordinary.filter(function (field) { return identityPhotoSlot(field, ordinary); }).map(function (field) { return field.label; });
+assert.ok(ordinaryOffered.indexOf('Full name') >= 0, 'ordinary full name is offered ' + ordinaryOffered.join('|'));
+assert.ok(ordinaryOffered.some(function (label) { return /Name as per NRIC/i.test(label); }), 'ordinary name as per NRIC is offered ' + ordinaryOffered.join('|'));
+assert.ok(ordinaryOffered.some(function (label) { return /NRIC\/FIN\/passport/i.test(label); }), 'ordinary id line is offered ' + ordinaryOffered.join('|'));
+assert.equal(ordinary.filter(function (field) { return /guarantor|nominee|spouse/i.test(field.section || ''); }).length, 0);
 console.log('spots tests ok', fields.length, 'fields');
