@@ -100,7 +100,10 @@
   }
 
   function headPhrase(text) {
-    return labelWords(String(text || '').replace(/\([^)]*\)/g, ' '));
+    var raw = String(text || '').replace(/\([^)]*\)/g, ' ');
+    raw = raw.replace(/^\s*\d+\s*[.)]\s*/, '');
+    raw = raw.replace(/^\s*\(\s*[a-z]\s*\)\s*/i, '');
+    return labelWords(raw).replace(/[\s:.*_]+$/g, '').replace(/\s+/g, ' ').trim();
   }
 
   /* Split words are the head noun. A parenthetical such as "(Underline
@@ -136,7 +139,7 @@
     return /\bsurname\b/.test(s) || splitKind(text) !== '';
   }
 
-  var DOC_WORD = '(?:nric|ic|fin|passport|identification\\s+card|identity\\s+card)';
+  var DOC_WORD = '(?:identification\\s+card|identity\\s+card|driving\\s+licen[cs]e|work\\s+pass|hkid|my\\s*kad|aadhaar|aadhar|nric|passport|fin|ic|pan|\\bid\\b)';
   var DOC_QUAL = '(?:as\\s+appearing\\s+in|as\\s+printed\\s+on|as\\s+shown\\s+on|as\\s+shown\\s+in|as\\s+stated\\s+in|as\\s+in|as\\s+per|seperti\\s+dalam|mengikut|\\bin\\b)';
 
   function plainNameWord(text) {
@@ -240,7 +243,7 @@
     }
     if (/\b(maiden|introducer|referrer|physician|emergency contact)\b/i.test(blob)) return 'other-person';
     if (/\bpercentage\b/i.test(label) && /nominee|witness/i.test(blob)) return 'other-person';
-    if (/\binsured\b/i.test(label) && !/\bapplicant\b/i.test(label) && !/sum insured/i.test(label) && !insuredNameLine(label)) return 'other-person';
+    if (lifePartyName(label)) return 'other-person';
     return '';
   }
 
@@ -287,6 +290,7 @@
     if (split) return 'other';
     if (unsafeDestination(field)) return 'other';
     if (userOrNickName(label)) return 'other';
+    if (chineseNameLabel(label)) return 'chineseName';
     if (/bank use only|for bank use|official use only/.test(s)) return 'other';
     if (/signature|authoris|authoriz/.test(s)) return 'other';
     if (/debit/.test(s)) return 'other';
@@ -311,25 +315,45 @@
     return 'other';
   }
 
-  function insuredNameLine(text) {
+  function lifePartyName(text) {
     var s = labelWords(text);
-    return /\b(?:name|nama)\s+of\s+(?:the\s+)?insured\b/.test(s) || /\binsureds?\s+(?:full\s+)?(?:name|nama)\b/.test(s);
+    if (/\bsum\s+insured\b/.test(s)) return false;
+    if (!/\b(?:name|nama)\b/.test(s)) return false;
+    return /\b(?:life\s+)?(?:insured|assured)s?\b/.test(s);
+  }
+
+  function chineseNameLabel(text) {
+    if (/中文姓名/.test(String(text || ''))) return true;
+    return /^chinese\s+name$/.test(headPhrase(text));
+  }
+
+  function allowOne(text) {
+    var s = headPhrase(text);
+    if (!s) return false;
+    if (/^(?:full name|name|nama penuh|nama|姓名|英文姓名)$/.test(s)) return true;
+    if (/^(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
+    if (/^name in (?:full|block letters|capitals|english|bahasa malaysia)$/.test(s)) return true;
+    if (/^(?:full legal name|full name in english|english name|legal name|official name)$/.test(s)) return true;
+    if (/^(?:please\s+)?print(?:ed)?\s+(?:your\s+)?(?:full\s+)?name$/.test(s)) return true;
+    if (/^nama\s+(?:pemohon|pencadang|pemegang\s+polisi|pekerja|pelanggan)$/.test(s)) return true;
+    var person = 'applicants?|customers?|members?|claimants?|proposers?|policy\\s*holders?|employees?|card\\s*holders?|clients?|subscribers?|taxpayers?|principals?|account\\s+applicants?|(?:main|primary)\\s+applicants?';
+    if (new RegExp('^(?:' + person + ')s?\\s+(?:full\\s+)?(?:name|nama)$').test(s)) return true;
+    if (new RegExp('^(?:full\\s+)?(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + person + ')$').test(s)) return true;
+    if (holderNameLabel(text) || idNameLabel(text) || documentNameLabel(text)) return true;
+    return /\b(?:name|nama)\b/.test(s) && /\bas\s+per\b/.test(s) && /\bbank account\b/.test(s) && !/debit/.test(s);
   }
 
   /* The applicant name is an allowlist of person-head phrases. Any other
      "<noun> name" or "name of <noun>" is not offered. */
   function applicantNameLabel(text) {
-    if (!text) return false;
+    if (!text || chineseNameLabel(text) || lifePartyName(text)) return false;
     if (splitKind(text) || userOrNickName(text) || accountHolderName(text) || placeName(text) || organisationNameLabel(text)) return false;
-    var s = headPhrase(text);
-    if (!s) return false;
-    if (/^(?:full name|name|nama penuh|nama|姓名)$/.test(s)) return true;
-    if (/^name in english\b/.test(s)) return true;
-    var person = 'applicants?|customers?|members?|claimants?|policy\\s*holders?|insured|account\\s+applicants?';
-    if (new RegExp('^(?:' + person + ')s?\\s+(?:full\\s+)?(?:name|nama)$').test(s)) return true;
-    if (new RegExp('^(?:full\\s+)?(?:name|nama)\\s+of\\s+(?:the\\s+)?(?:' + person + ')$').test(s)) return true;
-    if (holderNameLabel(text) || idNameLabel(text) || documentNameLabel(text)) return true;
-    return /\b(?:name|nama|姓名)\b/.test(s) && /\bas\s+per\b/.test(s) && /\bbank account\b/.test(s) && !/debit/.test(s);
+    var pieces = String(text || '').split(/\s*\/\s*/);
+    if (pieces.length > 1) {
+      if (combinedNameAndId(text)) return false;
+      return pieces.some(allowOne);
+    }
+    return allowOne(text);
   }
 
   function fieldRole(field) {
@@ -381,6 +405,7 @@
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
     if (splitKind(field.label)) return '';
+    if (chineseNameLabel(field.label)) return 'chineseName';
     if (applicantNameLabel(field.label)) return 'name';
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
     if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';

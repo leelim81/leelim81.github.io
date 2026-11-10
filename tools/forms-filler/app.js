@@ -1328,6 +1328,7 @@
         function slotValue(slot) {
           if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
+          if (slot === 'chineseName') return idn.chineseName || '';
           if (slot === 'nric') return idn.nric || '';
           if (slot === 'dob') return idn.dob || '';
           if (slot === 'sex') return idn.sex || '';

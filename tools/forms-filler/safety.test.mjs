@@ -375,9 +375,57 @@ function hasName(label) {
   ['Claimant name', 'offered'],
   ['Policyholder name', 'offered'],
   ['Name of policy holder', 'offered'],
-  ['Name of insured', 'offered'],
-  ["Insured's name", 'offered'],
   ['Name of account applicant', 'offered'],
+  ['Name:', 'offered'],
+  ['NAME:', 'offered'],
+  ['Name: _____', 'offered'],
+  ['Name.', 'offered'],
+  ['Name*', 'offered'],
+  ['1. Name', 'offered'],
+  ['(a) Name', 'offered'],
+  ['Name / 姓名', 'offered'],
+  ['Name/姓名', 'offered'],
+  ['Nama / Name', 'offered'],
+  ['Name / Nama', 'offered'],
+  ['Name in full', 'offered'],
+  ['Name in BLOCK LETTERS', 'offered'],
+  ['Name in capitals', 'offered'],
+  ['Your name', 'offered'],
+  ['Your full name', 'offered'],
+  ['Print name', 'offered'],
+  ['Printed Name', 'offered'],
+  ['Please print your name', 'offered'],
+  ['Legal name', 'offered'],
+  ['Full Legal Name', 'offered'],
+  ['Official name', 'offered'],
+  ['Full Name in English', 'offered'],
+  ['English Name', 'offered'],
+  ['英文姓名', 'offered'],
+  ['Name in Bahasa Malaysia', 'offered'],
+  ['Proposer name', 'offered'],
+  ['Name of proposer', 'offered'],
+  ['Nama Pemohon', 'offered'],
+  ['Nama Pencadang', 'offered'],
+  ['Nama Pemegang Polisi', 'offered'],
+  ['Nama Pekerja', 'offered'],
+  ['Nama Pelanggan', 'offered'],
+  ['Employee name', 'offered'],
+  ['Name of employee', 'offered'],
+  ['Cardholder name', 'offered'],
+  ['Client name', 'offered'],
+  ['Subscriber name', 'offered'],
+  ['Taxpayer name', 'offered'],
+  ['Principal name', 'offered'],
+  ['Name of Main Applicant', 'offered'],
+  ['Primary applicant name', 'offered'],
+  ['Name as shown on HKID', 'offered'],
+  ['Name as appearing in MyKad', 'offered'],
+  ['Name as per PAN', 'offered'],
+  ['Name as per Aadhaar', 'offered'],
+  ['Name as per IC', 'offered'],
+  ['Name as per Work Pass', 'offered'],
+  ['Name as per driving licence', 'offered'],
+  ['Name as per driving license', 'offered'],
   ['Name in English (Surname first)', 'offered'],
   ['Name as per Example Bank Account (Underline surname)', 'offered'],
   ['Preferred name', 'hidden'],
@@ -412,7 +460,14 @@ assert.equal(fieldKind({ label: 'Name as per Example Bank Account (Underline sur
   ['Building name', 'address-part'],
   ['Estate name', 'address-part'],
   ['Display name', 'not-offered'],
-  ['Nickname', 'not-offered']
+  ['Nickname', 'not-offered'],
+  ['Name of insured', 'other-person'],
+  ["Insured's name", 'other-person'],
+  ['Insured name', 'other-person'],
+  ["Assured's name", 'other-person'],
+  ['Name of Life Assured', 'other-person'],
+  ['Life Assured Name', 'other-person'],
+  ['Name of the Life Insured', 'other-person']
 ].forEach((item) => {
   const label = item[0];
   const decision = row([{ id: 'held', label: label, type: 'text' }], 'held');
@@ -423,6 +478,13 @@ assert.equal(fieldKind({ label: 'Name as per Example Bank Account (Underline sur
   assert.notEqual(decision.refusal, 'organisation', label);
   const alone = [{ id: 's', label: label, type: 'text' }];
   assert.equal(identityPhotoSlot(alone[0], alone), '', label);
+});
+['Chinese Name', '中文姓名'].forEach((label) => {
+  const decision = row([{ id: 'cn', label: label, type: 'text' }], 'cn');
+  assert.equal(decision.value, '', label);
+  assert.notEqual(fieldKind({ label: label, type: 'text' }), 'name', label);
+  const alone = [{ id: 's', label: label, type: 'text' }];
+  assert.equal(identityPhotoSlot(alone[0], alone), 'chineseName', label);
 });
 
 const fitRows = [
