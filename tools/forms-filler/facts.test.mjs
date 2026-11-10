@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import assert from 'assert';
 
 const require = createRequire(import.meta.url);
-const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject, nricChecksum, identityRead, identityVote } = require('./facts.js');
+const { fromText, mapFactsToFields, accept, modelFields, preview, allowModelValue, prepareModelValue, modelScalar, coerceModelObject, nricChecksum, identityRead, identityVote, keepCardWords } = require('./facts.js');
 
 const ocr = `REPUBLIC OF SINGAPORE
 IDENTITY CARD NO. S1234567D
@@ -576,6 +576,12 @@ assert.equal(oneOffVote.blkChecked, false);
 assert.equal(oneOffVote.blkUnconfirmed, true);
 assert.equal(oneOffVote.blkHint, '1294');
 assert.equal(oneOffVote.postalChecked, false);
+assert.equal(oneOffVote.blkReason, 'applied');
+const cardPostal = identityVote([oneOff, { blk: '1234', blkSuggest: '123A', blkSuggestKind: 'reread', postal: '' }]);
+assert.equal(cardPostal.blk, '123A');
+assert.equal(cardPostal.postal, '560123');
+assert.equal(cardPostal.postalChecked, false);
+assert.equal(cardPostal.blkReason, 'applied');
 const twoOff = identityRead('BLK 1894 EXAMPLE RD\n#12-34\nSINGAPORE 560123\n');
 twoOff.blkSuggest = '189A';
 twoOff.blkSuggestKind = 'reread';
@@ -583,11 +589,35 @@ const twoOffVote = identityVote([twoOff]);
 assert.equal(twoOffVote.blk, '1894');
 assert.equal(twoOffVote.blkChecked, false);
 assert.equal(twoOffVote.blkHint, '');
+assert.equal(twoOffVote.blkReason, 'postalDist>1');
 const noLetter = identityRead('BLK 1294 EXAMPLE RD\n#12-34\nSINGAPORE 560123\n');
 const noLetterVote = identityVote([noLetter]);
 assert.equal(noLetterVote.blk, '1294');
 assert.equal(noLetterVote.blkChecked, false);
 assert.equal(noLetterVote.blkHint, '');
+assert.equal(noLetterVote.blkReason, 'noLetter');
+const missingPostal = identityRead('BLK 1294 EXAMPLE RD\n#12-34\n');
+missingPostal.blkSuggest = '129A';
+missingPostal.blkSuggestKind = 'reread';
+assert.equal(identityVote([missingPostal]).blkReason, 'postalNone');
+const badPostal = identityRead('BLK 1294 EXAMPLE RD\n#12-34\n');
+badPostal.postal = '12345';
+badPostal.blkSuggest = '129A';
+badPostal.blkSuggestKind = 'reread';
+assert.equal(identityVote([badPostal]).blkReason, 'postalFormat');
+const firmId = identityRead('Name\nTAN WEI MING\nS8523146D\n', [
+  { text: 'S8523146D', confidence: 75 },
+  { text: 'TAN', confidence: 90 },
+  { text: 'WEI', confidence: 90 },
+  { text: 'MING', confidence: 90 }
+]);
+const weakId = identityRead('Name\nTAN WEI MING\nS8523146D\n', [{ text: 'S8523146D', confidence: 25 }]);
+assert.equal(firmId.nricUnconfirmed, false);
+assert.equal(weakId.nricUnconfirmed, true);
+assert.equal(keepCardWords(firmId.nricConf, weakId.nricConf, false), false);
+assert.equal(keepCardWords(firmId.nricConf, weakId.nricConf, true), false);
+assert.equal(keepCardWords(null, weakId.nricConf, false), true);
+assert.equal(identityVote([firmId, firmId]).nricChecked, true);
 assert.equal(identityRead('1234 KING STREET\nSINGAPORE 123456\n').blk, '');
 assert.equal(identityRead('1234 KING STREET\nSINGAPORE 123456\n').street, '');
 const houseLine = identityVote([

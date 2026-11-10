@@ -864,7 +864,9 @@
   }
 
   function glyphRoom(session) {
-    return !!session && (session._ffGlyphCrops || 0) < 4;
+    if (!session || (session._ffGlyphCrops || 0) >= 4) return false;
+    if (session._ffGlyphDeadline && Date.now() >= session._ffGlyphDeadline) return false;
+    return true;
   }
 
   async function rereadBlockLetter(session, worker, canvas, word) {
@@ -883,7 +885,7 @@
       var started = Date.now();
       var result = await recognizeGlyph(session, worker, crops[i]);
       var hit = letterFromGlyph(result);
-      var slow = Date.now() - started > 600;
+      var slow = Date.now() - started > 300;
       if (hit) {
         hits.push(hit);
         var agreed = hits.filter(function (item) { return item.letter === hit.letter && item.confidence >= 40; });
@@ -932,27 +934,40 @@
         }
         var worker = await ocrWorker(session);
         session._ffGlyphCrops = 0;
-        session._ffSawFour = false;
+        session._ffGlyphDeadline = 0;
         session._ffGlyphExtra = false;
+        session._ffFirstBlk = '';
         var bag = [];
         var words = [];
+        var keptNricConf = null;
         var used = { rotate: 0, tilt: 0 };
         var jobs = cardJobs();
         for (var i = 0; i < jobs.length; i++) {
           if (session.cancelled || session.released) throw cancelledError();
-          var variant = cardVariant(canvas, jobs[i]);
+          var extraPass = !!session._ffGlyphExtra;
+          var spec = extraPass ? { rotate: 0, tilt: 3, threshold: false, shear: 0 } : jobs[i];
+          var variant = cardVariant(canvas, spec);
           await applyParams(session, worker, { tessedit_pageseg_mode: '6' });
           worker = await ocrWorker(session);
           var result = await recognizeBounded(session, worker, variant);
           var packed = linesFromWords(result && result.data && result.data.words);
           var read = FormFacts.identityRead(packed.text, mapWords(packed.items, scale, pageHeight));
-          if (/^\d{4}$/.test(read.blk)) session._ffSawFour = true;
+          if (read.blk && !session._ffFirstBlk) session._ffFirstBlk = read.blk;
+          if (/^\d{4}$/.test(read.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = Date.now() + 1200;
           try {
             await maybeRereadBlock(session, worker, variant, read, result && result.data && result.data.words);
           } catch (err) {
             if (err && (err.message === 'cancelled' || err.message === 'budget')) throw err;
           }
-          bag.push(read);
+          bag.push(extraPass ? { blk: read.blk, blkSuggest: read.blkSuggest, blkSuggestKind: read.blkSuggestKind, blkUnconfirmed: true, postal: '' } : read);
+          if (!extraPass && (read.nricValid || (read.name && read.name.split(' ').length >= 3 && keptNricConf == null))) {
+            var nextConf = read.nricValid ? read.nricConf : null;
+            if (FormFacts.keepCardWords(keptNricConf, read.nricValid ? nextConf : keptNricConf, false)) {
+              words = mapWords(packed.items, scale, pageHeight);
+              used = jobs[i];
+              if (read.nricValid) keptNricConf = nextConf == null ? 0 : Number(nextConf);
+            }
+          }
           if (read.labeled) session._ffSawNameLabel = true;
           if (!read.labeled && !session._ffSawNameLabel && !session._ffSparseName) {
             session._ffSparseName = true;
@@ -961,7 +976,8 @@
             var sparse = await recognizeBounded(session, worker, variant);
             var sparsePacked = linesFromWords(sparse && sparse.data && sparse.data.words);
             var sparseRead = FormFacts.identityRead(sparsePacked.text, mapWords(sparsePacked.items, scale, pageHeight));
-            if (/^\d{4}$/.test(sparseRead.blk)) session._ffSawFour = true;
+            if (sparseRead.blk && !session._ffFirstBlk) session._ffFirstBlk = sparseRead.blk;
+            if (/^\d{4}$/.test(sparseRead.blk) && !session._ffGlyphDeadline) session._ffGlyphDeadline = Date.now() + 1200;
             try {
               await maybeRereadBlock(session, worker, variant, sparseRead, sparse && sparse.data && sparse.data.words);
             } catch (err) {
@@ -970,13 +986,10 @@
             bag.push(sparseRead);
             if (sparseRead.labeled) read = sparseRead;
           }
-          if (read.nricValid || (read.name && read.name.split(' ').length >= 3)) {
-            words = mapWords(packed.items, scale, pageHeight);
-            used = jobs[i];
-          }
           var vote = bag.length >= 2 ? FormFacts.identityVote(bag) : null;
           if (vote && vote.nric && vote.name && vote.nricChecked) {
-            if (session._ffSawFour && !session._ffGlyphExtra) {
+            var extraRoom = !session._ffGlyphDeadline || Date.now() + 900 < session._ffGlyphDeadline;
+            if (!extraPass && /^\d{4}$/.test(session._ffFirstBlk) && extraRoom) {
               session._ffGlyphExtra = true;
               continue;
             }
