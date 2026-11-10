@@ -289,6 +289,28 @@ assert.equal(evidence.identityPhotoSlot(
   [{ id: 'part', label: 'Passport No. (first 4 characters)', type: 'text' }]
 ), '', 'first 4 characters');
 assert.equal(evidence.unsafeDestination({ label: 'NRIC (last 4 digits)' }), 'partial-id');
+assert.notEqual(evidence.unsafeDestination({ label: 'Valid for first 6 months' }), 'partial-id');
+assert.notEqual(evidence.unsafeDestination({ label: 'Please complete the first 2 pages' }), 'partial-id');
+assert.notEqual(evidence.unsafeDestination({ label: 'NRIC last 4' }), 'partial-id');
+assert.notEqual(evidence.unsafeDestination({ label: 'Last 4 characters' }), 'partial-id');
+const person = require('./person.js');
+assert.equal(person.sectionKind('Referred By'), 'other');
+assert.equal(person.sectionKind('Referred by:'), 'other');
+assert.equal(person.sectionKind('Referrer'), 'other');
+assert.equal(person.sectionKind('Introducer'), 'other');
+assert.equal(person.sectionKind('Referral'), 'other');
+[
+  'Particulars of the Applicant as referred',
+  'Documents referred herein',
+  'as referred to in'
+].forEach(function (title) {
+  assert.notEqual(person.sectionKind(title), 'other', title);
+  const texts = [text(40, 420, 240, title), text(40, 360, 30, 'Name')];
+  const rows = placed([field('name', 'Name', 40, 340, 180, 14, texts)]);
+  assert.equal(rows.name.value, NAME, title);
+  const only = [{ id: 'name', label: 'Name', type: 'text', section: title }];
+  assert.equal(evidence.identityPhotoSlot(only[0], only), 'name', title);
+});
 
 /* DBS Hong Kong name row. The box is one row tall enough that a wrap would
    land on the next row, so a long name shrinks onto that one line. */

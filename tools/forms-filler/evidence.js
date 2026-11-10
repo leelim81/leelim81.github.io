@@ -95,12 +95,14 @@
     return { size: min, fits: false, lines: wrappedLines(text, min, boxWidth).length };
   }
 
-  /* A box that asks for only part of an ID cannot take the whole number. */
+  /* A box that asks for only part of an ID cannot take the whole number.
+     Both an ID word and a unit are required, so "first 6 months" is not one. */
   function partialIdLabel(text) {
     var s = String(text || '');
-    if (/\blast\s+\d+\s+(?:characters?|digits?|letters?|numbers?)\b/i.test(s)) return true;
-    if (/\bfirst\s+\d+\b/i.test(s)) return true;
-    return false;
+    var slice = /\b(?:first|last)\s+\d+\b/i.test(s);
+    var idWord = /\b(?:nric|passport|fin|\bic\b|\bid\b|accounts?|cards?)\b/i.test(s);
+    var unit = /\b(?:characters?|digits?|letters?|chars?)\b/i.test(s);
+    return slice && idWord && unit;
   }
 
   function allowsValue(field, value) {
