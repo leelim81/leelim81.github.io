@@ -48,7 +48,7 @@
     }
     if ((s.match(/[^A-Za-z0-9\s:./#'()\-&,]/g) || []).length > 0) return '';
     s = s.replace(/\.$/, '').trim();
-    if (/^(page|form|union|membership application)$/i.test(s)) return '';
+    if (/^(page|form|union)$/i.test(s)) return '';
     return s.replace(/\s*\($/, '').trim();
   }
 
@@ -381,7 +381,7 @@
   /* The nearest person heading above a blank owns that blank. A field label
      such as "Name of Member" is not a heading. A heading in another column
      does not own this blank. */
-  function personHeading(slot, slots, texts) {
+  function personHeading(slot, slots, texts, carried) {
     var y = slot.lineY != null ? slot.lineY : slot.y;
     var best = '';
     var bestDy = 1e9;
@@ -394,7 +394,7 @@
       var claimed = slots.some(function (other) { return normLabel(other.label) === want; });
       if (claimed) return;
       var dy = text.y - y;
-      if (dy < 8 || dy > 420) return;
+      if (dy < 8 || dy > 980) return;
       if (text.x > slot.x + 80) return;
       if (slot.x - text.x > 260) return;
       var dx = Math.abs(text.x - slot.x);
@@ -404,7 +404,26 @@
         bestDx = dx;
       }
     });
-    return best;
+    return best || carried || '';
+  }
+
+  function lastPersonHeading(texts, slots, carried) {
+    var best = '';
+    var bestY = 1e9;
+    var found = false;
+    texts.forEach(function (text) {
+      var line = String(text.str || '').replace(/\s+/g, ' ').trim();
+      if (!line || words(line).length > 8 || line.length > 48) return;
+      if (!personOf(line)) return;
+      var want = normLabel(line);
+      if (slots.some(function (other) { return normLabel(other.label) === want; })) return;
+      found = true;
+      if (text.y < bestY) {
+        best = line.replace(/[:.\s]+$/g, '').trim();
+        bestY = text.y;
+      }
+    });
+    return found ? best : (carried || '');
   }
 
   function dedupeSlots(slots, texts) {
@@ -434,7 +453,9 @@
         var overlapH = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
         var smaller = Math.min(a.w * Math.max(a.h, 1), b.w * Math.max(b.h, 1));
         var inter = Math.max(0, overlapW) * Math.max(0, overlapH);
-        if (!(same && dy < 42) && !(inter > smaller * 0.45 && dy < 18)) continue;
+        var stacked = same && dy < 42 && overlapW > 6;
+        var piled = inter > smaller * 0.45 && dy < 18;
+        if (!stacked && !piled) continue;
         var lose = j;
         if (same) {
           var da = labelDelta(a);
@@ -612,7 +633,7 @@
         if (Math.abs((other.lineY != null ? other.lineY : other.y) - y) > 8) return;
         if (/dependant|dependent|spouse|\bchild\b|officer|nominee|referee|beneficiary|mother|father|parent|guardian|payee|witness|introducer|\bkin\b|\bagent\b/i.test(other.label)) slot.group = other.label;
       });
-      var heading = personHeading(slot, slots, texts);
+      var heading = personHeading(slot, slots, texts, page.carriedPerson || '');
       if (heading) {
         slot.section = heading;
         if (!slot.group) slot.group = heading;
@@ -686,6 +707,7 @@
       if (a.rect.y !== b.rect.y) return b.rect.y - a.rect.y;
       return a.rect.x - b.rect.x;
     });
+    page.lastPerson = lastPersonHeading(texts, slots, page.carriedPerson || '');
     return fields;
   }
 

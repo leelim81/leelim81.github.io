@@ -342,8 +342,11 @@
   function layoutPages(pages) {
     if (!global.FormSpots) return [];
     var fields = [];
+    var carried = '';
     pages.forEach(function (page) {
+      page.carriedPerson = carried;
       FormSpots.layout(page).forEach(function (field) { fields.push(field); });
+      carried = page.lastPerson || '';
     });
     return fields;
   }

@@ -10,10 +10,13 @@
      same words: "joint applicant", "authorised signatory", "next of kin",
      "particulars of guarantor". "contact details" is a block of the
      applicant's own numbers, not a person called Contact. */
-  var OTHER = /\b(guarantors?|nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|emergency|payees?|joints?|second\s+applicants?|holders?\s*2|2nd\s+applicants?|applicants?\s*2|witness(?:es)?|next\s+of\s+kin|kin|children|child|dependants?|dependents?|officers?|agents?|authoris(?:e|ed)\s+persons?|authoriz(?:e|ed)\s+persons?|introducers?|patients?|nurses?|doctors?|siblings?|signatories|signatory)\b/i;
+  var OTHER = /\b(guarantors?|co\s*borrowers?|prox(?:y|ies)|insured|employers?|landlords?|tenants?|trustees?|partners?|nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|emergency|payees?|joints?|second\s+applicants?|holders?\s*2|owners?\s*2|directors?\s*2|2nd\s+applicants?|applicants?\s*2|witness(?:es)?|next\s+of\s+kin|kin|children|child|dependants?|dependents?|officers?|agents?|authoris(?:e|ed)\s+persons?|authoriz(?:e|ed)\s+persons?|introducers?|patients?|nurses?|doctors?|siblings?|signatories|signatory)\b/i;
   var CONTACT_PARTY = /\bcontacts?\b/i;
   var CONTACT_BLOCK = /\bcontacts?\s+(?:details|number|no|info|information)\b/i;
   var APPLICANT = /\b(applicants?|members?|claimants?|workers?)\b/i;
+  /* Part A, Personal details, and Membership application are the applicant
+     block on a single-person form. A heading that also names someone else
+     is caught above and stays other. */
 
   function normalize(text) {
     return String(text || '')
@@ -30,6 +33,7 @@
     if (OTHER.test(s)) return 'other';
     if (CONTACT_PARTY.test(s) && !CONTACT_BLOCK.test(s)) return 'other';
     if (APPLICANT.test(s)) return 'applicant';
+    if (/^part a\b/i.test(s) || /\bpersonal details\b/i.test(s) || /\bmembership application\b/i.test(s)) return 'applicant';
     return '';
   }
 
