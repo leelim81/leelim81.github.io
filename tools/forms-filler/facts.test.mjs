@@ -400,6 +400,88 @@ assert.equal(tiedBlock.blk, '1234');
 assert.equal(tiedBlock.blkChecked, false);
 assert.equal(tiedBlock.blkUnconfirmed, true);
 assert.equal(tiedBlock.address, '');
+const letterHome = 'BLK 123A EXAMPLE RD\n#12-34\nSINGAPORE 560123\n';
+const letterBlock = identityRead(letterHome);
+assert.equal(letterBlock.blk, '123A');
+assert.equal(letterBlock.blkUnconfirmed, false);
+assert.equal(letterBlock.blkSuggest, '');
+const letterVote = identityVote([letterBlock, letterBlock]);
+assert.equal(letterVote.blk, '123A');
+assert.equal(letterVote.blkChecked, true);
+assert.equal(letterVote.blkHint, '');
+function blockWord(text, lastConfidence, choices) {
+  return {
+    text: text,
+    confidence: 80,
+    glyphs: text.split('').map(function (ch, index) {
+      var glyph = { text: ch, confidence: index === text.length - 1 ? lastConfidence : 96 };
+      if (index === text.length - 1 && choices) glyph.choices = choices;
+      return glyph;
+    })
+  };
+}
+const choiceHome = 'BLK 1234 EXAMPLE RD\n#12-34\nSINGAPORE 560123\n';
+const choiceRead = identityRead(choiceHome, [blockWord('1234', 41, [{ text: '4', confidence: 41 }, { text: 'A', confidence: 37 }])]);
+assert.equal(choiceRead.blk, '1234');
+assert.equal(choiceRead.blkSuggest, '123A');
+assert.equal(choiceRead.blkSuggestKind, 'choice');
+const choiceVote = identityVote([choiceRead, choiceRead]);
+assert.equal(choiceVote.blk, '123A');
+assert.equal(choiceVote.blkChecked, false);
+assert.equal(choiceVote.blkUnconfirmed, true);
+assert.equal(choiceVote.blkHint, '1234');
+assert.equal(choiceVote.street, 'EXAMPLE RD');
+assert.equal(choiceVote.address, '');
+const beeRead = identityRead('BLK 1208 EXAMPLE RD\n#12-34\nSINGAPORE 561208\n', [blockWord('1208', 33, [{ text: '8', confidence: 33 }, { text: 'B', confidence: 30 }])]);
+assert.equal(identityVote([beeRead, beeRead]).blk, '120B');
+assert.equal(identityVote([beeRead, beeRead]).blkChecked, false);
+assert.equal(identityVote([beeRead, beeRead]).blkHint, '1208');
+const deeBlock = identityRead('BLK 4500 EXAMPLE RD\n#12-34\nSINGAPORE 564500\n', [blockWord('4500', 28, [{ text: '0', confidence: 28 }, { text: 'D', confidence: 26 }])]);
+assert.equal(identityVote([deeBlock, deeBlock]).blk, '450D');
+assert.equal(identityVote([deeBlock, deeBlock]).blkChecked, false);
+const essRead = identityRead('BLK 3155 EXAMPLE RD\n#12-34\nSINGAPORE 563155\n', [blockWord('3155', 44, [{ text: '5', confidence: 44 }, { text: 'S', confidence: 40 }])]);
+assert.equal(identityVote([essRead, essRead]).blk, '315S');
+assert.equal(identityVote([essRead, essRead]).blkHint, '3155');
+const firmRead = identityRead(choiceHome, [blockWord('1234', 94, [{ text: '4', confidence: 94 }])]);
+assert.equal(firmRead.blkSuggest, '');
+assert.equal(identityVote([firmRead, firmRead]).blk, '1234');
+assert.equal(identityVote([firmRead, firmRead]).blkHint, '');
+const oddRead = identityRead('BLK 1237 EXAMPLE RD\n#12-34\nSINGAPORE 560123\n', [blockWord('1237', 22, [{ text: '7', confidence: 22 }, { text: 'A', confidence: 80 }])]);
+assert.equal(oddRead.blkSuggest, '');
+assert.equal(identityVote([oddRead, oddRead]).blk, '1237');
+assert.equal(identityVote([oddRead, oddRead]).blkChecked, false);
+const weakRead = identityRead(choiceHome, [blockWord('1234', 42)]);
+assert.equal(weakRead.blkSuggest, '123A');
+assert.equal(weakRead.blkSuggestKind, 'confidence');
+const weakVote = identityVote([weakRead, weakRead]);
+assert.equal(weakVote.blk, '123A');
+assert.equal(weakVote.blkChecked, false);
+assert.equal(weakVote.blkHint, '1234');
+const weakClash = identityRead('BLK 1234 EXAMPLE RD\n#12-34\nSINGAPORE 560999\n', [blockWord('1234', 42)]);
+assert.equal(identityVote([weakClash, weakClash]).blk, '1234');
+assert.equal(identityVote([weakClash, weakClash]).blkHint, '');
+const secondLetter = identityVote([
+  identityRead(letterHome),
+  identityRead(choiceHome)
+]);
+assert.equal(secondLetter.blk, '123A');
+assert.equal(secondLetter.blkChecked, false);
+assert.equal(secondLetter.blkUnconfirmed, true);
+assert.equal(secondLetter.blkHint, '1234');
+const unrelated = identityVote([
+  identityRead('BLK 123B EXAMPLE RD\n#12-34\nSINGAPORE 560123\n'),
+  identityRead(choiceHome)
+]);
+assert.equal(unrelated.blk, '');
+assert.equal(unrelated.blkChecked, false);
+assert.equal(unrelated.blkHint, '');
+const splitSuggest = identityVote([
+  identityRead('BLK 4500 EXAMPLE RD\n#12-34\nSINGAPORE 564500\n', [blockWord('4500', 40, [{ text: 'D', confidence: 50 }])]),
+  identityRead('BLK 4500 EXAMPLE RD\n#12-34\nSINGAPORE 564500\n', [blockWord('4500', 40, [{ text: 'O', confidence: 50 }])])
+]);
+assert.equal(splitSuggest.blk, '4500');
+assert.equal(splitSuggest.blkHint, '');
+assert.equal(splitSuggest.blkChecked, false);
 const oneHome = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n')]);
 assert.equal(oneHome.address, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
 assert.equal(oneHome.blkUnconfirmed, false);
