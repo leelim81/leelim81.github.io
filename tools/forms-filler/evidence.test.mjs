@@ -2,7 +2,8 @@ import assert from 'assert';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { extract, identityPhotoSlot } = require('./evidence.js');
+const { extract, identityPhotoSlot, identityCardOffer } = require('./evidence.js');
+const { identityRead, identityVote } = require('./facts.js');
 const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
 
@@ -133,10 +134,22 @@ assert.equal(identityPhotoSlot({ id: 'debit', label: 'Name as per Debiting Accou
 assert.equal(identityPhotoSlot({ id: 'credited', label: 'Account No. to be Credited' }), '');
 assert.equal(identityPhotoSlot({ id: 'amount', label: 'Amount' }), '');
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'For Bank Use Only' }), '');
-assert.equal(identityPhotoSlot({ id: 'dob', label: 'Date of birth' }), '');
-assert.equal(identityPhotoSlot({ id: 'sex', label: 'Sex' }), '');
-assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), '');
-assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), '');
+assert.equal(identityPhotoSlot({ id: 'dob', label: 'Date of birth' }), 'dob');
+assert.equal(identityPhotoSlot({ id: 'sex', label: 'Sex' }), 'sex');
+assert.equal(identityPhotoSlot({ id: 'gender', label: 'Gender' }), 'sex');
+assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), 'nationality');
+assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), 'address');
+assert.equal(identityPhotoSlot({ id: 'postal', label: 'Postal code' }), 'postal');
+assert.equal(identityPhotoSlot({ id: 'blk', label: 'Blk/House No.' }), 'blk');
+assert.equal(identityPhotoSlot({ id: 'street', label: 'Street' }), 'street');
+assert.equal(identityPhotoSlot({ id: 'unit', label: 'Unit' }), 'unit');
+assert.equal(identityPhotoSlot({ id: 'unit_no', label: 'Unit No. #' }), 'unit');
+assert.equal(identityPhotoSlot({ id: 'blk_house', label: 'Blk / House No.' }), 'blk');
+assert.equal(identityPhotoSlot({ id: 'race', label: 'Race' }), 'race');
+assert.equal(identityPhotoSlot({ id: 'born', label: 'Country of birth' }), 'birthCountry');
+assert.equal(identityPhotoSlot({ id: 'gdob', label: 'Date of birth', section: 'Guarantor' }), '');
+assert.equal(identityPhotoSlot({ id: 'gsex', label: 'Sex', section: 'Nominee' }), '');
+assert.equal(identityPhotoSlot({ id: 'gaddr', label: 'Address', section: 'Guarantor' }), '');
 assert.equal(identityPhotoSlot({ id: 'phone', label: 'Home No.' }), '');
 assert.equal(identityPhotoSlot({ id: 'emergency', label: 'Emergency contact name' }), '');
 assert.equal(identityPhotoSlot({ id: 'patient', label: 'Patient name' }), '');
@@ -273,7 +286,7 @@ const stillRepeated = [
 stillRepeated.forEach(function (field) {
   assert.equal(identityPhotoSlot(field, stillRepeated), '', 'unnamed repeated names still abstain');
 });
-['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
+['Declaration', 'Declaration by applicant', 'Declaration by the applicant', 'Declaration of the applicant', "Applicant's declaration", 'Part B continued', 'For bank use', 'For official use', 'Office use', 'Part B', 'Part C', 'Part D', 'Acknowledgement', 'Acknowledge', 'Authorisation', 'Terms and conditions'].forEach(function (heading) {
   assert.equal(sectionKind(heading), 'reset', heading);
   assert.notEqual(personOf(heading), 'applicant', heading);
   const only = [{ id: 'n', label: 'Name', section: heading }, { id: 'i', label: 'NRIC', section: heading }];
@@ -285,6 +298,26 @@ stillRepeated.forEach(function (field) {
   const only = [{ id: 'n', label: 'Name', section: heading }];
   assert.equal(identityPhotoSlot(only[0], only), '', heading);
 });
+const onlyAddress = [{ id: 'a', label: 'Address' }];
+const unconfirmedHome = identityVote([
+  identityRead('APT BLK 9999 STREET #99-999\nSINGAPORE 999999\n'),
+  identityRead('APT BLK 9999 STREET #99-999\nSINGAPORE 999999\n')
+]);
+assert.equal(identityPhotoSlot(onlyAddress[0], onlyAddress), 'address');
+assert.equal(identityCardOffer(unconfirmedHome, 'address').value, '');
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').value, '9999');
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').checked, false);
+assert.equal(identityCardOffer(unconfirmedHome, 'blk').editable, true);
+const confirmedHome = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n')]);
+assert.equal(identityCardOffer(confirmedHome, 'address').value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
+assert.equal(identityCardOffer(confirmedHome, 'address').checked, false);
+const partialOffer = { blk: '88', street: '', postal: '018956', address: '88 SINGAPORE 018956', blkUnconfirmed: false };
+assert.equal(identityCardOffer(partialOffer, 'address').value, '');
+assert.equal(sectionKind('See Part B'), '');
+assert.equal(personOf('The insured'), 'other');
+assert.equal(personOf('Insured'), 'other');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'The insured' }, [{ id: 'n', label: 'Name', section: 'The insured' }]), '');
+assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Insured' }, [{ id: 'n', label: 'Name', section: 'Insured' }]), '');
 assert.equal(personOf('Sum insured'), '');
 assert.equal(identityPhotoSlot({ id: 'n', label: 'Name', section: 'Sum insured' }, [{ id: 'n', label: 'Name', section: 'Sum insured' }]), 'name');
 

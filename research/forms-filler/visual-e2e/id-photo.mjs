@@ -664,7 +664,7 @@ async function probe(label, files, want) {
   await page.waitForFunction(() => {
     const review = document.getElementById('reviewBox');
     const fail = document.getElementById('failText');
-    return (review && !review.hidden) || (fail && /Could not read/i.test(fail.textContent || ''));
+    return (review && !review.hidden) || (fail && /Could not read|not offered|Nothing was filled/i.test(fail.textContent || ''));
   });
   const ms = Date.now() - started;
   const review = await page.locator('#reviewBox').isVisible() ? await reviewText(page) : '';

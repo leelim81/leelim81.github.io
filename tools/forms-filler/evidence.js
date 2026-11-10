@@ -92,15 +92,42 @@
      its Name or NRIC is the only one on the form. A repeated name or NRIC
      abstains when no applicant section can be told apart. */
   function applicantIdentitySlot(field) {
-    if (!field || sectionKind(field.label) === 'reset' || sectionKind(fieldContext(field)) === 'reset' || sectionKind(field.id) === 'reset') return '';
-    if (namesOtherRole(field.label) || namesOtherRole(fieldContext(field)) || namesOtherRole(field.id)) return '';
-    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s]+$/g, '');
+    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
+    if (!field || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
+    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
     if (/name as per\b/.test(s) && /bank account/.test(s) && !/debit/.test(s)) return 'name';
     if (/^name as per nric\b/.test(s)) return 'name';
     if (/^applicants?(?:'s|’s)? (?:full )?name$/.test(s)) return 'name';
     if (/^(?:full name|name)$/.test(s)) return 'name';
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
+    if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';
+    if (/^(?:sex|gender)$/.test(s)) return 'sex';
+    if (/^(?:nationality|citizenship)$/.test(s)) return 'nationality';
+    if (/^country of birth$/.test(s)) return 'birthCountry';
+    if (/^race$/.test(s)) return 'race';
+    if (/^(?:residential address|home address|address)$/.test(s)) return 'address';
+    if (/^(?:postal|postal code)$/.test(s)) return 'postal';
+    if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
+    if (/^street(?: name)?$/.test(s)) return 'street';
+    if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
     return '';
+  }
+
+  /* A whole address is offered only when the block, street and postal code
+     are all present and the block is confirmed. An unconfirmed block is
+     still offered on its own line, unticked, so the suffix can be corrected. */
+  function identityCardOffer(identity, slot) {
+    var idn = identity || {};
+    if (slot === 'address') {
+      if (idn.blkUnconfirmed || !idn.blk || !idn.street || !idn.postal || !idn.address) return { value: '', checked: false, editable: false };
+      return { value: idn.address, checked: !!idn.addressChecked, editable: false };
+    }
+    if (slot === 'blk') {
+      if (!idn.blk) return { value: '', checked: false, editable: false };
+      var unconfirmed = !!idn.blkUnconfirmed || /^\d{4}$/.test(idn.blk);
+      return { value: idn.blk, checked: !!idn.blkChecked && !unconfirmed, editable: unconfirmed };
+    }
+    return null;
   }
 
   function identityPhotoSlot(field, fields) {
@@ -208,6 +235,7 @@
     fieldKind: fieldKind,
     fieldRole: fieldRole,
     identityPhotoSlot: identityPhotoSlot,
+    identityCardOffer: identityCardOffer,
     normValue: normValue,
     kindOfLabel: kindOfLabel
   };
