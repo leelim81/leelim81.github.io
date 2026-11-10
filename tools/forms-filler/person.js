@@ -46,9 +46,15 @@
   }
 
   function sectionKind(text) {
-    var s = normalize(text);
+    var raw = String(text || '');
+    var s = normalize(raw);
     if (!s) return '';
     if (isPartReset(s)) return 'reset';
+    /* "About Myself/Parent/Legal Guardian" is the applicant block. The
+       other roles are alternatives for who may sign, not a second person.
+       A field id is only the letters of that heading, so "myself" is
+       enough on its own. */
+    if (/\bmyself\b/i.test(s)) return 'applicant';
     if (OTHER.test(s)) return 'other';
     if (/^(?:the )?insured$/i.test(s)) return 'other';
     if (CONTACT_PARTY.test(s) && !CONTACT_BLOCK.test(s)) return 'other';

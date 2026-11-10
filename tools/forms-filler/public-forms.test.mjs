@@ -124,7 +124,126 @@ assert.equal(form8822.you.value, NAME, '8822 your name');
 assert.equal(form8822.spouse.value, '', '8822 spouse');
 assert.equal(form8822.spouse.refusal, 'other-person');
 
-assert.equal(require('./evidence.js').isSectionHeading('Please complete every field before you sign.'), '');
-assert.equal(require('./evidence.js').isSectionHeading('The applicant must sign the declaration.'), '');
+const evidence = require('./evidence.js');
+const { layout } = require('./spots.js');
+assert.equal(evidence.isSectionHeading('Please complete every field before you sign.'), '');
+assert.equal(evidence.isSectionHeading('The applicant must sign the declaration.'), '');
+assert.equal(evidence.isSectionHeading("Mother's Maiden Name"), '');
+assert.equal(evidence.isSectionHeading('Name of Employer'), '');
+assert.equal(evidence.isSectionHeading("Father's Name:"), '');
+assert.equal(evidence.isSectionHeading('providing personal details to the Bank'), '');
+assert.equal(require('./person.js').sectionKind('About Myself/Parent/Legal Guardian/Administrator'), 'applicant');
+assert.equal(require('./person.js').sectionKind('About My Joint Applicant/Child/Beneficiary'), 'other');
+
+function offeredSlots(fields) {
+  evidence.applySectionContext(fields);
+  return Object.fromEntries(fields.map((field) => [field.id, evidence.identityPhotoSlot(field, fields)]));
+}
+
+/* DBS Hong Kong personal account opening, page 1. "Mother's Maiden Name"
+   and "Name of Employer" are blanks, not sections. */
+const dbsHkTexts = [
+  text(40, 425, 220, 'Personal Data of Sole/Principal Applicant'),
+  text(40, 406, 240, 'providing personal details to the Bank'),
+  text(42, 374, 40, 'Gender'),
+  text(42, 351, 160, 'Name in English (Surname first)'),
+  text(473, 351, 110, "Mother's Maiden Name"),
+  text(203, 257, 70, 'Date of Birth'),
+  text(42, 233, 110, 'Residential Address'),
+  text(42, 117, 90, 'Name of Employer')
+];
+const dbsHk = offeredSlots([
+  field('name', 'Name in English (Surname first)', 210, 348, 150, 12, dbsHkTexts),
+  field('maiden', "Mother's Maiden Name", 473, 336, 90, 12, dbsHkTexts),
+  field('dob', 'Date of Birth', 280, 250, 120, 12, dbsHkTexts),
+  field('home', 'Residential Address', 160, 226, 300, 12, dbsHkTexts),
+  field('employer', 'Name of Employer', 140, 110, 200, 12, dbsHkTexts)
+]);
+assert.equal(dbsHk.name, 'name', 'DBS HK applicant name');
+assert.equal(dbsHk.maiden, '', 'DBS HK maiden name');
+assert.equal(dbsHk.dob, 'dob', 'DBS HK date of birth');
+assert.equal(dbsHk.home, 'address', 'DBS HK residential address');
+assert.equal(dbsHk.employer, '', 'DBS HK employer');
+const dbsHkName = layout({
+  page: 0,
+  width: 600,
+  height: 800,
+  texts: [text(42, 351, 160, 'Name in English (Surname first)')],
+  lines: [{ x: 210, y: 351, w: 180 }],
+  squares: []
+});
+assert.ok(dbsHkName.some((row) => /Name in English/i.test(row.label)), 'DBS HK name label is kept');
+
+/* Standard Chartered personal account opening, page 2. Father's Name and
+   Mother's Name sit above the applicant Gender line. */
+const scTexts = [
+  text(49, 390, 180, "Applicant's Personal Information"),
+  text(28, 356, 200, 'Name of Accountholder in English:'),
+  text(28, 187, 80, "Father's Name:"),
+  text(28, 172, 80, "Mother's Name:"),
+  text(28, 158, 120, "Husband/Wife's Name:"),
+  text(28, 107, 40, 'Gender:')
+];
+const sc = offeredSlots([
+  field('holder', 'Name of Accountholder in English:', 240, 348, 200, 12, scTexts),
+  field('father', "Father's Name:", 120, 180, 140, 12, scTexts),
+  field('gender', 'Gender:', 80, 100, 80, 12, scTexts)
+]);
+assert.equal(sc.holder, 'name', 'SC accountholder');
+assert.equal(sc.father, '', 'SC father');
+assert.equal(sc.gender, 'sex', 'SC gender');
+
+/* CIMB deposit application. The first block is the applicant even though
+   a parent or guardian may also sign it. The joint block stays blank. */
+const cimbTexts = [
+  text(38, 595, 300, 'About Myself/Parent/Legal Guardian/Administrator'),
+  text(32, 575, 180, 'Full Name as per NRIC/Passport:'),
+  text(32, 508, 80, 'Date of Birth:'),
+  text(32, 474, 40, 'Gender:'),
+  text(38, 150, 260, 'About My Joint Applicant/Child/Beneficiary'),
+  text(32, 130, 180, 'Full Name as per NRIC/Passport:')
+];
+const cimb = offeredSlots([
+  field('about_myself_parent_legal_guardian_adminis', 'Full Name as per NRIC/Passport:', 220, 568, 220, 12, cimbTexts),
+  field('about_myself_parent_legal_guardian_adminis_3', 'Date of Birth:', 120, 500, 100, 12, cimbTexts),
+  field('sex', 'Gender:', 80, 466, 60, 12, cimbTexts),
+  field('about_my_joint_applicant_child_beneficiary', 'Full Name as per NRIC/Passport:', 220, 122, 220, 12, cimbTexts)
+]);
+assert.equal(cimb.about_myself_parent_legal_guardian_adminis, 'name', 'CIMB applicant name');
+assert.equal(cimb.about_myself_parent_legal_guardian_adminis_3, 'dob', 'CIMB date of birth');
+assert.equal(cimb.sex, 'sex', 'CIMB gender');
+assert.equal(cimb.about_my_joint_applicant_child_beneficiary, '', 'CIMB joint name');
+
+/* USCIS I-9, page 1. The format notes stay off the label. Section 2 is
+   the employer, not the employee. */
+const i9Texts = [
+  text(38, 644, 220, 'Section 1. Employee Information and Attestation:'),
+  text(42, 622, 120, 'Last Name (Family Name)'),
+  text(204, 622, 120, 'First Name (Given Name)'),
+  text(42, 596, 180, 'Address (Street Number and Name)'),
+  text(42, 570, 140, 'Date of Birth (mm/dd/yyyy)'),
+  text(38, 398, 250, 'Section 2. Employer Review and Verification:'),
+  text(38, 69, 180, "Employer's Business or Organization Name")
+];
+const i9 = offeredSlots([
+  field('last', 'Last Name (Family Name)', 42, 608, 140, 12, i9Texts),
+  field('first', 'First Name (Given Name)', 204, 608, 140, 12, i9Texts),
+  field('addr', 'Address (Street Number and Name)', 42, 582, 240, 12, i9Texts),
+  field('dob', 'Date of Birth (mm/dd/yyyy)', 42, 556, 140, 12, i9Texts),
+  field('org', "Employer's Business or Organization Name", 38, 54, 180, 12, i9Texts)
+]);
+assert.equal(i9.last, '', 'I-9 last name is not the full name');
+assert.equal(i9.first, '', 'I-9 first name is not the full name');
+assert.equal(i9.addr, 'address', 'I-9 employee address');
+assert.equal(i9.dob, 'dob', 'I-9 date of birth');
+assert.equal(i9.org, '', 'I-9 employer');
+const i9Sheet = placed([
+  field('last', 'Last Name (Family Name)', 42, 608, 140, 12, i9Texts),
+  field('addr', 'Address (Street Number and Name)', 42, 582, 240, 12, i9Texts),
+  field('org', "Employer's Business or Organization Name", 38, 54, 180, 12, i9Texts)
+]);
+assert.equal(i9Sheet.last.value, '', 'I-9 sheet last name');
+assert.equal(i9Sheet.addr.value, '10 Example Road', 'I-9 sheet address');
+assert.equal(i9Sheet.org.value, '', 'I-9 sheet employer');
 
 console.log('public form layouts ok');

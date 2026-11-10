@@ -309,6 +309,18 @@
     return current;
   }
 
+  /* A blank's own label, such as "Mother's Name" or "Name of Employer",
+     names the value written on that line. It is not a section title, even
+     when the person word would otherwise mark someone else. */
+  function isAttributeLabel(line) {
+    var s = headPhrase(line);
+    if (!s) return false;
+    if (/\b(?:particulars|details|information|data)\b/.test(s)) return false;
+    if (/\b(?:name|nama)\b/.test(s)) return true;
+    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address|postal|postal code)$/.test(s)) return true;
+    return false;
+  }
+
   /* A section title is a short label. A sentence, a wrapped field label,
      and a row of filled-in examples are not headings. */
   function isSectionHeading(raw) {
@@ -316,7 +328,9 @@
     if (!line || line.length > 48) return '';
     var words = line.split(' ').filter(Boolean);
     if (words.length > 7) return '';
+    if (/^[a-z]/.test(line)) return '';
     if (/\([^)]*$/.test(line)) return '';
+    if (isAttributeLabel(line)) return '';
     if (/\b(full name of|name\s*&\s*address|name and address of)\b/i.test(line)) return '';
     if (/^(i|we|the|this|if|when|where|please|complete|as the|while|note)\b/i.test(line)) return '';
     if (/\b(must|shall|agree|hereby|please|complete|during|before the|after the)\b/i.test(line)) return '';
@@ -624,10 +638,14 @@
   function applicantIdentitySlot(field) {
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
-    var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s#]+$/g, '');
+    var s;
     if (splitKind(field.label)) return '';
     if (chineseNameLabel(field.label)) return 'chineseName';
     if (applicantNameLabel(field.label)) return 'name';
+    /* A format note in parentheses is not part of the label. "Date of Birth
+       (mm/dd/yyyy)" and "Address (Street Number and Name)" are still those
+       lines. */
+    s = headPhrase(field.label || '').replace(/#+$/g, '').trim();
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
     if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';
     if (/^(?:sex|gender)$/.test(s)) return 'sex';
