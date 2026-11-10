@@ -953,6 +953,8 @@
       var used = 0;
       for (var li = 0; li < lines.length; li++) {
         if (used + size > height + 0.5) break;
+        /* A following line has to finish inside this row. */
+        if (li > 0 && used + lineStep > height + 0.5) break;
         kept.push(lines[li]);
         used += lineStep;
       }

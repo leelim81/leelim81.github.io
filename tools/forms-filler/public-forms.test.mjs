@@ -246,4 +246,59 @@ assert.equal(i9Sheet.last.value, '', 'I-9 sheet last name');
 assert.equal(i9Sheet.addr.value, '10 Example Road', 'I-9 sheet address');
 assert.equal(i9Sheet.org.value, '', 'I-9 sheet employer');
 
+/* The fillable I-9 names its boxes without parentheses. */
+const i9Acro = offeredSlots([
+  field('addr2', 'Address Street Number and Name', 42, 582, 240, 12, i9Texts),
+  field('dob2', 'Date of Birth mmddyyyy', 42, 556, 140, 12, i9Texts),
+  field('org2', 'Employers Business or Org Address', 38, 54, 180, 12, i9Texts)
+]);
+assert.equal(i9Acro.addr2, 'address', 'I-9 acro address');
+assert.equal(i9Acro.dob2, 'dob', 'I-9 acro date of birth');
+assert.equal(i9Acro.org2, '', 'I-9 acro employer address');
+
+/* CIMB deposit form, page 1. Referred By is the referrer, and the box
+   asks only for the last 4 characters. */
+const referredTexts = [
+  text(38, 399, 150, 'Promotion/Referral Details'),
+  text(215, 382, 52, 'Referred By:'),
+  text(397, 382, 159, 'NRIC/Passport No. (Last 4 characters):')
+];
+const referred = offeredSlots([
+  field('last4', 'NRIC/Passport No. (Last 4 characters)', 400, 368, 140, 12, referredTexts),
+  field('refNric', 'NRIC', 400, 340, 140, 12, referredTexts)
+]);
+assert.equal(referred.last4, '', 'referrer last-4 box');
+assert.equal(referred.refNric, '', 'NRIC under Referred By');
+const referredSheet = placed([
+  field('last4', 'NRIC/Passport No. (Last 4 characters)', 400, 368, 140, 12, referredTexts),
+  field('refNric', 'NRIC', 120, 340, 140, 12, referredTexts),
+  field('intro', 'NRIC', 120, 300, 140, 12, [text(40, 330, 80, 'Introducer')]),
+  field('who', 'NRIC', 120, 260, 140, 12, [text(40, 290, 70, 'Referrer')])
+]);
+assert.equal(referredSheet.last4.value, '', 'last 4 characters are not the full NRIC');
+assert.equal(referredSheet.last4.refusal, 'partial-id');
+assert.notEqual(referredSheet.last4.checked, true);
+assert.equal(referredSheet.refNric.value, '', 'Referred By NRIC');
+assert.equal(referredSheet.refNric.refusal, 'other-person');
+assert.equal(referredSheet.intro.value, '', 'introducer NRIC');
+assert.equal(referredSheet.intro.refusal, 'other-person');
+assert.equal(referredSheet.who.value, '', 'referrer NRIC');
+assert.equal(referredSheet.who.refusal, 'other-person');
+assert.equal(evidence.identityPhotoSlot(
+  { id: 'part', label: 'Passport No. (first 4 characters)', type: 'text' },
+  [{ id: 'part', label: 'Passport No. (first 4 characters)', type: 'text' }]
+), '', 'first 4 characters');
+assert.equal(evidence.unsafeDestination({ label: 'NRIC (last 4 digits)' }), 'partial-id');
+
+/* DBS Hong Kong name row. The box is one row tall enough that a wrap would
+   land on the next row, so a long name shrinks onto that one line. */
+const longName = 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL';
+const nameRow = evidence.fitInBox(longName, 260, 28, 11);
+assert.equal(nameRow.fits, true, 'DBS name row fits');
+assert.equal(nameRow.lines, 1, 'DBS name stays on one line');
+const { PDFDocument, StandardFonts } = require('./vendor/pdf/pdf-lib.min.js');
+const measure = await PDFDocument.create();
+const helvetica = await measure.embedFont(StandardFonts.Helvetica);
+assert.ok(helvetica.widthOfTextAtSize(longName, nameRow.size) <= 260, 'Helvetica name stays inside the row');
+
 console.log('public form layouts ok');

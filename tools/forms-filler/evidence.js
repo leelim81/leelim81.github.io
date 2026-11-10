@@ -35,9 +35,10 @@
     var s = String(text || '');
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      var factor = 0.52;
+      var factor = 0.5;
       if (c <= 32) factor = 0.28;
       else if (c >= 48 && c <= 57) factor = 0.56;
+      else if (c >= 65 && c <= 90) factor = 0.70;
       else if (c === 45 || c === 47) factor = 0.33;
       width += size * factor;
     }
@@ -73,11 +74,16 @@
     return lines;
   }
 
-  /* Wrapped lines must stay inside the field rectangle. */
+  /* Wrapped lines must stay inside the field rectangle. A value that can
+     sit on one line is shrunk until it does. Wrapping is only for a box
+     tall enough for another row, so a second line cannot cross into the
+     next table row. */
   function fitInBox(text, boxWidth, boxHeight, start) {
     var size = start > 0 ? start : 10;
     var min = 6;
     if (!(boxWidth > 0) || !(boxHeight > 0)) return { size: size, fits: false, lines: 0 };
+    var one = fittedSize(text, boxWidth, size);
+    if (one.fits && lineBoxHeight(one.size) <= boxHeight + 0.5) return { size: one.size, fits: true, lines: 1 };
     while (size >= min) {
       var lines = wrappedLines(text, size, boxWidth);
       var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
@@ -87,6 +93,14 @@
       size = Math.round((size - 0.2) * 10) / 10;
     }
     return { size: min, fits: false, lines: wrappedLines(text, min, boxWidth).length };
+  }
+
+  /* A box that asks for only part of an ID cannot take the whole number. */
+  function partialIdLabel(text) {
+    var s = String(text || '');
+    if (/\blast\s+\d+\s+(?:characters?|digits?|letters?|numbers?)\b/i.test(s)) return true;
+    if (/\bfirst\s+\d+\b/i.test(s)) return true;
+    return false;
   }
 
   function allowsValue(field, value) {
@@ -230,6 +244,7 @@
     var region = String((field && field.region) || '');
     var blob = [label, group, section, heading].join('\n');
     if (region === 'signature' || region === 'bank-use' || region === 'other-person') return region;
+    if (partialIdLabel(label)) return 'partial-id';
     if (accountHolderName(label)) return 'account-holder';
     if (placeName(label)) return 'address-part';
     if (userOrNickName(label)) return 'not-offered';
@@ -647,12 +662,12 @@
        lines. */
     s = headPhrase(field.label || '').replace(/#+$/g, '').trim();
     if (/^(?:nric|fin|passport)(?:\s*\/\s*(?:nric|fin|passport)){0,2}(?:\s*(?:no|number)\.?)?$/.test(s) && /nric|\bfin\b/.test(s)) return 'nric';
-    if (/^(?:date of birth|dob|birth date)$/.test(s)) return 'dob';
+    if (/^(?:date of birth|dob|birth date)(?:\s+mm\s*dd\s*yyyy)?$/.test(s)) return 'dob';
     if (/^(?:sex|gender)$/.test(s)) return 'sex';
     if (/^(?:nationality|citizenship)$/.test(s)) return 'nationality';
     if (/^country of birth$/.test(s)) return 'birthCountry';
     if (/^race$/.test(s)) return 'race';
-    if (/^(?:residential address|home address|address)$/.test(s)) return 'address';
+    if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
     if (/^(?:postal|postal code)$/.test(s)) return 'postal';
     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
