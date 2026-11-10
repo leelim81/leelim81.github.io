@@ -314,6 +314,18 @@ assert.equal(bothAddress.editable, true);
 assert.equal(bothBlk.value, '9999');
 assert.equal(bothBlk.checked, false);
 assert.equal(bothBlk.editable, true);
+const mixedParts = bothSlots.concat([
+  { id: 's', label: 'Street' },
+  { id: 'u', label: 'Unit' },
+  { id: 'p', label: 'Postal code' }
+]);
+const agreedParts = Object.assign({}, unconfirmedHome, { streetChecked: true, unitChecked: true, postalChecked: true });
+['street', 'unit', 'postal'].forEach(function (slot) {
+  const offered = identityCardOffer(agreedParts, slot, mixedParts);
+  assert.equal(offered.checked, false, slot);
+  assert.ok(offered.value, slot);
+});
+assert.equal(identityCardOffer(agreedParts, 'street', onlyAddress).checked, true);
 const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);
 assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
 assert.equal(addressOnly.checked, false);

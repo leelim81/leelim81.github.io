@@ -1350,11 +1350,12 @@
         return;
       }
       if (out.street) return;
+      var hasUnit = /#\s?\d{1,4}\s*-\s*\d{1,4}/.test(t);
       var prefixedHere = /\bSINGAPORE\s+S?\s?\d{6}\b/i.test(t);
       var bare = t.replace(/\s+#\s?\d{1,4}\s*-\s*\d{1,4}.*$/i, '').replace(/\bSINGAPORE\b.*$/i, '').replace(/\s+\S*\d+\s*-\s*\d*\S*.*$/, '').trim();
       if (!bare || /^\d{4,}\b/.test(bare)) return;
       var lead = bare.match(/^(\d{1,3}[A-Z]?)\s+(\S(?:.*\S)?)$/i);
-      if (!prefixedHere && !lead) return;
+      if (!lead && !(hasUnit && prefixedHere)) return;
       var streetText = lead ? lead[2] : bare;
       var streetWords = streetText.replace(/[^A-Za-z\s]/g, ' ').split(/\s+/).filter(Boolean);
       if (!streetWords.length || streetWords[0].length < 2 || !placeAlias(streetWords) || usedByName(streetText, phrases)) return;
