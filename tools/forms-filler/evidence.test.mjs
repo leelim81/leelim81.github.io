@@ -432,6 +432,34 @@ const oneConfirmed = identityVote([identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSI
 assert.equal(addressSlotsBlank(oneConfirmed, addressAndStreet), true);
 const noBlock = { blk: '', blkUnconfirmed: false, street: 'EXAMPLE RD', streetChecked: true, unit: '12-34', unitChecked: true, postal: '018956', postalChecked: true };
 assert.equal(identityCardOffer(noBlock, 'street', splitOnly).checked, true);
+const noBlockReads = identityVote([
+  identityRead('EXAMPLE RD #12-34 SINGAPORE 018956\n'),
+  identityRead('EXAMPLE RD #12-34 SINGAPORE 018956\n')
+]);
+const addressStreetOnly = [{ id: 'a', label: 'Address' }, { id: 's', label: 'Street' }];
+assert.equal(noBlockReads.blk, '');
+assert.equal(noBlockReads.streetChecked, true);
+assert.equal(noBlockReads.postalChecked, true);
+assert.equal(addressSlotsBlank(noBlockReads, addressStreetOnly), false);
+assert.equal(identityCardOffer(noBlockReads, 'street', addressStreetOnly).value, 'EXAMPLE RD');
+assert.equal(identityCardOffer(noBlockReads, 'street', addressStreetOnly).checked, true);
+assert.equal(identityCardOffer(noBlockReads, 'address', addressStreetOnly).value, '#12-34 SINGAPORE 018956');
+assert.equal(identityCardOffer(noBlockReads, 'address', addressStreetOnly).checked, true);
+const looseParts = {
+  blk: '88', blkChecked: true, blkUnconfirmed: false,
+  street: 'EXAMPLE WALK', streetChecked: true,
+  unit: '12-34', unitChecked: false,
+  postal: '018956', postalChecked: false
+};
+const partFields = [{ id: 's', label: 'Street' }, { id: 'u', label: 'Unit' }, { id: 'p', label: 'Postal code' }];
+assert.equal(identityCardOffer(looseParts, 'unit', partFields).checked, false);
+assert.equal(identityCardOffer(looseParts, 'unit', partFields).editable, true);
+assert.equal(identityCardOffer(looseParts, 'postal', partFields).checked, false);
+assert.equal(identityCardOffer(looseParts, 'postal', partFields).editable, true);
+const heldBlock = Object.assign({}, looseParts, { blk: '1234', blkUnconfirmed: true, blkChecked: false });
+assert.equal(identityCardOffer(heldBlock, 'unit', partFields).checked, false);
+assert.equal(identityCardOffer(heldBlock, 'unit', partFields).editable, false);
+assert.equal(identityCardOffer(heldBlock, 'postal', partFields).editable, false);
 const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);
 assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
 assert.equal(addressOnly.checked, false);
