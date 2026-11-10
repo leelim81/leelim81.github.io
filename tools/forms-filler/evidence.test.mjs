@@ -325,7 +325,32 @@ const agreedParts = Object.assign({}, unconfirmedHome, { streetChecked: true, un
   assert.equal(offered.checked, false, slot);
   assert.ok(offered.value, slot);
 });
-assert.equal(identityCardOffer(agreedParts, 'street', onlyAddress).checked, true);
+const splitOnly = [
+  { id: 'b', label: 'Blk' },
+  { id: 's', label: 'Street' },
+  { id: 'u', label: 'Unit' },
+  { id: 'p', label: 'Postal code' }
+];
+const addressStreet = [
+  { id: 'a', label: 'Address' },
+  { id: 's', label: 'Street' },
+  { id: 'u', label: 'Unit' },
+  { id: 'p', label: 'Postal code' }
+];
+[splitOnly, addressStreet, onlyAddress].forEach(function (shape) {
+  ['street', 'unit', 'postal'].forEach(function (slot) {
+    assert.equal(identityCardOffer(agreedParts, slot, shape).checked, false, slot + ' ' + shape.map(function (field) { return field.label; }).join('+'));
+  });
+});
+const confirmedParts = identityVote([
+  identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n'),
+  identityRead('BLK 88 EXAMPLE WALK\n#12-34\nSINGAPORE 018956\n')
+]);
+assert.equal(identityCardOffer(confirmedParts, 'street', splitOnly).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'unit', addressStreet).checked, true);
+assert.equal(identityCardOffer(confirmedParts, 'postal', onlyAddress).checked, true);
+const noBlock = { blk: '', blkUnconfirmed: false, street: 'EXAMPLE RD', streetChecked: true, unit: '12-34', unitChecked: true, postal: '018956', postalChecked: true };
+assert.equal(identityCardOffer(noBlock, 'street', splitOnly).checked, true);
 const addressOnly = identityCardOffer(unconfirmedHome, 'address', onlyAddress);
 assert.equal(addressOnly.value, '9999 STREET #99-999 SINGAPORE 999999');
 assert.equal(addressOnly.checked, false);
