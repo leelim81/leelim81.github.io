@@ -36,6 +36,25 @@ const tenancy = placed([
 assert.equal(tenancy.occ.value, '', 'tenancy occupant name');
 assert.equal(tenancy.occ.refusal, 'other-person');
 
+[
+  'PARTICULARS OF APPLICANT (PLEASE COMPLETE IN BLOCK LETTERS)',
+  'APPLICANT DETAILS (PLEASE USE BLOCK LETTERS)'
+].forEach(function (title) {
+  const texts = [
+    text(40, 520, 140, 'Particulars of Occupiers'),
+    text(40, 430, 280, title),
+    text(40, 380, 27, 'Name')
+  ];
+  const rows = placed([
+    field('occ', 'Name', 40, 470, 160, 12, texts),
+    field('app', 'Name', 40, 360, 180, 14, texts)
+  ]);
+  assert.equal(rows.occ.value, '', title + ' occupier');
+  assert.equal(rows.occ.refusal, 'other-person', title);
+  assert.equal(rows.app.value, NAME, title);
+  assert.equal(rows.app.decision, 'review', title);
+});
+
 const dbsTexts = [
   text(105, 529, 55, '1st Applicant'),
   text(373, 529, 59, '2nd Applicant'),
@@ -104,5 +123,8 @@ const form8822 = placed([
 assert.equal(form8822.you.value, NAME, '8822 your name');
 assert.equal(form8822.spouse.value, '', '8822 spouse');
 assert.equal(form8822.spouse.refusal, 'other-person');
+
+assert.equal(require('./evidence.js').isSectionHeading('Please complete every field before you sign.'), '');
+assert.equal(require('./evidence.js').isSectionHeading('The applicant must sign the declaration.'), '');
 
 console.log('public form layouts ok');

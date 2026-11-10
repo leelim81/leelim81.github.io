@@ -296,10 +296,23 @@
     return right > 0 ? right + 16 : 595;
   }
 
+  /* Drop a trailing instruction in parentheses. The title in front of it
+     is what names the section. */
+  function stripInstruction(line) {
+    var current = line;
+    var previous;
+    var instruction = /\s*\((?:please\b[^)]*|in\s+block\s+letters|to\s+be\s+completed\b[^)]*|if\s+applicable)\)\s*$/i;
+    do {
+      previous = current;
+      current = current.replace(instruction, '').trim();
+    } while (current !== previous);
+    return current;
+  }
+
   /* A section title is a short label. A sentence, a wrapped field label,
      and a row of filled-in examples are not headings. */
   function isSectionHeading(raw) {
-    var line = String(raw || '').replace(/\s+/g, ' ').trim();
+    var line = stripInstruction(String(raw || '').replace(/\s+/g, ' ').trim());
     if (!line || line.length > 48) return '';
     var words = line.split(' ').filter(Boolean);
     if (words.length > 7) return '';
