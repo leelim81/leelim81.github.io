@@ -516,6 +516,11 @@ assert.equal(identityRead('BLK 88\n#15-1990\n').unit, '');
 assert.equal(identityRead('BLK 88\n#15-01-1990\n').blk, '');
 assert.equal(identityRead('BLK 88\n#15-01-1990\n').unit, '');
 assert.equal(identityRead('BLK 88\n#01-15-1990\n').unit, '');
+assert.equal(identityRead('BLK 88\n#15-01-90\n').blk, '');
+assert.equal(identityRead('BLK 88\n#15-01-90\n').unit, '');
+assert.equal(identityRead('BLK 88\n#01-15-90\n').blk, '');
+assert.equal(identityRead('BLK 88\n#01-15-90\n').unit, '');
+assert.equal(identityRead('BLK 10 ORCHARD ROAD #12-1890\n').unit, '12-1890');
 assert.equal(identityRead('BLK 10 ORCHARD ROAD #10-1201 SINGAPORE 238801\n').unit, '10-1201');
 assert.equal(identityRead('#12-3456 SINGAPORE 018956\n').unit, '12-3456');
 assert.equal(identityRead('BLK 88\n').blk, '');
@@ -576,7 +581,22 @@ assert.equal(identityRead('EXAMPLE GDNS #01-02 SINGAPORE 121212').street, 'EXAMP
 assert.equal(identityRead('EXAMPLE HTS #02-03 SINGAPORE 131313').street, 'EXAMPLE HTS');
 assert.equal(identityRead('EXAMPLE CTRL #03-04 SINGAPORE 141414').street, 'EXAMPLE CTRL');
 assert.equal(identityRead('Date of birth\n15 JAN 1990\nDate of issue 02 AUG 2015\n').dob, '15-01-1990');
-assert.equal(identityRead('Date of birth\nDate of issue 02 AUG 2015\n15 JAN 1990\n').dob, '15-01-1990');
+const recovered = identityRead('Date of birth\nDate of issue 02 AUG 2015\n15 JAN 1990\n');
+assert.equal(recovered.dob, '15-01-1990');
+assert.equal(recovered.dobUnconfirmed, true);
+assert.equal(identityVote([recovered]).dobChecked, false);
+assert.equal(identityVote([recovered, recovered]).dob, '15-01-1990');
+assert.equal(identityVote([recovered, recovered]).dobChecked, true);
+assert.equal(identityVote([recovered, recovered]).dobUnconfirmed, false);
+const expiryGap = identityRead('Date of birth\nDate of expiry 02 AUG 2015\n15 JAN 1990\n');
+assert.equal(expiryGap.dobUnconfirmed, true);
+assert.equal(identityVote([expiryGap, expiryGap]).dobChecked, true);
+const tooClose = identityRead('Date of birth\nDate of issue 02 AUG 2015\n15 JAN 2010\n');
+assert.equal(tooClose.dob, '');
+assert.equal(identityVote([
+  identityRead('Date of birth\nDate of issue 02 AUG 2015\n15 JAN 1990\n'),
+  identityRead('Date of birth\nDate of issue 02 AUG 2015\n16 JAN 1990\n')
+]).dobChecked, false);
 assert.equal(identityRead('Date of birth\nDate of issue 15 JAN 1990\n15 JAN 1990\n').dob, '');
 assert.equal(identityRead('Date of birth\nDate of issue\n02 AUG 2015\n').dob, '');
 const aliasBlk = identityVote([

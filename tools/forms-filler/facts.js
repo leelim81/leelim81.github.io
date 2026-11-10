@@ -1119,6 +1119,33 @@
       return { value: value || '', checked: !!(value && counts[value] >= 2 && !unconfirmed), unconfirmed: unconfirmed };
     }
     var dob = agreedValue('dob');
+    var dobUnconfirmed = false;
+    if (dob.value) {
+      var holders = list.filter(function (read) { return read && read.dob; });
+      var doubtful = holders.some(function (read) { return read.dob === dob.value && read.dobUnconfirmed; });
+      var labeled = holders.some(function (read) { return read.dob === dob.value && !read.dobUnconfirmed; });
+      var same = holders.length >= 2 && holders.every(function (read) { return read.dob === dob.value; });
+      function olderThanIssues(value) {
+        var issues = [];
+        list.forEach(function (read) {
+          (read && read.issueDates || []).forEach(function (item) {
+            if (issues.indexOf(item) < 0) issues.push(item);
+          });
+        });
+        if (!issues.length) return false;
+        var bornParts = value.split('-');
+        var born = new Date(Number(bornParts[2]), Number(bornParts[1]) - 1, Number(bornParts[0]));
+        return issues.every(function (item) {
+          var parts = item.split('-');
+          var issued = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+          return new Date(born.getFullYear() + 10, born.getMonth(), born.getDate()) <= issued;
+        });
+      }
+      if (doubtful && !(labeled && dob.checked) && !(same && dob.checked && olderThanIssues(dob.value))) {
+        dob = { value: dob.value, checked: false };
+        dobUnconfirmed = true;
+      }
+    }
     var sex = agreedValue('sex');
     var nationality = agreedValue('nationality');
     var race = agreedValue('race');
@@ -1169,6 +1196,7 @@
       postal: postal.value,
       address: whole,
       dobChecked: dob.checked,
+      dobUnconfirmed: dobUnconfirmed,
       sexChecked: sex.checked,
       nationalityChecked: nationality.checked,
       raceChecked: race.checked,
@@ -1212,30 +1240,45 @@
 
   function cardDob(text) {
     var lines = String(text || '').split(/\n/);
+    var issues = [];
+    var doubtful = '';
+    function rememberIssue(line) {
+      var found = dateIn(line);
+      if (found && issues.indexOf(found) < 0) issues.push(found);
+    }
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
+      if (/\b(?:issue|expiry)\b/i.test(line)) rememberIssue(line);
       if (/issue|expiry|blood/i.test(line) && !/\bdate\s+of\s+b[a-z]{2,4}\b|\bdob\b|\bborn\b/i.test(line)) continue;
       var cue = line.match(/\bdate\s+of\s+b[a-z]{2,4}\b|\bdob\b|\bborn\b/i);
       var dropped = !cue && /\bdate\s+of\s*(?:sex\b)?\s*$/i.test(line) && !/issue|expiry|blood/i.test(line);
       if (!cue && !dropped) continue;
       var after = cue ? line.slice(cue.index + cue[0].length) : '';
       var got = dateIn(after);
-      if (got) return got;
+      if (got) return { value: got, unconfirmed: false, issues: issues };
       var next = lines[i + 1] || '';
       if (/issue|expiry|blood/i.test(next)) {
-        var issueOnNext = dateIn(next);
-        if (!issueOnNext) continue;
+        rememberIssue(next);
+        if (!dateIn(next)) continue;
         var later = lines[i + 2] || '';
+        if (/\bdate\s+of\s+b[a-z]{2,4}\b|\bdob\b|\bborn\b/i.test(later)) continue;
         if (/issue|expiry|blood/i.test(later)) continue;
         if (!/^\s*\d{1,2}(?:[\/.\- ]\d{1,2}[\/.\- ]\d{4}|\s+[A-Za-z]{3,9}\s+\d{4})\s*$/.test(later)) continue;
-        got = birthAfterIssue(later, next);
-        if (got) return got;
+        var candidate = dateIn(later);
+        var issued = dateIn(next);
+        if (candidate && issued && candidate !== issued) {
+          var bornParts = candidate.split('-');
+          var issueParts = issued.split('-');
+          var bornOn = new Date(Number(bornParts[2]), Number(bornParts[1]) - 1, Number(bornParts[0]));
+          var issuedOn = new Date(Number(issueParts[2]), Number(issueParts[1]) - 1, Number(issueParts[0]));
+          if (new Date(bornOn.getFullYear() + 10, bornOn.getMonth(), bornOn.getDate()) <= issuedOn) doubtful = candidate;
+        }
         continue;
       }
       got = dateIn(next);
-      if (got) return got;
+      if (got) return { value: got, unconfirmed: false, issues: issues };
     }
-    return '';
+    return { value: doubtful, unconfirmed: !!doubtful, issues: issues };
   }
 
   function sexMark(text) {
@@ -1359,10 +1402,14 @@
 
   function unitFrom(line) {
     var raw = String(line || '');
-    if (/#\s?\d{1,2}\s*[-\/.]\s*\d{1,2}\s*[-\/.]\s*\d{4}\b/.test(raw)) return '';
-    if (/\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|day|month)\b/i.test(raw) && /\b(?:19|20)\d{2}\b/.test(raw)) return '';
+    if (/#\s?\d{1,2}\s*[-\/.]\s*\d{1,2}\s*[-\/.]\s*\d{2,4}\b/.test(raw)) return '';
     var mark = raw.match(/#\s?(\d{1,3})\s*-\s*(\d{1,4})([A-Za-z]?)(?!\d)/);
-    if (!mark || /^(?:19|20)\d{2}$/.test(mark[2])) return '';
+    if (!mark) return '';
+    var year = Number(mark[2]);
+    var yearLike = mark[2].length === 4 && year >= 1800 && year <= 2199;
+    var dateContext = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|date|issue|expiry|birth|dob|day|month)\b/i.test(raw);
+    var bareYear = /^#\s?\d{1,2}\s*-\s*\d{4}[A-Za-z]?$/.test(raw.trim()) && Number(mark[1]) >= 1 && Number(mark[1]) <= 31;
+    if (yearLike && (dateContext || bareYear)) return '';
     return mark[1] + '-' + mark[2] + (mark[3] || '').toUpperCase();
   }
 
@@ -1470,6 +1517,7 @@
     }
     var nameConf = tokenConfidence(words, name);
     var nricConf = tokenConfidence(words, nric);
+    var born = cardDob(raw);
     var namePhrases = [];
     if (printed.labeled && printed.plain) namePhrases.push(printed.plain);
     if (printed.alias) namePhrases.push(printed.alias);
@@ -1492,7 +1540,9 @@
       nricUnconfirmed: !!(nric && (!nricValid || (nricConf != null && nricConf < 55))),
       nameChecked: false,
       nricChecked: false,
-      dob: cardDob(raw),
+      dob: born.value || '',
+      dobUnconfirmed: !!born.unconfirmed,
+      issueDates: born.issues || [],
       sex: cardSex(raw),
       nationality: cardNationality(raw),
       race: raceFrom(raw),
