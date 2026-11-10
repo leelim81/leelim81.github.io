@@ -351,6 +351,33 @@ placeAliases.forEach(function (label) {
   assert.equal(bare.nameAlias, '', 'unlabeled ' + label);
   assert.equal(bare.nameRepaired, '', 'unlabeled ' + label);
 });
+function assertKeptAlias(text, plain, alias) {
+  const read = identityRead(text);
+  assert.equal(read.namePlain, plain, text);
+  assert.equal(read.nameAlias, alias, text);
+  assert.equal(read.name, plain + ' (' + alias + ')', text);
+}
+assertKeptAlias('Name\nTAN AH KOW (JOHN LANE)\nS1234567D\n', 'TAN AH KOW', 'JOHN LANE');
+assertKeptAlias('Name\nTAN AH KOW\n(JOHN LANE)\nS1234567D\n', 'TAN AH KOW', 'JOHN LANE');
+assertKeptAlias('Name\nTAN AH KOW (MARY CLOSE)\nS1234567D\n', 'TAN AH KOW', 'MARY CLOSE');
+assertKeptAlias('Name\nTAN AH KOW\n(MARY CLOSE)\nS1234567D\n', 'TAN AH KOW', 'MARY CLOSE');
+assertKeptAlias('TANG WEI MING\n(JOHN LANE)\n', 'TANG WEI MING', 'JOHN LANE');
+assert.equal(identityRead('Name\nTAN AH KOW (ANN DRIVE)\nS1234567D\n').nameAlias, 'ANN DRIVE');
+assert.equal(identityRead('Name\nTAN AH KOW (LEE WALK)\nS1234567D\n').nameAlias, 'LEE WALK');
+assert.equal(fromText('44 HARBOUR LANE 161616').name, undefined);
+assert.equal(fromText('12 HARBOUR LANE #04-12 111111').name, undefined);
+assert.equal(fromText('3 RIVER CLOSE #08-03 555555').name, undefined);
+assert.equal(fromText('5 RECORD LANE #08-05 191919').name, undefined);
+assert.equal(identityRead('10 EXAMPLE LANE\nSINGAPORE 123456\n').name, '');
+assert.equal(identityRead('Name\nTAN WEI MING (44 HARBOUR LANE)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (HARBOUR LANE)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (CEDAR WALK)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (RIVER CLOSE)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (DOCK LANE)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (CLINIC DRIVE)\nS1234567D\n').nameAlias, '');
+assert.equal(identityRead('Name\nTAN WEI MING (10 EXAMPLE LANE)\nS1234567D\n').name, 'TAN WEI MING');
+assert.equal(fromText('Premises: 10 EXAMPLE LANE 018956\n').name, undefined);
+assert.equal(fromText('Premises: 10 EXAMPLE LANE 018956\n').address, '10 EXAMPLE LANE 018956');
 
 const truncated = identityRead('Name\nTAN WEI\nMING\nS1234567D\n');
 assert.equal(truncated.name, 'TAN WEI');

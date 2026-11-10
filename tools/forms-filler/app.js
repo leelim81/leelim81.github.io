@@ -1250,7 +1250,7 @@
             row.quote = idn.nricValid ? 'Read from the photo' : 'Checksum not confirmed';
           }
         });
-        if (!matched) throw new Error('Could not read a name or ID from the photo. Nothing was filled.');
+        if (!matched) throw new Error('No line on this form is clearly the applicant\'s. The name and ID were not offered.');
       }
       function proposalsFrom(confirmed) {
         var allow = {};

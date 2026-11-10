@@ -83,12 +83,39 @@
     jalan: 1, lorong: 1
   };
   var PLACE_SHORT = { st: 1, rd: 1, dr: 1 };
+  /* These street types are also surnames. A short personal alias may end in
+     one of them. An address still has a number, a block, another street
+     type, or a place word in front (Example Lane, Harbour Lane, Orchard Road). */
+  var STREET_SURNAME = { lane: 1, close: 1, drive: 1, walk: 1 };
+  var ADDRESS_HEAD = {
+    example: 1, orchard: 1, harbour: 1, harbor: 1, cedar: 1, river: 1, record: 1, dock: 1, clinic: 1,
+    north: 1, south: 1, east: 1, west: 1, upper: 1, lower: 1, sungei: 1, bukit: 1,
+    circular: 1, ring: 1, market: 1
+  };
 
   function placeAlias(words) {
     var lower = (words || []).map(function (word) { return String(word || '').toLowerCase(); });
     if (!lower.length) return false;
     if (lower.some(function (word) { return PLACE_ALIAS[word]; })) return true;
     return !!PLACE_SHORT[lower[lower.length - 1]];
+  }
+
+  function personalStreetSurname(words) {
+    var lower = (words || []).map(function (word) { return String(word || '').toLowerCase(); });
+    if (lower.length < 2 || lower.length > 3) return false;
+    if (!STREET_SURNAME[lower[lower.length - 1]]) return false;
+    var soft = 0;
+    for (var i = 0; i < lower.length; i++) if (STREET_SURNAME[lower[i]]) soft += 1;
+    if (soft !== 1) return false;
+    for (var j = 0; j < lower.length - 1; j++) {
+      if (ADDRESS_HEAD[lower[j]] || PLACE_ALIAS[lower[j]] || PLACE_SHORT[lower[j]] || ALIAS_BLOCK[lower[j]] || ALIAS_STOP[lower[j]]) return false;
+    }
+    return true;
+  }
+
+  function aliasIsPlace(words) {
+    if (personalStreetSurname(words)) return false;
+    return placeAlias(words);
   }
 
   function acceptableMain(words) {
@@ -106,7 +133,7 @@
     if (words.length < 1 || words.length > 5) return false;
     if (words.some(function (word) { return !/^[A-Za-z][A-Za-z'’.\-]{1,}$/.test(word); })) return false;
     if (words.some(function (word) { return ALIAS_BLOCK[word.toLowerCase()]; })) return false;
-    if (placeAlias(words)) return false;
+    if (aliasIsPlace(words)) return false;
     if (words.every(function (word) { return ALIAS_STOP[word.toLowerCase()]; })) return false;
     return true;
   }

@@ -199,4 +199,56 @@ repeatedNames.forEach(function (field) {
   assert.equal(identityPhotoSlot(field, repeatedNames), '', field.id);
 });
 
+const otherSections = [
+  'Guarantor',
+  'Nominee',
+  'Beneficiary',
+  'Next of kin',
+  'Emergency contact',
+  'Spouse',
+  'Witness',
+  'Referee',
+  'Authorised signatory',
+  'Joint applicant',
+  'Particulars of Guarantor',
+  "Guarantor's particulars",
+  'Section B: Joint applicant'
+];
+otherSections.forEach(function (heading) {
+  const only = [
+    { id: 'n', label: 'Name', section: heading },
+    { id: 'i', label: 'NRIC', section: heading }
+  ];
+  only.forEach(function (field) {
+    assert.equal(identityPhotoSlot(field, only), '', heading + ' only ' + field.label);
+  });
+  const mixed = [
+    { id: 'a_name', label: 'Full name', group: "Applicant's particulars" },
+    { id: 'a_as', label: 'Name as per NRIC', group: "Applicant's particulars" },
+    { id: 'a_nric', label: 'NRIC/FIN/passport no.', group: "Applicant's particulars" },
+    { id: 'o_name', label: 'Name', section: heading },
+    { id: 'o_nric', label: 'NRIC', section: heading }
+  ];
+  const offeredIds = mixed.filter(function (field) { return identityPhotoSlot(field, mixed); }).map(function (field) { return field.id; });
+  assert.deepEqual(offeredIds, ['a_name', 'a_as', 'a_nric'], heading + ' mixed');
+});
+
+const ordinary = [
+  { id: 'full', label: 'Full name' },
+  { id: 'idline', label: 'NRIC/FIN/passport no.' }
+];
+assert.deepEqual(
+  ordinary.filter(function (field) { return identityPhotoSlot(field, ordinary); }).map(function (field) { return field.id; }),
+  ['full', 'idline']
+);
+const applicantLines = [
+  { id: 'full', label: 'Full name', section: "Applicant's particulars" },
+  { id: 'as', label: 'Name as per NRIC', section: "Applicant's particulars" },
+  { id: 'idline', label: 'NRIC/FIN/passport no.', section: "Applicant's particulars" }
+];
+assert.deepEqual(
+  applicantLines.filter(function (field) { return identityPhotoSlot(field, applicantLines); }).map(function (field) { return field.id; }),
+  ['full', 'as', 'idline']
+);
+
 console.log('evidence tests ok');

@@ -54,7 +54,18 @@
     return 'unspecified';
   }
 
-  var OTHER_ROLE = /\b(nominees?|referees?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|contacts?|emergency|payees?|joints?|second\s+applicants?|holders?\s*2|2nd\s+applicants?|applicants?\s*2|witness(?:es)?|next\s+of\s+kin|\bkin\b|children|child|dependants?|dependents?|officers?|agents?|authoris(?:e|ed)\s+persons?|authoriz(?:e|ed)\s+persons?|introducers?|patients?|nurses?|doctors?|siblings?|signatories|signatory)\b/i;
+  function personApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormPerson) return globalThis.FormPerson;
+    if (typeof require === 'function') {
+      try { return require('./person.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
+  function personOf(text) {
+    var api = personApi();
+    return api && api.personOf ? api.personOf(text) : '';
+  }
 
   function fieldContext(field) {
     return [field && field.group, field && field.heading, field && field.section]
@@ -63,19 +74,17 @@
   }
 
   function namesOtherRole(text) {
-    return OTHER_ROLE.test(String(text || '').replace(/[_./]+/g, ' '));
+    return personOf(text) === 'other';
   }
 
   function applicantSection(field) {
-    var text = fieldContext(field);
-    if (!text || namesOtherRole(text)) return false;
-    return /\bapplicants?\b/i.test(text);
+    return personOf(fieldContext(field)) === 'applicant';
   }
 
   /* The card name and NRIC are offered only on a line that is clearly the
-     applicant's own. Any other role in the label or the nearest section
-     abstains, and so does a repeated name or NRIC when no applicant section
-     can be told apart. */
+     applicant's own. A section that names someone else abstains even when
+     its Name or NRIC is the only one on the form. A repeated name or NRIC
+     abstains when no applicant section can be told apart. */
   function applicantIdentitySlot(field) {
     if (!field || namesOtherRole(field.label) || namesOtherRole(fieldContext(field)) || namesOtherRole(field.id)) return '';
     var s = String(field.label || '').replace(/\s+/g, ' ').trim().toLowerCase().replace(/[:.\s]+$/g, '');
