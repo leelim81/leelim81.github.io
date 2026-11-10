@@ -56,6 +56,11 @@
     });
     var allow = channel === 'ocr' ? ((frozen && frozen.ocrAutofill) || {}) : ((frozen && frozen.autofill) || {});
     if (ev.markRegions) ev.markRegions(fields);
+    function present(field, row) {
+      var slot = ev.identityPhotoSlot ? ev.identityPhotoSlot(field, fields) : '';
+      if ((slot === 'name' || slot === 'nric') && slot === row.kind) row.checked = true;
+      return noteFit(field, row);
+    }
     return (fields || []).map(function (field) {
       var refusal = ev.unsafeDestination ? ev.unsafeDestination(field) : '';
       if (refusal) {
@@ -104,20 +109,20 @@
       }
       var fact = matches[0];
       if (!trusted) {
-        return noteFit(field, Object.assign(base, {
+        return present(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'placement_untrusted', hard: null
         }));
       }
       if (!allow[kind]) {
-        return noteFit(field, Object.assign(base, {
+        return present(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'type_not_cleared', hard: null
         }));
       }
       var label = String((field && field.label) || '').toLowerCase();
       if ((/name as per/.test(label) && /bank account/.test(label)) || (/nric/.test(label) && /passport|fin/.test(label))) {
-        return noteFit(field, Object.assign(base, {
+        return present(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'identity_needs_review', hard: null
         }));
@@ -127,20 +132,22 @@
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,
           reason: 'identity_needs_review', hard: null
         });
-        return noteFit(field, named);
+        return present(field, named);
       }
       var placed = Object.assign(base, {
         decision: 'autofill', value: fact.value, factId: fact.id, quote: fact.quote,
         reason: 'explicit_single_source', hard: null
       });
-      return noteFit(field, placed);
+      return present(field, placed);
     });
   }
 
   function noteFit(field, row) {
-    if (!ev.fittedSize || !field || !field.rect || !(field.rect.width > 0) || !row.value) return row;
+    if (!field || !field.rect || !(field.rect.width > 0) || !row.value) return row;
     var start = Math.max(9, Math.min(13, ((field.lineH || 12) * 0.85)));
-    var fit = ev.fittedSize(row.value, field.rect.width, start);
+    var fit = field.rect.height > 0 && ev.fitInBox
+      ? ev.fitInBox(row.value, field.rect.width, field.rect.height, start)
+      : (ev.fittedSize ? ev.fittedSize(row.value, field.rect.width, start) : { size: start, fits: true });
     if (fit.fits) {
       row.fontSize = fit.size;
       return row;

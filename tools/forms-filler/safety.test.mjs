@@ -4,7 +4,7 @@ import { readFileSync } from 'fs';
 
 const require = createRequire(import.meta.url);
 const { decideAll } = require('./select.js');
-const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fieldKind, keepAgreedName } = require('./evidence.js');
+const { unsafeDestination, markRegions, identityPhotoSlot, fittedSize, fitInBox, allowsValue, fieldKind, keepAgreedName } = require('./evidence.js');
 const { extendsName } = require('./facts.js');
 const { annotations, layout } = require('./spots.js');
 
@@ -69,6 +69,12 @@ const f24 = [
 ];
 assert.equal(row(f24, 'taxpayer').value, '');
 assert.equal(row(f24, 'taxpayer').refusal, 'signature');
+const qcr = [
+  { id: 'name', label: 'Name', type: 'text', page: 0, rect: { x: 138, y: 304, width: 395, height: 11 } },
+  { id: 'sign', label: 'Signature', type: 'text', page: 0, rect: { x: 252, y: 226, width: 139, height: 40 } }
+];
+assert.equal(row(qcr, 'name').value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.notEqual(row(qcr, 'name').refusal, 'signature');
 assert.equal(identityPhotoSlot(f24[0], f24), '');
 const kept = row([{ id: 'top', label: 'Name (as in NRIC/Passport*)', type: 'text' }], 'top');
 assert.equal(kept.decision, 'review');
@@ -171,6 +177,37 @@ assert.equal(keepAgreedName(agreed, { label: 'Preferred name', type: 'text' }, '
 assert.equal(keepAgreedName({ decision: 'review', kind: 'nric', value: 'S1234567D' }, { label: 'NRIC', type: 'text' }, 'NURUL AISHAH BINTE'), false);
 assert.equal(keepAgreedName(agreed, { label: "Father's Name", type: 'text' }, agreed.value), false);
 assert.equal(keepAgreedName(agreed, { label: 'Name / NRIC', type: 'text' }, agreed.value), false);
+
+const tickFields = [
+  { id: 'name', label: 'Name', type: 'text' },
+  { id: 'id', label: 'NRIC', type: 'text' },
+  { id: 'pref', label: 'Preferred name', type: 'text' },
+  { id: 'father', label: "Father's Name", type: 'text' }
+];
+const tickRows = Object.fromEntries(decideAll(tickFields, packet, open).map((item) => [item.fieldId, item]));
+assert.equal(tickRows.name.checked, true);
+assert.equal(tickRows.name.value, 'NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL');
+assert.equal(tickRows.id.checked, true);
+assert.equal(tickRows.id.value, 'S1234567D');
+assert.notEqual(tickRows.pref.checked, true);
+assert.equal(tickRows.father.value, '');
+
+const address = '10 EXAMPLE ROAD SINGAPORE 123456 BLOCK 123 UNIT 04-12';
+const overflow = fitInBox(address, 90, 12, 10);
+assert.equal(overflow.fits, false);
+const inside = fitInBox('10 EXAMPLE ROAD', 160, 16, 10);
+assert.equal(inside.fits, true);
+assert.ok(inside.lines === 1 || inside.size * 1.3 * inside.lines <= 16);
+const tightAddress = annotations(
+  [{ id: 'addr', label: 'Address', type: 'text', source: 'flat', page: 0, pageWidth: 595, pageHeight: 842, lineH: 12, rect: { x: 40, y: 400, width: 90, height: 12 } }],
+  { addr: address }
+);
+assert.equal(tightAddress.unplaced[0].reason, 'does not fit');
+assert.equal(tightAddress[0], undefined);
+
+assert.equal(allowsValue({ label: 'Postal Code', type: 'text', comb: true }, 'B R I E N - S'), false);
+assert.equal(allowsValue({ label: 'Postal Code', type: 'text', comb: true }, '123456'), true);
+assert.equal(allowsValue({ label: 'Code', type: 'text', comb: true }, 'BRIEN'), false);
 
 const nameOrId = [
   ['Name as in NRIC', 'name'],

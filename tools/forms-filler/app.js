@@ -1548,6 +1548,7 @@
         }
         values[row.id] = FormSanitize.sanitize(row.value, field || row);
         if (row.source !== 'facts' && window.FormFacts && !FormFacts.accept(field || row, values[row.id])) values[row.id] = '';
+        if (values[row.id] && window.FormEvidence && FormEvidence.allowsValue && !FormEvidence.allowsValue(field || row, values[row.id])) values[row.id] = '';
       });
     }
     var bytes = state.formBytes;

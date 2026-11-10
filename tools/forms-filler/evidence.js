@@ -53,6 +53,52 @@
     return { size: size, fits: textWidth(text, size) <= boxWidth - 1 };
   }
 
+  function lineBoxHeight(size) {
+    return size * 1.3;
+  }
+
+  function wrappedLines(text, size, width) {
+    var words = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    var lines = [];
+    var line = '';
+    for (var i = 0; i < words.length; i++) {
+      var next = line ? line + ' ' + words[i] : words[i];
+      if (line && textWidth(next, size) > width - 1) {
+        lines.push(line);
+        line = words[i];
+      } else line = next;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  /* Wrapped lines must stay inside the field rectangle. */
+  function fitInBox(text, boxWidth, boxHeight, start) {
+    var size = start > 0 ? start : 10;
+    var min = 6;
+    if (!(boxWidth > 0) || !(boxHeight > 0)) return { size: size, fits: false, lines: 0 };
+    while (size >= min) {
+      var lines = wrappedLines(text, size, boxWidth);
+      var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
+      var wordFits = lines.every(function (line) { return textWidth(line, size) <= boxWidth - 1; });
+      if (wordFits && lines.length && lines.length <= allowed) return { size: size, fits: true, lines: lines.length };
+      if (size <= min) break;
+      size = Math.round((size - 0.2) * 10) / 10;
+    }
+    return { size: min, fits: false, lines: wrappedLines(text, min, boxWidth).length };
+  }
+
+  function allowsValue(field, value) {
+    var text = String(value || '').replace(/\s+/g, '');
+    var kind = fieldKind(field);
+    var label = String((field && field.label) || '');
+    if (kind === 'postal' || /postal|post\s*code|postcode|\bzip\b/i.test(label)) return /^\d{6}$/.test(text);
+    var numericComb = field && field.comb && /(?:^|\s)(?:no\.?|number|code)$/i.test(label) && !/nric|fin|passport|name|phone|tel/i.test(label);
+    if (numericComb) return /^\d+$/.test(text);
+    return true;
+  }
+
   function headPhrase(text) {
     return labelWords(String(text || '').replace(/\([^)]*\)/g, ' '));
   }
@@ -195,12 +241,23 @@
       list.forEach(function (other) {
         if (hit || other === field || !other.region || !other.rect) return;
         if ((other.page || 0) !== (field.page || 0)) return;
-        if (Math.abs(other.rect.y - field.rect.y) > 160) return;
+        var gap = boxGap(field.rect, other.rect);
+        if (gap > 28) return;
         hit = other.region;
       });
       if (hit) field.region = hit;
     });
     return list;
+  }
+
+  function boxGap(a, b) {
+    var a0 = a.y;
+    var a1 = a.y + (a.height || 0);
+    var b0 = b.y;
+    var b1 = b.y + (b.height || 0);
+    if (a1 < b0) return b0 - a1;
+    if (b1 < a0) return a0 - b1;
+    return 0;
   }
 
   function fieldKind(field) {
@@ -522,6 +579,8 @@
     markRegions: markRegions,
     splitKind: splitKind,
     fittedSize: fittedSize,
+    fitInBox: fitInBox,
+    allowsValue: allowsValue,
     keepAgreedName: keepAgreedName
   };
 });

@@ -777,8 +777,10 @@
       var fontSize = check
         ? Math.max(8, Math.min(14, rect.height * 0.85))
         : Math.max(9, Math.min(13, (field.lineH || 12) * 0.85));
-      if (!check && evidence && evidence.fittedSize) {
-        var fit = evidence.fittedSize(value, rect.width, fontSize);
+      if (!check && evidence && (evidence.fitInBox || evidence.fittedSize)) {
+        var fit = evidence.fitInBox
+          ? evidence.fitInBox(value, rect.width, rect.height, fontSize)
+          : evidence.fittedSize(value, rect.width, fontSize);
         fontSize = fit.size;
         if (!fit.fits) {
           unplaced.push({ id: field.id, label: field.label || field.id, reason: 'does not fit' });
@@ -795,6 +797,7 @@
         h: h,
         text: check ? 'X' : value,
         fontSize: fontSize,
+        lockBox: true,
         color: '#1a1612',
         factKey: check ? '' : (field.factKey || ''),
         profileId: check ? '' : (field.profileId || ''),
