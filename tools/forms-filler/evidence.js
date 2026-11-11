@@ -45,13 +45,23 @@
     return width;
   }
 
+  /* Three points stay clear of the right edge while the size can still fall.
+     At 6pt the line cannot shrink further. Two points are then enough: the
+     glyphs start one point in from the left, so the ink still ends inside
+     the box instead of being dropped. */
+  function clearsEdge(text, size, boxWidth, min) {
+    var width = textWidth(text, size);
+    if (width <= boxWidth - 3) return true;
+    return size <= min && width <= boxWidth - 2;
+  }
+
   /* Shrink to the box. Below the minimum, the value does not fit. */
   function fittedSize(text, boxWidth, start) {
     var size = start > 0 ? start : 10;
     var min = 6;
     if (!(boxWidth > 0)) return { size: size, fits: false };
     while (size > min && textWidth(text, size) > boxWidth - 3) size = Math.round((size - 0.2) * 10) / 10;
-    return { size: size, fits: textWidth(text, size) <= boxWidth - 3 };
+    return { size: size, fits: clearsEdge(text, size, boxWidth, min) };
   }
 
   function lineBoxHeight(size) {
@@ -87,7 +97,7 @@
     while (size >= min) {
       var lines = wrappedLines(text, size, boxWidth);
       var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
-      var wordFits = lines.every(function (line) { return textWidth(line, size) <= boxWidth - 3; });
+      var wordFits = lines.every(function (line) { return clearsEdge(line, size, boxWidth, min); });
       if (wordFits && lines.length && lines.length <= allowed) return { size: size, fits: true, lines: lines.length };
       if (size <= min) break;
       size = Math.round((size - 0.2) * 10) / 10;

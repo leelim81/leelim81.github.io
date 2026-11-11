@@ -369,4 +369,39 @@ const homeFit = evidence.fitInBox(home, homeWidth + 1, 14, 11);
 assert.equal(homeFit.fits, true, 'mixed-case address that fits the font is offered');
 assert.ok(helvetica.widthOfTextAtSize(home, homeFit.size) <= homeWidth + 1);
 
+/* DBS HK residential address is 172.6pt wide and 12pt tall. The line below
+   meets the 6pt floor a fraction over the three-point gap and used to be
+   dropped. The drawn glyphs start one point in and still end inside the row.
+   A name that can leave three points still does. */
+const bedok = '123A BEDOK NORTH AVENUE 4 #05-67 SINGAPORE 460123';
+const bedokBox = { x: 116.2, y: 222.4, width: 172.6, height: 12 };
+const bedokFit = evidence.fitInBox(bedok, bedokBox.width, bedokBox.height, 10.2);
+assert.equal(bedokFit.fits, true, 'DBS HK residential address fits');
+assert.equal(bedokFit.lines, 1, 'DBS HK residential address stays on one line');
+assert.ok(bedokFit.size >= 6, 'DBS HK residential address stays legible');
+const bedokInk = helvetica.widthOfTextAtSize(bedok, bedokFit.size);
+assert.ok(bedokBox.x + 1 + bedokInk <= bedokBox.x + bedokBox.width, 'residential address ends inside the row');
+[
+  '45B TAMPINES STREET 91 #12-345 SINGAPORE 521045',
+  '7C TOA PAYOH LORONG 8 #03-1011 SINGAPORE 311007'
+].forEach(function (longer) {
+  const row = evidence.fitInBox(longer, bedokBox.width, bedokBox.height, 10.2);
+  assert.equal(row.fits, true, longer);
+  assert.ok(helvetica.widthOfTextAtSize(longer, row.size) <= bedokBox.width - 3, longer);
+});
+const { annotations } = require('./spots.js');
+const bedokDrawn = annotations([
+  { id: 'home', label: 'Residential Address', type: 'text', source: 'flat', page: 0, pageWidth: 595.44, pageHeight: 841.68, lineH: 12, rect: bedokBox }
+], { home: bedok });
+assert.equal(bedokDrawn.unplaced.length, 0, 'residential address is written');
+assert.equal(bedokDrawn[0][0].text, bedok);
+assert.equal(bedokDrawn[0][0].fontSize, bedokFit.size);
+const nameBox = 175.4;
+const nameGap = evidence.fitInBox(longName, nameBox, 12, 11);
+assert.equal(nameGap.fits, true, 'a name that can shrink still fits');
+assert.equal(nameGap.size, 6, 'the name uses the size that leaves three points');
+assert.ok(helvetica.widthOfTextAtSize(longName, nameGap.size) <= nameBox - 3, 'three points stay clear');
+assert.ok(helvetica.widthOfTextAtSize(longName, 6.2) > nameBox - 3, 'the next size would cross the gap');
+assert.equal(evidence.fitInBox(bedok + ' BLOCK', bedokBox.width, bedokBox.height, 10.2).fits, false, 'a line past the row is not written');
+
 console.log('public form layouts ok');
