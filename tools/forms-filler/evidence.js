@@ -889,9 +889,37 @@
     return { parts: parts, seps: seps };
   }
 
-  function asksForYear(field) {
-    var blob = [field && field.label, field && field.tooltip, field && field.name, field && field.id].filter(Boolean).join(' ');
-    if (/\byear\b/i.test(blob)) return true;
+  /* Day, month and year words, in the order they are written.
+     "Day/Month/Year" is dd/mm/yyyy. One missing part is not a format. */
+  function wordDateHint(text) {
+    var found = [];
+    var seen = {};
+    var re = /\b(day|month|year)\b/ig;
+    var match;
+    while ((match = re.exec(text))) {
+      var role = match[1].toLowerCase();
+      if (seen[role]) return null;
+      seen[role] = true;
+      found.push(role);
+    }
+    if (!seen.day || !seen.month || !seen.year) return null;
+    var parts = found.map(function (role) {
+      if (role === 'day') return 'dd';
+      if (role === 'month') return 'mm';
+      return 'yyyy';
+    });
+    var seps = [];
+    for (var i = 0; i < parts.length - 1; i++) seps.push('/');
+    return { parts: parts, seps: seps };
+  }
+
+  /* The year alone: "Year of birth" or "Born in yyyy". A day or month
+     word or token means this is not a year-only line. */
+  function asksForYearAlone(field) {
+    var blob = [field && field.label, field && field.tooltip].filter(Boolean).join(' ');
+    if (/\bday\b/i.test(blob) || /\bmonth\b/i.test(blob)) return false;
+    if (/(^|[^A-Za-z])(?:mmmm|mmm|mm|dd|d|m)(?![A-Za-z])/i.test(blob)) return false;
+    if (/\byear\s+of\s+birth\b/i.test(blob)) return true;
     return /\bborn\s+in\b/i.test(blob);
   }
 
@@ -908,8 +936,9 @@
         if (parsed && parsed.parts) return parsed;
       }
     }
-    /* "Year of birth" asks for the year even without a yyyy token. */
-    if (asksForYear(field)) return { yearOnly: true };
+    var words = wordDateHint([field && field.label, field && field.tooltip].filter(Boolean).join(' '));
+    if (words) return words;
+    if (asksForYearAlone(field)) return { yearOnly: true };
     return null;
   }
 
