@@ -120,11 +120,13 @@
           var existingRevision = existing && existing.revision ? Number(existing.revision) : 0;
           var baseRevision = Number(session && session.baseRevision || 0);
           var sameWriter = !!(existing && existing.writerTab && session.writerTab && existing.writerTab === session.writerTab);
-          if (existing && existing.savedAt && session.savedAt && existing.savedAt === session.savedAt && !sameWriter) {
+          // Opening a file starts a later epoch than the document already stored.
+          var newerDocument = !!(existing && existing.epoch && epoch && epoch > existing.epoch);
+          if (!newerDocument && existing && existing.savedAt && session.savedAt && existing.savedAt === session.savedAt && !sameWriter) {
             outcome = { written: false, reason: 'conflict' }; return;
           }
           var otherWriter = !!(existing && existing.writerTab && session.writerTab && existing.writerTab !== session.writerTab);
-          if (otherWriter && existingRevision !== baseRevision) { outcome = { written: false, reason: 'conflict' }; return; }
+          if (!newerDocument && otherWriter && existingRevision !== baseRevision) { outcome = { written: false, reason: 'conflict' }; return; }
           var stored = Object.assign({}, session);
           delete stored.baseRevision;
           stored.revision = existingRevision + 1;
@@ -2685,26 +2687,34 @@
     }
     buildFontChoices();
     wire();
+    var seen = state.docSerial;
+    function stillWaiting() { return state.docSerial === seen; }
     try {
       var pdf = await idbGet('pdf');
+      if (!stillWaiting()) return;
       var session = await idbGet('session');
+      if (!stillWaiting()) return;
       var usable = pdf && session && session.pages && session.pages.length && session.source !== (desk === 'forms' ? 'edit' : 'forms');
       if (usable) {
         try {
           await loadBytes(pdf instanceof Uint8Array ? pdf : new Uint8Array(pdf), session.fileName, session);
         } catch (err) {
+          if (state.docSerial !== seen + 1) return;
           showEmpty();
           toast('A saved document was found but could not be restored.');
           return;
         }
+        if (state.docSerial !== seen + 1) return;
         if (session.reviewNote) toast(session.reviewNote);
         setSaveStatus('Saved');
         $('saveState').dataset.gen = '1';
       } else if (desk === 'forms') {
+        if (!stillWaiting()) return;
         showEmpty();
         toast('No filled form is waiting. Go back to Forms Filler and choose Fill again.');
       }
     } catch (err) {
+      if (!stillWaiting()) return;
       showEmpty();
       toast('This browser could not open saved documents. Nothing was restored.');
     }
