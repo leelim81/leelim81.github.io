@@ -30,6 +30,8 @@ const S = {
   runSeq: 0,
   worker: null,
   sql: null,
+  runtimeReady: false,
+  runtimeStatus: "",
 };
 
 function emptyRun() {
@@ -603,7 +605,7 @@ function leftBody(q) {
     return `<textarea class="casebox" data-act="notes" placeholder="Notes stay with this task">${esc(notes)}</textarea>`;
   }
   if (S.leftTab === "rules") {
-    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. This trainer grades coding tasks all-or-nothing: every test must pass. The real assessment may score differently. Numeric answers in this trainer are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during this trainer's mock.</p><p>This trainer preloads pandas and numpy as <code>pd</code> and <code>np</code>. The real platform may not. Import them yourself there.</p></div>`;
+    return `<div class="prose"><h1>Rules</h1><p>Run tests checks your current code and does not by itself record a restore point. Submit does, and it is what counts in the mock test. This trainer grades coding tasks all-or-nothing: every test must pass. The real assessment may score differently. Numeric answers in this trainer are accepted within 0.001 of the three-decimal value. Select-all items must match exactly. Written cases are graded only by the reviewer.</p><p>Autocomplete is off during this trainer's mock.</p><p>This trainer preloads pandas and numpy as <code>pd</code> and <code>np</code>, and loads scikit-learn before a run so <code>import sklearn</code> does not wait on a download. The real platform may not. Import them yourself there.</p></div>`;
   }
   if (S.leftTab === "info") {
     const g = S.bank.groups.find((x) => x.id === q.group);
@@ -666,7 +668,10 @@ function consoleBlock() {
   if (out || err) {
     html += `<div class="console">${out ? esc(out) : ""}${err ? `<div class="err">${esc(err)}</div>` : ""}</div>`;
   } else if (!run.running && !run.status) {
-    html += `<div class="empty">Console output appears here. pandas and numpy are already imported as pd and np.</div>`;
+    const loading = pythonSurface() && !S.runtimeReady;
+    html += loading
+      ? `<div class="empty">${esc(S.runtimeStatus || "Loading Python, pandas, NumPy, scikit-learn…")}</div>`
+      : `<div class="empty">Console output appears here. pandas and numpy are already imported as pd and np. scikit-learn is loaded.</div>`;
   }
   return html;
 }
@@ -730,7 +735,7 @@ function renderIde(q) {
     <section class="work-col">
       <div data-pane="code" style="display:flex;flex-direction:column;flex:1;min-height:0">
         <div class="editor-tools">
-          <span class="langpill">${q.type === "sql" ? "SQLite" : q.type === "python" ? "Python 3 · pd, np ready" : q.type}</span>
+          <span class="langpill" ${q.type === "python" ? "data-py-pill" : ""}>${q.type === "sql" ? "SQLite" : q.type === "python" ? esc(pyPill()) : q.type}</span>
           ${S.mode === "mock" ? `<span class="langpill">Autocomplete off</span>` : ""}
           <span class="run-status" id="run-status"></span>
           <span class="spacer"></span>
@@ -1005,7 +1010,7 @@ function renderSandbox() {
     <section class="work-col">
       <div class="editor-tools">
         <button class="btn small" data-act="back-scratch" title="${esc(tip("Back", "Ctrl+B"))}">Back</button>
-        <span class="langpill">${S.scratch.lang === "sql" ? "SQLite" : "Python 3 · pd, np ready"}</span>
+        <span class="langpill" ${S.scratch.lang === "sql" ? "" : "data-py-pill"}>${S.scratch.lang === "sql" ? "SQLite" : esc(pyPill())}</span>
         <span class="run-status" id="run-status"></span>
         <span class="spacer"></span>
         <button class="btn small" data-act="format" title="${esc(tip("Format", "Shift+Alt+F"))}">Format</button>
@@ -1059,6 +1064,7 @@ function render() {
     root.innerHTML = renderMockLobby();
     mountEditor(S.mode === "mock" ? byId((activeMock() || {}).cursor || (activeMock() || {}).questionIds?.[0]) : null);
     applyPanes();
+    startRuntime();
     return;
   }
   if (route.name === "review") {
@@ -1070,6 +1076,7 @@ function render() {
     root.innerHTML = renderSandbox();
     mountEditor(null);
     applyPanes();
+    startRuntime();
     return;
   }
   const q = byId(route.id);
@@ -1086,6 +1093,7 @@ function render() {
   mountEditor(q);
   applyPanes();
   bindSplits();
+  startRuntime();
 }
 
 function formatClock(ms) {
@@ -1140,7 +1148,45 @@ function paintChrome() {
     }
   }
   const status = document.getElementById("run-status");
-  if (status) status.textContent = running ? (S.run.status || "Starting Python…") : (S.run.status || "");
+  if (status) status.textContent = running ? (S.run.status || "Starting Python…") : (S.run.status || runtimeLabel());
+}
+
+function pyPill() {
+  return S.runtimeReady ? "Python 3 · pd, np, sklearn ready" : "Python 3";
+}
+
+function pythonSurface() {
+  const route = parseRoute();
+  if (route.name === "sandbox") return !S.scratch || S.scratch.lang !== "sql";
+  if (route.name === "task") {
+    const q = byId(route.id);
+    return !!(q && q.type === "python");
+  }
+  if (route.name === "mock") {
+    const m = activeMock();
+    const q = m && byId(m.cursor || (m.questionIds || [])[0]);
+    return !!(q && q.type === "python");
+  }
+  return false;
+}
+
+function startRuntime() {
+  if (!pythonSurface()) return;
+  ensureWorker();
+  paintRuntime();
+}
+
+function runtimeLabel() {
+  if (S.runtimeReady || !S.worker || !pythonSurface()) return "";
+  return S.runtimeStatus || "Loading Python, pandas, NumPy, scikit-learn…";
+}
+
+function paintRuntime() {
+  const label = pyPill();
+  document.querySelectorAll("[data-py-pill]").forEach((el) => { el.textContent = label; });
+  const status = document.getElementById("run-status");
+  if (status && !S.run.running) status.textContent = S.run.status || runtimeLabel();
+  if (!S.run.running && !S.run.stdout && !S.run.error && pythonSurface()) paintBottom();
 }
 
 function showOutput(kind) {
@@ -1152,10 +1198,33 @@ function showOutput(kind) {
   paintChrome();
 }
 
+function onRuntimeMessage(ev) {
+  const d = ev.data || {};
+  if (d.type === "runtime") {
+    S.runtimeReady = !!d.ready;
+    if (d.ready) S.runtimeStatus = "";
+    else if (d.message) S.runtimeStatus = d.message;
+    if (S.run.running && d.phase === "preload") S.run.status = S.runtimeStatus;
+    paintRuntime();
+    return;
+  }
+  if (d.phase === "preload") {
+    S.runtimeStatus = d.text || "Loading Python, pandas, NumPy, scikit-learn…";
+    if (S.run.running) {
+      S.run.status = S.runtimeStatus;
+      paintBottom();
+      paintChrome();
+    } else paintRuntime();
+  }
+}
+
 function ensureWorker() {
   if (S.worker) return S.worker;
+  S.runtimeReady = false;
+  S.runtimeStatus = "Loading Python, pandas, NumPy, scikit-learn…";
   const url = new URL("pyodide-worker.js", document.baseURI);
   S.worker = new Worker(url, { type: "module" });
+  S.worker.addEventListener("message", onRuntimeMessage);
   return S.worker;
 }
 
@@ -1164,6 +1233,8 @@ function stopRun(message) {
     S.worker.terminate();
     S.worker = null;
   }
+  S.runtimeReady = false;
+  S.runtimeStatus = "";
   S.run.running = false;
   S.run.status = "";
   if (message) {
@@ -1176,18 +1247,34 @@ function stopRun(message) {
 
 function runSource({ source, tests, packages, timeoutMs, consoleOnly }) {
   const id = ++S.runSeq;
-  S.run = { id, running: true, status: "Starting Python…", tests: [], stdout: "", stderr: "", error: "", traceback: "", passed: null };
+  const waiting = !S.runtimeReady;
+  S.run = {
+    id, running: true,
+    status: waiting ? (S.runtimeStatus || "Loading Python, pandas, NumPy, scikit-learn…") : "Starting Python…",
+    tests: [], stdout: "", stderr: "", error: "", traceback: "", passed: null,
+  };
   const showConsole = consoleOnly || !(tests && tests.length);
   showOutput(showConsole ? "console" : "tests");
   const worker = ensureWorker();
-  const timer = setTimeout(() => {
-    if (S.run.id === id) stopRun("Timed out. The runtime was stopped. Run tests starts a fresh session.");
-  }, timeoutMs || 20000);
+  let timer = 0;
+  let clockOn = false;
+  const arm = () => {
+    if (clockOn || S.run.id !== id) return;
+    clockOn = true;
+    timer = setTimeout(() => {
+      if (S.run.id === id) stopRun("Timed out. The runtime was stopped. Run tests starts a fresh session.");
+    }, timeoutMs || 20000);
+  };
   const onMsg = (ev) => {
     if (!ev.data || ev.data.id !== id) return;
     const d = ev.data;
     if (d.type === "status") {
       S.run.status = d.text;
+      paintBottom();
+      paintChrome();
+    } else if (d.type === "executing") {
+      S.run.status = "Running…";
+      arm();
       paintBottom();
       paintChrome();
     } else if (d.type === "result") {

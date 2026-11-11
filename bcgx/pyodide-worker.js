@@ -1,57 +1,107 @@
-/* Pyodide runtime. Loads numpy, pandas, and scikit-learn on demand and keeps them. */
+/* Pyodide runtime. numpy, pandas, and scikit-learn load at startup, outside the run timer. */
 import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
 
 let pyodide = null;
-let loading = null;
+let booting = null;
+let warming = null;
+let runtimeReady = false;
 const loaded = new Set();
 const INDEX = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const LOADING = "Loading Python, pandas, NumPy, scikit-learn…";
 
-function say(id, text) {
-  postMessage({ id, type: "status", text });
+const PREIMPORT =
+  "import numpy as np\n" +
+  "import pandas as pd\n" +
+  "import sklearn\n" +
+  "import sklearn.preprocessing\n" +
+  "import sklearn.model_selection\n" +
+  "import sklearn.linear_model\n" +
+  "import sklearn.ensemble\n" +
+  "import sklearn.metrics\n" +
+  "import sklearn.pipeline\n" +
+  "import sklearn.compose\n" +
+  "import sklearn.impute\n" +
+  "import sklearn.cluster\n";
+
+function preload(text) {
+  postMessage({ id: 0, type: "status", phase: "preload", text });
 }
 
-async function boot(id) {
+function canonical(raw) {
+  const map = {
+    sklearn: "scikit-learn",
+    "scikit-learn": "scikit-learn",
+    numpy: "numpy",
+    pandas: "pandas",
+    scipy: "scipy",
+    micropip: "micropip",
+    joblib: "joblib",
+    threadpoolctl: "threadpoolctl",
+  };
+  return map[raw] || raw;
+}
+
+async function boot() {
   if (pyodide) return pyodide;
-  if (loading) return loading;
-  loading = (async () => {
-    say(id, "Loading Python runtime…");
+  if (booting) return booting;
+  booting = (async () => {
+    preload(LOADING);
     pyodide = await loadPyodide({ indexURL: INDEX });
-    say(id, "Python is ready");
     return pyodide;
   })();
   try {
-    return await loading;
+    return await booting;
   } finally {
-    loading = null;
+    booting = null;
   }
 }
 
-async function ensure(id, packages) {
-  const py = await boot(id);
-  const map = { sklearn: "scikit-learn", "scikit-learn": "scikit-learn", numpy: "numpy", pandas: "pandas", scipy: "scipy", micropip: "micropip" };
+async function ensure(packages) {
+  const py = await boot();
   const need = [];
   for (const raw of packages || []) {
-    const name = map[raw] || raw;
+    const name = canonical(raw);
     if (!loaded.has(name)) need.push(name);
   }
   if (need.length) {
-    say(id, "Loading " + need.join(", ") + "…");
     await py.loadPackage(need);
-    need.forEach((n) => loaded.add(n));
+    need.forEach((name) => loaded.add(name));
   }
   return py;
 }
 
+async function warm() {
+  if (runtimeReady) return pyodide;
+  if (warming) return warming;
+  warming = (async () => {
+    preload(LOADING);
+    const py = await boot();
+    preload(LOADING);
+    await py.loadPackage(["numpy", "pandas"]);
+    loaded.add("numpy");
+    loaded.add("pandas");
+    await py.loadPackage(["scikit-learn"]);
+    loaded.add("scikit-learn");
+    await py.runPythonAsync(PREIMPORT, { dedent: false });
+    runtimeReady = true;
+    postMessage({ type: "runtime", ready: true });
+    return py;
+  })();
+  try {
+    return await warming;
+  } catch (err) {
+    warming = null;
+    runtimeReady = false;
+    throw err;
+  }
+}
+
 let blackReady = null;
-async function ensureBlack(id) {
-  const py = await ensure(id, ["micropip"]);
+async function ensureBlack() {
+  const py = await ensure(["micropip"]);
   if (blackReady) return blackReady;
   blackReady = (async () => {
-    say(id, "Loading formatter…");
-    await py.runPythonAsync(
-      "import micropip\nawait micropip.install('black')\nimport black\n",
-      { dedent: false }
-    );
+    await py.runPythonAsync("import micropip\nawait micropip.install('black')\nimport black\n", { dedent: false });
     return true;
   })();
   try {
@@ -71,10 +121,34 @@ function infer(packages, source) {
   return [...set];
 }
 
+async function loadImports(id, code) {
+  const py = await warm();
+  let announced = false;
+  try {
+    await py.loadPackagesFromImports(code, {
+      messageCallback(message) {
+        announced = true;
+        postMessage({ id, type: "status", phase: "preload", text: String(message) });
+      },
+    });
+  } catch {
+    /* An unknown import fails again inside the user's own code. */
+  }
+  return announced;
+}
+
 async function runUser(id, payload) {
   const source = String(payload.source || "");
   const tests = payload.tests || [];
-  const py = await ensure(id, infer(["numpy", "pandas"].concat(payload.packages || []), source));
+  const py = await warm();
+  const extra = infer(payload.packages, source).filter((name) => !loaded.has(canonical(name)));
+  if (extra.length) {
+    postMessage({ id, type: "status", phase: "preload", text: "Loading " + extra.join(", ") + "…" });
+    await ensure(extra);
+  }
+  const joined = [source].concat(tests.map((test) => test.code || "")).join("\n");
+  await loadImports(id, joined);
+  postMessage({ id, type: "executing" });
   const driver =
     "import sys, io, json, traceback\n" +
     "import numpy as np\n" +
@@ -103,20 +177,25 @@ async function runUser(id, payload) {
     "_payload['stdout'] = _out.getvalue()[-30000:]\n" +
     "_payload['stderr'] = _err.getvalue()[-8000:]\n" +
     "json.dumps(_payload)\n";
-  const raw = await py.runPythonAsync(driver, { dedent: false });
+  const produced = py.runPython(driver, { dedent: false });
+  const raw = typeof produced === "string" ? produced : String(produced);
   const result = JSON.parse(raw);
   postMessage({ id, type: "result", result });
 }
 
 async function formatCode(id, code) {
-  const py = await boot(id);
-  await ensureBlack(id);
-  const raw = await py.runPythonAsync(
+  await boot();
+  await ensureBlack();
+  const raw = pyodide.runPython(
     "import black\nblack.format_str(" + JSON.stringify(code) + ", mode=black.Mode(line_length=88))\n",
     { dedent: false }
   );
   postMessage({ id, type: "formatted", code: raw });
 }
+
+warm().catch((err) => {
+  postMessage({ type: "runtime", ready: false, message: String(err && err.message ? err.message : err) });
+});
 
 self.onmessage = async (event) => {
   const msg = event.data || {};
