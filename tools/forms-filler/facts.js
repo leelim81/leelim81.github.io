@@ -581,6 +581,14 @@
     return /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(labelHead(field && field.label));
   }
 
+  function evidenceApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormEvidence && globalThis.FormEvidence.usZipBox) return globalThis.FormEvidence;
+    if (typeof require === 'function') {
+      try { return require('./evidence.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
   function personApi() {
     if (typeof globalThis !== 'undefined' && globalThis.FormPerson) return globalThis.FormPerson;
     if (typeof require === 'function') {
@@ -628,7 +636,11 @@
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
     if (/unit\s*no/i.test(label)) return 'unit';
-    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label) && (/postal/i.test(label) || (barePostalLabel(field) && barePostalAnchored(field, fields)))) return 'postal';
+    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label) && (/postal/i.test(label) || (barePostalLabel(field) && barePostalAnchored(field, fields)))) {
+      var evidence = evidenceApi();
+      if (evidence && evidence.usZipBox && evidence.usZipBox(field, fields)) return '';
+      return 'postal';
+    }
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
     if (/(^|\s)contact$/i.test(label) || /contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';

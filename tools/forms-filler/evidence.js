@@ -790,7 +790,12 @@
   }
 
   function hasSplitAddress(fields) {
-    return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
+    /* A US ZIP box that cannot hold the code is not a postal row. Counting
+       it would blank the address and drop SINGAPORE and the code. */
+    var postalRow = (fields || []).some(function (field) {
+      return applicantIdentitySlot(field, fields) === 'postal' && !usZipBox(field, fields);
+    });
+    return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || postalRow;
   }
 
   function blockOpen(idn) {
@@ -1236,6 +1241,8 @@
     fitInBox: fitInBox,
     dateForField: dateForField,
     allowsValue: allowsValue,
-    keepAgreedName: keepAgreedName
+    keepAgreedName: keepAgreedName,
+    usZipBox: usZipBox,
+    usZipValue: usZipValue
   };
 });

@@ -173,6 +173,33 @@ const applicantAddress = [
 ];
 assert.equal(identityPhotoSlot(applicantAddress[0], applicantAddress), 'address', 'applicant address');
 assert.equal(identityPhotoSlot(applicantAddress[1], applicantAddress), 'postal', 'applicant post code');
+assert.equal(sectionKind('Standard Chartered Bank'), '', 'bank letterhead');
+assert.equal(sectionKind('OCBC Bank'), '', 'bank letterhead');
+assert.equal(sectionKind('Your Bank'), 'other');
+assert.equal(sectionKind('The Bank'), 'other');
+assert.equal(sectionKind('Bank Details'), 'other');
+assert.equal(sectionKind('Name of Bank'), 'other');
+assert.equal(sectionKind('Details of Bank'), 'other');
+assert.equal(sectionKind('Bank otherwise'), '', 'a sentence fragment is not a bank section');
+const presentPost = [
+  { id: 'home', label: 'Permanent Address', page: 1 },
+  { id: 'pc', label: 'Post Code:', page: 1 }
+];
+assert.equal(identityPhotoSlot(presentPost[1], presentPost), 'postal', 'post code beside permanent address');
+const i9 = [
+  { id: 'addr', label: 'Address (Street Number and Name)', page: 0 },
+  { id: 'city', label: 'City or Town', page: 0 },
+  { id: 'state', label: 'State', page: 0 },
+  { id: 'zip', label: 'ZIP Code', page: 0, maxLen: 6, tooltip: 'Section 1., Enter ZIP Code.' }
+];
+const sgCard = {
+  blk: '88', street: 'EXAMPLE WALK', unit: '12-34', postal: '018956',
+  blkChecked: false, streetChecked: false, postalChecked: false, blkUnconfirmed: false
+};
+assert.equal(addressSlotsBlank(sgCard, i9), false, 'a US ZIP does not blank the Singapore address');
+assert.equal(identityCardOffer(sgCard, 'address', i9).value, '88 EXAMPLE WALK #12-34 SINGAPORE 018956');
+assert.equal(identityCardOffer(sgCard, 'postal', i9, i9[3]).value, '');
+assert.equal(identityPhotoSlot(i9[3], i9), 'postal', 'I-9 ZIP is still a postal slot');
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'Name as per bank account' }, [{ id: 'bank', label: 'Name as per bank account' }]), 'name');
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'Zip', section: 'For official use' }), '');
 assert.equal(fieldKind({ label: 'Post Code', section: 'For Bank Use Only' }), 'other');

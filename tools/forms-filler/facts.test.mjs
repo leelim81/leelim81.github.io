@@ -88,6 +88,14 @@ assert.equal(postalLabels.surgery, undefined);
 assert.equal(postalLabels.school, undefined);
 assert.equal(postalLabels.solicitor, undefined);
 assert.equal(postalLabels.anchored, '123456');
+const i9sheet = mapFactsToFields(facts, [
+  { id: 'addr', label: 'Address (Street Number and Name)', type: 'text', page: 0 },
+  { id: 'city', label: 'City or Town', type: 'text', page: 0 },
+  { id: 'state', label: 'State', type: 'text', page: 0 },
+  { id: 'zip', label: 'ZIP Code', type: 'text', page: 0, maxLen: 6, tooltip: 'Enter ZIP Code' }
+]);
+assert.equal(i9sheet.zip, undefined, 'Singapore code stays out of a US ZIP');
+assert.equal(i9sheet.addr, '10 EXAMPLE ROAD #04-12 123456');
 assert.equal(mapped.female, 'Female');
 assert.equal(mapped.male, undefined);
 assert.equal(mapped.chinese, 'Chinese');

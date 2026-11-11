@@ -129,6 +129,9 @@
       }
       var kind = ev.fieldKind(field);
       var matches = packet.facts.filter(function (fact) { return eligible(fact, field, packet); });
+      if (ev.usZipBox && ev.usZipBox(field, fields)) {
+        matches = matches.filter(function (fact) { return ev.usZipValue(fact.value); });
+      }
       var trusted = !(field && field.untrusted);
       var base = {
         fieldId: field.id,
