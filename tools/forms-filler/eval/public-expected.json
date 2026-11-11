@@ -1,5 +1,5 @@
 {
-  "note": "Expected values are decided from the field label, its section, and the synthetic person. A missing key is empty. The same answer is used for photo, typed, and sheet. This file is not a copy of filler output.",
+  "note": "Each kept answer was read from the PDF line around that box and the synthetic person. section and why say which line. A missing key is empty. The same answer is used for photo, typed, and sheet. Values are not copied from filler output.",
   "modes": [
     "photo",
     "typed",
@@ -11,1640 +11,1195 @@
     "nurul"
   ],
   "answers": {
-    "dev-group-hospitalisation|name_of_union|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Union"
-    },
     "dev-group-hospitalisation|name_of_member_claimant|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name of Member (Claimant)"
+      "label": "Name of Member (Claimant)",
+      "section": "Particulars of Member",
+      "why": "Member who is the claimant"
     },
     "dev-group-hospitalisation|particulars_of_member_nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "Particulars of Member",
+      "why": "Member NRIC"
     },
     "dev-group-hospitalisation|gender_male|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
+      "label": "Male",
+      "section": "Particulars of Member",
+      "why": "Member gender, the Male box under Particulars of Member"
     },
     "dev-group-hospitalisation|particulars_of_member_date_of_birth_dd_mm_|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Dependant"
-    },
-    "dev-group-hospitalisation|name_of_dependant_nric_no|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC No"
-    },
-    "dev-group-hospitalisation|name_of_dependant_gender_male|alex": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy|alex": {
-      "value": "14/03/1992",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy_5|alex": {
-      "value": "14/03/1992",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy) Age"
+      "label": "Date of Birth (dd/mm/yyyy)",
+      "section": "Particulars of Member",
+      "why": "Member date of birth"
     },
     "dev-group-hospitalisation|address_of_member|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address of Member"
+      "label": "Address of Member",
+      "section": "Particulars of Member",
+      "why": "Address of Member"
     },
     "dev-group-hospitalisation|particulars_of_member_email|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email"
-    },
-    "dev-group-hospitalisation|name_of_member|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Member"
-    },
-    "dev-group-hospitalisation|member_name_of_authorised_officer|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Authorised Officer"
-    },
-    "dev-group-hospitalisation|name_of_union|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Union"
+      "label": "Email",
+      "section": "Particulars of Member",
+      "why": "Member email"
     },
     "dev-group-hospitalisation|name_of_member_claimant|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name of Member (Claimant)"
+      "label": "Name of Member (Claimant)",
+      "section": "Particulars of Member",
+      "why": "Member who is the claimant"
     },
     "dev-group-hospitalisation|particulars_of_member_nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "Particulars of Member",
+      "why": "Member NRIC"
     },
     "dev-group-hospitalisation|gender_male|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
+      "label": "Male",
+      "section": "Particulars of Member",
+      "why": "Member gender, the Male box under Particulars of Member"
     },
     "dev-group-hospitalisation|particulars_of_member_date_of_birth_dd_mm_|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Dependant"
-    },
-    "dev-group-hospitalisation|name_of_dependant_nric_no|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "NRIC No"
-    },
-    "dev-group-hospitalisation|name_of_dependant_gender_male|tan": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy|tan": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy_5|tan": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy) Age"
+      "label": "Date of Birth (dd/mm/yyyy)",
+      "section": "Particulars of Member",
+      "why": "Member date of birth"
     },
     "dev-group-hospitalisation|address_of_member|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address of Member"
-    },
-    "dev-group-hospitalisation|name_of_member|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Member"
-    },
-    "dev-group-hospitalisation|member_name_of_authorised_officer|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Authorised Officer"
-    },
-    "dev-group-hospitalisation|name_of_union|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Union"
+      "label": "Address of Member",
+      "section": "Particulars of Member",
+      "why": "Address of Member"
     },
     "dev-group-hospitalisation|name_of_member_claimant|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name of Member (Claimant)"
+      "label": "Name of Member (Claimant)",
+      "section": "Particulars of Member",
+      "why": "Member who is the claimant"
     },
     "dev-group-hospitalisation|particulars_of_member_nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "Particulars of Member",
+      "why": "Member NRIC"
     },
     "dev-group-hospitalisation|particulars_of_member_date_of_birth_dd_mm_|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Dependant"
-    },
-    "dev-group-hospitalisation|name_of_dependant_nric_no|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC No"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy|nurul": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy)"
-    },
-    "dev-group-hospitalisation|name_of_dependant_date_of_birth_dd_mm_yyyy_5|nurul": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of Birth (dd/mm/yyyy) Age"
-    },
-    "dev-group-hospitalisation|name_of_member|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Member"
-    },
-    "dev-group-hospitalisation|member_name_of_authorised_officer|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Authorised Officer"
+      "label": "Date of Birth (dd/mm/yyyy)",
+      "section": "Particulars of Member",
+      "why": "Member date of birth"
     },
     "dev-pubeu-membership|name|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "NAME:"
+      "label": "NAME:",
+      "section": "Application for Membership",
+      "why": "Applicant name"
     },
     "dev-pubeu-membership|nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC NO:"
+      "label": "NRIC NO:",
+      "section": "Application for Membership",
+      "why": "Applicant NRIC"
     },
     "dev-pubeu-membership|date_of_birth|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "DATE OF BIRTH:"
+      "label": "DATE OF BIRTH:",
+      "section": "Application for Membership",
+      "why": "Applicant date of birth"
     },
     "dev-pubeu-membership|address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "ADDRESS:"
+      "label": "ADDRESS:",
+      "section": "Application for Membership",
+      "why": "Applicant address"
     },
     "dev-pubeu-membership|postal_code|alex": {
       "value": "123456",
       "kind": "postal",
-      "label": "POSTAL CODE:"
+      "label": "POSTAL CODE:",
+      "section": "Application for Membership",
+      "why": "Applicant postal code"
     },
     "dev-pubeu-membership|name|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "NAME:"
+      "label": "NAME:",
+      "section": "Application for Membership",
+      "why": "Applicant name"
     },
     "dev-pubeu-membership|nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC NO:"
+      "label": "NRIC NO:",
+      "section": "Application for Membership",
+      "why": "Applicant NRIC"
     },
     "dev-pubeu-membership|date_of_birth|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "DATE OF BIRTH:"
+      "label": "DATE OF BIRTH:",
+      "section": "Application for Membership",
+      "why": "Applicant date of birth"
     },
     "dev-pubeu-membership|address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "ADDRESS:"
+      "label": "ADDRESS:",
+      "section": "Application for Membership",
+      "why": "Applicant address"
     },
     "dev-pubeu-membership|postal_code|tan": {
       "value": "018956",
       "kind": "postal",
-      "label": "POSTAL CODE:"
+      "label": "POSTAL CODE:",
+      "section": "Application for Membership",
+      "why": "Applicant postal code"
     },
     "dev-pubeu-membership|name|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "NAME:"
+      "label": "NAME:",
+      "section": "Application for Membership",
+      "why": "Applicant name"
     },
     "dev-pubeu-membership|nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC NO:"
+      "label": "NRIC NO:",
+      "section": "Application for Membership",
+      "why": "Applicant NRIC"
     },
     "dev-pubeu-membership|date_of_birth|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "DATE OF BIRTH:"
+      "label": "DATE OF BIRTH:",
+      "section": "Application for Membership",
+      "why": "Applicant date of birth"
     },
     "dev-irs-w9|topmostSubform[0].Page1[0].f1_01[0]|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name of entity/individual"
+      "label": "Name of entity/individual",
+      "section": "Line 1",
+      "why": "Name of the person on line 1"
     },
     "dev-irs-w9|topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_07[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address (number, street, and apt"
+      "label": "Address (number, street, and apt",
+      "section": "Line 5",
+      "why": "Street address of the person on line 1"
     },
     "dev-irs-w9|topmostSubform[0].Page1[0].f1_01[0]|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name of entity/individual"
+      "label": "Name of entity/individual",
+      "section": "Line 1",
+      "why": "Name of the person on line 1"
     },
     "dev-irs-w9|topmostSubform[0].Page1[0].Address_ReadOrder[0].f1_07[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address (number, street, and apt"
+      "label": "Address (number, street, and apt",
+      "section": "Line 5",
+      "why": "Street address of the person on line 1"
     },
     "dev-irs-w9|topmostSubform[0].Page1[0].f1_01[0]|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name of entity/individual"
+      "label": "Name of entity/individual",
+      "section": "Line 1",
+      "why": "Name of the person on line 1"
     },
     "dev-irs-w4|topmostSubform[0].Page1[0].Step1a[0].f1_01[0]|alex": {
       "value": "Alex",
       "kind": "name",
-      "label": "First name and middle initial"
+      "label": "First name and middle initial",
+      "section": "Step 1 Employee",
+      "why": "Employee first name"
     },
     "dev-irs-w4|topmostSubform[0].Page1[0].Step1a[0].f1_02[0]|alex": {
       "value": "Example",
       "kind": "name",
-      "label": "Last name"
+      "label": "Last name",
+      "section": "Step 1 Employee",
+      "why": "Employee last name"
     },
     "dev-irs-w4|topmostSubform[0].Page1[0].Step1a[0].f1_03[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "Step 1 Employee",
+      "why": "Employee home address"
     },
     "dev-irs-w4|topmostSubform[0].Page1[0].Step1a[0].f1_03[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "Step 1 Employee",
+      "why": "Employee home address"
     },
     "dev-uscis-i9|First Name Given Name|alex": {
       "value": "Alex",
       "kind": "name",
-      "label": "First Name Given Name"
-    },
-    "dev-uscis-i9|Last Name Family Name from Section 1-2|alex": {
-      "value": "Example",
-      "kind": "name",
-      "label": "Last Name Family Name from Section 1-2"
-    },
-    "dev-uscis-i9|First Name Given Name from Section 1-2|alex": {
-      "value": "Alex",
-      "kind": "name",
-      "label": "First Name Given Name from Section 1-2"
+      "label": "First Name Given Name",
+      "section": "Section 1. Employee Information",
+      "why": "Employee first name"
     },
     "dev-uscis-i9|Date of Birth mmddyyyy|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of Birth mmddyyyy"
+      "label": "Date of Birth mmddyyyy",
+      "section": "Section 1. Employee Information",
+      "why": "Employee date of birth"
     },
     "dev-uscis-i9|Last Name (Family Name)|alex": {
       "value": "Example",
       "kind": "name",
-      "label": "Last Name (Family Name)"
+      "label": "Last Name (Family Name)",
+      "section": "Section 1. Employee Information",
+      "why": "Employee last name"
     },
     "dev-uscis-i9|Address Street Number and Name|alex": {
       "value": "10 EXAMPLE ROAD #04-12 SINGAPORE 123456",
       "kind": "address",
-      "label": "Address Street Number and Name"
+      "label": "Address Street Number and Name",
+      "section": "Section 1. Employee Information",
+      "why": "Employee street address. The ZIP box stays empty"
     },
     "dev-uscis-i9|Date of Birth mmddyyyy|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth mmddyyyy"
+      "label": "Date of Birth mmddyyyy",
+      "section": "Section 1. Employee Information",
+      "why": "Employee date of birth"
     },
     "dev-uscis-i9|Address Street Number and Name|tan": {
       "value": "88 EXAMPLE WALK #12-34 SINGAPORE 018956",
       "kind": "address",
-      "label": "Address Street Number and Name"
+      "label": "Address Street Number and Name",
+      "section": "Section 1. Employee Information",
+      "why": "Employee street address. The ZIP box stays empty"
     },
     "dev-uscis-i9|Date of Birth mmddyyyy|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth mmddyyyy"
+      "label": "Date of Birth mmddyyyy",
+      "section": "Section 1. Employee Information",
+      "why": "Employee date of birth"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_1[0]|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name of individual who is the beneficial owner"
-    },
-    "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_2[0]|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Permanent residence address (street, apt"
+      "label": "Name of individual who is the beneficial owner",
+      "section": "Line 1 beneficial owner",
+      "why": "The individual beneficial owner is the filer"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_3[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Permanent residence address (street, apt"
+      "label": "Permanent residence address (street, apt",
+      "section": "Line 3 permanent residence",
+      "why": "Permanent residence of the beneficial owner"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_12[0]|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
-    },
-    "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_13[0]|alex": {
-      "value": "14/03/1992",
-      "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
+      "label": "Date of birth (MM-DD-YYYY) (see instructions)",
+      "section": "Line 8",
+      "why": "Date of birth of the beneficial owner"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_1[0]|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name of individual who is the beneficial owner"
-    },
-    "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_2[0]|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Permanent residence address (street, apt"
+      "label": "Name of individual who is the beneficial owner",
+      "section": "Line 1 beneficial owner",
+      "why": "The individual beneficial owner is the filer"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_3[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Permanent residence address (street, apt"
+      "label": "Permanent residence address (street, apt",
+      "section": "Line 3 permanent residence",
+      "why": "Permanent residence of the beneficial owner"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_12[0]|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
-    },
-    "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_13[0]|tan": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
+      "label": "Date of birth (MM-DD-YYYY) (see instructions)",
+      "section": "Line 8",
+      "why": "Date of birth of the beneficial owner"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_1[0]|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name of individual who is the beneficial owner"
+      "label": "Name of individual who is the beneficial owner",
+      "section": "Line 1 beneficial owner",
+      "why": "The individual beneficial owner is the filer"
     },
     "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_12[0]|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
-    },
-    "heldout-irs-w8ben|topmostSubform[0].Page1[0].f_13[0]|nurul": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (MM-DD-YYYY) (see instructions)"
+      "label": "Date of birth (MM-DD-YYYY) (see instructions)",
+      "section": "Line 8",
+      "why": "Date of birth of the beneficial owner"
     },
     "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_2[0]|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Legal name of entity (or individual)"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_4[0]|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Executor, administrator, trustee, “care of” name"
+      "label": "Legal name of entity (or individual)",
+      "section": "Line 1",
+      "why": "Legal name of the individual the EIN is for"
     },
     "heldout-irs-ss4|topmostSubform[0].Page1[0].Line4ReadOrder[0].f1_5[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Mailing address (room, apt"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_10[0]|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of responsible party"
+      "label": "Mailing address (room, apt",
+      "section": "Line 4a",
+      "why": "Mailing address of the person on line 1"
     },
     "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_2[0]|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Legal name of entity (or individual)"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_4[0]|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Executor, administrator, trustee, “care of” name"
+      "label": "Legal name of entity (or individual)",
+      "section": "Line 1",
+      "why": "Legal name of the individual the EIN is for"
     },
     "heldout-irs-ss4|topmostSubform[0].Page1[0].Line4ReadOrder[0].f1_5[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Mailing address (room, apt"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_10[0]|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of responsible party"
+      "label": "Mailing address (room, apt",
+      "section": "Line 4a",
+      "why": "Mailing address of the person on line 1"
     },
     "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_2[0]|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Legal name of entity (or individual)"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_4[0]|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Executor, administrator, trustee, “care of” name"
-    },
-    "heldout-irs-ss4|topmostSubform[0].Page1[0].f1_10[0]|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of responsible party"
+      "label": "Legal name of entity (or individual)",
+      "section": "Line 1",
+      "why": "Legal name of the individual the EIN is for"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].f1_13[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Street address, apartment number, or rural route number"
+      "label": "Street address, apartment number, or rural route number",
+      "section": "Line 2 Applicant mailing",
+      "why": "Applicant mailing address"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].f1_15[0]|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Street address, apartment number, or rural route number"
+      "label": "Street address, apartment number, or rural route number",
+      "section": "Line 3 Foreign address",
+      "why": "Applicant foreign address"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].Line4_ReadOrder[0].f1_17[0]|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of birth (month / day / year)"
+      "label": "Date of birth (month / day / year)",
+      "section": "Line 4",
+      "why": "Applicant date of birth"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].c1_10[1]|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_20[0]|alex": {
-      "value": "14/03/1992",
-      "kind": "dob",
-      "label": "Date of birth (month / day / year)"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_35[0]|alex": {
-      "value": "Alex",
-      "kind": "name",
-      "label": "First name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_36[0]|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Middle name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_37[0]|alex": {
-      "value": "Alex",
-      "kind": "name",
-      "label": "First name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_39[0]|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Middle name"
+      "label": "Male",
+      "section": "Line 5",
+      "why": "Applicant sex, the Male box"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].f1_40[0]|alex": {
       "value": "+65 8123 4567",
       "kind": "phone",
-      "label": "Phone number"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_41[0]|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of delegate, if applicable (type or print)"
+      "label": "Phone number",
+      "section": "Applicant signature block",
+      "why": "Applicant phone above the delegate line"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].f1_13[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Street address, apartment number, or rural route number"
+      "label": "Street address, apartment number, or rural route number",
+      "section": "Line 2 Applicant mailing",
+      "why": "Applicant mailing address"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].f1_15[0]|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Street address, apartment number, or rural route number"
+      "label": "Street address, apartment number, or rural route number",
+      "section": "Line 3 Foreign address",
+      "why": "Applicant foreign address"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].Line4_ReadOrder[0].f1_17[0]|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of birth (month / day / year)"
+      "label": "Date of birth (month / day / year)",
+      "section": "Line 4",
+      "why": "Applicant date of birth"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].c1_10[1]|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_20[0]|tan": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (month / day / year)"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_36[0]|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Middle name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_39[0]|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Middle name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_41[0]|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of delegate, if applicable (type or print)"
+      "label": "Male",
+      "section": "Line 5",
+      "why": "Applicant sex, the Male box"
     },
     "heldout-irs-w7|topmostSubform[0].Page1[0].Line4_ReadOrder[0].f1_17[0]|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of birth (month / day / year)"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_20[0]|nurul": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (month / day / year)"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_36[0]|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Middle name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_39[0]|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Middle name"
-    },
-    "heldout-irs-w7|topmostSubform[0].Page1[0].f1_41[0]|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of delegate, if applicable (type or print)"
-    },
-    "heldout-sg-gift-death|dear_claimant_full_name_of_member_as_shown|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-death|information_on_member_full_name_of_member_|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport) NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|nric_passport_or_fin_number|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|gender_male|alex": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-sg-gift-death|date_of_birth_dd_mm_yyyy|alex": {
-      "value": "14/03/1992",
-      "kind": "dob",
-      "label": "Date of birth (dd/mm/yyyy)"
-    },
-    "heldout-sg-gift-death|address_contact_number|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Address/Contact number"
-    },
-    "heldout-sg-gift-death|nric_passport|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC/Passport/"
-    },
-    "heldout-sg-gift-death|email|alex": {
-      "value": "alex.example@example.com",
-      "kind": "email",
-      "label": "Email"
-    },
-    "heldout-sg-gift-death|nationality_male|alex": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-sg-gift-death|dear_claimant_full_name_of_member_as_shown|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-death|information_on_member_full_name_of_member_|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport) NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|nric_passport_or_fin_number|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|information_on_insured_person_deceased_nat|tan": {
-      "value": "Singapore Citizen",
-      "kind": "name",
-      "label": "Nationality"
-    },
-    "heldout-sg-gift-death|gender_male|tan": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-sg-gift-death|date_of_birth_dd_mm_yyyy|tan": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (dd/mm/yyyy)"
-    },
-    "heldout-sg-gift-death|address_contact_number|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Address/Contact number"
-    },
-    "heldout-sg-gift-death|nric_passport|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "NRIC/Passport/"
-    },
-    "heldout-sg-gift-death|nationality_male|tan": {
-      "value": "Male",
-      "kind": "sex",
-      "label": "Male"
-    },
-    "heldout-sg-gift-death|dear_claimant_full_name_of_member_as_shown|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-death|information_on_member_full_name_of_member_|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport) NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|nric_passport_or_fin_number|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-death|date_of_birth_dd_mm_yyyy|nurul": {
-      "value": "15/01/1990",
-      "kind": "dob",
-      "label": "Date of birth (dd/mm/yyyy)"
-    },
-    "heldout-sg-gift-death|nric_passport|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC/Passport/"
+      "label": "Date of birth (month / day / year)",
+      "section": "Line 4",
+      "why": "Applicant date of birth"
     },
     "heldout-sg-gift-tpd|gender_male|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
+      "label": "Male",
+      "section": "Information on member",
+      "why": "Member gender"
     },
     "heldout-sg-gift-tpd|dear_claimant_full_name_of_member_as_shown|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
+      "label": "Full Name of member (as shown in NRIC, FIN or passport)",
+      "section": "Information on member",
+      "why": "Member name on a disability claim the member makes"
     },
     "heldout-sg-gift-tpd|information_on_member_nric_passport_or_fin|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC, passport or FIN number"
+      "label": "NRIC, passport or FIN number",
+      "section": "Information on member",
+      "why": "Member NRIC"
     },
     "heldout-sg-gift-tpd|dear_claimant_mailing_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Mailing address"
+      "label": "Mailing address",
+      "section": "Information on member",
+      "why": "Member mailing address"
     },
     "heldout-sg-gift-tpd|information_on_member_email|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email"
-    },
-    "heldout-sg-gift-tpd|member_full_name_of_insured_person_as_show|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Full Name of insured person (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|name_and_address_of|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Name and address of"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor_8|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|name_and_address_of_5|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Name and address of"
-    },
-    "heldout-sg-gift-tpd|insured_name_of_payee|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of payee"
+      "label": "Email",
+      "section": "Information on member",
+      "why": "Member email"
     },
     "heldout-sg-gift-tpd|gender_male|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
+      "label": "Male",
+      "section": "Information on member",
+      "why": "Member gender"
     },
     "heldout-sg-gift-tpd|dear_claimant_full_name_of_member_as_shown|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
+      "label": "Full Name of member (as shown in NRIC, FIN or passport)",
+      "section": "Information on member",
+      "why": "Member name on a disability claim the member makes"
     },
     "heldout-sg-gift-tpd|information_on_member_nric_passport_or_fin|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC, passport or FIN number"
+      "label": "NRIC, passport or FIN number",
+      "section": "Information on member",
+      "why": "Member NRIC"
     },
     "heldout-sg-gift-tpd|information_on_member_nationality|tan": {
       "value": "Singapore Citizen",
       "kind": "name",
-      "label": "Nationality"
+      "label": "Nationality",
+      "section": "Information on member",
+      "why": "Member nationality"
     },
     "heldout-sg-gift-tpd|dear_claimant_mailing_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Mailing address"
-    },
-    "heldout-sg-gift-tpd|member_full_name_of_insured_person_as_show|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Full Name of insured person (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|name_and_address_of|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Name and address of"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor_8|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|name_and_address_of_5|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Name and address of"
-    },
-    "heldout-sg-gift-tpd|insured_name_of_payee|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of payee"
+      "label": "Mailing address",
+      "section": "Information on member",
+      "why": "Member mailing address"
     },
     "heldout-sg-gift-tpd|dear_claimant_full_name_of_member_as_shown|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Full Name of member (as shown in NRIC, FIN or passport)"
+      "label": "Full Name of member (as shown in NRIC, FIN or passport)",
+      "section": "Information on member",
+      "why": "Member name on a disability claim the member makes"
     },
     "heldout-sg-gift-tpd|information_on_member_nric_passport_or_fin|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC, passport or FIN number"
-    },
-    "heldout-sg-gift-tpd|member_full_name_of_insured_person_as_show|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Full Name of insured person (as shown in NRIC, FIN or passport)"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|name_of_doctor_8|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of doctor"
-    },
-    "heldout-sg-gift-tpd|insured_name_of_payee|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of payee"
+      "label": "NRIC, passport or FIN number",
+      "section": "Information on member",
+      "why": "Member NRIC"
     },
     "heldout-sg-childbirth|member_s_particulars_full_name_in_block_le|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-childbirth|member_s_particulars_nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-childbirth|member_s_particulars_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-childbirth|member_s_particulars_full_name_in_block_le|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-childbirth|member_s_particulars_nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-childbirth|member_s_particulars_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-childbirth|member_s_particulars_full_name_in_block_le|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-childbirth|member_s_particulars_nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-marriage|member_s_particulars_full_name_in_block_le|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-marriage|member_s_particulars_nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-marriage|member_s_particulars_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-marriage|member_s_particulars_full_name_in_block_le|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-marriage|member_s_particulars_nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-marriage|member_s_particulars_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-marriage|member_s_particulars_full_name_in_block_le|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-marriage|member_s_particulars_nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_full_name_in_block_le|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_full_name_in_block_le|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member address"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_full_name_in_block_le|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Full Name in Block Letter"
+      "label": "Full Name in Block Letter",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member name"
     },
     "heldout-sg-hdbsu-hosp|member_s_particulars_nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "MEMBER'S PARTICULARS",
+      "why": "Member NRIC"
     },
     "sc|present_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Present Address:"
+      "label": "Present Address:",
+      "section": "Contact Information",
+      "why": "Applicant present address"
     },
     "sc|post_code|alex": {
       "value": "123456",
       "kind": "postal",
-      "label": "Post Code:"
-    },
-    "sc|permanent_address|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Permanent Address"
-    },
-    "sc|type_of_account_present_address|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Present Address"
-    },
-    "sc|type_of_account_permanent_address|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Permanent Address"
+      "label": "Post Code:",
+      "section": "Contact Information",
+      "why": "Post code under the applicant present address"
     },
     "sc|applicant_s_personal_information_name_of_a_18|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name of Accountholder in English:"
+      "label": "Name of Accountholder in English:",
+      "section": "Applicant's Personal Information",
+      "why": "Accountholder name in English"
     },
     "sc|applicant_s_personal_information_date_of_b|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Applicant's Personal Information",
+      "why": "Applicant date of birth"
     },
     "sc|applicant_s_personal_information_gender|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Gender:"
+      "label": "Gender:",
+      "section": "Applicant's Personal Information",
+      "why": "Applicant gender"
     },
     "sc|present_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Present Address:"
+      "label": "Present Address:",
+      "section": "Contact Information",
+      "why": "Applicant present address"
     },
     "sc|post_code|tan": {
       "value": "018956",
       "kind": "postal",
-      "label": "Post Code:"
-    },
-    "sc|permanent_address|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Permanent Address"
-    },
-    "sc|type_of_account_present_address|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Present Address"
-    },
-    "sc|type_of_account_permanent_address|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Permanent Address"
+      "label": "Post Code:",
+      "section": "Contact Information",
+      "why": "Post code under the applicant present address"
     },
     "sc|applicant_s_personal_information_name_of_a_18|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name of Accountholder in English:"
+      "label": "Name of Accountholder in English:",
+      "section": "Applicant's Personal Information",
+      "why": "Accountholder name in English"
     },
     "sc|applicant_s_personal_information_date_of_b|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Applicant's Personal Information",
+      "why": "Applicant date of birth"
     },
     "sc|applicant_s_personal_information_gender|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Gender:"
+      "label": "Gender:",
+      "section": "Applicant's Personal Information",
+      "why": "Applicant gender"
     },
     "sc|applicant_s_personal_information_name_of_a_18|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name of Accountholder in English:"
+      "label": "Name of Accountholder in English:",
+      "section": "Applicant's Personal Information",
+      "why": "Accountholder name in English"
     },
     "sc|applicant_s_personal_information_date_of_b|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Applicant's Personal Information",
+      "why": "Applicant date of birth"
     },
     "ocbc|name|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name"
-    },
-    "ocbc|name_to_appear_on_card|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name to appear on Card -"
-    },
-    "ocbc|declaration_of_b_as_in_nric_passport|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
+      "label": "Name",
+      "section": "Personal particulars of main account holder",
+      "why": "Main account holder name"
     },
     "ocbc|postal_code|alex": {
       "value": "123456",
       "kind": "postal",
-      "label": "Postal code"
+      "label": "Postal code",
+      "section": "Personal particulars of main account holder",
+      "why": "Postal code beside the main account holder address"
     },
-    "ocbc|as_in_nric_passport|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
+    "ocbc|name_to_appear_on_card|alex": {
+      "value": "Alex Example",
+      "kind": "name",
+      "label": "Name to appear on Card -",
+      "section": "Debit card",
+      "why": "Name on the applicant card, same person as the identity document"
     },
     "ocbc|name|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name"
+      "label": "Name",
+      "section": "Personal particulars of main account holder",
+      "why": "Main account holder name"
     },
     "ocbc|nationality|tan": {
       "value": "Singapore Citizen",
       "kind": "name",
-      "label": "Nationality"
-    },
-    "ocbc|name_to_appear_on_card|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name to appear on Card -"
-    },
-    "ocbc|declaration_of_b_as_in_nric_passport|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
+      "label": "Nationality",
+      "section": "Personal particulars of main account holder",
+      "why": "Main account holder nationality"
     },
     "ocbc|postal_code|tan": {
       "value": "018956",
       "kind": "postal",
-      "label": "Postal code"
+      "label": "Postal code",
+      "section": "Personal particulars of main account holder",
+      "why": "Postal code beside the main account holder address"
     },
-    "ocbc|as_in_nric_passport|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
+    "ocbc|name_to_appear_on_card|tan": {
+      "value": "TAN WEI MING",
+      "kind": "name",
+      "label": "Name to appear on Card -",
+      "section": "Debit card",
+      "why": "Name on the applicant card, same person as the identity document"
     },
     "ocbc|name|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name"
+      "label": "Name",
+      "section": "Personal particulars of main account holder",
+      "why": "Main account holder name"
     },
     "ocbc|name_to_appear_on_card|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name to appear on Card -"
-    },
-    "ocbc|declaration_of_b_as_in_nric_passport|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
-    },
-    "ocbc|as_in_nric_passport|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "As in NRIC / Passport"
+      "label": "Name to appear on Card -",
+      "section": "Debit card",
+      "why": "Name on the applicant card, same person as the identity document"
     },
     "prudential|nric_no|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "Life Assured's particulars",
+      "why": "Life assured NRIC. The section is completed by the adult life assured"
     },
     "prudential|address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "Life Assured's particulars",
+      "why": "Life assured address"
     },
     "prudential|postal_code|alex": {
       "value": "123456",
       "kind": "postal",
-      "label": "Postal Code"
-    },
-    "prudential|name_of_doctor|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Doctor"
+      "label": "Postal Code",
+      "section": "Life Assured's particulars",
+      "why": "Life assured postal code"
     },
     "prudential|nric_no|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC No"
+      "label": "NRIC No",
+      "section": "Life Assured's particulars",
+      "why": "Life assured NRIC. The section is completed by the adult life assured"
     },
     "prudential|address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Address"
+      "label": "Address",
+      "section": "Life Assured's particulars",
+      "why": "Life assured address"
     },
     "prudential|postal_code|tan": {
       "value": "018956",
       "kind": "postal",
-      "label": "Postal Code"
-    },
-    "prudential|name_of_doctor|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Doctor"
+      "label": "Postal Code",
+      "section": "Life Assured's particulars",
+      "why": "Life assured postal code"
     },
     "prudential|nric_no|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC No"
-    },
-    "prudential|name_of_doctor|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Doctor"
+      "label": "NRIC No",
+      "section": "Life Assured's particulars",
+      "why": "Life assured NRIC. The section is completed by the adult life assured"
     },
     "uob|name_as_in_nric_passport|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name (as in NRIC/Passport*)"
+      "label": "Name (as in NRIC/Passport*)",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant name"
     },
     "uob|nric_passport_number_5|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "uob|email_address|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email Address"
+      "label": "Email Address",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant email"
     },
     "uob|nric_passport_number|alex": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
-    },
-    "uob|authorisation_agreement_name_of_signatory|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of Signatory"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "uob|name_as_in_nric_passport|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name (as in NRIC/Passport*)"
+      "label": "Name (as in NRIC/Passport*)",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant name"
     },
     "uob|nric_passport_number_5|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "uob|nric_passport_number|tan": {
       "value": "S8523146D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
-    },
-    "uob|authorisation_agreement_name_of_signatory|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of Signatory"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "uob|name_as_in_nric_passport|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name (as in NRIC/Passport*)"
+      "label": "Name (as in NRIC/Passport*)",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant name"
     },
     "uob|nric_passport_number_5|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "uob|nric_passport_number|nurul": {
       "value": "S1234567D",
       "kind": "nric",
-      "label": "NRIC/Passport Number*"
-    },
-    "uob|authorisation_agreement_name_of_signatory|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of Signatory"
-    },
-    "iras-f24|NRIC  FIN  ASGD  ITR  PASSPORT No|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC FIN ASGD ITR PASSPORT No"
-    },
-    "iras-f24|Name|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name"
-    },
-    "iras-f24|NRIC  FIN  ASGD  ITR  PASSPORT No|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "NRIC FIN ASGD ITR PASSPORT No"
-    },
-    "iras-f24|Name|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name"
-    },
-    "iras-f24|NRIC  FIN  ASGD  ITR  PASSPORT No|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC FIN ASGD ITR PASSPORT No"
-    },
-    "iras-f24|Name|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name"
+      "label": "NRIC/Passport Number*",
+      "section": "Section 1: Your particulars",
+      "why": "Applicant NRIC"
     },
     "dbs-india|1st_applicant_minor_e_mail|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "E-mail:"
+      "label": "E-mail:",
+      "section": "1st Applicant",
+      "why": "Email beside the 1st applicant marital status"
     },
     "dbs-india|1st_applicant_name|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Name"
+      "label": "Name",
+      "section": "1st Applicant debit card",
+      "why": "Name on the 1st applicant debit card"
     },
     "dbs-india|1st_applicant_name|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Name"
+      "label": "Name",
+      "section": "1st Applicant debit card",
+      "why": "Name on the 1st applicant debit card"
     },
     "dbs-india|1st_applicant_name|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_postcode|alex": {
-      "value": "123456",
-      "kind": "postal",
-      "label": "Postcode"
+      "label": "Name",
+      "section": "1st Applicant debit card",
+      "why": "Name on the 1st applicant debit card"
     },
     "uk-gp|what_male|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
+      "label": "Male",
+      "section": "Patient registration",
+      "why": "Patient sex, the line that asks your sex"
     },
     "uk-gp|gp_email|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email"
-    },
-    "uk-gp|gp_name|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of_emergency_contact|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of emergency contact"
-    },
-    "uk-gp|gp_name_14|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Name of"
-    },
-    "uk-gp|school_address_3|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Address"
-    },
-    "uk-gp|school_address|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Address"
-    },
-    "uk-gp|pharmacy_pharmacy_address|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Pharmacy address"
-    },
-    "uk-gp|pharmacy_postcode|alex": {
-      "value": "123456",
-      "kind": "postal",
-      "label": "Postcode"
-    },
-    "uk-gp|gp_postcode|tan": {
-      "value": "018956",
-      "kind": "postal",
-      "label": "Postcode"
+      "label": "Email",
+      "section": "Patient contact",
+      "why": "Item 18, the patient email. The GP heading above it is the surgery, not this line"
     },
     "uk-gp|what_male|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male"
-    },
-    "uk-gp|gp_name|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of_emergency_contact|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of emergency contact"
-    },
-    "uk-gp|gp_name_14|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Name of"
-    },
-    "uk-gp|school_address_3|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Address"
-    },
-    "uk-gp|school_address|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Address"
-    },
-    "uk-gp|pharmacy_pharmacy_address|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Pharmacy address"
-    },
-    "uk-gp|pharmacy_postcode|tan": {
-      "value": "018956",
-      "kind": "postal",
-      "label": "Postcode"
-    },
-    "uk-gp|gp_name|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of_emergency_contact|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of emergency contact"
-    },
-    "uk-gp|gp_name_14|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name"
-    },
-    "uk-gp|gp_name_of|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Name of"
+      "label": "Male",
+      "section": "Patient registration",
+      "why": "Patient sex, the line that asks your sex"
     },
     "hsbc|Last Name/Surname|alex": {
       "value": "Example",
       "kind": "name",
-      "label": "Last Name/Surname"
+      "label": "Last Name/Surname",
+      "section": "My Personal Details",
+      "why": "Customer last name"
     },
     "hsbc|First/Given Name|alex": {
       "value": "Alex",
       "kind": "name",
-      "label": "First/Given Name"
+      "label": "First/Given Name",
+      "section": "My Personal Details",
+      "why": "Customer first name"
     },
     "hsbc|Email Address|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email Address"
-    },
-    "hsbc|New/Other Name|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "New/Other Name"
-    },
-    "hsbc|NRIC|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC"
-    },
-    "hsbc|New NRIC/Passport No|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "New NRIC/Passport No"
-    },
-    "hsbc|New FIN No|alex": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "New FIN No"
-    },
-    "hsbc|New/Other Name|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "New/Other Name"
-    },
-    "hsbc|NRIC|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "NRIC"
-    },
-    "hsbc|New NRIC/Passport No|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "New NRIC/Passport No"
-    },
-    "hsbc|New FIN No|tan": {
-      "value": "S8523146D",
-      "kind": "nric",
-      "label": "New FIN No"
-    },
-    "hsbc|New/Other Name|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "New/Other Name"
-    },
-    "hsbc|NRIC|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "NRIC"
-    },
-    "hsbc|New NRIC/Passport No|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "New NRIC/Passport No"
-    },
-    "hsbc|New FIN No|nurul": {
-      "value": "S1234567D",
-      "kind": "nric",
-      "label": "New FIN No"
+      "label": "Email Address",
+      "section": "My Personal Details",
+      "why": "Customer email"
     },
     "dbs-hk|selected_language_male_m|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male (M)"
+      "label": "Male (M)",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Gender Male (M)"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__5|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__6|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Residential Address"
+      "label": "Residential Address",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant residential address"
     },
     "dbs-hk|email_address|alex": {
       "value": "alex.example@example.com",
       "kind": "email",
-      "label": "Email Address"
-    },
-    "dbs-hk|choice_yes_name_of_the_relevant|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Yes, name of the relevant"
-    },
-    "dbs-hk|address_proof|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Address Proof"
-    },
-    "dbs-hk|source_of_wealth_address_proof|alex": {
-      "value": "10 EXAMPLE ROAD #04-12",
-      "kind": "address",
-      "label": "Address Proof"
+      "label": "Email Address",
+      "section": "Contact Information",
+      "why": "Applicant email"
     },
     "dbs-hk|gender_male_m|alex": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male (M)"
+      "label": "Male (M)",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Gender Male (M)"
     },
     "dbs-hk|date_of_birth|alex": {
       "value": "14/03/1992",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|residential_address|alex": {
       "value": "10 EXAMPLE ROAD #04-12",
       "kind": "address",
-      "label": "Residential Address"
+      "label": "Residential Address",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant residential address"
     },
     "dbs-hk|customer_name|alex": {
       "value": "Alex Example",
       "kind": "name",
-      "label": "Customer Name"
-    },
-    "dbs-hk|customer_name_2|alex": {
-      "value": "Alex Example",
-      "kind": "name",
-      "label": "Customer Name"
+      "label": "Customer Name",
+      "section": "Phone banking customer, line 1",
+      "why": "Applicant name on phone banking line 1. The account number stays empty"
     },
     "dbs-hk|selected_language_male_m|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male (M)"
+      "label": "Male (M)",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Gender Male (M)"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__4|tan": {
       "value": "Singapore Citizen",
       "kind": "name",
-      "label": "Nationality"
+      "label": "Nationality",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant nationality"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__5|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__6|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Residential Address"
-    },
-    "dbs-hk|choice_yes_name_of_the_relevant|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Yes, name of the relevant"
-    },
-    "dbs-hk|address_proof|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Address Proof"
-    },
-    "dbs-hk|source_of_wealth_address_proof|tan": {
-      "value": "88 EXAMPLE WALK #12-34",
-      "kind": "address",
-      "label": "Address Proof"
+      "label": "Residential Address",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant residential address"
     },
     "dbs-hk|gender_male_m|tan": {
       "value": "Male",
       "kind": "sex",
-      "label": "Male (M)"
+      "label": "Male (M)",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Gender Male (M)"
     },
     "dbs-hk|nationality|tan": {
       "value": "Singapore Citizen",
       "kind": "name",
-      "label": "Nationality"
+      "label": "Nationality",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant nationality"
     },
     "dbs-hk|date_of_birth|tan": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|residential_address|tan": {
       "value": "88 EXAMPLE WALK #12-34",
       "kind": "address",
-      "label": "Residential Address"
+      "label": "Residential Address",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant residential address"
     },
     "dbs-hk|customer_name|tan": {
       "value": "TAN WEI MING",
       "kind": "name",
-      "label": "Customer Name"
-    },
-    "dbs-hk|customer_name_2|tan": {
-      "value": "TAN WEI MING",
-      "kind": "name",
-      "label": "Customer Name"
+      "label": "Customer Name",
+      "section": "Phone banking customer, line 1",
+      "why": "Applicant name on phone banking line 1. The account number stays empty"
     },
     "dbs-hk|personal_data_of_sole_principal_applicant__5|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
-    },
-    "dbs-hk|choice_yes_name_of_the_relevant|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Yes, name of the relevant"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|date_of_birth|nurul": {
       "value": "15/01/1990",
       "kind": "dob",
-      "label": "Date of Birth"
+      "label": "Date of Birth",
+      "section": "Personal Data of Sole/Principal Applicant",
+      "why": "Applicant date of birth"
     },
     "dbs-hk|customer_name|nurul": {
       "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
       "kind": "name",
-      "label": "Customer Name"
-    },
-    "dbs-hk|customer_name_2|nurul": {
-      "value": "NURUL AISHAH BINTE MOHAMED ABDUL RAHMAN-ISMAIL",
-      "kind": "name",
-      "label": "Customer Name"
+      "label": "Customer Name",
+      "section": "Phone banking customer, line 1",
+      "why": "Applicant name on phone banking line 1. The account number stays empty"
     }
   }
 }

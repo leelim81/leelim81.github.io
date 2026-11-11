@@ -219,7 +219,7 @@ if (argv[0] === '--write-expect') {
     process.stderr.write('expect ' + form.id + '\n');
   }
   const body = {
-    note: 'Expected values are decided from the field label, its section, and the synthetic person. A missing key is empty. The same answer is used for photo, typed, and sheet. This file is not a copy of filler output.',
+    note: 'Each kept answer was read from the PDF line around that box and the synthetic person. section and why say which line. A missing key is empty. The same answer is used for photo, typed, and sheet. Values are not copied from filler output.',
     modes: modes,
     people: people.map((person) => person.id),
     answers: answers
