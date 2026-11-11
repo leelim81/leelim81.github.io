@@ -1,0 +1,48 @@
+--- tools/forms-filler/evidence.js	2026-11-11 14:12:42.149289735 +0800
++++ /workspace/ff-model/site-model/tools/forms-filler/evidence.js	2026-11-11 16:37:02.734636569 +0800
+@@ -525,6 +525,17 @@
+     return list;
+   }
+ 
++
++  /* Gated label model (experiment). Table maps a label to a type the model is confident about.
++     It is consulted only after every rule has declined, so no rule veto is overridden. */
++  var MODEL_KIND_OK = { name: 1, given: 1, surname: 1, nric: 1, dob: 1, phone: 1, email: 1, address: 1, postal: 1 };
++  var MODEL_SLOT_OK = { name: 1, chineseName: 1, nric: 1, dob: 1, sex: 1, nationality: 1, birthCountry: 1, race: 1, address: 1, postal: 1, blk: 1, street: 1, unit: 1 };
++  function modelType(label) {
++    var table = typeof globalThis !== 'undefined' ? globalThis.FF_MODEL_TYPES : null;
++    if (!table) return '';
++    var key = String(label || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2').replace(/\s+/g, ' ').trim();
++    return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : '';
++  }
+   function fieldKind(field) {
+     var label = (field && field.label) || '';
+     var head = headPhrase(label);
+@@ -559,6 +570,8 @@
+     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
+     if (/postal/.test(s)) return 'postal';
+     if (applicantNameLabel(label)) return 'name';
++    var mt = modelType(label);
++    if (mt && MODEL_KIND_OK[mt]) return mt;
+     return 'other';
+   }
+ 
+@@ -686,6 +699,8 @@
+     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
+     if (/^street(?: name)?$/.test(s)) return 'street';
+     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
++    var mt = modelType(field.label);
++    if (mt && MODEL_SLOT_OK[mt]) return mt;
+     return '';
+   }
+ 
+--- tools/forms-filler/index.html	2026-11-11 14:12:42.149289735 +0800
++++ /workspace/ff-model/site-model/tools/forms-filler/index.html	2026-11-11 16:37:02.734636569 +0800
+@@ -137,6 +137,7 @@
+ <script src="fields.js"></script>
+ <script src="sanitize.js"></script>
+ <script src="facts.js"></script>
++<script src="model-types.js"></script>
+ <script src="evidence.js"></script>
+ <script src="select.js"></script>
+ <script src="thresholds.js"></script>

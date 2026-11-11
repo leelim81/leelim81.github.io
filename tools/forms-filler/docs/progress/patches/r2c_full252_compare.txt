@@ -1,0 +1,24 @@
+runs compared 252 of new 252
+baseline pr82c+PostCode {'runs': 252, 'refused': 56, 'exp': 1017, 'hit': 121, 'ok': 135, 'an': 141, 'ab': 14, 'wrong': 5, 'unexp': 8, 'prec': 0.9122, 'align': 90.1}
+model        {'runs': 252, 'refused': 51, 'exp': 1017, 'hit': 135, 'ok': 149, 'an': 155, 'ab': 14, 'unexp': 12, 'wrong': 5, 'prec': 0.8976, 'align': 91.0}
+runs whose placed items/outcome differ: 19
+NEW placements correct: 14  new wrong/unexpected: 4  lost placements: 0
+  NEW-WRONG iras-aitds-tax-deduction-claim__p1__card__desktop (0, ': ______________________________________', 'S8412345E', 'unexpected')
+  NEW-WRONG iras-aitds-tax-deduction-claim__p1__card_sheet__desktop (0, ': ______________________________________', 'S8412345E', 'unexpected')
+  NEW-WRONG iras-aitds-tax-deduction-claim__p3__card__desktop (0, ': ______________________________________', 'T0134567I', 'unexpected')
+  NEW-WRONG iras-aitds-tax-deduction-claim__p3__card_sheet__desktop (0, ': ______________________________________', 'T0134567I', 'unexpected')
+  new derived-iras-qcr-rotated90__p1__card (0, 'Identification No. (NRIC/FIN)', 'S8412345E', 'correct')
+  new derived-iras-qcr-rotated90__p1__card_sheet (0, 'Identification No. (NRIC/FIN)', 'S8412345E', 'correct')
+  new derived-iras-qcr-rotated90__p3__card (0, 'Identification No. (NRIC/FIN)', 'T0134567I', 'correct')
+  new derived-iras-qcr-rotated90__p3__card_sheet (0, 'Identification No. (NRIC/FIN)', 'T0134567I', 'correct')
+  new greateastern-pa-claim__p1__card (0, '2. Date of Birth:', '14/03/1984', 'correct')
+  new greateastern-pa-claim__p1__card_sheet (0, '2. Date of Birth:', '14/03/1984', 'correct')
+  new greateastern-pa-claim__p2__card (0, '2. Date of Birth:', '02/11/1990', 'correct')
+  new greateastern-pa-claim__p2__card_sheet (0, '2. Date of Birth:', '02/11/1990', 'correct')
+  new greateastern-pa-claim__p3__card (0, '2. Date of Birth:', '27/07/2001', 'correct')
+  new greateastern-pa-claim__p3__card_sheet (0, '2. Date of Birth:', '27/07/2001', 'correct')
+  new iras-application-for-qcr__p1__card (0, 'Identification No. (NRIC/FIN)', 'S8412345E', 'correct')
+  new iras-application-for-qcr__p1__card_sheet (0, 'Identification No. (NRIC/FIN)', 'S8412345E', 'correct')
+  new iras-application-for-qcr__p3__card (0, 'Identification No. (NRIC/FIN)', 'T0134567I', 'correct')
+  new iras-application-for-qcr__p3__card_sheet (0, 'Identification No. (NRIC/FIN)', 'T0134567I', 'correct')
+outcome changes [('iras-aitds-tax-deduction-claim__p1__card__desktop', 'fill-refused', 'editor-reached'), ('iras-aitds-tax-deduction-claim__p1__card_sheet__desktop', 'fill-refused', 'editor-reached'), ('iras-aitds-tax-deduction-claim__p2__card_sheet__desktop', 'fill-refused', 'editor-reached'), ('iras-aitds-tax-deduction-claim__p3__card__desktop', 'fill-refused', 'editor-reached'), ('iras-aitds-tax-deduction-claim__p3__card_sheet__desktop', 'fill-refused', 'editor-reached')]
