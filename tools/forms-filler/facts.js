@@ -571,6 +571,13 @@
     return parts.length >= 2 && parts.every(function (part) { return /^[A-Za-z][A-Za-z'’.\-]+$/.test(part); });
   }
 
+  /* "Post code", "zip" and "zip code", with an optional trailing number.
+     A zip hidden inside another word is not a postal label. */
+  function postalLabel(field) {
+    var head = String((field && field.label) || '').replace(/\([^)]*\)/g, ' ').replace(/[:.*\s]+$/g, '').replace(/\s+/g, ' ').trim();
+    return /^(?:postal(?:\s+code)?|post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(head);
+  }
+
   function factKey(field) {
     var label = blob(field);
     if (/dependant|dependent|spouse|\bchild\b|authorised officer|authorized officer/i.test(label)) return '';
@@ -578,7 +585,7 @@
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
     if (/unit\s*no/i.test(label)) return 'unit';
-    if (/postal/i.test(label)) return 'postal';
+    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label) && (/postal/i.test(label) || postalLabel(field))) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
     if (/(^|\s)contact$/i.test(label) || /contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';

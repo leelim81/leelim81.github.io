@@ -2,7 +2,7 @@ import assert from 'assert';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { extract, identityPhotoSlot, identityCardOffer, addressSlotsBlank } = require('./evidence.js');
+const { extract, identityPhotoSlot, identityCardOffer, addressSlotsBlank, fieldKind } = require('./evidence.js');
 const { identityRead, identityVote } = require('./facts.js');
 const { personOf, sectionKind } = require('./person.js');
 const { decideAll } = require('./select.js');
@@ -140,6 +140,21 @@ assert.equal(identityPhotoSlot({ id: 'gender', label: 'Gender' }), 'sex');
 assert.equal(identityPhotoSlot({ id: 'nation', label: 'Nationality' }), 'nationality');
 assert.equal(identityPhotoSlot({ id: 'home', label: 'Residential address' }), 'address');
 assert.equal(identityPhotoSlot({ id: 'postal', label: 'Postal code' }), 'postal');
+['Post Code', 'Post code', 'Postcode', 'Post Code 1', 'Zip', 'ZIP', 'Zip 2', 'Zip Code', 'Zip Code 3'].forEach(function (label) {
+  assert.equal(identityPhotoSlot({ id: 'pc', label: label }), 'postal', label);
+  assert.equal(fieldKind({ label: label }), 'postal', label);
+});
+['Unzip', 'Zippy', 'Zipper', 'Please unzip the file'].forEach(function (label) {
+  assert.equal(identityPhotoSlot({ id: 'z', label: label }), '', label);
+  assert.notEqual(fieldKind({ label: label }), 'postal', label);
+});
+['Guarantor', 'Spouse', 'Nominee'].forEach(function (section) {
+  assert.equal(identityPhotoSlot({ id: 'g', label: 'Post Code', section: section }), '', section);
+  assert.equal(identityPhotoSlot({ id: 'g', label: 'Zip Code', group: section }), '', section);
+});
+assert.equal(identityPhotoSlot({ id: 'bank', label: 'Post Code', section: 'For Bank Use Only' }), '');
+assert.equal(identityPhotoSlot({ id: 'bank', label: 'Zip', section: 'For official use' }), '');
+assert.equal(fieldKind({ label: 'Post Code', section: 'For Bank Use Only' }), 'other');
 assert.equal(identityPhotoSlot({ id: 'blk', label: 'Blk/House No.' }), 'blk');
 assert.equal(identityPhotoSlot({ id: 'street', label: 'Street' }), 'street');
 assert.equal(identityPhotoSlot({ id: 'unit', label: 'Unit' }), 'unit');

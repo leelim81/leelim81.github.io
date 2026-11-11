@@ -55,6 +55,28 @@ assert.equal(mapped.dob, '14/03/1992');
 assert.equal(mapped.blk, '10');
 assert.equal(mapped.unit, '04-12');
 assert.equal(mapped.postal, '123456');
+const postalLabels = mapFactsToFields(facts, [
+  { id: 'post', label: 'Post Code', type: 'text' },
+  { id: 'post1', label: 'Post Code 1', type: 'text' },
+  { id: 'zip', label: 'Zip', type: 'text' },
+  { id: 'zip2', label: 'Zip 2', type: 'text' },
+  { id: 'zipcode', label: 'Zip Code', type: 'text' },
+  { id: 'zipcode3', label: 'Zip Code 3', type: 'text' },
+  { id: 'unzip', label: 'Unzip', type: 'text' },
+  { id: 'zippy', label: 'Zippy', type: 'text' },
+  { id: 'spouse', label: 'Post Code', type: 'text', group: 'Spouse' },
+  { id: 'bank', label: 'Zip Code', type: 'text', group: 'For Bank Use Only' }
+]);
+assert.equal(postalLabels.post, '123456');
+assert.equal(postalLabels.post1, '123456');
+assert.equal(postalLabels.zip, '123456');
+assert.equal(postalLabels.zip2, '123456');
+assert.equal(postalLabels.zipcode, '123456');
+assert.equal(postalLabels.zipcode3, '123456');
+assert.equal(postalLabels.unzip, undefined);
+assert.equal(postalLabels.zippy, undefined);
+assert.equal(postalLabels.spouse, undefined);
+assert.equal(postalLabels.bank, undefined);
 assert.equal(mapped.female, 'Female');
 assert.equal(mapped.male, undefined);
 assert.equal(mapped.chinese, 'Chinese');

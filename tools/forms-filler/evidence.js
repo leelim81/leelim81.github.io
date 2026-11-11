@@ -22,7 +22,7 @@
     if (/^(date of birth|dob|birth date)$/.test(s)) return 'dob';
     if (/^(nric|fin|nric\/fin|identity number|identification number)$/.test(s)) return 'nric';
     if (/^(address|premises|dwelling|home address|street)$/.test(s)) return 'address';
-    if (/^(postal|postal code)$/.test(s)) return 'postal';
+    if (postalHead(s)) return 'postal';
     if (/^(?:first|given)(?:\s*\/\s*(?:first|given))?\s+name$/.test(s)) return 'given';
     if (/^(?:last(?:\s+name)?|family name|surname)(?:\s*\/\s*(?:surname|family name|last name))?$/.test(s)) return 'surname';
     if (/^last name\/surname$/.test(s)) return 'surname';
@@ -119,10 +119,17 @@
     var text = String(value || '').replace(/\s+/g, '');
     var kind = fieldKind(field);
     var label = String((field && field.label) || '');
-    if (kind === 'postal' || /postal|post\s*code|postcode|\bzip\b/i.test(label)) return /^\d{6}$/.test(text);
+    if (kind === 'postal' || postalHead(label)) return /^\d{6}$/.test(text);
     var numericComb = field && field.comb && /(?:^|\s)(?:no\.?|number|code)$/i.test(label) && !/nric|fin|passport|name|phone|tel/i.test(label);
     if (numericComb) return /^\d+$/.test(text);
     return true;
+  }
+
+  /* The applicant's postal code. "Post code", "zip" and "zip code" count,
+     and a trailing box number does too. "zip" inside another word does not. */
+  function postalHead(text) {
+    var s = headPhrase(text);
+    return /^(?:postal(?:\s+code)?|post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/.test(s);
   }
 
   function headPhrase(text) {
@@ -344,7 +351,8 @@
     if (!s) return false;
     if (/\b(?:particulars|details|information|data)\b/.test(s)) return false;
     if (/\b(?:name|nama)\b/.test(s)) return true;
-    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address|postal|postal code)$/.test(s)) return true;
+    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address)$/.test(s)) return true;
+    if (postalHead(line)) return true;
     return false;
   }
 
@@ -557,7 +565,7 @@
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
-    if (/postal/.test(s)) return 'postal';
+    if (/postal/.test(s) || postalHead(label)) return 'postal';
     if (applicantNameLabel(label)) return 'name';
     return 'other';
   }
@@ -682,7 +690,7 @@
     if (/^country of birth$/.test(s)) return 'birthCountry';
     if (/^race$/.test(s)) return 'race';
     if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
-    if (/^(?:postal|postal code)$/.test(s)) return 'postal';
+    if (postalHead(field.label)) return 'postal';
     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';

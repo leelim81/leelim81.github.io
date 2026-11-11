@@ -1438,7 +1438,7 @@
       texts.forEach(function (text) {
         var clipped = clipLabel(text.str);
         if (!clipped) return;
-        var fieldish = /name|address|city|state|zip|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
+        var fieldish = /name|address|city|state|\bzip\b|post\s*code|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
         if (field.type === 'text' && !fieldish) return;
         var above = text.y - (field.rect.y + (field.rect.height || 10));
         var gap = field.rect.x - (text.x + text.w);
