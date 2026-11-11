@@ -1,0 +1,11 @@
+--- tools/forms-filler/evidence.js	2026-11-11 14:12:42.149289735 +0800
++++ /workspace/ff-model/site-rules/tools/forms-filler/evidence.js	2026-11-11 16:56:49.547048757 +0800
+@@ -682,7 +682,7 @@
+     if (/^country of birth$/.test(s)) return 'birthCountry';
+     if (/^race$/.test(s)) return 'race';
+     if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
+-    if (/^(?:postal|postal code)$/.test(s)) return 'postal';
++    if (/^(?:postal|postal code|post code|zip|zip code)(?:\s+\d+)?$/.test(s)) return 'postal';
+     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
+     if (/^street(?: name)?$/.test(s)) return 'street';
+     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';

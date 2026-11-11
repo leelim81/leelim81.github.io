@@ -1,0 +1,56 @@
+--- tools/forms-filler/evidence.js	2026-11-11 18:11:53.354895379 +0800
++++ ../site-r2b/tools/forms-filler/evidence.js	2026-11-11 18:12:24.907299521 +0800
+@@ -525,6 +525,25 @@
+     return list;
+   }
+ 
++
++  /* Gated label model, round 2 (experiment). Offline cross-fit table: label -> type the model is confident about.
++     Consulted only AFTER every rule has declined (no rule/role/section veto is overridden) and only for plain text
++     inputs whose label is not a caption/option/heading shape. */
++  var MODEL_KIND_OK = { name: 1, given: 1, surname: 1, nric: 1, dob: 1, phone: 1, email: 1, address: 1, postal: 1 };
++  var MODEL_SLOT_OK = { name: 1, chineseName: 1, nric: 1, dob: 1, sex: 1, nationality: 1, birthCountry: 1, race: 1, address: 1, postal: 1, blk: 1, street: 1, unit: 1 };
++  function modelEligible(field) {
++    if (!field || (field.type && field.type !== 'text')) return false;
++    var raw = String(field.label || '').trim();
++    if (!raw || raw.length > 70 || /^[\u2610\[(]/.test(raw) || /last\s*(?:4|four|\d+)\s*(?:char|digit)/i.test(raw) || /^\s*(?:if|please|note|refer|enter|kindly)\b/i.test(raw) || raw.split(/\s+/).length >= 7 || /\btoday/i.test(raw) || /^\s*new\b/i.test(raw)) return false;
++    var core = raw.replace(/\([^)]*\)/g, ' ').replace(/[\W_]+/g, ' ').trim();
++    return /[A-Za-z\u3400-\u9fff]{2}/.test(core);
++  }
++  function modelType(field) {
++    var table = typeof globalThis !== 'undefined' ? globalThis.FF_MODEL_TYPES : null;
++    if (!table || !modelEligible(field)) return '';
++    var key = String(field.label || '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2').replace(/\s+/g, ' ').trim();
++    return Object.prototype.hasOwnProperty.call(table, key) ? table[key] : '';
++  }
+   function fieldKind(field) {
+     var label = (field && field.label) || '';
+     var head = headPhrase(label);
+@@ -559,6 +578,8 @@
+     if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
+     if (/postal/.test(s)) return 'postal';
+     if (applicantNameLabel(label)) return 'name';
++    var mt = modelType(field);
++    if (mt && MODEL_KIND_OK[mt]) return mt;
+     return 'other';
+   }
+ 
+@@ -686,6 +707,8 @@
+     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
+     if (/^street(?: name)?$/.test(s)) return 'street';
+     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
++    var mt = modelType(field);
++    if (mt && MODEL_SLOT_OK[mt]) return mt;
+     return '';
+   }
+ 
+--- tools/forms-filler/index.html	2026-11-11 18:11:20.096034612 +0800
++++ ../site-r2b/tools/forms-filler/index.html	2026-11-11 18:11:43.766178600 +0800
+@@ -137,6 +137,7 @@
+ <script src="fields.js"></script>
+ <script src="sanitize.js"></script>
+ <script src="facts.js"></script>
++<script src="model-types.js"></script>
+ <script src="evidence.js"></script>
+ <script src="select.js"></script>
+ <script src="thresholds.js"></script>
