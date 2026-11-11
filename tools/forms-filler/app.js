@@ -1355,7 +1355,7 @@
           if (kind) asked[kind] = true;
         });
         var addressUnsure = window.FormEvidence.addressSlotsBlank ? FormEvidence.addressSlotsBlank(idn, state.fields) : false;
-        function slotValue(slot) {
+        function slotValue(slot, field) {
           if (addressUnsure && (slot === 'address' || slot === 'blk' || slot === 'street' || slot === 'unit' || slot === 'postal')) return '';
           if (slot === 'name') return idn.name || '';
           if (slot === 'chineseName') {
@@ -1369,7 +1369,7 @@
           if (slot === 'race') return idn.race || '';
           if (slot === 'birthCountry') return idn.birthCountry || '';
           if (slot === 'address' || slot === 'blk') return (window.FormEvidence.identityCardOffer(idn, slot, state.fields) || {}).value || '';
-          if (slot === 'postal') return idn.postal || '';
+          if (slot === 'postal') return (window.FormEvidence.identityCardOffer(idn, 'postal', state.fields, field) || {}).value || '';
           if (slot === 'street') return idn.street || '';
           if (slot === 'unit') return idn.unit ? '#' + idn.unit : '';
           return '';
@@ -1389,7 +1389,7 @@
           var field = null;
           for (var i = 0; i < state.fields.length; i++) if (state.fields[i].id === row.fieldId) field = state.fields[i];
           var slot = window.FormEvidence && FormEvidence.identityPhotoSlot ? FormEvidence.identityPhotoSlot(field, state.fields) : '';
-          var value = slotValue(slot);
+          var value = slotValue(slot, field);
           if (!slot || !value) {
             if (window.FormEvidence.keepAgreedName && FormEvidence.keepAgreedName(row, field, idn.name)) {
               matched = true;

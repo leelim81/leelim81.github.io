@@ -158,6 +158,22 @@ assert.equal(identityPhotoSlot({ id: 'postal', label: 'Postal code' }), 'postal'
   assert.equal(identityPhotoSlot({ id: 'g', label: 'Zip Code', group: section }), '', section);
 });
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'Post Code', section: 'For Bank Use Only' }), '');
+['Solicitor', 'Hospital', 'Bank', 'Insurer', 'Accountant', 'Pharmacy', 'GP surgery', 'GP', 'Surgery', 'School', 'Previous address'].forEach(function (section) {
+  assert.equal(sectionKind(section), 'other', section);
+  const lines = [
+    { id: 'a', label: 'Address', section: section },
+    { id: 'pc', label: 'Post Code', section: section }
+  ];
+  assert.equal(identityPhotoSlot(lines[0], lines), '', section + ' address');
+  assert.equal(identityPhotoSlot(lines[1], lines), '', section + ' post code');
+});
+const applicantAddress = [
+  { id: 'a', label: 'Address', section: "Applicant's particulars" },
+  { id: 'pc', label: 'Post Code', section: "Applicant's particulars" }
+];
+assert.equal(identityPhotoSlot(applicantAddress[0], applicantAddress), 'address', 'applicant address');
+assert.equal(identityPhotoSlot(applicantAddress[1], applicantAddress), 'postal', 'applicant post code');
+assert.equal(identityPhotoSlot({ id: 'bank', label: 'Name as per bank account' }, [{ id: 'bank', label: 'Name as per bank account' }]), 'name');
 assert.equal(identityPhotoSlot({ id: 'bank', label: 'Zip', section: 'For official use' }), '');
 assert.equal(fieldKind({ label: 'Post Code', section: 'For Bank Use Only' }), 'other');
 ['Pharmacy', 'GP surgery', 'School'].forEach(function (section) {
@@ -419,11 +435,18 @@ assert.equal(identityCardOffer(confirmedParts, 'postal', addressPostal).checked,
 assert.equal(identityCardOffer(confirmedParts, 'address', addressPostal).value, '88 EXAMPLE WALK #12-34');
 const i9Address = [
   { id: 'addr', label: 'Address (Street Number and Name)', section: 'Section 1. Employee Information and Attestation' },
-  { id: 'zip', label: 'ZIP Code', section: 'Section 1. Employee Information and Attestation' }
+  { id: 'city', label: 'City or Town', section: 'Section 1. Employee Information and Attestation' },
+  { id: 'state', label: 'State', section: 'Section 1. Employee Information and Attestation' },
+  { id: 'zip', label: 'ZIP Code', maxLen: 5, section: 'Section 1. Employee Information and Attestation' }
 ];
-assert.equal(identityPhotoSlot(i9Address[1], i9Address), 'postal', 'I-9 ZIP Code');
-assert.equal(identityCardOffer(confirmedParts, 'postal', i9Address).value, '018956', 'I-9 ZIP Code is filled');
-assert.equal(identityCardOffer(confirmedParts, 'address', i9Address).value, '88 EXAMPLE WALK #12-34', 'I-9 address leaves the code in the ZIP box');
+assert.equal(identityCardOffer(confirmedParts, 'postal', i9Address).value, '', 'a Singapore code stays out of a 5-digit ZIP');
+assert.ok(identityCardOffer(confirmedParts, 'address', i9Address).value.indexOf('SINGAPORE 018956') >= 0, 'I-9 address keeps SINGAPORE and the postal code');
+const zipPlus4 = [
+  { id: 'addr', label: 'Address (Street Number and Name)', section: 'Section 1. Employee Information and Attestation' },
+  { id: 'zip', label: 'ZIP Code', maxLen: 10, tooltip: 'ZIP+4', section: 'Section 1. Employee Information and Attestation' }
+];
+assert.equal(identityCardOffer(confirmedParts, 'postal', zipPlus4).value, '', 'a Singapore code stays out of ZIP+4');
+assert.ok(identityCardOffer(confirmedParts, 'address', zipPlus4).value.indexOf('SINGAPORE 018956') >= 0, 'ZIP+4 leaves the code on the address row');
 const i9Refused = [
   { id: 'addr', label: 'Address (Street Number and Name)', section: 'Section 1. Employee Information and Attestation' },
   { id: 'zip', label: 'ZIP Code', section: 'Pharmacy' }

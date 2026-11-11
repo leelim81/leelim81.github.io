@@ -571,21 +571,64 @@
     return parts.length >= 2 && parts.every(function (part) { return /^[A-Za-z][A-Za-z'’.\-]+$/.test(part); });
   }
 
-  /* "Post code", "zip" and "zip code", with an optional trailing number.
-     A zip hidden inside another word is not a postal label. */
-  function postalLabel(field) {
-    var head = String((field && field.label) || '').replace(/\([^)]*\)/g, ' ').replace(/[:.*\s]+$/g, '').replace(/\s+/g, ' ').trim();
-    return /^(?:postal(?:\s+code)?|post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(head);
+  function labelHead(text) {
+    return String(text || '').replace(/\([^)]*\)/g, ' ').replace(/[:.*\s]+$/g, '').replace(/\s+/g, ' ').trim();
   }
 
-  function factKey(field) {
+  /* "Post code", "zip" and "zip code", with an optional trailing number.
+     A zip hidden inside another word is not a postal label. */
+  function barePostalLabel(field) {
+    return /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(labelHead(field && field.label));
+  }
+
+  function personApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormPerson) return globalThis.FormPerson;
+    if (typeof require === 'function') {
+      try { return require('./person.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
+  function applicantAddressLabel(field, person) {
+    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section];
+    if (parts.some(function (part) {
+      return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset';
+    })) return false;
+    var s = labelHead(field && field.label).toLowerCase();
+    if (/^(?:(?:residential|home|your|correspondence|permanent)\s+address)$/.test(s)) return true;
+    return /^(?:address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s);
+  }
+
+  /* Same rule as the card: a bare code only inside an applicant block, or
+     beside an address that block already treats as the applicant's. */
+  function barePostalAnchored(field, fields) {
+    var person = personApi();
+    if (!person || !field) return false;
+    var parts = [field.group, field.heading, field.section];
+    if (parts.some(function (part) { return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset'; })) return false;
+    if (parts.some(function (part) { return person.personOf(part) === 'applicant'; })) return true;
+    var key = String(field.section || field.heading || field.group || '');
+    return (fields || []).some(function (other) {
+      if (!other || other === field) return false;
+      var otherKey = String(other.section || other.heading || other.group || '');
+      if (otherKey !== key) return false;
+      if (!key && field.page != null && other.page != null && field.page !== other.page) return false;
+      return applicantAddressLabel(other, person);
+    });
+  }
+
+  function factKey(field, fields) {
     var label = blob(field);
+    var person = personApi();
+    if (person && [field && field.group, field && field.heading, field && field.section].some(function (part) {
+      return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset';
+    })) return '';
     if (/dependant|dependent|spouse|\bchild\b|authorised officer|authorized officer/i.test(label)) return '';
     if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
     if (/unit\s*no/i.test(label)) return 'unit';
-    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label) && (/postal/i.test(label) || postalLabel(field))) return 'postal';
+    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label) && (/postal/i.test(label) || (barePostalLabel(field) && barePostalAnchored(field, fields)))) return 'postal';
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
     if (/(^|\s)contact$/i.test(label) || /contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
@@ -883,7 +926,7 @@
     var out = {};
     (fields || []).forEach(function (field) {
       if (field && field.untrusted) return;
-      var key = factKey(field);
+      var key = factKey(field, fields);
       if (!key || !facts || !facts[key]) return;
       var value = facts[key];
       if (field.type === 'radio' || field.type === 'checkbox') {

@@ -720,8 +720,11 @@
      its Name or NRIC is the only one on the form. A repeated name or NRIC
      abstains when no applicant section can be told apart. */
   function applicantIdentitySlot(field, fields) {
-    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
-    if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
+    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section];
+    /* A one-word id such as "bank" is the field, not a section heading. */
+    var idWords = String(field && field.id || '').replace(/[_./]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+    var idOther = idWords.length > 1 && (sectionKind(field.id) === 'reset' || personOf(field.id) === 'other');
+    if (!field || unsafeDestination(field) || idOther || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s;
     if (splitKind(field.label)) return '';
     if (chineseNameLabel(field.label)) return 'chineseName';
@@ -752,6 +755,40 @@
     return (fields || []).some(function (field) { return identityPhotoSlot(field, fields) === slot; });
   }
 
+  /* A US ZIP box is five digits or ZIP+4. A Singapore postal code is neither. */
+  function usZipValue(text) {
+    var s = String(text || '').trim();
+    return /^\d{5}$/.test(s) || /^\d{5}-\d{4}$/.test(s);
+  }
+
+  function usZipBox(field, fields) {
+    if (!field) return false;
+    var hint = [field.label, field.tooltip, field.name].filter(Boolean).join(' ');
+    if (!/\bzip\b/i.test(hint) || /\bpost(?:al)?\s*code\b/i.test(hint)) return false;
+    var len = Number(field.maxLen || field.maxLength) || 0;
+    if (field.cells && field.cells.length) len = field.cells.length;
+    if (len === 5 || len === 9 || len === 10) return true;
+    if (/\bzip\s*\+\s*4\b|\b5\s*-?\s*digits?\b/i.test(hint)) return true;
+    var city = false;
+    var state = false;
+    (fields || []).forEach(function (other) {
+      if (!other || other === field || !sameBlock(field, other)) return;
+      var s = headPhrase(other.label || '');
+      if (/^(?:city(?:\s+or\s+town)?|town)$/.test(s)) city = true;
+      if (/^(?:state(?:\s+or\s+province)?)$/.test(s)) state = true;
+    });
+    return city && state;
+  }
+
+  /* The code is written in a postal box only when that box can hold it. */
+  function postalWritten(fields, code) {
+    return (fields || []).some(function (field) {
+      if (identityPhotoSlot(field, fields) !== 'postal') return false;
+      if (usZipBox(field, fields) && !usZipValue(code)) return false;
+      return true;
+    });
+  }
+
   function hasSplitAddress(fields) {
     return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
   }
@@ -775,7 +812,7 @@
       if (!text) return;
       /* A code box that is not actually filled must not eat the postal
          code out of the address row. */
-      var placed = slot === 'postal' ? offeredSlot(fields, 'postal') : formHasSlot(fields, slot);
+      var placed = slot === 'postal' ? postalWritten(fields, idn.postal) : formHasSlot(fields, slot);
       if (placed) return;
       bits.push(text);
       if (!partConfirmed(idn, slot)) shaky = true;
@@ -797,7 +834,7 @@
     return !(idn.streetChecked && idn.postalChecked);
   }
 
-  function identityCardOffer(identity, slot, fields) {
+  function identityCardOffer(identity, slot, fields, field) {
     var idn = identity || {};
     if (slot === 'address') {
       if (fields && !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
@@ -814,6 +851,8 @@
     if (slot === 'street' || slot === 'unit' || slot === 'postal') {
       var part = idn[slot] || '';
       if (!part) return { value: '', checked: false, editable: false };
+      if (slot === 'postal' && field && usZipBox(field, fields) && !usZipValue(part)) return { value: '', checked: false, editable: false };
+      if (slot === 'postal' && fields && fields.some(function (item) { return identityPhotoSlot(item, fields) === 'postal'; }) && !postalWritten(fields, part)) return { value: '', checked: false, editable: false };
       var open = blockOpen(idn);
       var checked = !open && !!idn[slot + 'Checked'] && !(slot === 'unit' && idn.unitUnconfirmed);
       return { value: part, checked: checked, editable: !checked && !open };

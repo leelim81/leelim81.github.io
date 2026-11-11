@@ -154,6 +154,7 @@
         label: prettify(field.getName()),
         tooltip: tooltip,
         comb: comb,
+        maxLen: maxLen,
         type: type,
         options: options,
         source: 'acro',

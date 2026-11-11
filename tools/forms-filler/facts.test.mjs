@@ -65,18 +65,29 @@ const postalLabels = mapFactsToFields(facts, [
   { id: 'unzip', label: 'Unzip', type: 'text' },
   { id: 'zippy', label: 'Zippy', type: 'text' },
   { id: 'spouse', label: 'Post Code', type: 'text', group: 'Spouse' },
-  { id: 'bank', label: 'Zip Code', type: 'text', group: 'For Bank Use Only' }
+  { id: 'bank', label: 'Zip Code', type: 'text', group: 'For Bank Use Only' },
+  { id: 'pharmacy', label: 'Post Code', type: 'text', section: 'Pharmacy' },
+  { id: 'surgery', label: 'Post Code', type: 'text', section: 'GP surgery' },
+  { id: 'school', label: 'Zip', type: 'text', section: 'School' },
+  { id: 'solicitor', label: 'Post Code', type: 'text', section: 'Solicitor' },
+  { id: 'home', label: 'Residential Address', type: 'text', section: "Applicant's particulars" },
+  { id: 'anchored', label: 'Post Code', type: 'text', section: "Applicant's particulars" }
 ]);
-assert.equal(postalLabels.post, '123456');
-assert.equal(postalLabels.post1, '123456');
-assert.equal(postalLabels.zip, '123456');
-assert.equal(postalLabels.zip2, '123456');
-assert.equal(postalLabels.zipcode, '123456');
-assert.equal(postalLabels.zipcode3, '123456');
+assert.equal(postalLabels.post, undefined);
+assert.equal(postalLabels.post1, undefined);
+assert.equal(postalLabels.zip, undefined);
+assert.equal(postalLabels.zip2, undefined);
+assert.equal(postalLabels.zipcode, undefined);
+assert.equal(postalLabels.zipcode3, undefined);
 assert.equal(postalLabels.unzip, undefined);
 assert.equal(postalLabels.zippy, undefined);
 assert.equal(postalLabels.spouse, undefined);
 assert.equal(postalLabels.bank, undefined);
+assert.equal(postalLabels.pharmacy, undefined);
+assert.equal(postalLabels.surgery, undefined);
+assert.equal(postalLabels.school, undefined);
+assert.equal(postalLabels.solicitor, undefined);
+assert.equal(postalLabels.anchored, '123456');
 assert.equal(mapped.female, 'Female');
 assert.equal(mapped.male, undefined);
 assert.equal(mapped.chinese, 'Chinese');
