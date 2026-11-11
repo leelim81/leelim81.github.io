@@ -668,11 +668,58 @@
     return personOf(fieldContext(field)) === 'applicant';
   }
 
+  /* Residential, home, your, correspondence and permanent address, and the
+     plain address line the card already offers. A pharmacy or school
+     address is not one of these. */
+  function applicantAddressLine(field) {
+    if (!field || unsafeDestination(field)) return false;
+    var parts = [field.label, field.group, field.heading, field.section, field.id];
+    if (parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return false;
+    var s = headPhrase(field.label || '').replace(/#+$/g, '').trim();
+    if (/^(?:(?:residential|home|your|correspondence|permanent)\s+address)$/.test(s)) return true;
+    return /^(?:address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s);
+  }
+
+  function blockKey(field) {
+    return String((field && (field.section || field.heading || field.group)) || '');
+  }
+
+  function sameBlock(a, b) {
+    if (blockKey(a) !== blockKey(b)) return false;
+    if (!blockKey(a) && a && b && a.page != null && b.page != null && a.page !== b.page) return false;
+    return true;
+  }
+
+  function applicantBlock(field) {
+    return [field && field.group, field && field.heading, field && field.section].some(function (part) {
+      return personOf(part) === 'applicant';
+    });
+  }
+
+  function namedPostalLabel(text) {
+    return /^(?:postal(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(text));
+  }
+
+  /* "Post code", "postcode" and "zip" name a code, not whose code it is. */
+  function barePostalLabel(text) {
+    return /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(text));
+  }
+
+  /* A bare code is the applicant's only inside an applicant block, or beside
+     an applicant address in that same block. Anywhere else it stays blank. */
+  function barePostalOwned(field, fields) {
+    if (!field || !barePostalLabel(field.label)) return false;
+    if (applicantBlock(field)) return true;
+    return (fields || []).some(function (other) {
+      return other !== field && sameBlock(field, other) && applicantAddressLine(other);
+    });
+  }
+
   /* The card name and NRIC are offered only on a line that is clearly the
      applicant's own. A section that names someone else abstains even when
      its Name or NRIC is the only one on the form. A repeated name or NRIC
      abstains when no applicant section can be told apart. */
-  function applicantIdentitySlot(field) {
+  function applicantIdentitySlot(field, fields) {
     var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
     if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s;
@@ -690,7 +737,7 @@
     if (/^country of birth$/.test(s)) return 'birthCountry';
     if (/^race$/.test(s)) return 'race';
     if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
-    if (postalHead(field.label)) return 'postal';
+    if (namedPostalLabel(field.label) || barePostalOwned(field, fields)) return 'postal';
     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
@@ -698,7 +745,11 @@
   }
 
   function formHasSlot(fields, slot) {
-    return (fields || []).some(function (field) { return applicantIdentitySlot(field) === slot; });
+    return (fields || []).some(function (field) { return applicantIdentitySlot(field, fields) === slot; });
+  }
+
+  function offeredSlot(fields, slot) {
+    return (fields || []).some(function (field) { return identityPhotoSlot(field, fields) === slot; });
   }
 
   function hasSplitAddress(fields) {
@@ -721,7 +772,11 @@
     var bits = [];
     var shaky = false;
     function take(slot, text) {
-      if (!text || formHasSlot(fields, slot)) return;
+      if (!text) return;
+      /* A code box that is not actually filled must not eat the postal
+         code out of the address row. */
+      var placed = slot === 'postal' ? offeredSlot(fields, 'postal') : formHasSlot(fields, slot);
+      if (placed) return;
       bits.push(text);
       if (!partConfirmed(idn, slot)) shaky = true;
     }
@@ -816,10 +871,10 @@
   }
 
   function identityPhotoSlot(field, fields) {
-    var slot = applicantIdentitySlot(field);
-    if (!slot) return '';
     var list = fields && fields.length ? fields : [field];
-    var same = list.filter(function (item) { return applicantIdentitySlot(item) === slot; });
+    var slot = applicantIdentitySlot(field, list);
+    if (!slot) return '';
+    var same = list.filter(function (item) { return applicantIdentitySlot(item, list) === slot; });
     if (same.length <= 1) return slot;
     var owned = same.filter(applicantSection);
     if (!owned.length) return '';
