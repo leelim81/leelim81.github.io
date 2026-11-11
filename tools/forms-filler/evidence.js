@@ -275,6 +275,8 @@
       if (!parts[i]) continue;
       if (personOf(parts[i]) === 'other') return 'other-person';
     }
+    if (/\b(requesters?|designees?|preparers?|translators?)\b/i.test(label)) return 'other-person';
+    if (/\bif\s+different\b/i.test(label)) return 'different-address';
     if (/\b(maiden|introducer|referrer|physician|emergency contact)\b/i.test(blob)) return 'other-person';
     if (/\bpercentage\b/i.test(label) && /nominee|witness/i.test(blob)) return 'other-person';
     if (lifePartyName(label)) return 'other-person';
@@ -564,7 +566,11 @@
     if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
-    if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
+    if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) {
+      var face = String(label || '').toLowerCase();
+      if ((/\bcity\b|\bstate\b|\bzip\b/.test(face)) && !/\baddress\b/.test(face)) return 'other';
+      return 'address';
+    }
     if (/postal/.test(s) || postalHead(label)) return 'postal';
     if (applicantNameLabel(label)) return 'name';
     return 'other';
@@ -765,6 +771,7 @@
     if (!field) return false;
     var hint = [field.label, field.tooltip, field.name].filter(Boolean).join(' ');
     if (!/\bzip\b/i.test(hint) || /\bpost(?:al)?\s*code\b/i.test(hint)) return false;
+    if (/^(?:zip(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(field.label || ''))) return true;
     var len = Number(field.maxLen || field.maxLength) || 0;
     if (field.cells && field.cells.length) len = field.cells.length;
     if (len === 5 || len === 9 || len === 10) return true;

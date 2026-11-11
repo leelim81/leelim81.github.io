@@ -128,6 +128,9 @@
         };
       }
       var kind = ev.fieldKind(field);
+      /* "Post code" and "Zip" need the applicant anchor. "Postal code" stays as it was. */
+      var bareCode = /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(String((field && field.label) || '').replace(/\([^)]*\)/g, ' ').replace(/[:.*\s]+$/g, '').trim());
+      if (kind === 'postal' && bareCode && ev.identityPhotoSlot(field, fields) !== 'postal') kind = 'other';
       var matches = packet.facts.filter(function (fact) { return eligible(fact, field, packet); });
       if (ev.usZipBox && ev.usZipBox(field, fields)) {
         matches = matches.filter(function (fact) { return ev.usZipValue(fact.value); });
@@ -167,6 +170,21 @@
         return Object.assign(base, { decision: 'abstain', value: '', reason: 'conflict', hard: 'conflict' });
       }
       var fact = matches[0];
+      /* A US ZIP cannot hold a Singapore code, so the address line keeps it. */
+      if (kind === 'address' && ev.usZipBox && fact.value) {
+        var besideZip = (fields || []).some(function (other) {
+          return other !== field && (other.page || 0) === (field.page || 0) && ev.usZipBox(other, fields);
+        });
+        var sg = '';
+        if (besideZip) {
+          packet.facts.forEach(function (item) {
+            if (item.kind === 'postal' && /^\d{6}$/.test(String(item.value || ''))) sg = String(item.value);
+          });
+        }
+        if (sg && String(fact.value).indexOf(sg) < 0 && !/\bemployers?\b/i.test(field.label || '')) {
+          fact = Object.assign({}, fact, { value: (/SINGAPORE/i.test(fact.value) ? fact.value + ' ' + sg : fact.value + ' SINGAPORE ' + sg) });
+        }
+      }
       if (!trusted) {
         return present(field, Object.assign(base, {
           decision: 'review', value: fact.value, factId: fact.id, quote: fact.quote,

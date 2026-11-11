@@ -77,7 +77,10 @@
        ordinary words. */
     if (/\breferred\s+by\b/i.test(s)) return 'other';
     if (/\bprevious\s+address\b/i.test(s)) return 'other';
-    if (OTHER.test(s)) return 'other';
+    /* Form titles and tax-code labels, not another person. */
+    if (/\bemployer identification\b/i.test(s) || /\bpayee\s+code\b/i.test(s)) {
+      /* keep looking */
+    } else if (OTHER.test(s)) return 'other';
     /* "Bank" and "GP surgery" are another party. "Bank otherwise" is a
        broken sentence, and "Standard Chartered Bank" is the letterhead. */
     if (orgParty(s)) return 'other';
@@ -85,7 +88,8 @@
     if (CONTACT_PARTY.test(s) && !CONTACT_BLOCK.test(s)) return 'other';
     if (APPLICANT.test(s)) return 'applicant';
     if (/^part a\b/i.test(s) || /\bpersonal details\b/i.test(s) || /\bmembership application\b/i.test(s)) return 'applicant';
-    if (/\bowners?\b/i.test(s)) return 'other';
+    /* "Owner 2" is someone else. The beneficial owner on W-8BEN is the filer. */
+    if (/\bowners?\b/i.test(s) && !/\bbeneficial\s+owners?\b/i.test(s)) return 'other';
     return '';
   }
 

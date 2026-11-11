@@ -181,6 +181,11 @@ assert.equal(sectionKind('Bank Details'), 'other');
 assert.equal(sectionKind('Name of Bank'), 'other');
 assert.equal(sectionKind('Details of Bank'), 'other');
 assert.equal(sectionKind('Bank otherwise'), '', 'a sentence fragment is not a bank section');
+assert.equal(sectionKind('Application for Employer Identification Number'), '', 'SS-4 title');
+assert.equal(sectionKind('Exempt payee code (if any)'), '', 'payee code is not a person');
+assert.equal(sectionKind('Identification of Beneficial Owner'), '', 'W-8BEN filer');
+assert.equal(sectionKind("Employer's name and address"), 'other');
+assert.equal(sectionKind('Beneficial owner'), '');
 const presentPost = [
   { id: 'home', label: 'Permanent Address', page: 1 },
   { id: 'pc', label: 'Post Code:', page: 1 }
