@@ -45,13 +45,23 @@
     return width;
   }
 
+  /* Three points stay clear of the right edge while the size can still fall.
+     At 6pt the line cannot shrink further. Two points are then enough: the
+     glyphs start one point in from the left, so the ink still ends inside
+     the box instead of being dropped. */
+  function clearsEdge(text, size, boxWidth, min) {
+    var width = textWidth(text, size);
+    if (width <= boxWidth - 3) return true;
+    return size <= min && width <= boxWidth - 2;
+  }
+
   /* Shrink to the box. Below the minimum, the value does not fit. */
   function fittedSize(text, boxWidth, start) {
     var size = start > 0 ? start : 10;
     var min = 6;
     if (!(boxWidth > 0)) return { size: size, fits: false };
-    while (size > min && textWidth(text, size) > boxWidth - 1) size = Math.round((size - 0.2) * 10) / 10;
-    return { size: size, fits: textWidth(text, size) <= boxWidth - 1 };
+    while (size > min && textWidth(text, size) > boxWidth - 3) size = Math.round((size - 0.2) * 10) / 10;
+    return { size: size, fits: clearsEdge(text, size, boxWidth, min) };
   }
 
   function lineBoxHeight(size) {
@@ -65,7 +75,7 @@
     var line = '';
     for (var i = 0; i < words.length; i++) {
       var next = line ? line + ' ' + words[i] : words[i];
-      if (line && textWidth(next, size) > width - 1) {
+      if (line && textWidth(next, size) > width - 3) {
         lines.push(line);
         line = words[i];
       } else line = next;
@@ -87,7 +97,7 @@
     while (size >= min) {
       var lines = wrappedLines(text, size, boxWidth);
       var allowed = Math.max(1, Math.floor((boxHeight + 0.2) / lineBoxHeight(size)));
-      var wordFits = lines.every(function (line) { return textWidth(line, size) <= boxWidth - 1; });
+      var wordFits = lines.every(function (line) { return clearsEdge(line, size, boxWidth, min); });
       if (wordFits && lines.length && lines.length <= allowed) return { size: size, fits: true, lines: lines.length };
       if (size <= min) break;
       size = Math.round((size - 0.2) * 10) / 10;
@@ -541,6 +551,8 @@
     if (/post mailbox|po mailbox|p\.?o\.? mailbox|\bmailbox\b/.test(s)) return 'mailbox';
     if (/e-?mail|\binbox\b/.test(s)) return 'email';
     if (/phone|tel|mobile|handset|callback/.test(s)) return 'phone';
+    /* The specify line beside a date is not the date cell. */
+    if (/please\s+specify|others\s+identity\s+document/i.test(label)) return 'other';
     if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
@@ -872,26 +884,47 @@
       if (!role || seen[role]) return { bad: true };
       seen[role] = true;
     }
-    if (!seen.day || !seen.month || !seen.year) return { bad: true };
+    /* Day and month jammed together, as in "adminis", is not a date hint. */
+    if (!seen.day || !seen.month || !seen.year) return null;
     return { parts: parts, seps: seps };
   }
 
-  /* yyyy on its own is not yy+yy. A one-part token is not a full date. */
-  function hasLoneYear(text) {
-    if (!/yyyy/i.test(text)) return false;
-    var rest = String(text).replace(/yyyy/ig, ' ');
-    return !/(?:y{2,4}|m{1,4}|d{1,4})/i.test(rest);
+  /* Day, month and year words, in the order they are written.
+     "Day/Month/Year" is dd/mm/yyyy. One missing part is not a format. */
+  function wordDateHint(text) {
+    var found = [];
+    var seen = {};
+    var re = /\b(day|month|year)\b/ig;
+    var match;
+    while ((match = re.exec(text))) {
+      var role = match[1].toLowerCase();
+      if (seen[role]) return null;
+      seen[role] = true;
+      found.push(role);
+    }
+    if (!seen.day || !seen.month || !seen.year) return null;
+    var parts = found.map(function (role) {
+      if (role === 'day') return 'dd';
+      if (role === 'month') return 'mm';
+      return 'yyyy';
+    });
+    var seps = [];
+    for (var i = 0; i < parts.length - 1; i++) seps.push('/');
+    return { parts: parts, seps: seps };
   }
 
-  function asksForYear(field) {
-    var blob = [field && field.label, field && field.tooltip, field && field.name, field && field.id].filter(Boolean).join(' ');
-    if (/\byear\b/i.test(blob)) return true;
+  /* The year alone: "Year of birth" or "Born in yyyy". A day or month
+     word or token means this is not a year-only line. */
+  function asksForYearAlone(field) {
+    var blob = [field && field.label, field && field.tooltip].filter(Boolean).join(' ');
+    if (/\bday\b/i.test(blob) || /\bmonth\b/i.test(blob)) return false;
+    if (/(^|[^A-Za-z])(?:mmmm|mmm|mm|dd|d|m)(?![A-Za-z])/i.test(blob)) return false;
+    if (/\byear\s+of\s+birth\b/i.test(blob)) return true;
     return /\bborn\s+in\b/i.test(blob);
   }
 
   function dateHint(field) {
     var sources = [field && field.label, field && field.tooltip, field && field.name, field && field.id];
-    var loneYear = false;
     for (var s = 0; s < sources.length; s++) {
       var text = String(sources[s] || '');
       if (!text) continue;
@@ -902,9 +935,10 @@
         if (parsed && parsed.bad) return { bad: true };
         if (parsed && parsed.parts) return parsed;
       }
-      if (hasLoneYear(text)) loneYear = true;
     }
-    if (loneYear && asksForYear(field)) return { yearOnly: true };
+    var words = wordDateHint([field && field.label, field && field.tooltip].filter(Boolean).join(' '));
+    if (words) return words;
+    if (asksForYearAlone(field)) return { yearOnly: true };
     return null;
   }
 

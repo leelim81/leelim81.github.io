@@ -283,7 +283,16 @@
             if (below < 8 || below > 42) return false;
             return text.x + 6 > other.x && text.x < other.x + other.w;
           });
-          if (!floor) pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
+          if (!floor) {
+            var under = slots.some(function (other, index) {
+              if (index === si) return false;
+              var line = other.lineY != null ? other.lineY : other.y;
+              var below = text.y - line;
+              if (below < 6 || below > 22) return false;
+              return Math.min(other.x + other.w, text.x + text.w) - Math.max(other.x, text.x) > 12;
+            });
+            if (!under) pairs.push({ si: si, ti: ti, score: 18 + Math.abs(dy) });
+          }
         }
       });
     });
@@ -383,9 +392,11 @@
     for (var i = 0; i < texts.length; i++) {
       var text = texts[i];
       if (text.str === slot.label) continue;
+      if (text.x < slot.x && text.x + text.w < slot.x + 24) continue;
       if (text.y < slot.y + 1 || text.y > slot.y + slot.h + 1) continue;
       var overlap = Math.min(slot.x + slot.w, text.x + text.w) - Math.max(slot.x, text.x);
-      if (overlap > 8) inside++;
+      /* A word that only grazes the right edge is the next column. */
+      if (overlap > 18) inside++;
     }
     return inside === 0;
   }
@@ -562,6 +573,28 @@
     return out;
   }
 
+  /* A row of equal boxes under a date is a comb. Each character belongs in one box. */
+  function dateComb(slot, squares) {
+    if (!/birth|\bdob\b/i.test(slot.label || '')) return null;
+    var y = slot.lineY != null ? slot.lineY : slot.y;
+    var row = (squares || []).filter(function (sq) {
+      if (!(sq.w >= 8 && sq.w <= 16 && sq.h >= 8 && sq.h <= 16)) return false;
+      return y >= sq.y - 8 && y <= sq.y + sq.h + 10;
+    }).sort(function (a, b) { return a.x - b.x; });
+    var run = [];
+    var best = [];
+    row.forEach(function (sq) {
+      var prev = run[run.length - 1];
+      if (prev && sq.x - (prev.x + prev.w) > 28) {
+        if (run.length > best.length) best = run;
+        run = [];
+      }
+      run.push(sq);
+    });
+    if (run.length > best.length) best = run;
+    return best.length >= 6 ? best : null;
+  }
+
   function layout(page) {
     var width = page.width || 595;
     var height = page.height || 842;
@@ -678,6 +711,23 @@
         slot.section = heading;
         if (!slot.group) slot.group = heading;
       }
+      var cells = dateComb(slot, squares);
+      if (cells) {
+        slot.comb = true;
+        slot.cells = cells;
+        var left = cells[0].x;
+        var right = cells[cells.length - 1].x + cells[cells.length - 1].w;
+        var top = cells[0].y + cells[0].h;
+        var bottom = cells[0].y;
+        cells.forEach(function (cell) {
+          if (cell.y < bottom) bottom = cell.y;
+          if (cell.y + cell.h > top) top = cell.y + cell.h;
+        });
+        slot.x = left;
+        slot.y = bottom;
+        slot.w = right - left;
+        slot.h = top - bottom;
+      }
       var own = normLabel(slot.label);
       var nearLabel = texts.some(function (text) {
         var textName = normLabel(text.str);
@@ -712,6 +762,8 @@
         group: slot.group || '',
         section: slot.section || '',
         untrusted: !!slot.untrusted,
+        comb: !!slot.comb,
+        cells: slot.cells || null,
         texts: texts,
         pageTexts: page.texts || [],
         rect: { x: slot.x, y: slot.y, width: slot.w, height: Math.max(12, slot.h) },
@@ -788,6 +840,37 @@
       }
       if (!field.rect || field.source === 'acro') {
         if (!check) unplaced.push({ id: field.id, label: field.label || field.id, reason: field.source === 'acro' ? 'not a drawn line' : 'no box' });
+        return;
+      }
+      if (field.cells && field.cells.length) {
+        var chars = value.replace(/[^0-9A-Za-z]/g, '').split('');
+        var page = field.page || 0;
+        var pw = field.pageWidth || 595;
+        var ph = field.pageHeight || 842;
+        if (!byPage[page]) byPage[page] = [];
+        field.cells.forEach(function (cell, index) {
+          var glyph = chars[index];
+          if (!glyph) return;
+          var size = Math.max(7, Math.min(11, cell.h * 0.72));
+          var glyphW = size * 0.56;
+          var cx = cell.x + Math.max(0, (cell.w - glyphW) / 2);
+          var cy = cell.y + Math.max(0, (cell.h - size) / 2);
+          byPage[page].push({
+            id: uid(),
+            type: 'text',
+            x: cx / pw,
+            y: 1 - (cy + size) / ph,
+            w: Math.max(0.008, glyphW / pw),
+            h: Math.max(0.008, size / ph),
+            text: glyph,
+            fontSize: size,
+            lockBox: true,
+            color: '#1a1612',
+            factKey: field.factKey || '',
+            profileId: field.profileId || '',
+            seedText: glyph
+          });
+        });
         return;
       }
       var rect = field.rect;

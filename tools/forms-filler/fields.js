@@ -122,15 +122,31 @@
       var tooltip = '';
       var comb = false;
       try {
-        var dict = widgets.length && widgets[0].dict ? widgets[0].dict : null;
-        var tu = dict ? dict.get(PDFLib.PDFName.of('TU')) : null;
-        if (tu && typeof tu.decodeText === 'function') tooltip = tu.decodeText();
-        else if (tu && typeof tu.value === 'string') tooltip = tu.value;
-        var ff = dict ? dict.get(PDFLib.PDFName.of('Ff')) : null;
-        var flags = ff && typeof ff.asNumber === 'function' ? ff.asNumber() : 0;
-        var max = dict ? dict.get(PDFLib.PDFName.of('MaxLen')) : null;
-        var maxLen = max && typeof max.asNumber === 'function' ? max.asNumber() : 0;
-        /* Comb is Ff bit 25 (1-based), and only when MaxLen is set. */
+        var widgetDict = widgets.length && widgets[0].dict ? widgets[0].dict : null;
+        var fieldDict = field.acroField && field.acroField.dict ? field.acroField.dict : widgetDict;
+        function dictText(dict, key) {
+          if (!dict || !dict.get) return '';
+          var value = dict.get(PDFLib.PDFName.of(key));
+          if (!value) return '';
+          if (typeof value.decodeText === 'function') return value.decodeText();
+          return typeof value.value === 'string' ? value.value : '';
+        }
+        function dictNumber(dict, key) {
+          var current = dict;
+          var guard = 0;
+          while (current && current.get && guard < 6) {
+            var value = current.get(PDFLib.PDFName.of(key));
+            if (value && typeof value.asNumber === 'function') return value.asNumber();
+            if (typeof value === 'number') return value;
+            current = current.get(PDFLib.PDFName.of('Parent'));
+            guard++;
+          }
+          return 0;
+        }
+        tooltip = dictText(fieldDict, 'TU') || dictText(widgetDict, 'TU');
+        var flags = dictNumber(fieldDict, 'Ff') || dictNumber(widgetDict, 'Ff');
+        var maxLen = dictNumber(fieldDict, 'MaxLen') || dictNumber(widgetDict, 'MaxLen');
+        /* Comb is Ff bit 25 (1-based) on the field or its parent, and only with MaxLen. */
         comb = (flags & (1 << 24)) !== 0 && maxLen > 0;
       } catch (err) {}
       fields.push({
