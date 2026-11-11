@@ -373,7 +373,7 @@
 
   function keepSlot(slot, texts) {
     if (/important notice|please submit|^please\b|particulars of|details of|declaration by|i agree|i hereby|for official use|bank use only|for bank use|certificate of|this section/i.test(slot.label)) return false;
-    if (!/\b(full\s*)?name\b|\bnric\b|\bfin\b|\baddress\b|\bpostal\b|\be-?mail\b|\bphone\b|\btel\b|\bhandset\b|\bcallback\b|\bmobile\b|\binbox\b|\bmailbox\b|\bpremises\b|\bdwelling\b|\bh\s*\/\s*p\b|\bdate\b|\bbirth\b|\bdob\b|\bsignature\b|\bmember\b|\bsex\b|\bmale\b|\bfemale\b|\brace\b|\bcontact\b|\bhospital\b|\badmit|\bdischarge|\bsalary\b|\bdesignation\b|\bdepartment\b|\boffice\b|\bapplicant\b|\bpassport\b|\bcompany\b|\bunion\b|\bcode\b|\bgender\b|\bmarital\b|\bemployer\b|\boccupation\b|\bnationality\b|\bbank\b|\baccount\b|\bsection\b|\bdepot\b|\bpolicy\b|\bofficer\b|\brelationship\b|\bplan\b|\bemail\b|\bstreet\b|\bunit\b|\bblk\b|\bhouse\b|\bjoined\b|\bservice\b|\bidentification\b|\bidentity\b|\b(off|res|pgr|hp)\s*no\b/i.test(slot.label)) return false;
+    if (!/\b(full\s*)?name\b|\bnric\b|\bfin\b|\baddress\b|\bpostal\b|\bpost\s*code\b|\bzip\b|\be-?mail\b|\bphone\b|\btel\b|\bhandset\b|\bcallback\b|\bmobile\b|\binbox\b|\bmailbox\b|\bpremises\b|\bdwelling\b|\bh\s*\/\s*p\b|\bdate\b|\bbirth\b|\bdob\b|\bsignature\b|\bmember\b|\bsex\b|\bmale\b|\bfemale\b|\brace\b|\bcontact\b|\bhospital\b|\badmit|\bdischarge|\bsalary\b|\bdesignation\b|\bdepartment\b|\boffice\b|\bapplicant\b|\bpassport\b|\bcompany\b|\bunion\b|\bcode\b|\bgender\b|\bmarital\b|\bemployer\b|\boccupation\b|\bnationality\b|\bbank\b|\baccount\b|\bsection\b|\bdepot\b|\bpolicy\b|\bofficer\b|\brelationship\b|\bplan\b|\bemail\b|\bstreet\b|\bunit\b|\bblk\b|\bhouse\b|\bjoined\b|\bservice\b|\bidentification\b|\bidentity\b|\b(off|res|pgr|hp)\s*no\b/i.test(slot.label)) return false;
     if (/^(job|contact details|your contact|address in singapore|personal particulars|residential status|marital status|highest education( level)?|ntuc|race|gender)$/i.test(slot.label)) return false;
     if (/fairprice|ntuc|understand|rebates|dividend|entrance fee|this section/i.test(slot.label)) return false;
     if (/^(contacts?)$/i.test(String(slot.label || '').trim())) return false;
@@ -553,7 +553,7 @@
   }
 
   function splitOnCaptions(runs, texts) {
-    var cue = /name|nric|fin|date|birth|address|e-?mail|phone|age|occupation|sex|gender|postal|race|contact/i;
+    var cue = /name|nric|fin|date|birth|address|e-?mail|phone|age|occupation|sex|gender|postal|post\s*code|\bzip\b|race|contact/i;
     var out = [];
     runs.forEach(function (run) {
       var caps = texts.filter(function (text) {

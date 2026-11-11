@@ -154,6 +154,7 @@
         label: prettify(field.getName()),
         tooltip: tooltip,
         comb: comb,
+        maxLen: maxLen,
         type: type,
         options: options,
         source: 'acro',
@@ -1430,27 +1431,36 @@
       if (parts.length < 6 && /^(see|if|for|the|an|and|only)\b/i.test(s)) return '';
       return s;
     }
+    var claims = [];
     fields.forEach(function (field) {
       if (!field.rect || !opaqueLabel(field.label)) return;
       var texts = textsByPage[field.page || 0] || [];
-      var best = '';
-      var bestScore = 1e9;
+      var best = null;
       texts.forEach(function (text) {
         var clipped = clipLabel(text.str);
         if (!clipped) return;
-        var fieldish = /name|address|city|state|zip|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
+        var fieldish = /name|address|city|state|\bzip\b|post\s*code|tin|\bssn\b|ein|account|exempt|business|requester|street|postal|phone|email|social|security|spouse|taxpayer|birth|customer|form number/i.test(clipped);
         if (field.type === 'text' && !fieldish) return;
         var above = text.y - (field.rect.y + (field.rect.height || 10));
         var gap = field.rect.x - (text.x + text.w);
         var score = null;
         if (above >= -4 && above <= 28 && Math.abs(text.x - field.rect.x) < 80) score = above + Math.abs(text.x - field.rect.x) * 0.05;
         else if (gap >= -8 && gap <= 80 && Math.abs(text.y - field.rect.y) <= 10) score = 12 + gap * 0.2;
-        if (score != null && score < bestScore) {
-          bestScore = score;
-          best = clipped;
-        }
+        if (score != null && (!best || score < best.score)) best = { score: score, label: clipped, text: text };
       });
-      if (best) field.label = best;
+      if (best) claims.push({ field: field, score: best.score, label: best.label, text: best.text });
+    });
+    /* One printed caption belongs to the nearest box. The next box must not
+       reuse it, or a country line inherits the address caption below it. */
+    var owner = {};
+    claims.forEach(function (claim) {
+      var text = claim.text;
+      var key = (claim.field.page || 0) + '|' + Math.round(text.x) + '|' + Math.round(text.y) + '|' + text.str;
+      var current = owner[key];
+      if (!current || claim.score < current.score) owner[key] = claim;
+    });
+    Object.keys(owner).forEach(function (key) {
+      owner[key].field.label = owner[key].label;
     });
     fields.forEach(function (field) {
       field.texts = textsByPage[field.page || 0] || [];

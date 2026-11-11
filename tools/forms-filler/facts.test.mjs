@@ -55,6 +55,49 @@ assert.equal(mapped.dob, '14/03/1992');
 assert.equal(mapped.blk, '10');
 assert.equal(mapped.unit, '04-12');
 assert.equal(mapped.postal, '123456');
+const postalLabels = mapFactsToFields(facts, [
+  { id: 'post', label: 'Post Code', type: 'text' },
+  { id: 'post1', label: 'Post Code 1', type: 'text' },
+  { id: 'zip', label: 'Zip', type: 'text' },
+  { id: 'zip2', label: 'Zip 2', type: 'text' },
+  { id: 'zipcode', label: 'Zip Code', type: 'text' },
+  { id: 'zipcode3', label: 'Zip Code 3', type: 'text' },
+  { id: 'unzip', label: 'Unzip', type: 'text' },
+  { id: 'zippy', label: 'Zippy', type: 'text' },
+  { id: 'spouse', label: 'Post Code', type: 'text', group: 'Spouse' },
+  { id: 'bank', label: 'Zip Code', type: 'text', group: 'For Bank Use Only' },
+  { id: 'pharmacy', label: 'Post Code', type: 'text', section: 'Pharmacy' },
+  { id: 'surgery', label: 'Post Code', type: 'text', section: 'GP surgery' },
+  { id: 'school', label: 'Zip', type: 'text', section: 'School' },
+  { id: 'solicitor', label: 'Post Code', type: 'text', section: 'Solicitor' },
+  { id: 'home', label: 'Residential Address', type: 'text', section: "Applicant's particulars" },
+  { id: 'anchored', label: 'Post Code', type: 'text', section: "Applicant's particulars" }
+]);
+assert.equal(postalLabels.post, undefined);
+assert.equal(postalLabels.post1, undefined);
+assert.equal(postalLabels.zip, undefined);
+assert.equal(postalLabels.zip2, undefined);
+assert.equal(postalLabels.zipcode, undefined);
+assert.equal(postalLabels.zipcode3, undefined);
+assert.equal(postalLabels.unzip, undefined);
+assert.equal(postalLabels.zippy, undefined);
+assert.equal(postalLabels.spouse, undefined);
+assert.equal(postalLabels.bank, undefined);
+assert.equal(postalLabels.pharmacy, undefined);
+assert.equal(postalLabels.surgery, undefined);
+assert.equal(postalLabels.school, undefined);
+assert.equal(postalLabels.solicitor, undefined);
+assert.equal(postalLabels.anchored, '123456');
+const i9sheet = mapFactsToFields(facts, [
+  { id: 'addr', label: 'Address (Street Number and Name)', type: 'text', page: 0 },
+  { id: 'city', label: 'City or Town', type: 'text', page: 0 },
+  { id: 'state', label: 'State', type: 'text', page: 0 },
+  { id: 'zip', label: 'ZIP Code', type: 'text', page: 0, maxLen: 6, tooltip: 'Enter ZIP Code' },
+  { id: 'prep', label: 'Preparer or Translator Address (Street Number and Name) 0', type: 'text', page: 0 }
+]);
+assert.equal(i9sheet.zip, undefined, 'Singapore code stays out of a US ZIP');
+assert.equal(i9sheet.addr, '10 EXAMPLE ROAD #04-12 SINGAPORE 123456');
+assert.equal(i9sheet.prep, undefined, 'a preparer address stays empty');
 assert.equal(mapped.female, 'Female');
 assert.equal(mapped.male, undefined);
 assert.equal(mapped.chinese, 'Chinese');

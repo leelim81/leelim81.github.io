@@ -22,7 +22,7 @@
     if (/^(date of birth|dob|birth date)$/.test(s)) return 'dob';
     if (/^(nric|fin|nric\/fin|identity number|identification number)$/.test(s)) return 'nric';
     if (/^(address|premises|dwelling|home address|street)$/.test(s)) return 'address';
-    if (/^(postal|postal code)$/.test(s)) return 'postal';
+    if (postalHead(s)) return 'postal';
     if (/^(?:first|given)(?:\s*\/\s*(?:first|given))?\s+name$/.test(s)) return 'given';
     if (/^(?:last(?:\s+name)?|family name|surname)(?:\s*\/\s*(?:surname|family name|last name))?$/.test(s)) return 'surname';
     if (/^last name\/surname$/.test(s)) return 'surname';
@@ -119,10 +119,17 @@
     var text = String(value || '').replace(/\s+/g, '');
     var kind = fieldKind(field);
     var label = String((field && field.label) || '');
-    if (kind === 'postal' || /postal|post\s*code|postcode|\bzip\b/i.test(label)) return /^\d{6}$/.test(text);
+    if (kind === 'postal' || postalHead(label)) return /^\d{6}$/.test(text);
     var numericComb = field && field.comb && /(?:^|\s)(?:no\.?|number|code)$/i.test(label) && !/nric|fin|passport|name|phone|tel/i.test(label);
     if (numericComb) return /^\d+$/.test(text);
     return true;
+  }
+
+  /* The applicant's postal code. "Post code", "zip" and "zip code" count,
+     and a trailing box number does too. "zip" inside another word does not. */
+  function postalHead(text) {
+    var s = headPhrase(text);
+    return /^(?:postal(?:\s+code)?|post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/.test(s);
   }
 
   function headPhrase(text) {
@@ -268,6 +275,8 @@
       if (!parts[i]) continue;
       if (personOf(parts[i]) === 'other') return 'other-person';
     }
+    if (/\b(requesters?|designees?|preparers?|translators?)\b/i.test(label)) return 'other-person';
+    if (/\bif\s+different\b/i.test(label)) return 'different-address';
     if (/\b(maiden|introducer|referrer|physician|emergency contact)\b/i.test(blob)) return 'other-person';
     if (/\bpercentage\b/i.test(label) && /nominee|witness/i.test(blob)) return 'other-person';
     if (lifePartyName(label)) return 'other-person';
@@ -344,7 +353,8 @@
     if (!s) return false;
     if (/\b(?:particulars|details|information|data)\b/.test(s)) return false;
     if (/\b(?:name|nama)\b/.test(s)) return true;
-    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address|postal|postal code)$/.test(s)) return true;
+    if (/^(?:gender|sex|date of birth|dob|birth date|nationality|citizenship|country of birth|residential address|home address|address)$/.test(s)) return true;
+    if (postalHead(line)) return true;
     return false;
   }
 
@@ -556,8 +566,12 @@
     if (/\bborn\b|birth|\bdob\b/.test(s)) return 'dob';
     /* 3. An ID field has no name token, including inside username. */
     if (!hasNameToken(label) && idOnlyLabel(label)) return 'nric';
-    if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) return 'address';
-    if (/postal/.test(s)) return 'postal';
+    if (/(address|premises|dwelling|street)/.test(s) && !/mail/.test(s)) {
+      var face = String(label || '').toLowerCase();
+      if ((/\bcity\b|\bstate\b|\bzip\b/.test(face)) && !/\baddress\b/.test(face)) return 'other';
+      return 'address';
+    }
+    if (/postal/.test(s) || postalHead(label)) return 'postal';
     if (applicantNameLabel(label)) return 'name';
     return 'other';
   }
@@ -660,13 +674,63 @@
     return personOf(fieldContext(field)) === 'applicant';
   }
 
+  /* Residential, home, your, correspondence and permanent address, and the
+     plain address line the card already offers. A pharmacy or school
+     address is not one of these. */
+  function applicantAddressLine(field) {
+    if (!field || unsafeDestination(field)) return false;
+    var parts = [field.label, field.group, field.heading, field.section, field.id];
+    if (parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return false;
+    var s = headPhrase(field.label || '').replace(/#+$/g, '').trim();
+    if (/^(?:(?:residential|home|your|correspondence|permanent)\s+address)$/.test(s)) return true;
+    return /^(?:address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s);
+  }
+
+  function blockKey(field) {
+    return String((field && (field.section || field.heading || field.group)) || '');
+  }
+
+  function sameBlock(a, b) {
+    if (blockKey(a) !== blockKey(b)) return false;
+    if (!blockKey(a) && a && b && a.page != null && b.page != null && a.page !== b.page) return false;
+    return true;
+  }
+
+  function applicantBlock(field) {
+    return [field && field.group, field && field.heading, field && field.section].some(function (part) {
+      return personOf(part) === 'applicant';
+    });
+  }
+
+  function namedPostalLabel(text) {
+    return /^(?:postal(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(text));
+  }
+
+  /* "Post code", "postcode" and "zip" name a code, not whose code it is. */
+  function barePostalLabel(text) {
+    return /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(text));
+  }
+
+  /* A bare code is the applicant's only inside an applicant block, or beside
+     an applicant address in that same block. Anywhere else it stays blank. */
+  function barePostalOwned(field, fields) {
+    if (!field || !barePostalLabel(field.label)) return false;
+    if (applicantBlock(field)) return true;
+    return (fields || []).some(function (other) {
+      return other !== field && sameBlock(field, other) && applicantAddressLine(other);
+    });
+  }
+
   /* The card name and NRIC are offered only on a line that is clearly the
      applicant's own. A section that names someone else abstains even when
      its Name or NRIC is the only one on the form. A repeated name or NRIC
      abstains when no applicant section can be told apart. */
-  function applicantIdentitySlot(field) {
-    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section, field && field.id];
-    if (!field || unsafeDestination(field) || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
+  function applicantIdentitySlot(field, fields) {
+    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section];
+    /* A one-word id such as "bank" is the field, not a section heading. */
+    var idWords = String(field && field.id || '').replace(/[_./]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+    var idOther = idWords.length > 1 && (sectionKind(field.id) === 'reset' || personOf(field.id) === 'other');
+    if (!field || unsafeDestination(field) || idOther || parts.some(function (part) { return sectionKind(part) === 'reset' || personOf(part) === 'other'; })) return '';
     var s;
     if (splitKind(field.label)) return '';
     if (chineseNameLabel(field.label)) return 'chineseName';
@@ -682,7 +746,7 @@
     if (/^country of birth$/.test(s)) return 'birthCountry';
     if (/^race$/.test(s)) return 'race';
     if (/^(?:residential address|home address|address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s)) return 'address';
-    if (/^(?:postal|postal code)$/.test(s)) return 'postal';
+    if (namedPostalLabel(field.label) || barePostalOwned(field, fields)) return 'postal';
     if (/^(?:blk(?:\s*\/\s*house no\.?)?|block)$/.test(s)) return 'blk';
     if (/^street(?: name)?$/.test(s)) return 'street';
     if (/^unit(?:\s+no\.?)?$/.test(s)) return 'unit';
@@ -690,11 +754,55 @@
   }
 
   function formHasSlot(fields, slot) {
-    return (fields || []).some(function (field) { return applicantIdentitySlot(field) === slot; });
+    return (fields || []).some(function (field) { return applicantIdentitySlot(field, fields) === slot; });
+  }
+
+  function offeredSlot(fields, slot) {
+    return (fields || []).some(function (field) { return identityPhotoSlot(field, fields) === slot; });
+  }
+
+  /* A US ZIP box is five digits or ZIP+4. A Singapore postal code is neither. */
+  function usZipValue(text) {
+    var s = String(text || '').trim();
+    return /^\d{5}$/.test(s) || /^\d{5}-\d{4}$/.test(s);
+  }
+
+  function usZipBox(field, fields) {
+    if (!field) return false;
+    var hint = [field.label, field.tooltip, field.name].filter(Boolean).join(' ');
+    if (!/\bzip\b/i.test(hint) || /\bpost(?:al)?\s*code\b/i.test(hint)) return false;
+    if (/^(?:zip(?:\s+code)?)(?:\s+\d+)?$/.test(headPhrase(field.label || ''))) return true;
+    var len = Number(field.maxLen || field.maxLength) || 0;
+    if (field.cells && field.cells.length) len = field.cells.length;
+    if (len === 5 || len === 9 || len === 10) return true;
+    if (/\bzip\s*\+\s*4\b|\b5\s*-?\s*digits?\b/i.test(hint)) return true;
+    var city = false;
+    var state = false;
+    (fields || []).forEach(function (other) {
+      if (!other || other === field || !sameBlock(field, other)) return;
+      var s = headPhrase(other.label || '');
+      if (/^(?:city(?:\s+or\s+town)?|town)$/.test(s)) city = true;
+      if (/^(?:state(?:\s+or\s+province)?)$/.test(s)) state = true;
+    });
+    return city && state;
+  }
+
+  /* The code is written in a postal box only when that box can hold it. */
+  function postalWritten(fields, code) {
+    return (fields || []).some(function (field) {
+      if (identityPhotoSlot(field, fields) !== 'postal') return false;
+      if (usZipBox(field, fields) && !usZipValue(code)) return false;
+      return true;
+    });
   }
 
   function hasSplitAddress(fields) {
-    return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || formHasSlot(fields, 'postal');
+    /* A US ZIP box that cannot hold the code is not a postal row. Counting
+       it would blank the address and drop SINGAPORE and the code. */
+    var postalRow = (fields || []).some(function (field) {
+      return applicantIdentitySlot(field, fields) === 'postal' && !usZipBox(field, fields);
+    });
+    return formHasSlot(fields, 'blk') || formHasSlot(fields, 'street') || formHasSlot(fields, 'unit') || postalRow;
   }
 
   function blockOpen(idn) {
@@ -713,7 +821,11 @@
     var bits = [];
     var shaky = false;
     function take(slot, text) {
-      if (!text || formHasSlot(fields, slot)) return;
+      if (!text) return;
+      /* A code box that is not actually filled must not eat the postal
+         code out of the address row. */
+      var placed = slot === 'postal' ? postalWritten(fields, idn.postal) : formHasSlot(fields, slot);
+      if (placed) return;
       bits.push(text);
       if (!partConfirmed(idn, slot)) shaky = true;
     }
@@ -734,7 +846,7 @@
     return !(idn.streetChecked && idn.postalChecked);
   }
 
-  function identityCardOffer(identity, slot, fields) {
+  function identityCardOffer(identity, slot, fields, field) {
     var idn = identity || {};
     if (slot === 'address') {
       if (fields && !formHasSlot(fields, 'address')) return { value: '', checked: false, editable: false };
@@ -751,6 +863,8 @@
     if (slot === 'street' || slot === 'unit' || slot === 'postal') {
       var part = idn[slot] || '';
       if (!part) return { value: '', checked: false, editable: false };
+      if (slot === 'postal' && field && usZipBox(field, fields) && !usZipValue(part)) return { value: '', checked: false, editable: false };
+      if (slot === 'postal' && fields && fields.some(function (item) { return identityPhotoSlot(item, fields) === 'postal'; }) && !postalWritten(fields, part)) return { value: '', checked: false, editable: false };
       var open = blockOpen(idn);
       var checked = !open && !!idn[slot + 'Checked'] && !(slot === 'unit' && idn.unitUnconfirmed);
       return { value: part, checked: checked, editable: !checked && !open };
@@ -808,10 +922,10 @@
   }
 
   function identityPhotoSlot(field, fields) {
-    var slot = applicantIdentitySlot(field);
-    if (!slot) return '';
     var list = fields && fields.length ? fields : [field];
-    var same = list.filter(function (item) { return applicantIdentitySlot(item) === slot; });
+    var slot = applicantIdentitySlot(field, list);
+    if (!slot) return '';
+    var same = list.filter(function (item) { return applicantIdentitySlot(item, list) === slot; });
     if (same.length <= 1) return slot;
     var owned = same.filter(applicantSection);
     if (!owned.length) return '';
@@ -1134,6 +1248,8 @@
     fitInBox: fitInBox,
     dateForField: dateForField,
     allowsValue: allowsValue,
-    keepAgreedName: keepAgreedName
+    keepAgreedName: keepAgreedName,
+    usZipBox: usZipBox,
+    usZipValue: usZipValue
   };
 });

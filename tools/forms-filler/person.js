@@ -11,6 +11,24 @@
      "particulars of guarantor". "contact details" is a block of the
      applicant's own numbers, not a person called Contact. */
   var OTHER = /\b(guarantors?|co\s*borrowers?|prox(?:y|ies)|insured\s+persons?|employers?|landlords?|tenants?|trustees?|partners?|nominations?|nominees?|referees?|referrers?|referrals?|beneficiaries|beneficiary|mothers?|fathers?|parents?|spouses?|guardians?|occupants?|occupiers?|emergency|payees?|joints?|second\s+applicants?|holders?\s*2|owners?\s*2|directors?\s*2|2nd\s+applicants?|applicants?\s*2|witness(?:es)?|next\s+of\s+kin|kin|children|child|dependants?|dependents?|officers?|agents?|authoris(?:e|ed)\s+persons?|authoriz(?:e|ed)\s+persons?|introducers?|patients?|nurses?|doctors?|siblings?|signatories|signatory)\b/i;
+  /* Third-party organisations and a previous address. A name line that only
+     mentions a bank account is still the applicant's name. */
+  /* "Standard Chartered Bank" and "OCBC Bank" are the form's own letterhead.
+     "Bank", "Your Bank", "Bank Details", and "Name of Bank" are still someone else. */
+  function orgParty(s) {
+    if (/\b(?:name|nama)\b/i.test(s) && /\bbank account\b/i.test(s)) return false;
+    if (letterheadBank(s)) return false;
+    var party = '(?:solicitors?|hospitals?|banks?|insurers?|accountants?|pharmacies|pharmacy|gp|surgeries|surgery|schools?)';
+    if (new RegExp('^(?:the |your |our |my )?' + party + '$', 'i').test(s)) return true;
+    if (/^gp\s+surgery$/i.test(s)) return true;
+    if (new RegExp('^(?:' + party + ')(?:\\s+(?:details|address|name|branch|information))?$', 'i').test(s)) return true;
+    if (new RegExp('^(?:name|details)\\s+of\\s+(?:the\\s+|your\\s+)?' + party + '$', 'i').test(s)) return true;
+    return false;
+  }
+  function letterheadBank(s) {
+    if (/\b(?:name|nama|address|details|branch|use)\b/i.test(s)) return false;
+    return /^(?!your\b|the\b|our\b|my\b|this\b|for\b)[a-z0-9][a-z0-9'&.-]*(?:\s+[a-z0-9][a-z0-9'&.-]*)*\s+bank$/i.test(s);
+  }
   var CONTACT_PARTY = /\bcontacts?\b/i;
   var CONTACT_BLOCK = /\bcontacts?\s+(?:details|number|no|info|information)\b/i;
   var APPLICANT = /\b(applicants?|members?|claimants?|workers?)\b/i;
@@ -58,12 +76,20 @@
     /* Only the referrer heading. "as referred" and "referred herein" stay
        ordinary words. */
     if (/\breferred\s+by\b/i.test(s)) return 'other';
-    if (OTHER.test(s)) return 'other';
+    if (/\bprevious\s+address\b/i.test(s)) return 'other';
+    /* Form titles and tax-code labels, not another person. */
+    if (/\bemployer identification\b/i.test(s) || /\bpayee\s+code\b/i.test(s)) {
+      /* keep looking */
+    } else if (OTHER.test(s)) return 'other';
+    /* "Bank" and "GP surgery" are another party. "Bank otherwise" is a
+       broken sentence, and "Standard Chartered Bank" is the letterhead. */
+    if (orgParty(s)) return 'other';
     if (/^(?:the )?insured$/i.test(s)) return 'other';
     if (CONTACT_PARTY.test(s) && !CONTACT_BLOCK.test(s)) return 'other';
     if (APPLICANT.test(s)) return 'applicant';
     if (/^part a\b/i.test(s) || /\bpersonal details\b/i.test(s) || /\bmembership application\b/i.test(s)) return 'applicant';
-    if (/\bowners?\b/i.test(s)) return 'other';
+    /* "Owner 2" is someone else. The beneficial owner on W-8BEN is the filer. */
+    if (/\bowners?\b/i.test(s) && !/\bbeneficial\s+owners?\b/i.test(s)) return 'other';
     return '';
   }
 

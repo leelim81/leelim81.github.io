@@ -497,6 +497,8 @@
     if (address.street) facts.street = address.street;
     if (address.unit) facts.unit = address.unit;
     if (address.postal) facts.postal = address.postal;
+    var statedPostal = String(body || '').match(/\b(?:postal(?:\s+code)?|post\s*code|postcode)\s*[:\-]\s*(\d{6})\b/i);
+    if (statedPostal) facts.postal = statedPostal[1];
     var addressLine = [address.blk, address.street, address.unit ? '#' + address.unit : '', address.postal].filter(Boolean).join(' ');
     if (address.blk || address.street) facts.address = addressLine;
     else if (address.labeled) facts.address = address.labeled;
@@ -571,14 +573,100 @@
     return parts.length >= 2 && parts.every(function (part) { return /^[A-Za-z][A-Za-z'’.\-]+$/.test(part); });
   }
 
-  function factKey(field) {
+  function labelHead(text) {
+    return String(text || '').replace(/\([^)]*\)/g, ' ').replace(/[:.*\s]+$/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  /* "Post code", "zip" and "zip code", with an optional trailing number.
+     A zip hidden inside another word is not a postal label. */
+  function barePostalLabel(field) {
+    return /^(?:post\s*code|zip(?:\s+code)?)(?:\s+\d+)?$/i.test(labelHead(field && field.label));
+  }
+
+  function evidenceApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormEvidence && globalThis.FormEvidence.usZipBox) return globalThis.FormEvidence;
+    if (typeof require === 'function') {
+      try { return require('./evidence.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
+  function personApi() {
+    if (typeof globalThis !== 'undefined' && globalThis.FormPerson) return globalThis.FormPerson;
+    if (typeof require === 'function') {
+      try { return require('./person.js'); } catch (err) { return null; }
+    }
+    return null;
+  }
+
+  function applicantAddressLabel(field, person) {
+    var parts = [field && field.label, field && field.group, field && field.heading, field && field.section];
+    if (parts.some(function (part) {
+      return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset';
+    })) return false;
+    var s = labelHead(field && field.label).toLowerCase();
+    if (/^(?:(?:residential|home|your|correspondence|permanent)\s+address)$/.test(s)) return true;
+    return /^(?:address(?:\s+street\s+number(?:\s+and\s+name)?)?)$/.test(s);
+  }
+
+  /* Same rule as the card: a bare code only inside an applicant block, or
+     beside an address that block already treats as the applicant's. */
+  function barePostalAnchored(field, fields) {
+    var person = personApi();
+    if (!person || !field) return false;
+    var parts = [field.group, field.heading, field.section];
+    if (parts.some(function (part) { return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset'; })) return false;
+    if (parts.some(function (part) { return person.personOf(part) === 'applicant'; })) return true;
+    var key = String(field.section || field.heading || field.group || '');
+    return (fields || []).some(function (other) {
+      if (!other || other === field) return false;
+      var otherKey = String(other.section || other.heading || other.group || '');
+      if (otherKey !== key) return false;
+      if (!key && field.page != null && other.page != null && field.page !== other.page) return false;
+      return applicantAddressLabel(other, person);
+    });
+  }
+
+  function factKey(field, fields) {
     var label = blob(field);
+    var person = personApi();
+    if (person && [field && field.group, field && field.heading, field && field.section].some(function (part) {
+      return person.personOf(part) === 'other' || person.sectionKind(part) === 'reset';
+    })) return '';
     if (/dependant|dependent|spouse|\bchild\b|authorised officer|authorized officer/i.test(label)) return '';
+    /* The label itself names someone else, or a second address the person does not have.
+       An employer word is not refused here: Form SS-4's title contains it, and the
+       I-9 employer signature mapping is left as it already is. */
+    if (/\b(requesters?|designees?|nominees?|witness(?:es)?|guardians?|siblings?|preparers?|translators?)\b/i.test(label)) return '';
+    if (/\bif\s+different\b/i.test(label)) return '';
+    if (/\bprevious\b/i.test(label) && /\bname\b/i.test(label)) return '';
     if (/\baddress\b/i.test(label) && !/e-?mail|ip\b/i.test(label)) return 'address';
     if (/street/i.test(label)) return 'street';
     if (/blk|house\s*no/i.test(label)) return 'blk';
     if (/unit\s*no/i.test(label)) return 'unit';
-    if (/postal/i.test(label)) return 'postal';
+    if (!/for bank use|bank use only|for official use|official use only|office use only/i.test(label)) {
+      var evidence = evidenceApi();
+      if (evidence && evidence.usZipBox && evidence.usZipBox(field, fields)) return '';
+      var head = labelHead(field.label);
+      /* "Postal Code 2" is a second box. Leave it blank when there is no second address. */
+      if (/^(?:postal(?:\s+code)?|post\s*code)\s+\d+$/i.test(head)) return '';
+      if (/^(?:postal(?:\s+code)?|post\s*code)$/i.test(head)) {
+        var peers = (fields || []).filter(function (other) {
+          if (!other || (other.page || 0) !== (field.page || 0)) return false;
+          if (!/^(?:postal(?:\s+code)?|post\s*code)$/i.test(labelHead(other.label))) return false;
+          var where = other.section || other.group || '';
+          if (person && (person.personOf(where) === 'other' || person.sectionKind(where) === 'reset')) return false;
+          return true;
+        });
+        var owned = person ? peers.filter(function (other) {
+          return person.personOf(other.section || other.group || '') === 'applicant';
+        }) : [];
+        if (owned.length === 1) return owned[0] === field ? 'postal' : '';
+        if (!owned.length && peers.length === 1) return 'postal';
+        return '';
+      }
+      if (barePostalLabel(field) && barePostalAnchored(field, fields)) return 'postal';
+    }
     if (/company|employer/i.test(label)) return 'company';
     if (/e-?mail/i.test(label)) return 'email';
     if (/(^|\s)contact$/i.test(label) || /contact\s*(no\.?|number)|phone|\(hp\)|\bh\s*\/\s*p\b|\bhp\b|mobile|\btel\b/i.test(label)) return 'phone';
@@ -876,7 +964,7 @@
     var out = {};
     (fields || []).forEach(function (field) {
       if (field && field.untrusted) return;
-      var key = factKey(field);
+      var key = factKey(field, fields);
       if (!key || !facts || !facts[key]) return;
       var value = facts[key];
       if (field.type === 'radio' || field.type === 'checkbox') {
@@ -886,6 +974,18 @@
       if (field.options && field.options.length && (key === 'citizenship' || key === 'residential')) {
         var option = field.options.filter(function (item) { return citizenshipKind(item) && citizenshipKind(item) === citizenshipKind(value); })[0];
         if (option) { out[field.id] = option; return; }
+      }
+      if (key === 'address' && facts.postal && /^\d{6}$/.test(String(facts.postal)) && !/SINGAPORE/i.test(String(value)) && !/\bemployers?\b/i.test(field.label || '')) {
+        var evidence = evidenceApi();
+        var besideZip = evidence && evidence.usZipBox && (fields || []).some(function (other) {
+          return other !== field && (other.page || 0) === (field.page || 0) && evidence.usZipBox(other, fields);
+        });
+        if (besideZip) {
+          var code = String(facts.postal);
+          value = String(value).indexOf(code) >= 0
+            ? String(value).replace(new RegExp('\\s*' + code + '\\s*$'), '') + ' SINGAPORE ' + code
+            : value + ' SINGAPORE ' + code;
+        }
       }
       if (accept(field, value)) out[field.id] = value;
     });
