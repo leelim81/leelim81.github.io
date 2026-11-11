@@ -461,7 +461,7 @@ body.focus #view { max-width: none; height: 100dvh; padding: 0; }
 
 /* ---- dialog and toast ----------------------------------------------------------------------- */
 .dlg { width: min(520px, calc(100vw - 32px)); padding: 26px 28px 24px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--paper); color: var(--ink); }
-.dlg-wide { width: min(640px, calc(100vw - 32px)); }
+.dlg-wide { width: min(740px, calc(100vw - 32px)); }
 .dlg::backdrop { background: rgb(0 0 0 / 0.5); }
 .dlg-title { font: 400 31px/1.12 var(--serif); margin-bottom: 14px; }
 .dlg-body { display: grid; gap: 14px; }
