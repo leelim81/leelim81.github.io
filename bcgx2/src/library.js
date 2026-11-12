@@ -13,7 +13,7 @@ function row({ href, state, title, meta, detail, locked }) {
 export function libraryView(root) {
   const st = S();
   const prog = moduleProgress();
-  const page = h("div", { class: "library" }, h("h1", { class: "display" }, "Library"), h("p", { class: "hero-sub" }, "Every task and question set, grouped the way the test is. Use it to repeat anything outside the plan."), ninetyBar({ progress: prog }));
+  const page = h("div", { class: "library" }, h("h1", { class: "display" }, "Library"), h("p", { class: "hero-sub" }, "Every task and question set, grouped the way the test is. Use it to repeat anything outside the plan. The theory behind the quiz questions is in the ", h("a", { href: "#/learn" }, "refresher"), "."), ninetyBar({ progress: prog }));
 
   for (const m of B().modules) {
     const list = h("ul", { class: "items" });

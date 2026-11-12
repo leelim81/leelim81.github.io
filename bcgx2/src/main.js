@@ -2,6 +2,7 @@
 import { loadBank } from "./content.js";
 import { clear, h } from "./dom.js";
 import { homeView } from "./home.js";
+import { learnView, lessonView } from "./learn.js";
 import { libraryView } from "./library.js";
 import { mockView } from "./mock.js";
 import { reviewView, setView } from "./quiz.js";
@@ -28,6 +29,8 @@ function route() {
   if ((m = hash.match(/^#\/task\/([\w@-]+)$/))) cleanup = taskView(view, m[1]);
   else if ((m = hash.match(/^#\/set\/(\w+)$/))) cleanup = setView(view, m[1]);
   else if ((m = hash.match(/^#\/mock\/(\w+)$/))) cleanup = mockView(view, m[1]);
+  else if ((m = hash.match(/^#\/learn\/([\w-]+)$/))) cleanup = lessonView(view, m[1]);
+  else if (hash === "#/learn") cleanup = learnView(view);
   else if (hash === "#/review") cleanup = reviewView(view);
   else if (hash === "#/library") cleanup = libraryView(view);
   else if (hash === "#/settings") cleanup = settingsView(view);
@@ -73,7 +76,7 @@ async function boot() {
     return;
   }
   if (!storageWorks()) {
-    document.body.prepend(h("p", { class: "banner", role: "alert" }, "This browser is not saving progress, which happens in private windows or when site data is blocked. You can practise, but nothing is kept after you close the tab."));
+    document.body.prepend(h("p", { class: "banner", role: "alert" }, "This browser is not saving progress, which happens in private windows or when site data is blocked. You can practice, but nothing is kept after you close the tab."));
   }
   let misses = -1;
   subscribe((st) => {

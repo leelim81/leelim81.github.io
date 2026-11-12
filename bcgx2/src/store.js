@@ -27,6 +27,7 @@ function defaults() {
     days: {}, // yyyy-mm-dd -> { s: seconds, t: tasks solved, a: answers, c: correct answers }
     misses: {}, // question id -> time it was missed
     review: null, // a review run in progress
+    course: {}, // refresher lesson id -> see lessonRec()
   };
 }
 
@@ -119,6 +120,11 @@ export function daysUntil(iso) {
 // seconds, submits, hints, peeked, and solved describe the current attempt. passed and best are for good.
 export function task(key) {
   return (state.tasks[key] ||= { started: 0, seconds: 0, submits: 0, hints: 0, peeked: false, solved: false, passed: 0, best: 0, checks: null });
+}
+
+// answers: check id -> { value, correct }. done is the time every check had an answer. tries reshuffles a retried check.
+export function lessonRec(id) {
+  return (state.course[id] ||= { opened: 0, done: 0, answers: {}, tries: 0, ran: 0 });
 }
 
 export function getCode(key) {

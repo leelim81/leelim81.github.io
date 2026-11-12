@@ -4,7 +4,7 @@ import { clock, plural } from "./dom.js";
 import { S, save } from "./store.js";
 
 let bank = null;
-export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {} };
+export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {}, lesson: {} };
 const payloads = new Map();
 
 export async function loadBank() {
@@ -17,6 +17,11 @@ export async function loadBank() {
   for (const m of bank.mocks) X.mock[m.id] = m;
   for (const m of bank.modules) X.mod[m.id] = m;
   for (const m of bank.mocks) for (const id of m.questions) (X.ex[id] || X.q[id]).mock = m.id;
+  bank.course.lessons.forEach((les, i) => {
+    les.n = i + 1;
+    les.checks = les.blocks.filter((b) => b.kind === "check").map((b) => b.q);
+    X.lesson[les.id] = les;
+  });
   return bank;
 }
 
@@ -61,6 +66,27 @@ export function moduleProgress() {
     out[m.id] = { done, target: m.target, frac: Math.min(1, done / m.target) };
   }
   return out;
+}
+
+// ---- the refresher ------------------------------------------------------------------------
+// A lesson is done once every check in it has had an answer, right or wrong. Trying a check again doesn't undo that.
+export function lessonState(les) {
+  const rec = S().course[les.id];
+  const answered = les.checks.filter((q) => rec?.answers?.[q.id]).length;
+  const right = les.checks.filter((q) => rec?.answers?.[q.id]?.correct).length;
+  return { answered, right, total: les.checks.length, done: !!rec?.done, started: !!rec?.opened };
+}
+
+// The lessons behind a list of questions, in course order.
+export function lessonsFor(ids) {
+  const seen = new Set(ids.map((id) => X.q[id]?.see));
+  return bank.course.lessons.filter((les) => seen.has(les.id));
+}
+
+export function courseProgress() {
+  const lessons = bank.course.lessons;
+  const done = lessons.filter((les) => lessonState(les).done).length;
+  return { done, total: lessons.length, next: lessons.find((les) => !lessonState(les).done) || null };
 }
 
 // ---- the plan -----------------------------------------------------------------------------

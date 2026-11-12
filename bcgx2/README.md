@@ -9,7 +9,8 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 - **19 coding tasks** with realistic data files: joins and aggregations, leak-free preprocessing, and models that have to clear a metric bar. Each task has visible checks, hidden checks, three hints, and a reference solution.
 - **50 quiz questions**: numeric answers to three decimals, single choice, and select all that apply. Every question has a worked explanation and a note on each option.
 - **2 mock tests**: 11 questions on a 90-minute clock, with nothing marked until the end.
-- **An eight-session plan** that orders all of the above, and a library for free practice.
+- **A 12-lesson refresher** on the theory behind the quiz questions: probability, statistics, and machine learning fundamentals. Each lesson has worked examples, a few checks with the reasoning, and a Python snippet to run and change. Quiz feedback links back to the lesson that covers the question.
+- **An eight-session plan** that orders the tasks, sets, and mocks, and a library for free practice.
 
 ## How it works
 
@@ -27,14 +28,16 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 | `py-worker.js` | The Python runtime worker |
 | `py/ninety_check.py` | The check library that grades task output |
 | `sw.js` | The service worker |
-| `content/bank.json` | Questions, plan, and task descriptions |
+| `content/bank.json` | Questions, lessons, plan, and task descriptions |
 | `content/ex/*.json` | Input files and hidden check data for each task |
 | `dev/` | Content sources and build scripts |
 | `fonts/` | IBM Plex and Latin Modern, with their licenses |
 
 ## Change the content
 
-The tasks and questions are written in Python under `dev/`. The build runs every reference solution, compares it with an independent second implementation, runs a set of known-wrong solutions to make sure the checks catch them, and then writes `content/`.
+The tasks, questions, and lessons are written in Python under `dev/`. The build runs every reference solution, compares it with an independent second implementation, runs a set of known-wrong solutions to make sure the checks catch them, and then writes `content/`.
+
+The refresher lessons are in `dev/course.py`. The build recomputes the results in the worked examples and the answer to every check, runs every snippet, and confirms that each quiz question points at a lesson.
 
 ```
 pip install pandas numpy scikit-learn latex2mathml

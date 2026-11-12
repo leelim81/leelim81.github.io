@@ -1,6 +1,7 @@
 // Question sets and the review list: one question at a time, with the answer and the reasoning right away.
-import { X, missCount, nextLink, reviewDone, sessionClosedBy } from "./content.js";
+import { X, lessonsFor, missCount, nextLink, reviewDone, sessionClosedBy } from "./content.js";
 import { add, clear, clock, h, icon, plural } from "./dom.js";
+import { lessonPills } from "./learn.js";
 import { answerText, calculator, questionCard } from "./question.js";
 import { notice } from "./shell.js";
 import { S, logDay, recordAnswer, save } from "./store.js";
@@ -74,6 +75,7 @@ function runQuiz(root, { title, cur, finish }) {
 }
 
 function results(root, { title, headline, lines, cur, actions }) {
+  const reread = lessonsFor(cur.ids.filter((id) => !cur.answers[id]?.correct));
   const list = h("ol", { class: "res-list" });
   for (const id of cur.ids) {
     const q = X.q[id];
@@ -98,6 +100,7 @@ function results(root, { title, headline, lines, cur, actions }) {
       h("header", { class: "quiz-head" }, h("a", { class: "back", href: "#/" }, icon("back"), "Plan"), h("h1", { class: "quiz-title" }, title)),
       h("h2", { class: "display" }, headline),
       lines.map((t) => h("p", { class: "res-line" }, t)),
+      reread.length ? h("p", { class: "res-line" }, `Refresher ${reread.length === 1 ? "lesson" : "lessons"} `, lessonPills(reread), ` ${reread.length === 1 ? "covers" : "cover"} what you missed.`) : null,
       h("div", { class: "res-actions" }, actions),
       h("h3", { class: "h-sec" }, "Question by question"),
       h("p", { class: "muted sec-note" }, "Open a row to read the reasoning again."),
