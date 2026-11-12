@@ -493,6 +493,52 @@ a.les-row:hover { background: var(--paper); color: var(--ink); }
 .keys li { padding: 9px 0 9px 26px; border-bottom: 1px solid var(--rule); font-size: 16.5px; background: linear-gradient(var(--marker), var(--marker)) 0 1.05em / 14px 7px no-repeat; }
 .lesson-foot { margin-top: 40px; padding-top: 22px; border-top: 1.5px solid var(--ink); }
 
+/* ---- code recall -------------------------------------------------------------------------- */
+/* The gap you type into is the highlighter: yellow marks the piece that has to come from you. */
+.recall .hero .back { margin: 0 0 8px -2px; }
+.rc-drop { margin-top: 10px; }
+.rc-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--muted); }
+.rc-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.rc-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-dot { flex: none; width: 14px; height: 14px; border: 1.5px solid var(--rule-strong); border-radius: 50%; }
+.rc-dot.is-known { background: var(--marker); border-color: var(--marker-edge); }
+.rc-dot.is-once { background: linear-gradient(to right, var(--marker) 50%, transparent 50%); border-color: var(--marker-edge); }
+.rc-dot.is-missed { border-color: var(--fail); background: radial-gradient(var(--fail) 0 2.5px, transparent 3px); }
+.rc-group { margin-top: 30px; }
+.rc-group-title { font: 600 17px/1.3 var(--sans); }
+.rc-group-note { margin: 2px 0 10px; max-width: 70ch; font-size: 14.5px; }
+.rc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 0; border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--rule); }
+.rc-row .rc-dots { flex: 1 1 280px; }
+.rc-count { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rc-ref > summary { cursor: pointer; padding: 10px 0; }
+.rc-list { list-style: none; padding: 0; border-top: 1px solid var(--rule); }
+.rc-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 14px 0 16px; border-bottom: 1px solid var(--rule); }
+.rc-item-mark { padding-top: 2px; }
+.rc-item-prompt { margin-bottom: 8px; max-width: 72ch; }
+.rc-item-note { margin-top: 8px; max-width: 72ch; font-size: 14.5px; }
+
+.rc-prompt { font: 400 27px/1.2 var(--serif); margin: 4px 0 20px; max-width: 30em; }
+.rc-code { padding: 15px 18px; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 4px; font: 15.5px/2.05 var(--mono); }
+.rc-code.is-quiet { padding: 8px 14px; border: 1px solid var(--rule); font-size: 14px; line-height: 1.9; }
+/* a line that has to wrap continues four characters in from where it started */
+.rc-ln { padding-left: calc((var(--in, 0) + 4) * 1ch); text-indent: calc((var(--in, 0) + 4) * -1ch); white-space: pre-wrap; overflow-wrap: anywhere; }
+.rc-indent { white-space: pre; }
+.rc-keep { white-space: nowrap; }
+.rc-gap, .rc-ans { border-radius: 3px 8px 4px 7px / 7px 3px 8px 4px; background: var(--marker); color: var(--marker-ink); }
+.rc-gap { width: calc(var(--w) * 1ch + 16px); margin: 0 1px; padding: 3px 8px 4px; border: 0; -webkit-appearance: none; appearance: none; caret-color: var(--marker-ink); font: inherit; line-height: 1.25; text-indent: 0; }
+.rc-gap:focus-visible { outline: 2.5px solid var(--info); outline-offset: 2px; }
+/* a marked answer stays on the character grid, so the line reads exactly as you would type it */
+.rc-ans { margin: 0 -2px; padding: 3px 2px 4px; white-space: nowrap; }
+.rc-was { margin-right: 9px; color: var(--fail); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.rc-was.is-empty { display: inline-block; width: 2ch; height: 1.15em; vertical-align: -0.22em; border: 1.5px dashed var(--fail); border-radius: 3px; }
+.rc-keys { margin-left: auto; font-size: 13px; }
+.rc-note { margin-top: 16px; padding-left: 16px; border-left: 3px solid var(--rule-strong); max-width: 66ch; font-size: 16.5px; line-height: 1.5; }
+.rc-after { margin-top: 10px; font-size: 14.5px; }
+.rc-rule { margin-top: 10px; max-width: 64ch; font-size: 14.5px; }
+.quiz-steps li.is-back { background: var(--marker); }
+.rc-round .quiz-head { flex-wrap: wrap; row-gap: 10px; }
+.rc-round .quiz-steps { flex-wrap: wrap; max-width: 100%; }
+
 /* ---- mock test ---------------------------------------------------------------------------- */
 .mock-intro { max-width: 780px; padding: 20px 0 40px; display: grid; gap: 18px; justify-items: start; }
 .mock-intro .nb { width: 100%; margin: 10px 0 4px; }
@@ -578,6 +624,15 @@ a.les-row:hover { background: var(--paper); color: var(--ink); }
 }
 
 @media (max-width: 560px) {
+  /* 16px text in the gaps keeps a phone from zooming in when one takes focus */
+  .rc-code { padding: 11px 12px; font-size: 16px; }
+  .rc-code.is-quiet { padding: 8px 10px; font-size: 13.5px; }
+  .rc-prompt { font-size: 23px; }
+  .rc-keys { display: none; }
+  .rc-round .quiz-steps { width: 100%; margin-left: 0; }
+  /* a phone draws indents at half width, which leaves more of the line for the code */
+  .rc-indent { letter-spacing: -0.5ch; }
+  .rc-ln { padding-left: calc((var(--in, 0) * 0.5 + 3) * 1ch); text-indent: calc((var(--in, 0) * 0.5 + 3) * -1ch); }
   .lcheck { padding: 14px 14px 18px; }
   .lesson-text { font-size: 16.5px; }
   .lesson-text .eq { font-size: 17px; }

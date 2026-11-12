@@ -234,6 +234,23 @@ def main():
                 print(f"--- {les['id']} ({took:.1f}s)\n{out.rstrip()}")
     checks = sum(1 for les in data["course"]["lessons"] for b in les["blocks"] if b["kind"] == "check")
     print(f"refresher: {len(data['course']['lessons'])} lessons, {checks} checks, {labs} snippets run")
+    # every code recall card runs with its answers filled in, every accepted spelling works, and the listed wrong answers fail
+    import recall  # noqa: E402
+    ran = 0
+    for label, source, should_pass in recall.cases():
+        folder = tempfile.mkdtemp(prefix="ninety-card-")
+        try:
+            run_code(source, folder, f"card {label}")
+            passed, why = True, ""
+        except Exception as err:  # noqa: BLE001  (any failure counts)
+            passed, why = False, f"{type(err).__name__}: {err}"
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        assert passed == should_pass, f"card {label}: " + (why or "a wrong answer passed")
+        ran += 1
+        if os.environ.get("SHOW_CARDS"):
+            print(f"  {'pass' if passed else 'fail'}  {label}  {why[:110]}")
+    print(f"code recall: {len(data['recall']['cards'])} cards, {ran} programs run")
     (ROOT / "content" / "bank.json").write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False))
     print(f"bank.json: {len(metas)} coding tasks, {len(data['questions'])} quiz questions, "
           f"{(ROOT / 'content' / 'bank.json').stat().st_size / 1024:.0f} KB")

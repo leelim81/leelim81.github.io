@@ -117,6 +117,13 @@ export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, aut
   };
 }
 
+// Where the syntax colors go in a piece of Python: [from, to, class] for each colored stretch.
+export function tokenRanges(code) {
+  const out = [];
+  highlightTree(pythonLanguage.parser.parse(code), classHighlighter, (from, to, cls) => out.push([from, to, cls]));
+  return out;
+}
+
 // Python source as highlighted HTML, for the reference solutions.
 export function highlight(code) {
   let html = "";

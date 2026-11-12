@@ -372,7 +372,7 @@ export function mockView(root, id) {
         );
       }
       const drills = B().exercises.filter((e) => e.module === m.id && !e.mock).slice(0, 3);
-      return h("li", null, `${m.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file.");
+      return h("li", null, `${m.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file. If the syntax held you up, a round of ", h("a", { href: "#/learn/recall" }, "code recall"), " takes 4 minutes.");
     });
 
     const list = h("ol", { class: "res-list" });

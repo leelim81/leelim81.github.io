@@ -28,6 +28,7 @@ function defaults() {
     misses: {}, // question id -> time it was missed
     review: null, // a review run in progress
     course: {}, // refresher lesson id -> see lessonRec()
+    recall: { cards: {}, round: null, last: null, rounds: 0 }, // code recall, see recallRec()
   };
 }
 
@@ -125,6 +126,17 @@ export function task(key) {
 // answers: check id -> { value, correct }. done is the time every check had an answer. tries reshuffles a retried check.
 export function lessonRec(id) {
   return (state.course[id] ||= { opened: 0, done: 0, answers: {}, tries: 0, ran: 0 });
+}
+
+// cards: card id -> { seen, streak, misses, last }, counted on the first try of each round only.
+// round is the round in progress, last is the one that finished most recently, rounds is how many have finished.
+export function recallRec() {
+  const r = (state.recall ||= {});
+  r.cards ||= {};
+  r.round ||= null;
+  r.last ||= null;
+  r.rounds ||= 0;
+  return r;
 }
 
 export function getCode(key) {

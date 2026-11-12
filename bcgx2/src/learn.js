@@ -4,6 +4,7 @@ import { B, X, courseProgress, lessonState } from "./content.js";
 import { add, clear, h, icon, plural, toast } from "./dom.js";
 import { createEditor } from "./editor.js";
 import { calculator, questionCard } from "./question.js";
+import { recallTeaser } from "./recall.js";
 import { rt, runCode, stopRuntime } from "./runtime.js";
 import { notice } from "./shell.js";
 import { S, daysUntil, dropCode, getCode, lessonRec, logDay, save, setCode } from "./store.js";
@@ -78,6 +79,7 @@ export function learnView(root) {
         h("h1", { class: "display" }, "Refresher"),
         h("p", { class: "hero-sub" }, `${prog.total} short lessons on the theory behind the quiz questions, about ${Math.round(minutes / 10) * 10} minutes in all. Read a lesson before the question set that tests it. When you miss a question later, its feedback links back to the lesson.`),
         pace ? h("p", { class: "hero-sub" }, pace) : null,
+        h("p", { class: "hero-sub" }, "For the three coding tasks, ", h("a", { href: "#/learn/recall" }, "code recall"), " drills the imports and arguments in 4-minute rounds."),
       ),
       card,
     ),
@@ -116,6 +118,26 @@ export function learnView(root) {
       ),
     );
   }
+  // the imports and arguments for the three coding tasks have a drill of their own
+  const tease = recallTeaser();
+  add(
+    page,
+    h(
+      "section",
+      { class: "learn-part" },
+      h("h2", { class: "h-sec" }, B().recall.groups.map((g) => h("span", { class: "nb-n" }, g.id)), "Code recall"),
+      h("p", { class: "muted sec-note" }, `For the three coding tasks: ${tease.total} lines with a gap to fill, on the imports, method names, and arguments that are easy to blank on. No reading first. You type, and the card shows the line.`),
+      h(
+        "div",
+        { class: "lessons" },
+        h(
+          "div",
+          { class: "les" + (tease.current ? " is-current" : "") },
+          h("a", { class: "les-row", href: "#/learn/recall" }, h("span", { class: "les-n" }, icon("code")), h("span", { class: "les-main" }, h("span", { class: "les-title" }, tease.title), h("span", { class: "les-meta" }, tease.meta)), h("span", { class: "les-end" }, tease.end)),
+        ),
+      ),
+    ),
+  );
   clear(root).append(page);
   return () => {};
 }

@@ -5,6 +5,7 @@ from math import comb, exp, sqrt
 import latex2mathml.converter as l2m
 
 import course
+import recall
 
 MODULES = [
     dict(id=1, name="Probability and statistics", short="Probability", topic="probability and statistics", minutes=12, target=10, unit="correct answers",
@@ -634,5 +635,6 @@ def assemble(exercises):
         shown = q["stem"] + q["explain"] + "".join(o["text"] + o["why"] for o in q.get("options", []))
         assert "\\" not in shown, f"{q['id']}: a backslash is left in the text"
         questions.append(q)
-    return dict(version=2, modules=MODULES, questions=questions, sets=SETS, mocks=MOCKS, plan=PLAN, exercises=exercises,
-                course=course.build(render))
+    assert "recall" not in {les["id"] for les in course.LESSONS}, "a lesson id clashes with the code recall page"
+    return dict(version=3, modules=MODULES, questions=questions, sets=SETS, mocks=MOCKS, plan=PLAN, exercises=exercises,
+                course=course.build(render), recall=recall.build())

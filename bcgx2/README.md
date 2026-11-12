@@ -10,6 +10,7 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 - **50 quiz questions**: numeric answers to three decimals, single choice, and select all that apply. Every question has a worked explanation and a note on each option.
 - **2 mock tests**: 11 questions on a 90-minute clock, with nothing marked until the end.
 - **A 12-lesson refresher** on the theory behind the quiz questions: probability, statistics, and machine learning fundamentals. Each lesson has worked examples, a few checks with the reasoning, and a Python snippet to run and change. Quiz feedback links back to the lesson that covers the question.
+- **A code recall drill** for the three coding tasks: 55 one-line cards on the imports, method names, and arguments that are easy to blank on. You type the missing piece. A round is 10 cards, a card you miss comes back before the round ends, and a line counts as known after two first tries in a row are right.
 - **An eight-session plan** that orders the tasks, sets, and mocks, and a library for free practice.
 
 ## How it works
@@ -28,7 +29,7 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 | `py-worker.js` | The Python runtime worker |
 | `py/ninety_check.py` | The check library that grades task output |
 | `sw.js` | The service worker |
-| `content/bank.json` | Questions, lessons, plan, and task descriptions |
+| `content/bank.json` | Questions, lessons, code recall cards, plan, and task descriptions |
 | `content/ex/*.json` | Input files and hidden check data for each task |
 | `dev/` | Content sources and build scripts |
 | `fonts/` | IBM Plex and Latin Modern, with their licenses |
@@ -38,6 +39,8 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 The tasks, questions, and lessons are written in Python under `dev/`. The build runs every reference solution, compares it with an independent second implementation, runs a set of known-wrong solutions to make sure the checks catch them, and then writes `content/`.
 
 The refresher lessons are in `dev/course.py`. The build recomputes the results in the worked examples and the answer to every check, runs every snippet, and confirms that each quiz question points at a lesson.
+
+The code recall cards are in `dev/recall.py`. In a card's code, `{{answer}}` marks a gap, and `{{answer|other}}` lists every spelling that is accepted. The build runs each card with its answers filled in and checks the result, runs every accepted alternative the same way, and confirms that the wrong answers listed for a card fail. The page itself judges an answer by comparing text, so it needs no Python.
 
 ```
 pip install pandas numpy scikit-learn latex2mathml

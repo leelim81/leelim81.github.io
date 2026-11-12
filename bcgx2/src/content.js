@@ -4,7 +4,7 @@ import { clock, plural } from "./dom.js";
 import { S, save } from "./store.js";
 
 let bank = null;
-export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {}, lesson: {} };
+export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {}, lesson: {}, card: {} };
 const payloads = new Map();
 
 export async function loadBank() {
@@ -22,6 +22,16 @@ export async function loadBank() {
     les.checks = les.blocks.filter((b) => b.kind === "check").map((b) => b.q);
     X.lesson[les.id] = les;
   });
+  for (const card of bank.recall.cards) {
+    // a gap knows the text on either side of it, so that typing a neighbor again is not a miss
+    card.gaps = [];
+    card.parts.forEach((p, i) => {
+      if (typeof p === "string") return;
+      const side = (x) => (typeof x === "string" ? x : "");
+      card.gaps.push({ ...p, before: side(card.parts[i - 1]), after: side(card.parts[i + 1]) });
+    });
+    X.card[card.id] = card;
+  }
   return bank;
 }
 
@@ -87,6 +97,22 @@ export function courseProgress() {
   const lessons = bank.course.lessons;
   const done = lessons.filter((les) => lessonState(les).done).length;
   return { done, total: lessons.length, next: lessons.find((les) => !lessonState(les).done) || null };
+}
+
+// ---- code recall --------------------------------------------------------------------------
+// Only the first try at a card in a round counts. "new": never tried. "missed": the last first try was wrong.
+// "once": the last first try was right. "known": the last two were.
+export function cardState(card) {
+  const rec = S().recall?.cards?.[card.id];
+  if (!rec?.seen) return "new";
+  return rec.streak >= 2 ? "known" : rec.streak === 1 ? "once" : "missed";
+}
+
+export function recallProgress(group) {
+  const cards = bank.recall.cards.filter((c) => !group || c.group === group);
+  const n = { total: cards.length, new: 0, missed: 0, once: 0, known: 0 };
+  for (const c of cards) n[cardState(c)]++;
+  return n;
 }
 
 // ---- the plan -----------------------------------------------------------------------------
