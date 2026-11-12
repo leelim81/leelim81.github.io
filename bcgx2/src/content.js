@@ -4,7 +4,7 @@ import { clock, plural } from "./dom.js";
 import { S, save } from "./store.js";
 
 let bank = null;
-export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {} };
+export const X = { ex: {}, q: {}, set: {}, mock: {}, mod: {}, lesson: {}, card: {} };
 const payloads = new Map();
 
 export async function loadBank() {
@@ -17,6 +17,21 @@ export async function loadBank() {
   for (const m of bank.mocks) X.mock[m.id] = m;
   for (const m of bank.modules) X.mod[m.id] = m;
   for (const m of bank.mocks) for (const id of m.questions) (X.ex[id] || X.q[id]).mock = m.id;
+  bank.course.lessons.forEach((les, i) => {
+    les.n = i + 1;
+    les.checks = les.blocks.filter((b) => b.kind === "check").map((b) => b.q);
+    X.lesson[les.id] = les;
+  });
+  for (const card of bank.recall.cards) {
+    // a gap knows the text on either side of it, so that typing a neighbor again is not a miss
+    card.gaps = [];
+    card.parts.forEach((p, i) => {
+      if (typeof p === "string") return;
+      const side = (x) => (typeof x === "string" ? x : "");
+      card.gaps.push({ ...p, before: side(card.parts[i - 1]), after: side(card.parts[i + 1]) });
+    });
+    X.card[card.id] = card;
+  }
   return bank;
 }
 
@@ -61,6 +76,43 @@ export function moduleProgress() {
     out[m.id] = { done, target: m.target, frac: Math.min(1, done / m.target) };
   }
   return out;
+}
+
+// ---- the refresher ------------------------------------------------------------------------
+// A lesson is done once every check in it has had an answer, right or wrong. Trying a check again doesn't undo that.
+export function lessonState(les) {
+  const rec = S().course[les.id];
+  const answered = les.checks.filter((q) => rec?.answers?.[q.id]).length;
+  const right = les.checks.filter((q) => rec?.answers?.[q.id]?.correct).length;
+  return { answered, right, total: les.checks.length, done: !!rec?.done, started: !!rec?.opened };
+}
+
+// The lessons behind a list of questions, in course order.
+export function lessonsFor(ids) {
+  const seen = new Set(ids.map((id) => X.q[id]?.see));
+  return bank.course.lessons.filter((les) => seen.has(les.id));
+}
+
+export function courseProgress() {
+  const lessons = bank.course.lessons;
+  const done = lessons.filter((les) => lessonState(les).done).length;
+  return { done, total: lessons.length, next: lessons.find((les) => !lessonState(les).done) || null };
+}
+
+// ---- code recall --------------------------------------------------------------------------
+// Only the first try at a card in a round counts. "new": never tried. "missed": the last first try was wrong.
+// "once": the last first try was right. "known": the last two were.
+export function cardState(card) {
+  const rec = S().recall?.cards?.[card.id];
+  if (!rec?.seen) return "new";
+  return rec.streak >= 2 ? "known" : rec.streak === 1 ? "once" : "missed";
+}
+
+export function recallProgress(group) {
+  const cards = bank.recall.cards.filter((c) => !group || c.group === group);
+  const n = { total: cards.length, new: 0, missed: 0, once: 0, known: 0 };
+  for (const c of cards) n[cardState(c)]++;
+  return n;
 }
 
 // ---- the plan -----------------------------------------------------------------------------

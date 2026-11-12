@@ -1,7 +1,8 @@
 // The plan page: what is next, how ready each module is, and the eight sessions.
 import { ninetyBar } from "./bar.js";
-import { B, missCount, nextUp, sessionView, settlePlan } from "./content.js";
+import { B, X, courseProgress, lessonState, lessonsFor, missCount, nextUp, recallProgress, sessionView, settlePlan } from "./content.js";
 import { clear, clock, dateLabel, h, icon, plural } from "./dom.js";
+import { lessonPills } from "./learn.js";
 import { S, dayKey, daysUntil, isPracticeDay, save, streak, subscribe } from "./store.js";
 
 function headline(days) {
@@ -69,6 +70,10 @@ function nextCard(up, sessions) {
   const action = v.todo
     ? h("button", { class: "btn btn-go", type: "button", onclick: () => tick(v.todo) }, "Tick it off")
     : h("a", { class: "btn btn-go", href: v.href }, v.verb);
+  // a question set is easier after its lessons: point at the ones that are still unread
+  const unread = up.item.kind === "set" ? lessonsFor(X.set[up.item.id].questions).filter((les) => !lessonState(les).done) : [];
+  // a coding task goes faster when its lines come without a lookup: point at the drill until they are known
+  const lines = up.item.kind === "code" ? recallProgress(X.ex[up.item.id].module) : null;
   return h(
     "section",
     { class: "next" },
@@ -76,6 +81,8 @@ function nextCard(up, sessions) {
     h("h2", { class: "next-title" }, v.title),
     h("p", { class: "next-meta" }, [v.tag, v.meta, v.detail].filter(Boolean).join(". ") || up.sess.goal),
     action,
+    unread.length ? h("p", { class: "next-hint" }, `Rusty on the theory? Read ${unread.length === 1 ? "this refresher lesson" : "these refresher lessons"} first: `, lessonPills(unread)) : null,
+    lines && lines.known < lines.total ? h("p", { class: "next-hint" }, "Blank on the syntax? Warm up with a 4-minute round of ", h("a", { href: "#/learn/recall" }, "code recall"), ".") : null,
   );
 }
 
@@ -96,7 +103,7 @@ function practiceDays(st) {
   for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const k = dayKey(d);
     const cls = "pd" + (isPracticeDay(st.days[k]) ? " is-on" : "") + (k === dayKey(today) ? " is-today" : "") + (k === st.settings.testDate ? " is-test" : "");
-    dots.push(h("li", { class: cls, title: dateLabel(k) + (k === st.settings.testDate ? ", test day" : "") }, h("span", { class: "vh" }, `${dateLabel(k)}: ${isPracticeDay(st.days[k]) ? "practised" : "no practice"}`)));
+    dots.push(h("li", { class: cls, title: dateLabel(k) + (k === st.settings.testDate ? ", test day" : "") }, h("span", { class: "vh" }, `${dateLabel(k)}: ${isPracticeDay(st.days[k]) ? "practiced" : "no practice"}`)));
   }
   return { dots, count: keys.length };
 }
@@ -111,6 +118,8 @@ function build() {
   const pd = practiceDays(st);
   const run = streak();
   const misses = missCount();
+  const course = courseProgress();
+  const lines = recallProgress();
 
   const list = h("ol", { class: "sessions" });
   for (const s of sessions) {
@@ -160,6 +169,19 @@ function build() {
         h("section", null, h("h2", { class: "h-note" }, "Today"), h("p", null, todayText)),
         h("section", null, h("h2", { class: "h-note" }, "Practice days"), h("ol", { class: "pds" }, pd.dots), h("p", null, pd.count ? `${plural(pd.count, "day")} so far.` + (run >= 2 ? ` ${run} in a row.` : "") : "Your first one starts with the next task.")),
         h("section", null, h("h2", { class: "h-note" }, "To review"), misses ? h("p", null, h("a", { href: "#/review" }, plural(misses, "question")), " you missed. Each one you clear is a point back.") : h("p", null, "Nothing waiting. Questions you miss land here.")),
+        h(
+          "section",
+          null,
+          h("h2", { class: "h-note" }, "Refresher"),
+          !course.done
+            ? h("p", null, `${course.total} short lessons on the probability and machine learning theory behind the quiz questions. `, h("a", { href: "#/learn" }, "Open the refresher"), ".")
+            : course.next
+              ? h("p", null, `${course.done} of ${course.total} lessons done. `, h("a", { href: `#/learn/${course.next.id}` }, `Next: ${course.next.title}`), ".")
+              : h("p", null, `All ${course.total} lessons done. `, h("a", { href: "#/learn" }, "Reread one"), "."),
+          lines.total === lines.new
+            ? h("p", null, h("a", { href: "#/learn/recall" }, "Code recall"), ` drills the imports and arguments for the coding tasks, ${lines.total} lines in 4-minute rounds.`)
+            : h("p", null, h("a", { href: "#/learn/recall" }, "Code recall"), `: ${lines.known} of ${lines.total} lines known.`),
+        ),
         h("section", null, h("h2", { class: "h-note" }, "Cheatsheet"), h("p", null, h("a", { href: "cheatsheet.pdf", target: "_blank", rel: "noopener" }, "Open the 8-page PDF"), ". Keep it open in session 1, then close it.")),
         h(
           "section",

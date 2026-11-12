@@ -4,6 +4,9 @@ from math import comb, exp, sqrt
 
 import latex2mathml.converter as l2m
 
+import course
+import recall
+
 MODULES = [
     dict(id=1, name="Probability and statistics", short="Probability", topic="probability and statistics", minutes=12, target=10, unit="correct answers",
          kind="quiz", blurb="2 quiz questions. Numeric answers to 3 decimals."),
@@ -622,12 +625,16 @@ def assemble(exercises):
         e["desc"] + " ".join(e["hints"]) + e["title"] for e in exercises)
     for bad, name in (("–", "en dash"), ("—", "em dash"), ("!", "exclamation mark"), ("$", "dollar sign")):
         assert bad not in text, f"{name} found in content near: {text[max(0, text.index(bad) - 60):text.index(bad) + 20]!r}"
+    assert set(course.SEE) == set(ids), f"lesson links: missing {set(ids) - set(course.SEE)}, unknown {set(course.SEE) - set(ids)}"
     questions = []
     for q in Q:
         q = dict(q)
+        q["see"] = course.SEE[q["id"]]
         q["stem"] = render(q["stem"])
         q["explain"] = render(q["explain"])
         shown = q["stem"] + q["explain"] + "".join(o["text"] + o["why"] for o in q.get("options", []))
         assert "\\" not in shown, f"{q['id']}: a backslash is left in the text"
         questions.append(q)
-    return dict(version=1, modules=MODULES, questions=questions, sets=SETS, mocks=MOCKS, plan=PLAN, exercises=exercises)
+    assert "recall" not in {les["id"] for les in course.LESSONS}, "a lesson id clashes with the code recall page"
+    return dict(version=3, modules=MODULES, questions=questions, sets=SETS, mocks=MOCKS, plan=PLAN, exercises=exercises,
+                course=course.build(render), recall=recall.build())

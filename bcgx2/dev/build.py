@@ -101,7 +101,7 @@ def build_exercise(ex, tmp):
             want = pd.read_csv(io.StringIO(frame.to_csv(index=False)))
             frames_equal(got, want, f"{eid}: oracle vs expected {rel}", ex.get("oracle_decimals"))
 
-    # 3. variants: run each, keep the columns that differ so the checks can recognise the mistake
+    # 3. variants: run each, keep the columns that differ so the checks can recognize the mistake
     variant_meta, variant_runs = [], []
     for v in ex.get("variants", []):
         vwork = base / f"variant-{v['name']}"
@@ -212,8 +212,45 @@ def main():
     if only:
         print(f"built {len(metas)} task(s) (partial build: bank.json not written)")
         return
-    import bank  # noqa: E402  (quiz, sets, plan, mocks)
+    import bank  # noqa: E402  (quiz, sets, plan, mocks, and the refresher course)
     data = bank.assemble(metas)
+    # every snippet in the refresher runs cleanly, prints something, and is quick
+    labs = 0
+    for les in data["course"]["lessons"]:
+        for block in les["blocks"]:
+            if block["kind"] != "lab":
+                continue
+            folder = tempfile.mkdtemp(prefix="ninety-lab-")
+            t0 = time.time()
+            try:
+                out = run_code(block["code"], folder, f"lesson {les['id']}")
+            finally:
+                shutil.rmtree(folder, ignore_errors=True)
+            took = time.time() - t0
+            assert out.strip(), f"{les['id']}: the snippet prints nothing"
+            assert took < 20, f"{les['id']}: the snippet took {took:.0f} s"
+            labs += 1
+            if os.environ.get("SHOW_LABS"):
+                print(f"--- {les['id']} ({took:.1f}s)\n{out.rstrip()}")
+    checks = sum(1 for les in data["course"]["lessons"] for b in les["blocks"] if b["kind"] == "check")
+    print(f"refresher: {len(data['course']['lessons'])} lessons, {checks} checks, {labs} snippets run")
+    # every code recall card runs with its answers filled in, every accepted spelling works, and the listed wrong answers fail
+    import recall  # noqa: E402
+    ran = 0
+    for label, source, should_pass in recall.cases():
+        folder = tempfile.mkdtemp(prefix="ninety-card-")
+        try:
+            run_code(source, folder, f"card {label}")
+            passed, why = True, ""
+        except Exception as err:  # noqa: BLE001  (any failure counts)
+            passed, why = False, f"{type(err).__name__}: {err}"
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        assert passed == should_pass, f"card {label}: " + (why or "a wrong answer passed")
+        ran += 1
+        if os.environ.get("SHOW_CARDS"):
+            print(f"  {'pass' if passed else 'fail'}  {label}  {why[:110]}")
+    print(f"code recall: {len(data['recall']['cards'])} cards, {ran} programs run")
     (ROOT / "content" / "bank.json").write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False))
     print(f"bank.json: {len(metas)} coding tasks, {len(data['questions'])} quiz questions, "
           f"{(ROOT / 'content' / 'bank.json').stat().st_size / 1024:.0f} KB")

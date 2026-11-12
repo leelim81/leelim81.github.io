@@ -51,7 +51,7 @@ const errorLine = StateField.define({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, autocomplete = true }) {
+export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, autocomplete = true, label = "solution.py, code editor" }) {
   const complete = new Compartment();
   const run = (fn) => () => {
     fn?.();
@@ -86,7 +86,7 @@ export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, aut
         errorLine,
         look,
         keymap.of([...closeBracketsKeymap, ...completeKeys, ...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
-        EditorView.contentAttributes.of({ "aria-label": "solution.py, code editor", spellcheck: "false", autocapitalize: "off" }),
+        EditorView.contentAttributes.of({ "aria-label": label, spellcheck: "false", autocapitalize: "off" }),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) onChange?.(u.state.doc.toString());
         }),
@@ -115,6 +115,13 @@ export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, aut
     },
     destroy: () => view.destroy(),
   };
+}
+
+// Where the syntax colors go in a piece of Python: [from, to, class] for each colored stretch.
+export function tokenRanges(code) {
+  const out = [];
+  highlightTree(pythonLanguage.parser.parse(code), classHighlighter, (from, to, cls) => out.push([from, to, cls]));
+  return out;
 }
 
 // Python source as highlighted HTML, for the reference solutions.

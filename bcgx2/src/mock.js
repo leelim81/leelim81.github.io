@@ -1,8 +1,9 @@
 // A mock test: 11 questions, one 90-minute clock, nothing marked until the end.
 import { moduleAt, ninetyBar } from "./bar.js";
-import { B, X, nextLink, payload } from "./content.js";
+import { B, X, lessonsFor, nextLink, payload } from "./content.js";
 import { add, ask, clear, clock, h, icon, plural } from "./dom.js";
 import { highlight } from "./editor.js";
+import { lessonPills } from "./learn.js";
 import { answerText, calculator, judge, questionCard } from "./question.js";
 import { runCode, startRuntime } from "./runtime.js";
 import { notice, runtimeChip, themeButton } from "./shell.js";
@@ -359,10 +360,19 @@ export function mockView(root, id) {
     const advice = weak.map((m) => {
       if (m.kind === "quiz") {
         const sets = B().sets.filter((s) => s.module === m.id);
-        return h("li", null, `${m.name}: read the reasoning for each miss below, then retake `, sets.flatMap((s, i) => [i ? ", " : "", h("a", { href: `#/set/${s.id}` }, s.title)]), ".");
+        const reread = lessonsFor(quiz.filter((it) => it.q.module === m.id && !rep.quiz[it.id].correct).map((it) => it.id));
+        return h(
+          "li",
+          null,
+          `${m.name}: read the reasoning for each miss below`,
+          reread.length ? [`, work through refresher ${reread.length === 1 ? "lesson" : "lessons"} `, lessonPills(reread)] : null,
+          ", then retake ",
+          sets.flatMap((s, i) => [i ? ", " : "", h("a", { href: `#/set/${s.id}` }, s.title)]),
+          ".",
+        );
       }
       const drills = B().exercises.filter((e) => e.module === m.id && !e.mock).slice(0, 3);
-      return h("li", null, `${m.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file.");
+      return h("li", null, `${m.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file. If the syntax held you up, a round of ", h("a", { href: "#/learn/recall" }, "code recall"), " takes 4 minutes.");
     });
 
     const list = h("ol", { class: "res-list" });

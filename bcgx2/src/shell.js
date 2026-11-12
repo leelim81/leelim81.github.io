@@ -84,13 +84,13 @@ export function renderHeader(el) {
   chip?.destroy();
   chip = runtimeChip();
   const here = location.hash || "#/";
-  const link = (href, text, extra) => h("a", { href, class: "nav-link", "aria-current": here === href ? "page" : null }, text, extra);
+  const link = (href, text, extra) => h("a", { href, class: "nav-link", "aria-current": here === href || (href !== "#/" && here.startsWith(href + "/")) ? "page" : null }, text, extra);
   const misses = missCount();
   clear(el);
   add(
     el,
     h("a", { class: "brand", href: "#/", "aria-label": "Ninety, home" }, h("span", { class: "brand-mark" }, "Ninety")),
-    h("nav", { class: "nav", "aria-label": "Main" }, link("#/", "Plan"), link("#/library", "Library"), link("#/review", "Review", misses ? h("span", { class: "nav-count" }, misses) : null), link("#/settings", "Settings")),
+    h("nav", { class: "nav", "aria-label": "Main" }, link("#/", "Plan"), link("#/learn", "Refresher"), link("#/library", "Library"), link("#/review", "Review", misses ? h("span", { class: "nav-count" }, misses) : null), link("#/settings", "Settings")),
     h("div", { class: "top-end" }, chip.el, themeButton()),
   );
 }

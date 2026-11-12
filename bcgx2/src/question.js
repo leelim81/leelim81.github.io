@@ -1,4 +1,5 @@
 // One quiz question: numeric, single choice, or select all that apply. Also the Python calculator.
+import { X } from "./content.js";
 import { add, h, icon, shuffled } from "./dom.js";
 import { consoleLine } from "./runtime.js";
 
@@ -116,7 +117,13 @@ export function questionCard({ q, mode, value, seed = "", onChange, onSubmit }) 
     else if (q.type === "numeric") {
       head = h("p", { class: "verdict is-miss" }, icon("cross"), `The answer is ${q.answer}. You entered ${String(current).trim()}.`, res.close ? " The method looks right, so check the rounding." : "");
     } else head = h("p", { class: "verdict is-miss" }, icon("cross"), q.type === "multi" ? "Not this time. The marks show which options are right." : "Not this time. The right option is marked.");
-    add(feedback, head, h("div", { class: "q-explain prose", html: q.explain }), h("p", { class: "q-ref muted" }, q.ref));
+    const lesson = q.see && X.lesson[q.see];
+    add(
+      feedback,
+      head,
+      h("div", { class: "q-explain prose", html: q.explain }),
+      q.ref || lesson ? h("p", { class: "q-ref muted" }, q.ref, q.ref && lesson ? ". " : "", lesson ? ["Refresher: ", h("a", { href: `#/learn/${lesson.id}` }, lesson.title)] : null) : null,
+    );
     if (submit) submit.hidden = true;
     return res;
   }
