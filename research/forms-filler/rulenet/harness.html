@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Rule line harness</title>
+</head>
+<body>
+  <p>Development check only. Weights stay unloaded until Run. This page is not part of Forms Filler.</p>
+  <button id="run" type="button">Run</button>
+  <button id="cancel" type="button">Cancel</button>
+  <button id="clear" type="button">Clear</button>
+  <pre id="out"></pre>
+  <script type="module">
+    import { prepare, run } from './rulenet_fast.mjs';
+    import { segmentsFromProb } from './postprocess.mjs';
+
+    const state = {
+      gen: 0,
+      pack: null,
+      last: null,
+      fetches: 0
+    };
+    const MAX_EDGE = 1600;
+    const MAX_PIXELS = 2200000;
+
+    function capped(w, h) {
+      return w > 0 && h > 0 && w <= MAX_EDGE && h <= MAX_EDGE && w * h <= MAX_PIXELS;
+    }
+
+    async function loadPack() {
+      if (state.pack) return state.pack;
+      state.fetches += 1;
+      const meta = await fetch('./rulenet.meta.json').then((res) => res.json());
+      const buf = await fetch('./rulenet.f32.bin').then((res) => res.arrayBuffer());
+      const flat = new Float32Array(buf);
+      state.pack = prepare(meta, flat);
+      return state.pack;
+    }
+
+    async function execute(rgba, w, h) {
+      const token = ++state.gen;
+      if (!capped(w, h)) return { ok: false, reason: 'cap', fetches: state.fetches };
+      await Promise.resolve();
+      if (token !== state.gen) return { ok: false, reason: 'cancelled', fetches: state.fetches };
+      const heapBefore = performance.memory ? performance.memory.usedJSHeapSize : null;
+      const pack = await loadPack();
+      if (token !== state.gen) return { ok: false, reason: 'cancelled', fetches: state.fetches };
+      const started = performance.now();
+      const prob = run(pack, rgba, w, h);
+      const inferMs = performance.now() - started;
+      if (token !== state.gen) return { ok: false, reason: 'cancelled', fetches: state.fetches, inferMs };
+      const postStarted = performance.now();
+      const segs = segmentsFromProb(prob, rgba, w, h);
+      const postMs = performance.now() - postStarted;
+      const heapAfter = performance.memory ? performance.memory.usedJSHeapSize : null;
+      const accounted = (prob.byteLength || 0) + (rgba.byteLength || 0);
+      state.last = { n: segs.length, inferMs, postMs, heapBefore, heapAfter, accounted };
+      return { ok: true, fetches: state.fetches, n: segs.length, inferMs, postMs, totalMs: inferMs + postMs, heapBefore, heapAfter, accounted };
+    }
+
+    const api = {
+      capped: capped,
+      fetches: function () { return state.fetches; },
+      run: execute,
+      cancel: function () { state.gen += 1; },
+      clear: function () {
+        state.gen += 1;
+        state.pack = null;
+        state.last = null;
+        return { cleared: true, fetches: state.fetches };
+      },
+      last: function () { return state.last; }
+    };
+    window.RuleHarness = api;
+    document.getElementById('cancel').addEventListener('click', function () { api.cancel(); });
+    document.getElementById('clear').addEventListener('click', function () {
+      api.clear();
+      document.getElementById('out').textContent = 'cleared';
+    });
+    document.getElementById('run').addEventListener('click', function () {
+      document.getElementById('out').textContent = 'Run needs pixels from the development check.';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+ "version": "rules-gold-v1",
+ "frozen_before_any_method_run": true,
+ "annotator": "single visual review by research agent from autocontrast grid crops; provisional, not second-reviewed",
+ "unit": "printed horizontal rule segment on the FRONT side of the sheet (underline, table rule, box border). Show-through from reverse side, paper edges, folds, text strokes are NOT gold.",
+ "coords": "working-image pixels, top-left origin; working = original * scale (scale recorded)",
+ "status": "DEVELOPMENT diagnostic only: these issuer families have informed the project; NOT an independent or fresh holdout",
+ "images": {
+  "wellcome-food-order": {"scale": 0.285663274415283, "working_size": [983,1600], "cluster": "Fortnum&Mason 1930s",
+   "rules": [[238,808,392,"name"],[282,808,455,"address"],[175,810,505,"table-top"],
+    [175,810,548],[175,810,594],[175,810,640],[175,810,686],[175,810,731],[175,810,777],[175,810,822],[175,810,868],[175,810,913],[175,810,958],[175,810,1002],[175,810,1047],[175,810,1091],[175,810,1135],[175,810,1180],[175,810,1224],[175,810,1268],[175,810,1312],[175,810,1356,"table-bottom"]],
+   "ignore": []},
+  "nara-p4-front": {"scale": 1.0, "working_size": [1200,823], "cluster": "1950 Census",
+   "rules": [[440,722,314,"box1-top-border"],[455,705,360,"header-underline"],[555,703,389,"name-of-vessel"],[582,703,420,"operator"],[510,700,533,"port"],[480,700,558,"pier"],[440,722,587,"box1-bottom-border"],
+    [440,722,611,"box2-top-border"],[450,700,641,"header-underline2"],[450,567,687,"state"],[583,700,687,"county"],[450,567,728,"ed-number"],[440,722,760,"box2-bottom-border"]],
+   "ignore": [], "negatives_note": "left two panels are mirrored show-through of the reverse; any rules there are false positives"},
+  "wellcome-surrey-letter": {"scale": 0.2682763246143528, "working_size": [1299,1600], "cluster": "Surrey Dispensary 18th c.",
+   "rules": [], "ignore": [[480,1220,450,490,"decorative ornament rule"]],
+   "negatives_note": "blanks are prose gaps without rules; chain lines/folds/paper edges are not gold"}
+ },
+ "rule_entry_format": "[x0,x1,y,(note)]; ignore format [x0,x1,y0,y1,note]"
+}
