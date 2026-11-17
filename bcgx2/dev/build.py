@@ -32,7 +32,7 @@ sys.path.insert(0, str(DEV))
 sys.path.insert(0, str(ROOT / "py"))
 import ninety_check  # noqa: E402
 
-EX_MODULES = ["ex_houses", "ex_shop", "ex_cars", "ex_models", "ex_mock1", "ex_mock2"]
+EX_MODULES = ["ex_houses", "ex_shop", "ex_cars", "ex_models", "ex_mock1", "ex_mock2", "ex_mock3"]
 
 
 def write_files(folder, files):

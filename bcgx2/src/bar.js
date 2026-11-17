@@ -48,6 +48,34 @@ export function ninetyBar({ progress = moduleProgress(), size = "full", needle =
   return el;
 }
 
+// The same drawing for a run that is not the 90-minute test: one block per part, as wide as its minutes.
+// parts: [{ n, name, minutes }].
+export function runBar({ parts, size = "full", needle = null }) {
+  const track = h("div", { class: "nb-track", "aria-hidden": "true" });
+  parts.forEach((p, i) => track.append(h("div", { class: "nb-seg" + (i === parts.length - 1 ? " nb-end" : ""), vars: { "--w": p.minutes } }, h("span", { class: "nb-num" }, p.n))));
+  const pin = h("div", { class: "nb-needle", hidden: true });
+  track.append(pin);
+  const legend = h("ol", { class: "nb-legend" });
+  for (const p of parts) legend.append(h("li", { class: "nb-key", vars: { "--w": p.minutes } }, h("span", { class: "nb-name" }, h("span", { class: "nb-n" }, p.n), p.name), h("span", { class: "nb-min" }, `${p.minutes} min`)));
+  const el = h("div", { class: "nb nb-" + size }, track, size === "full" ? legend : null);
+  el.setNeedle = (frac) => {
+    pin.hidden = frac == null;
+    if (frac != null) pin.style.setProperty("--at", Math.max(0, Math.min(1, frac)));
+  };
+  el.setNeedle(needle);
+  return el;
+}
+
+// Which part of such a run the clock says you should be in.
+export function partAt(parts, seconds) {
+  let end = 0;
+  for (const p of parts) {
+    end += p.minutes * 60;
+    if (seconds < end) return p;
+  }
+  return null;
+}
+
 // Which module the clock says you should be in, for a given number of seconds into the test.
 export function moduleAt(seconds) {
   let end = 0;

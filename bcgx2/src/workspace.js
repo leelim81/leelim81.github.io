@@ -24,7 +24,8 @@ function tabs(names, onPick) {
   return { el, pick, buttons };
 }
 
-// opts.mode: "practice" shows hints, the solution, and every check after a submit. "mock" keeps them back.
+// opts.mode: "practice" shows hints, the solution, and every check after a submit. "mock" keeps hints and the
+// solution back, and a submit shows only whether each hidden check passes: no name and no reason.
 // opts.progress: { hints, peeked, solved } for this attempt. opts.onProgress(patch) saves a change to it.
 // opts.onSubmit({ items, notes, error, passed, total }) fires after each submit.
 export function workspace({ ex, key, mode, progress, onProgress, onSubmit, heading }) {
@@ -36,6 +37,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   let outputs = [];
   let result = null;
   let revealed = false;
+  let counted = false; // after a submit in a mock: hidden checks show pass or fail, and nothing else
   let submittedAt = 0;
   let saveTimer = 0;
   let dirty = false;
@@ -277,7 +279,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
 
   // ---- checks ----------------------------------------------------------------------------
   const checksEl = h("div", { class: "checks", hidden: true });
-  const hiddenLabel = practice ? "Hidden check. It runs when you submit." : "Hidden check. It is scored when you finish the test.";
+  const hiddenLabel = "Hidden check. It runs when you submit.";
 
   function checkRow(state, name, msg, hint) {
     const mark = { pass: icon("check", "Passes"), fail: icon("cross", "Fails"), skip: icon("ring", "Not checked yet"), hidden: icon("lock", "Hidden"), idle: icon("ring", "Not run yet") }[state];
@@ -299,18 +301,20 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
       return;
     }
     const items = result.items;
-    const seen = revealed ? items : items.filter((i) => !i.hidden);
+    const seen = revealed || counted ? items : items.filter((i) => !i.hidden);
     const passed = seen.filter((i) => i.status === "pass").length;
     const all = passed === seen.length;
     let head;
     if (revealed) head = all ? `All ${items.length} checks pass.` : `${passed} of ${items.length} checks pass. Start with the first cross.`;
-    else if (all) head = practice ? `All ${seen.length} visible checks pass. Submit to run the hidden ones.` : `All ${seen.length} visible checks pass.`;
+    else if (counted) head = all ? `All ${items.length} checks pass, hidden ones included.` : `${passed} of ${items.length} checks pass, hidden ones included.` + (items.some((i) => !i.hidden && i.status === "fail") ? " Start with the first cross." : " A hidden check keeps its reason until you finish the test.");
+    else if (all) head = `All ${seen.length} visible checks pass. Submit to run the hidden ones.`;
     else head = `${passed} of ${seen.length} visible checks pass. Start with the first cross.`;
     add(checksEl, h("p", { class: "chk-sum" + (all ? " is-pass" : "") }, h("span", { class: "chk-ticks", "aria-hidden": "true" }, seen.map((i) => h("i", { class: "is-" + i.status }))), head));
     if (!practice && submittedAt) checksEl.append(h("p", { class: "chk-note" }, `Submitted at ${new Date(submittedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}. You can change your code and submit again until you finish the test.`));
     if (practice) result.notes.forEach((n) => checksEl.append(h("p", { class: "chk-note" }, n)));
     for (const i of items) {
-      if (i.hidden && !revealed) list.append(checkRow("hidden", hiddenLabel));
+      if (i.hidden && counted) list.append(checkRow(i.status, "Hidden check", i.status === "fail" ? "It fails. The reason is in your results after the test." : i.status === "skip" ? i.msg : ""));
+      else if (i.hidden && !revealed) list.append(checkRow("hidden", hiddenLabel));
       else list.append(checkRow(i.status, i.name, i.status === "pass" ? "" : i.msg, practice && i.status === "fail" ? i.hint : ""));
     }
     checksEl.append(list);
@@ -402,6 +406,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
         if (!res.error) {
           result = res.result;
           revealed = practice && kind === "submit";
+          counted = !practice && kind === "submit";
           if (kind === "submit") submittedAt = Date.now();
           renderChecks();
           bottomTabs.pick("checks");

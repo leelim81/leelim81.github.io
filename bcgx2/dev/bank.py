@@ -550,6 +550,11 @@ MOCKS = [
          questions=["m1-p1", "m1-p2", "m1-f1", "m1-f2", "m1-f3", "m1-f4", "m1-f5", "m1-f6", "m1-collect", "m1-process", "m1-model"]),
     dict(id="m2", title="Mock test 2", story="Loan defaults", minutes=90,
          questions=["m2-p1", "m2-p2", "m2-f1", "m2-f2", "m2-f3", "m2-f4", "m2-f5", "m2-f6", "m2-collect", "m2-process", "m2-model"]),
+    # format "coding": no quiz, four linked coding questions. It sits outside the eight sessions of the plan.
+    dict(id="m3", title="Mock test 3", story="Couriers, coding only", minutes=70, format="coding",
+         note="Some candidates describe a version of the test with no quiz: four linked coding questions on one data set. "
+              "This run has that shape. Reports of its time limit range from 60 to 90 minutes, so this run gives you 70: the usual budget of each question, added up.",
+         questions=["m3-analyze", "m3-collect", "m3-process", "m3-model"]),
 ]
 
 
@@ -613,7 +618,11 @@ def assemble(exercises):
     assert in_sets | (in_mocks - ex_ids) == set(ids), f"unused questions: {set(ids) - in_sets - in_mocks}"
     for m in MOCKS:
         kinds = [byid[i]["module"] if i in byid else next(e["module"] for e in exercises if e["id"] == i) for i in m["questions"]]
-        assert kinds == [1, 1, 2, 2, 2, 2, 2, 2, 3, 4, 5], (m["id"], kinds)
+        if m.get("format") == "coding":
+            assert kinds == [3, 3, 4, 5], (m["id"], kinds)
+            assert m["minutes"] == sum(e["minutes"] for e in exercises if e["id"] in m["questions"]), m["id"]
+        else:
+            assert kinds == [1, 1, 2, 2, 2, 2, 2, 2, 3, 4, 5], (m["id"], kinds)
     for sess in PLAN:
         for it in sess["items"]:
             if it["kind"] == "code":
@@ -622,7 +631,8 @@ def assemble(exercises):
                 assert it["id"] in {s["id"] for s in SETS}, it
     text = " ".join(str(v) for q in Q for v in (q["stem"], q["explain"], q["title"], q["ref"]) ) + " ".join(
         o["text"] + o["why"] for q in Q if "options" in q for o in q["options"]) + " ".join(
-        e["desc"] + " ".join(e["hints"]) + e["title"] for e in exercises)
+        e["desc"] + " ".join(e["hints"]) + e["title"] + e.get("notes", "") for e in exercises) + " ".join(
+        m["title"] + m["story"] + m.get("note", "") for m in MOCKS)
     for bad, name in (("–", "en dash"), ("—", "em dash"), ("!", "exclamation mark"), ("$", "dollar sign")):
         assert bad not in text, f"{name} found in content near: {text[max(0, text.index(bad) - 60):text.index(bad) + 20]!r}"
     assert set(course.SEE) == set(ids), f"lesson links: missing {set(ids) - set(course.SEE)}, unknown {set(course.SEE) - set(ids)}"
