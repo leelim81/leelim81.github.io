@@ -6,9 +6,10 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 
 ## What is in it
 
-- **19 coding tasks** with realistic data files: joins and aggregations, leak-free preprocessing, and models that have to clear a metric bar. Each task has visible checks, hidden checks, three hints, and a reference solution.
+- **23 coding tasks** with realistic data files: joins and aggregations, leak-free preprocessing, and models that have to clear a metric bar. Each task has visible checks, hidden checks, three hints, and a reference solution.
 - **50 quiz questions**: numeric answers to three decimals, single choice, and select all that apply. Every question has a worked explanation and a note on each option.
-- **2 mock tests**: 11 questions on a 90-minute clock, with nothing marked until the end.
+- **2 mock tests**: 11 questions on a 90-minute clock. Quiz answers stay unmarked until the end. Submit on a coding task shows how many checks pass, hidden ones included, without the reasons.
+- **A coding-only run**: four linked coding questions on a 70-minute clock and no quiz, the shape that some candidates describe. It adds a short analysis question and a model that has to reach a recall bar while precision stays above a floor. The story, the data, and the wording are this site's own.
 - **A 12-lesson refresher** on the theory behind the quiz questions: probability, statistics, and machine learning fundamentals. Each lesson has worked examples, a few checks with the reasoning, and a Python snippet to run and change. Quiz feedback links back to the lesson that covers the question.
 - **A code recall drill** for the three coding tasks: 55 one-line cards on the imports, method names, and arguments that are easy to blank on. You type the missing piece. A round is 10 cards, a card you miss comes back before the round ends, and a line counts as known after two first tries in a row are right.
 - **An eight-session plan** that orders the tasks, sets, and mocks, and a library for free practice.

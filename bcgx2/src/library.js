@@ -47,7 +47,7 @@ export function libraryView(root) {
     const rec = st.mocks[m.id];
     mocks.append(row({ href: `#/mock/${m.id}`, state: rec?.status === "done" ? "done" : rec?.status === "running" ? "doing" : "todo", title: m.title, meta: `${m.story}, ${m.questions.length} questions, ${m.minutes} min`, detail: rec?.status === "done" ? `${rec.report.points} of 100 points` : rec?.status === "running" ? `${clock(rec.remaining)} left` : "" }));
   }
-  add(page, h("section", { class: "lib-mod" }, h("h2", { class: "h-sec" }, "Mock tests"), h("p", { class: "muted sec-note" }, "Full 90-minute runs with new data. Their questions stay hidden until you have taken the test."), mocks));
+  add(page, h("section", { class: "lib-mod" }, h("h2", { class: "h-sec" }, "Mock tests"), h("p", { class: "muted sec-note" }, "Timed runs with new data. Their questions stay hidden until you have taken the test."), mocks));
   clear(root).append(page);
   return () => {};
 }

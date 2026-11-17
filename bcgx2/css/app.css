@@ -151,6 +151,7 @@ code { font-family: var(--mono); font-size: 0.9em; }
 /* ---- the 90-minute bar -------------------------------------------------------------------- */
 .nb-track { position: relative; display: flex; height: 46px; border: 1.5px solid var(--ink); border-radius: 3px; background: var(--paper); }
 .nb-seg { position: relative; flex: var(--w) 1 0; min-width: 0; border-right: 1.5px solid var(--ink); }
+.nb-end { border-right: 0; }
 .nb-rest { border-right: 0; background: repeating-linear-gradient(135deg, transparent 0 5px, var(--rule-strong) 5px 6.5px); }
 .nb-fill { position: absolute; inset: 6px auto 6px 0; width: calc(var(--fill, 0) * 100%); background: var(--marker); border-radius: 0 5px 9px 0 / 0 9px 4px 0; transition: width 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .nb-seg.is-full .nb-fill { border-radius: 0; }
@@ -542,6 +543,7 @@ a.les-row:hover { background: var(--paper); color: var(--ink); }
 /* ---- mock test ---------------------------------------------------------------------------- */
 .mock-intro { max-width: 780px; padding: 20px 0 40px; display: grid; gap: 18px; justify-items: start; }
 .mock-intro .nb { width: 100%; margin: 10px 0 4px; }
+.mock-note { max-width: 66ch; }
 .rules { padding-left: 20px; display: grid; gap: 8px; max-width: 66ch; }
 .mock-bar { background: var(--paper); border-bottom: 1.5px solid var(--ink); }
 .mock-bar-row { display: flex; align-items: center; gap: 16px; padding: 8px 14px 6px; }
@@ -624,6 +626,11 @@ a.les-row:hover { background: var(--paper); color: var(--ink); }
 }
 
 @media (max-width: 560px) {
+  /* the report table: the name gets its own line, with the result and the time under it */
+  .mods tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .mods tbody th { grid-column: 1 / -1; white-space: normal; border-bottom: 0; padding: 10px 0 2px; }
+  .mods td { padding: 0 0 10px; }
+  .mods td.num { text-align: right; }
   /* 16px text in the gaps keeps a phone from zooming in when one takes focus */
   .rc-code { padding: 11px 12px; font-size: 16px; }
   .rc-code.is-quiet { padding: 8px 10px; font-size: 13.5px; }

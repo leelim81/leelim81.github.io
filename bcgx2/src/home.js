@@ -169,6 +169,22 @@ function build() {
         h("section", null, h("h2", { class: "h-note" }, "Today"), h("p", null, todayText)),
         h("section", null, h("h2", { class: "h-note" }, "Practice days"), h("ol", { class: "pds" }, pd.dots), h("p", null, pd.count ? `${plural(pd.count, "day")} so far.` + (run >= 2 ? ` ${run} in a row.` : "") : "Your first one starts with the next task.")),
         h("section", null, h("h2", { class: "h-note" }, "To review"), misses ? h("p", null, h("a", { href: "#/review" }, plural(misses, "question")), " you missed. Each one you clear is a point back.") : h("p", null, "Nothing waiting. Questions you miss land here.")),
+        B()
+          .mocks.filter((m) => m.format === "coding")
+          .map((m) => {
+            const rec = st.mocks[m.id];
+            const link = (text) => h("a", { href: `#/mock/${m.id}` }, text);
+            return h(
+              "section",
+              null,
+              h("h2", { class: "h-note" }, "Coding-only run"),
+              rec?.status === "done"
+                ? h("p", null, `${m.title}: ${rec.report.points} of ${rec.report.outOf} points. `, link("Open the results"), ".")
+                : rec?.status === "running"
+                  ? h("p", null, `${m.title} is stopped at ${clock(rec.remaining)} left. `, link("Go back in"), ".")
+                  : h("p", null, "Some candidates get four linked coding questions and no quiz. ", link(`${m.title} has that shape`), `: ${m.minutes} minutes, outside the eight sessions.`),
+            );
+          }),
         h(
           "section",
           null,

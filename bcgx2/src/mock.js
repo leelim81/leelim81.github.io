@@ -1,5 +1,6 @@
-// A mock test: 11 questions, one 90-minute clock, nothing marked until the end.
-import { moduleAt, ninetyBar } from "./bar.js";
+// A mock test: one clock, no hints, and the full marking at the end. The usual format has 11 questions in 90 minutes.
+// The "coding" format has four linked coding questions and no quiz.
+import { moduleAt, ninetyBar, partAt, runBar } from "./bar.js";
 import { B, X, lessonsFor, nextLink, payload } from "./content.js";
 import { add, ask, clear, clock, h, icon, plural } from "./dom.js";
 import { highlight } from "./editor.js";
@@ -20,6 +21,11 @@ export function mockView(root, id) {
   const rec = (S().mocks[id] ||= { status: "new" });
   const total = mock.minutes * 60;
   const items = mock.questions.map((qid) => (X.q[qid] ? { kind: "quiz", id: qid, q: X.q[qid], module: X.q[qid].module } : { kind: "code", id: qid, ex: X.ex[qid], module: X.ex[qid].module }));
+  const coding = mock.format === "coding";
+  // What the report and the points are split by: the five modules, or each question in a coding-only run.
+  const groups = coding
+    ? items.map((it, i) => ({ key: it.id, n: i + 1, name: it.ex.title, kind: "code", minutes: it.ex.minutes, module: it.module, items: [it] }))
+    : B().modules.map((m) => ({ key: m.id, n: m.id, name: m.name, kind: m.kind, minutes: m.minutes, module: m.id, items: items.filter((it) => it.module === m.id) }));
   let cleanup = null;
   let here = true; // false once you leave this page: scoring may still finish, but it must not draw
 
@@ -40,7 +46,7 @@ export function mockView(root, id) {
     startRuntime();
     items.forEach((it) => it.kind === "code" && payload(it.id).catch(() => {}));
     const empty = Object.fromEntries(B().modules.map((m) => [m.id, { done: 0, target: m.target, frac: 0 }]));
-    const bar = ninetyBar({ progress: empty });
+    const bar = coding ? runBar({ parts: groups }) : ninetyBar({ progress: empty });
     bar.querySelectorAll(".nb-got").forEach((el) => el.remove());
     root.append(
       h(
@@ -49,17 +55,27 @@ export function mockView(root, id) {
         h("a", { class: "back", href: "#/" }, icon("back"), "Plan"),
         h("h1", { class: "display" }, mock.title),
         h("p", { class: "hero-sub" }, `${mock.story}. ${items.length} questions, ${mock.minutes} minutes, one sitting.`),
+        mock.note ? h("p", { class: "mock-note" }, mock.note) : null,
         bar,
         h(
           "ul",
           { class: "rules" },
-          h("li", null, "2 probability questions and 6 machine learning questions come first, then 3 coding tasks on one data set."),
-          h("li", null, "Closed book. There are no hints and no solutions, and nothing is marked until you finish."),
-          h("li", null, "You can move between questions in any order. Answers and code save as you type."),
-          h("li", null, "Hidden checks decide the coding score, as on the real test. Test your output before you move on."),
+          coding
+            ? h("li", null, "Four coding questions on one story: a short analysis, then collection, processing, and a model. There is no quiz.")
+            : h("li", null, "2 probability questions and 6 machine learning questions come first, then 3 coding tasks on one data set."),
+          h("li", null, coding ? "Closed book. There are no hints and no solutions." : "Closed book. There are no hints and no solutions, and quiz answers are not marked until you finish."),
+          h("li", null, coding ? "You can move between questions in any order. Code saves as you type." : "You can move between questions in any order. Answers and code save as you type."),
+          h("li", null, "Test runs the visible checks. Submit runs every check and shows how many pass, hidden ones included, as on the real platform. A hidden check never says why it fails."),
+          h("li", null, "Press Submit on every coding question before you finish. On the real platform, work that is not submitted may not count."),
           h("li", null, "The clock stops if you close this page, so a dropped connection costs nothing. The real test does not stop."),
         ),
-        h("p", { class: "muted" }, "A good order: quiz first, capped at 25 minutes. Then collection, processing, and the model. Save a working file before you improve it."),
+        h(
+          "p",
+          { class: "muted" },
+          coding
+            ? "A good order: take the questions as they come, because each one sets up the next. Save a working file before you improve it, and keep 20 minutes for the model."
+            : "A good order: quiz first, capped at 25 minutes. Then collection, processing, and the model. Save a working file before you improve it.",
+        ),
         h(
           "button",
           {
@@ -91,14 +107,14 @@ export function mockView(root, id) {
     const nav = h("ol", { class: "mock-nav" });
     const stage = h("div", { class: "mock-stage" });
     const calc = calculator();
-    const bar = ninetyBar({ progress: Object.fromEntries(B().modules.map((m) => [m.id, { done: 0, target: m.target, frac: 0 }])), size: "slim" });
+    const bar = coding ? runBar({ parts: groups, size: "slim" }) : ninetyBar({ progress: Object.fromEntries(B().modules.map((m) => [m.id, { done: 0, target: m.target, frac: 0 }])), size: "slim" });
 
     const answered = (it) => (it.kind === "quiz" ? judge(it.q, rec.answers[it.id]).answered : !!rec.submitted[it.id]);
 
     function paintNav() {
       clear(nav);
       items.forEach((it, i) => {
-        const first = i === 0 || items[i - 1].module !== it.module;
+        const first = !coding && (i === 0 || items[i - 1].module !== it.module);
         const state = answered(it) ? "answered" : it.kind === "code" && (getCode(draftKey(id, it.id)) ?? it.ex.starter) !== it.ex.starter ? "started" : "open";
         nav.append(
           h(
@@ -125,6 +141,11 @@ export function mockView(root, id) {
       count.textContent = `${clock(left)} left`;
       count.classList.toggle("is-late", left <= 300);
       bar.setNeedle((total - rec.remaining) / total);
+      if (coding) {
+        const part = partAt(groups, total - rec.remaining);
+        pace.textContent = part ? `By the clock, you would be on question ${part.n}.` : "By the clock, time is up.";
+        return;
+      }
       const m = moduleAt(total - rec.remaining);
       pace.textContent = m ? `By the clock, you would be in module ${m.id}: ${m.name.toLowerCase()}.` : "By the clock, this is review time.";
     }
@@ -209,7 +230,7 @@ export function mockView(root, id) {
       stage.className = "mock-stage is-scoring";
       nav.querySelectorAll("button").forEach((b) => (b.disabled = true));
       finishBtn.disabled = true;
-      const log = h("ul", { class: "scoring" }, h("li", null, icon("check"), "Quiz answers marked"));
+      const log = h("ul", { class: "scoring" }, coding ? null : h("li", null, icon("check"), "Quiz answers marked"));
       stage.append(h("div", { class: "notice" }, h("h2", { class: "display-2" }, timeUp ? "Time is up" : "Scoring your test"), h("p", null, "Each coding task now runs in a fresh folder against every check, hidden ones included."), log));
       const rep = { ts: Date.now(), used: Math.round(total - rec.remaining), timeUp, quiz: {}, code: {}, modules: {}, points: 0, outOf: 100 };
       for (const it of items) {
@@ -286,15 +307,14 @@ export function mockView(root, id) {
     return out;
   }
 
-  // Points weight each module by its share of the test's minutes.
+  // Points weight each group (a module, or a question in a coding-only run) by its share of the test's minutes.
   function tally(rep) {
     let sum = 0;
     let weight = 0;
-    for (const m of B().modules) {
-      const mine = items.filter((it) => it.module === m.id);
+    for (const g of groups) {
       let got = 0;
       let of = 0;
-      for (const it of mine) {
+      for (const it of g.items) {
         if (it.kind === "quiz") {
           of += 1;
           got += rep.quiz[it.id].correct ? 1 : 0;
@@ -304,9 +324,9 @@ export function mockView(root, id) {
         }
       }
       const frac = of ? got / of : 0;
-      rep.modules[m.id] = { got, of, frac, seconds: Math.round(mine.reduce((n, it) => n + (rec.time[it.id] || 0), 0)) };
-      sum += frac * m.minutes;
-      weight += m.minutes;
+      rep.modules[g.key] = { got, of, frac, seconds: Math.round(g.items.reduce((n, it) => n + (rec.time[it.id] || 0), 0)) };
+      sum += frac * g.minutes;
+      weight += g.minutes;
     }
     rep.points = Math.round((sum / weight) * 100);
   }
@@ -338,41 +358,41 @@ export function mockView(root, id) {
     const right = quiz.filter((it) => rep.quiz[it.id].correct).length;
     const clean = code.filter((it) => rep.code[it.id].ok).length;
     const unscored = code.filter((it) => rep.code[it.id].unscored);
-    const longest = Math.max(...B().modules.map((m) => Math.max(m.minutes * 60, rep.modules[m.id].seconds)));
+    const longest = Math.max(...groups.map((g) => Math.max(g.minutes * 60, rep.modules[g.key].seconds)));
 
-    const rows = B().modules.map((m) => {
-      const r = rep.modules[m.id];
-      const over = r.seconds - m.minutes * 60;
+    const rows = groups.map((g) => {
+      const r = rep.modules[g.key];
+      const over = r.seconds - g.minutes * 60;
       return h(
         "tr",
         null,
-        h("th", { scope: "row" }, h("span", { class: "nb-n" }, m.id), m.name),
-        h("td", null, m.kind === "quiz" ? `${r.got} of ${r.of} right` : `${r.got} of ${r.of} checks`),
-        h("td", { class: "num" }, `${clock(r.seconds)} of ${m.minutes} min`),
-        h("td", { class: "mod-time" }, h("span", { class: "tbar", "aria-hidden": "true" }, h("span", { class: "tbar-budget", vars: { "--w": (m.minutes * 60) / longest } }), h("span", { class: "tbar-used", vars: { "--w": r.seconds / longest } })), over > 60 ? h("span", { class: "muted" }, `${Math.round(over / 60)} min over`) : null),
+        h("th", { scope: "row" }, h("span", { class: "nb-n" }, g.n), g.name),
+        h("td", null, g.kind === "quiz" ? `${r.got} of ${r.of} right` : `${r.got} of ${r.of} checks`),
+        h("td", { class: "num" }, `${clock(r.seconds)} of ${g.minutes} min`),
+        h("td", { class: "mod-time" }, h("span", { class: "tbar", "aria-hidden": "true" }, h("span", { class: "tbar-budget", vars: { "--w": (g.minutes * 60) / longest } }), h("span", { class: "tbar-used", vars: { "--w": r.seconds / longest } })), over > 60 ? h("span", { class: "muted" }, `${Math.round(over / 60)} min over`) : null),
       );
     });
 
-    const weak = B()
-      .modules.filter((m) => rep.modules[m.id].frac < 1)
-      .sort((a, b) => rep.modules[a.id].frac - rep.modules[b.id].frac)
+    const weak = groups
+      .filter((g) => rep.modules[g.key].frac < 1)
+      .sort((a, b) => rep.modules[a.key].frac - rep.modules[b.key].frac)
       .slice(0, 2);
-    const advice = weak.map((m) => {
-      if (m.kind === "quiz") {
-        const sets = B().sets.filter((s) => s.module === m.id);
-        const reread = lessonsFor(quiz.filter((it) => it.q.module === m.id && !rep.quiz[it.id].correct).map((it) => it.id));
+    const advice = weak.map((g) => {
+      if (g.kind === "quiz") {
+        const sets = B().sets.filter((s) => s.module === g.module);
+        const reread = lessonsFor(quiz.filter((it) => it.q.module === g.module && !rep.quiz[it.id].correct).map((it) => it.id));
         return h(
           "li",
           null,
-          `${m.name}: read the reasoning for each miss below`,
+          `${g.name}: read the reasoning for each miss below`,
           reread.length ? [`, work through refresher ${reread.length === 1 ? "lesson" : "lessons"} `, lessonPills(reread)] : null,
           ", then retake ",
           sets.flatMap((s, i) => [i ? ", " : "", h("a", { href: `#/set/${s.id}` }, s.title)]),
           ".",
         );
       }
-      const drills = B().exercises.filter((e) => e.module === m.id && !e.mock).slice(0, 3);
-      return h("li", null, `${m.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file. If the syntax held you up, a round of ", h("a", { href: "#/learn/recall" }, "code recall"), " takes 4 minutes.");
+      const drills = B().exercises.filter((e) => e.module === g.module && !e.mock).slice(0, 3);
+      return h("li", null, `${g.name}: open the failed checks below, then redo `, drills.flatMap((e, i) => [i ? ", " : "", h("a", { href: `#/task/${e.id}` }, e.title)]), " from a blank file. If the syntax held you up, a round of ", h("a", { href: "#/learn/recall" }, "code recall"), " takes 4 minutes.");
     });
 
     const list = h("ol", { class: "res-list" });
@@ -418,7 +438,7 @@ export function mockView(root, id) {
               { class: "res-code" },
               r.unscored ? h("p", null, `Python did not run this task (${r.unscored}). Use "Score the coding tasks again" above.`) : null,
               r.error ? h("p", null, "Your code stopped with an error, so no check could pass: ", h("code", null, r.error)) : null,
-              !r.submitted && !r.unscored ? h("p", { class: "muted" }, "You had not pressed Submit, so this is scored from the code that was in the editor.") : null,
+              !r.submitted && !r.unscored ? h("p", { class: "muted" }, "You had not pressed Submit, so this is scored from the code that was in the editor. On the real platform, work that is not submitted may not count.") : null,
               r.notes.map((n) => h("p", { class: "chk-note" }, n)),
               checks,
               h("p", null, h("a", { href: `#/task/${it.id}` }, "Open this task in practice mode"), " to fix it with hints and all checks visible."),
@@ -436,8 +456,14 @@ export function mockView(root, id) {
         { class: "quiz quiz-results mock-report" },
         h("header", { class: "quiz-head" }, h("a", { class: "back", href: "#/" }, icon("back"), "Plan"), h("h1", { class: "quiz-title" }, `${mock.title}: results`)),
         h("h2", { class: "display" }, `${rep.points} of 100 points`),
-        h("p", { class: "res-line" }, `Quiz: ${right} of ${quiz.length} right. Coding: ${clean} of ${code.length} tasks pass every check. Time used: ${clock(rep.used)} of ${mock.minutes} minutes.`),
-        h("p", { class: "muted" }, "Points weight each module by its share of the 90 minutes. The real test reports a score from 200 to 600 and does not publish its formula, so read this as a trend between your mocks, not a prediction."),
+        h("p", { class: "res-line" }, `${quiz.length ? `Quiz: ${right} of ${quiz.length} right. ` : ""}Coding: ${clean} of ${code.length} tasks pass every check. Time used: ${clock(rep.used)} of ${mock.minutes} minutes.`),
+        h(
+          "p",
+          { class: "muted" },
+          coding
+            ? `Points weight each question by its share of the ${mock.minutes} minutes. The real test reports a score from 200 to 600 and does not publish its formula, so read this as a measure of what to fix, not a prediction.`
+            : "Points weight each module by its share of the 90 minutes. The real test reports a score from 200 to 600 and does not publish its formula, so read this as a trend between your mocks, not a prediction.",
+        ),
         h(
           "div",
           { class: "res-actions" },
@@ -483,8 +509,8 @@ export function mockView(root, id) {
             "Take this mock again",
           ),
         ),
-        h("h3", { class: "h-sec" }, "By module"),
-        h("table", { class: "mods" }, h("thead", null, h("tr", null, h("th", null, "Module"), h("th", null, "Result"), h("th", null, "Time"), h("th", null, h("span", { class: "vh" }, "Time against budget")))), h("tbody", null, rows)),
+        h("h3", { class: "h-sec" }, coding ? "By question" : "By module"),
+        h("table", { class: "mods" }, h("thead", null, h("tr", null, h("th", null, coding ? "Question" : "Module"), h("th", null, "Result"), h("th", null, "Time"), h("th", null, h("span", { class: "vh" }, "Time against budget")))), h("tbody", null, rows)),
         advice.length ? [h("h3", { class: "h-sec" }, "Where the next points are"), h("ul", { class: "advice" }, advice)] : h("p", { class: "res-line" }, "A full score. Keep the routine and rest before the test."),
         h("h3", { class: "h-sec" }, "Question by question"),
         h("p", { class: "muted sec-note" }, "Open a row for the reasoning, the failed checks, and the reference solution."),
