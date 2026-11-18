@@ -1,7 +1,8 @@
 // The page's side of the Python worker: one worker for the whole visit, started as soon as the site opens.
 import { BUILD } from "./build.js";
+import { pythonLoaded } from "./offline.js";
 
-export const rt = { state: "idle", text: "", detail: "", step: 0, versions: null, ms: 0, kept: null, sw: false };
+export const rt = { state: "idle", text: "", detail: "", step: 0, versions: null, ms: 0, sw: false };
 
 const listeners = new Set();
 const pending = new Map();
@@ -47,8 +48,11 @@ export function startRuntime() {
       sinks.get(m.run)?.(m);
     } else if (m.type === "status") {
       set({ state: m.state, text: m.text, detail: m.detail || "", step: m.step || rt.step, versions: m.versions || rt.versions, ms: m.ms || rt.ms });
-      if (m.state === "ready" && m.files?.length) keepOffline(m.files);
-      if (m.state === "error") failAll(new Error(m.text + "."));
+      if (m.state === "ready") pythonLoaded(m.files); // the files Python used, for the offline copy
+      if (m.state === "error") {
+        failAll(new Error(m.text + "."));
+        pythonLoaded();
+      }
     }
   };
   worker.onerror = (ev) => {
@@ -56,6 +60,7 @@ export function startRuntime() {
     ev.preventDefault?.();
     set({ state: "error", text: "Python did not start. Check your connection, then try again", detail: "" });
     failAll(new Error("Python did not start. Check your connection, then try again."));
+    pythonLoaded();
   };
 }
 
@@ -115,19 +120,12 @@ export async function consoleLine({ slot, src, onEvent }) {
 
 export const readOutput = (slot, path) => call("read", { slot, path });
 
-// ---- offline copy -------------------------------------------------------------------------
-// The service worker caches Python files as they pass through it. This asks it to fetch any it missed.
-function keepOffline(urls) {
-  const sw = navigator.serviceWorker?.controller;
-  if (sw) sw.postMessage({ type: "keep", urls });
-}
-
+// ---- service worker -----------------------------------------------------------------------
+// The service worker serves the site and Python from this device. It saves files as they pass through it,
+// and src/offline.js fetches the ones it has not seen.
 export async function startServiceWorker() {
   if (!("serviceWorker" in navigator)) return false;
   try {
-    navigator.serviceWorker.addEventListener("message", (ev) => {
-      if (ev.data?.type === "kept") set({ kept: ev.data });
-    });
     await navigator.serviceWorker.register("sw.js");
     if (!navigator.serviceWorker.controller) {
       await Promise.race([

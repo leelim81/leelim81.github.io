@@ -1,5 +1,6 @@
 // The plan page: what is next, how ready each module is, and the eight sessions.
 import { ninetyBar } from "./bar.js";
+import { FILES } from "./build.js";
 import { B, X, courseProgress, lessonState, lessonsFor, missCount, nextUp, recallProgress, sessionView, settlePlan } from "./content.js";
 import { clear, clock, dateLabel, h, icon, plural } from "./dom.js";
 import { lessonPills } from "./learn.js";
@@ -198,12 +199,13 @@ function build() {
             ? h("p", null, h("a", { href: "#/learn/recall" }, "Code recall"), ` drills the imports and arguments for the coding tasks, ${lines.total} lines in 4-minute rounds.`)
             : h("p", null, h("a", { href: "#/learn/recall" }, "Code recall"), `: ${lines.known} of ${lines.total} lines known.`),
         ),
-        h("section", null, h("h2", { class: "h-note" }, "Cheatsheet"), h("p", null, h("a", { href: "cheatsheet.pdf", target: "_blank", rel: "noopener" }, "Open the 8-page PDF"), ". Keep it open in session 1, then close it.")),
+        h("section", null, h("h2", { class: "h-note" }, "Cheatsheet"), h("p", null, h("a", { href: FILES.pdf, target: "_blank", rel: "noopener" }, "Open the 8-page PDF"), ". Keep it open in session 1, then close it.")),
         h(
           "section",
           null,
           h("h2", { class: "h-note" }, "How it works"),
           h("p", null, "Code runs in real Python inside this tab. The first visit downloads it once, then it starts from this device."),
+          h("p", null, "The first visit also saves the whole site here, so later visits work without a connection. ", h("a", { href: "#/settings" }, "Settings"), " shows what is saved."),
           h("p", null, "Progress is saved in this browser only. Settings has a backup file if you switch devices."),
         ),
       ),

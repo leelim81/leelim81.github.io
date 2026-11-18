@@ -1,6 +1,7 @@
-// Settings: the test date, how the editor behaves, and a backup of your progress.
+// Settings: the test date, how the editor behaves, a backup of your progress, and the copy for use without a connection.
 import { BUILD } from "./build.js";
-import { add, ask, clear, h, toast } from "./dom.js";
+import { add, ask, clear, h, icon, toast } from "./dom.js";
+import { offline, offlineState, onOffline, saveOffline } from "./offline.js";
 import { applyTheme } from "./shell.js";
 import { S, dayKey, exportAll, importAll, resetAll, save } from "./store.js";
 
@@ -8,8 +9,47 @@ function field(label, control, help) {
   return h("div", { class: "field" }, h("div", { class: "field-label" }, label), h("div", { class: "field-control" }, control, help ? h("p", { class: "muted field-help" }, help) : null));
 }
 
+// What is saved on this device for use without a connection. The counts move while files download,
+// so the parts stay in place and only their text changes.
+function savedCopy() {
+  const head = h("p", { class: "off-head", role: "status" });
+  const cell = () => h("span", { class: "num" });
+  const [site, data, python] = [cell(), cell(), cell()];
+  const list = h("ul", { class: "off-list" }, h("li", null, h("span", null, "Site files"), site), h("li", null, h("span", null, "Task data sets"), data), h("li", null, h("span", null, "Python files"), python));
+  const again = h("div", { class: "btn-row" }, h("button", { class: "btn", type: "button", onclick: () => saveOffline() }, "Save again"));
+  const box = h("div", { class: "off" }, head, list, again);
+  const count = (p, none) => (p.want ? `${Math.min(p.have, p.want)} of ${p.want}` : none);
+  let shown = null;
+  const paint = () => {
+    const state = offlineState();
+    const text = {
+      checking: "Checking what is saved on this device.",
+      none: "This browser is not keeping a copy of the site. That happens in private windows and when site data is blocked. Everything still works while you are online.",
+      saved: "Saved. The site works without a connection.",
+      saving: "Saving the site to this device. Keep this tab open until it finishes.",
+      waiting: "Python is still loading. The task data follows when it is ready.",
+      partial: navigator.onLine === false ? "Not complete yet. You are offline now, and the rest downloads when you are back online." : "Not complete yet. Check your connection, then save again.",
+    }[state];
+    box.dataset.state = state;
+    if (text !== shown) {
+      shown = text;
+      clear(head);
+      add(head, state === "saved" ? icon("check") : null, text);
+    }
+    list.hidden = state === "checking" || state === "none";
+    again.hidden = state !== "partial";
+    site.textContent = count(offline.site, "0");
+    data.textContent = count(offline.data, "0");
+    python.textContent = count(offline.python, "not loaded yet");
+  };
+  const stop = onOffline(paint);
+  paint();
+  return { el: box, stop };
+}
+
 export function settingsView(root) {
   const st = S().settings;
+  const copy = savedCopy();
 
   const date = h("input", {
     type: "date",
@@ -129,11 +169,13 @@ export function settingsView(root) {
       h("h2", { class: "h-sec" }, "Your progress"),
       field("Backup", backup, "Progress lives in this browser on this device. A backup file moves it to another browser, or keeps it safe if you clear your browsing data."),
       field("Start over", reset),
+      h("h2", { class: "h-sec" }, "Offline use"),
+      field("Saved copy", copy.el, "After one visit with a connection, the site opens from this device at the same address: every page, every task, and Python. A new version of the site needs one more visit with a connection."),
       h("h2", { class: "h-sec" }, "About"),
       h("p", { class: "about" }, "Ninety is a personal practice room for a 90-minute data science test: probability and statistics, machine learning fundamentals, and three coding tasks in pandas and scikit-learn. The data, questions, and checks are written for practice and are not taken from any real test."),
       h("p", { class: "about muted" }, "It is not affiliated with or endorsed by CodeSignal. Python runs in your browser through Pyodide. Nothing you type leaves this device."),
       h("p", { class: "about muted" }, `Build ${BUILD}.`),
     ),
   );
-  return () => {};
+  return copy.stop;
 }

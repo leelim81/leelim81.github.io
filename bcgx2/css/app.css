@@ -239,6 +239,13 @@ a.it-row:hover, .it-check:hover { background: var(--paper); color: var(--ink); }
 .seg input:focus-visible + span { outline: 2.5px solid var(--info); outline-offset: -3px; }
 .check { display: inline-flex; gap: 10px; align-items: center; padding-top: 6px; cursor: pointer; }
 .check input { width: 17px; height: 17px; accent-color: var(--ink); }
+.off { display: grid; gap: 10px; justify-items: start; padding-top: 6px; }
+.off-head { display: flex; align-items: center; gap: 8px; font-weight: 600; max-width: 60ch; }
+.off[data-state="none"] .off-head, .off[data-state="checking"] .off-head { font-weight: 400; }
+.off[data-state="saved"] .off-head .ico { color: var(--pass); }
+.off-list { list-style: none; margin: 0; padding: 0; width: min(100%, 280px); font-size: 15px; }
+.off-list li { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-bottom: 1px solid var(--rule); }
+.off-list .num { color: var(--muted); }
 .about { max-width: 66ch; margin-top: 12px; }
 
 /* ---- prose: task text and explanations ------------------------------------------------------ */

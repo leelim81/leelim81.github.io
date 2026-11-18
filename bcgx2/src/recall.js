@@ -2,6 +2,7 @@
 // A round is 10 cards. A card you miss comes back before the round ends, and a line counts as known once
 // two first tries in a row are right. Answers are judged here by comparing text: the build has already
 // run every accepted answer in Python.
+import { FILES } from "./build.js";
 import { B, X, cardState, recallProgress } from "./content.js";
 import { add, clear, h, icon, plural, toast } from "./dom.js";
 import { tokenRanges } from "./editor.js";
@@ -354,7 +355,7 @@ export function recallView(root) {
           "p",
           { class: "muted sec-note" },
           `${prog.known} of ${prog.total} lines known${prog.once ? `, and ${prog.once} right once` : ""}. Each dot is a card, and only the first try at a card in a round counts. Pages 6 to 8 of `,
-          h("a", { href: "cheatsheet.pdf", target: "_blank", rel: "noopener" }, "the cheatsheet"),
+          h("a", { href: FILES.pdf, target: "_blank", rel: "noopener" }, "the cheatsheet"),
           " cover the same three tasks.",
         ),
         h(

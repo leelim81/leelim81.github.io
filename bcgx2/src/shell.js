@@ -1,6 +1,7 @@
 // The page header, the Python status chip, and the theme.
 import { missCount } from "./content.js";
 import { add, clear, h, icon } from "./dom.js";
+import { offlineState, onOffline } from "./offline.js";
 import { onRuntime, rt, stopRuntime } from "./runtime.js";
 import { S, save } from "./store.js";
 
@@ -35,12 +36,27 @@ export function themeButton() {
 
 const STEPS = 5;
 
+// One line on the copy of the site that is saved for use without a connection. Settings has the counts.
+function savedLine() {
+  const state = offlineState();
+  const text = {
+    saved: "The whole site is saved on this device, so it works without a connection.",
+    saving: "The site is being saved to this device, for use without a connection.",
+    partial: "The copy for use without a connection is not complete. ",
+    none: "This browser is not keeping a copy for use without a connection. ",
+  }[state];
+  if (!text) return null;
+  return h("p", { class: "muted rt-saved" }, text, state === "partial" || state === "none" ? h("a", { href: "#/settings" }, "See Settings.") : null);
+}
+
 // A chip that shows whether Python is ready, with details on click. Returns the element and a cleanup function.
 export function runtimeChip() {
   const label = h("span", { class: "rt-label" });
   const body = h("div", { class: "rt-body" });
   const el = h("details", { class: "rt" }, h("summary", { class: "rt-chip" }, h("span", { class: "rt-dot" }), label), body);
+  let saved = offlineState();
   const paint = () => {
+    saved = offlineState();
     el.dataset.state = rt.state;
     label.textContent = rt.state === "ready" ? "Python ready" : rt.state === "error" ? "Python stopped" : rt.state === "pandas" ? "Python: pandas ready" : "Python starting";
     clear(body);
@@ -49,7 +65,8 @@ export function runtimeChip() {
       add(
         body,
         h("p", null, `Python ${v.python} runs in this tab, with pandas ${v.pandas}, NumPy ${v.numpy}, and scikit-learn ${v.sklearn}. It stays loaded while you move between tasks.`),
-        h("p", { class: "muted" }, `Started in ${(rt.ms / 1000).toFixed(1)} s. `, rt.kept ? `${rt.kept.have} of ${rt.kept.want} Python files are saved on this device, so later visits skip the download.` : rt.sw ? "The Python files are being saved on this device." : "Your browser keeps the Python files in its own cache."),
+        h("p", { class: "muted" }, `Started in ${(rt.ms / 1000).toFixed(1)} s.`),
+        savedLine(),
       );
     } else if (rt.state === "error") {
       add(body, h("p", null, rt.text + "."), h("p", { class: "muted" }, "Python loads from cdn.jsdelivr.net on the first visit. After that it starts from this device."), rt.detail ? h("p", { class: "muted rt-detail" }, rt.detail) : null);
@@ -63,7 +80,12 @@ export function runtimeChip() {
     }
     body.append(h("button", { class: "btn btn-small", type: "button", onclick: () => stopRuntime() }, icon("redo"), rt.state === "error" ? "Try again" : "Restart Python"));
   };
-  const off = onRuntime(paint);
+  const offRuntime = onRuntime(paint);
+  const offSaved = onOffline(() => offlineState() !== saved && paint()); // the counts move often; the line changes only with the state
+  const off = () => {
+    offRuntime();
+    offSaved();
+  };
   const away = (e) => {
     if (el.open && !el.contains(e.target)) el.open = false;
   };
