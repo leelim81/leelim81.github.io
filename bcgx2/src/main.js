@@ -7,6 +7,7 @@ import { recallView, roundView } from "./recall.js";
 import { libraryView } from "./library.js";
 import { mockView } from "./mock.js";
 import { reviewView, setView } from "./quiz.js";
+import { startOffline } from "./offline.js";
 import { startRuntime, startServiceWorker } from "./runtime.js";
 import { settingsView } from "./settings.js";
 import { applyTheme, renderHeader } from "./shell.js";
@@ -71,7 +72,11 @@ async function boot() {
   oneTab();
   // Python starts loading now, in the background, so it is ready before the first Run.
   // The service worker goes first so that the download lands in its cache.
-  startServiceWorker().then(startRuntime);
+  // Then the rest of the site is saved for use without a connection.
+  startServiceWorker().then(() => {
+    startRuntime();
+    startOffline();
+  });
   try {
     await loadBank();
   } catch (err) {

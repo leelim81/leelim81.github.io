@@ -1,5 +1,5 @@
 // The question bank, the task files, and everything derived from them: plan state and module progress.
-import { BUILD } from "./build.js";
+import { BUILD, FILES } from "./build.js";
 import { clock, plural } from "./dom.js";
 import { S, save } from "./store.js";
 
@@ -37,10 +37,13 @@ export async function loadBank() {
 
 export const B = () => bank;
 
+// Where a task's data lives. The version is a hash of the file, so an unchanged task keeps its saved copy across builds.
+export const taskUrl = (id) => `content/ex/${id}.json?v=${FILES.data[id] || BUILD}`;
+
 // Input files and hidden check data for one task. Fetched once per visit.
 export function payload(id) {
   if (!payloads.has(id)) {
-    const p = fetch(`content/ex/${id}.json?v=${BUILD}`).then((r) => {
+    const p = fetch(taskUrl(id)).then((r) => {
       if (!r.ok) throw new Error(`The task files did not load (status ${r.status}).`);
       return r.json();
     });

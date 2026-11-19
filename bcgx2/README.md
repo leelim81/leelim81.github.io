@@ -64,3 +64,11 @@ python3 -m http.server 8000
 ```
 
 The first run downloads Python from `cdn.jsdelivr.net`, so it needs a connection.
+
+## Offline use
+
+One visit with a connection saves the whole site on the device: the pages, the fonts, the cheatsheet, the data of every task, and Python. After that it opens at the same address without a connection. Settings shows how much is saved.
+
+- `sw.js` serves saved files. Python files are served from the device first. The site's own files come from the network first, with the saved copy as the fallback.
+- `src/offline.js` fetches what the service worker has not seen: the files of a first visit, which load before the service worker is in control, and the data of tasks that were never opened. `dev/build.mjs` writes the list.
+- Task data files carry a hash of their own in the URL, so a new build downloads only the tasks that changed.
