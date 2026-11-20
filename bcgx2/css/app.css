@@ -299,7 +299,7 @@ body.focus #view { max-width: none; height: 100dvh; padding: 0; }
 .split-x { cursor: col-resize; border-inline: 1px solid var(--rule); }
 .split-y { cursor: row-resize; border-block: 1px solid var(--rule); }
 .ws-main { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 7px var(--bottom, 40%); min-width: 0; min-height: 0; }
-.ws-top { display: grid; grid-template-columns: 196px minmax(0, 1fr); min-height: 0; }
+.ws-top { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
 .ws-editor { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .editor-host, .preview-host { flex: 1; min-height: 0; overflow: auto; }
 .editor-host .cm-editor { height: 100%; }
@@ -320,7 +320,7 @@ body.focus #view { max-width: none; height: 100dvh; padding: 0; }
 .tabs-end { margin-left: auto; display: flex; align-items: center; gap: 14px; padding-right: 4px; }
 .save-note { font-size: 13px; }
 
-.ws-files { overflow: auto; padding: 6px; background: var(--desk); border-right: 1px solid var(--rule); }
+.ws-files { margin: -4px -6px 0; }
 .ws-files-head { padding: 8px 8px 4px; font: 600 12.5px/1.3 var(--sans); color: var(--muted); }
 .file { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px; align-items: center; width: 100%; padding: 5px 8px; border: 0; border-radius: 3px; background: none; text-align: left; cursor: pointer; }
 .file:hover { background: var(--paper); }
@@ -615,10 +615,6 @@ a.les-row:hover { background: var(--paper); color: var(--ink); }
   .ws[data-pane="output"] .ws-main { grid-template-rows: minmax(0, 1fr); }
   .ws[data-pane="output"] .ws-top { display: none; }
   .ws-bottom-bar { flex-wrap: wrap; padding-left: 4px; }
-  .ws-top { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .ws-files { display: flex; gap: 2px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--rule); }
-  .ws-files-head, .file-size { display: none; }
-  .file { width: auto; grid-template-columns: 18px auto; }
   .ws-bar { flex-wrap: wrap; gap: 6px 12px; }
   .ws-mod { display: none; }
   .mock-bar-row { flex-wrap: wrap; }

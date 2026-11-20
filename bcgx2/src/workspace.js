@@ -44,15 +44,19 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   let preview = null;
   let alive = true;
 
-  // ---- left: the task, hints, and the solution -------------------------------------------
+  // ---- left: the task, hints, the solution, and the task folder ------------------------------
   const sideBody = h("div", { class: "ws-side-body" });
-  const sideTabs = tabs(practice ? [["task", "Task"], ["hints", "Hints"], ["solution", "Solution"]] : [["task", "Task"]], showSide);
+  const sideTabs = tabs(practice ? [["task", "Task"], ["hints", "Hints"], ["solution", "Solution"], ["files", "Files"]] : [["task", "Task"], ["files", "Files"]], showSide);
 
   let sideNow = "task";
   function showSide(id) {
     sideNow = id;
     clear(sideBody);
     sideBody.scrollTop = 0;
+    if (id === "files") {
+      sideBody.append(fileList);
+      return;
+    }
     if (id === "task") {
       add(sideBody, heading ? h("h2", { class: "task-heading" }, heading) : null, h("div", { class: "prose task-text", html: ex.desc }));
       return;
@@ -153,6 +157,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   }
 
   function closePreview() {
+    setPane("code");
     preview = null;
     previewHost.hidden = true;
     editorHost.hidden = false;
@@ -162,6 +167,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   }
 
   async function openFile(f, kind) {
+    setPane("code"); // on a phone the folder sits in the Task pane, and the preview in the Code pane
     preview = { path: f.path };
     editorHost.hidden = true;
     previewHost.hidden = false;
@@ -439,7 +445,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   const main = h(
     "section",
     { class: "ws-main" },
-    h("div", { class: "ws-top" }, fileList, h("div", { class: "ws-editor" }, fileTabs, editorHost, previewHost)),
+    h("div", { class: "ws-top" }, h("div", { class: "ws-editor" }, fileTabs, editorHost, previewHost)),
     splitY,
     h("div", { class: "ws-bottom" }, h("div", { class: "ws-bottom-bar" }, bottomTabs.el, clearBtn, h("span", { class: "ws-actions" }, status, stopBtn, runBtn, testBtn, submitBtn)), consoleEl, repl, checksEl),
   );
@@ -478,7 +484,6 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   drag(splitY, "y");
 
   // ---- start -----------------------------------------------------------------------------
-  sideTabs.el.hidden = !practice; // the mock has only the task text, so a lone tab would be noise
   sideTabs.pick("task");
   bottomTabs.pick("console");
   paneTabs.pick("task");
