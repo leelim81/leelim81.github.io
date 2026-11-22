@@ -4,6 +4,7 @@ from math import comb, exp, sqrt
 
 import latex2mathml.converter as l2m
 
+import bank_extra
 import course
 import recall
 
@@ -545,6 +546,10 @@ SETS = [
     dict(id="F4", module=2, title="Leakage, features, and neural networks", questions=["f4-leak", "f4-scaling", "f4-encoding", "f4-nn", "f4-output"]),
 ]
 
+# The harder sets: cases and multi-step questions. They sit outside the eight sessions of the plan.
+bank_extra.register(numeric, choice, ROUND)
+SETS += bank_extra.SETS
+
 MOCKS = [
     dict(id="m1", title="Mock test 1", story="Telecom churn", minutes=90,
          questions=["m1-p1", "m1-p2", "m1-f1", "m1-f2", "m1-f3", "m1-f4", "m1-f5", "m1-f6", "m1-collect", "m1-process", "m1-model"]),
@@ -635,11 +640,13 @@ def assemble(exercises):
         m["title"] + m["story"] + m.get("note", "") for m in MOCKS)
     for bad, name in (("–", "en dash"), ("—", "em dash"), ("!", "exclamation mark"), ("$", "dollar sign")):
         assert bad not in text, f"{name} found in content near: {text[max(0, text.index(bad) - 60):text.index(bad) + 20]!r}"
-    assert set(course.SEE) == set(ids), f"lesson links: missing {set(ids) - set(course.SEE)}, unknown {set(course.SEE) - set(ids)}"
+    see = {**course.SEE, **bank_extra.SEE}
+    assert set(see) == set(ids), f"lesson links: missing {set(ids) - set(see)}, unknown {set(see) - set(ids)}"
+    assert set(see.values()) <= {les["id"] for les in course.LESSONS}, "a lesson link points to no lesson"
     questions = []
     for q in Q:
         q = dict(q)
-        q["see"] = course.SEE[q["id"]]
+        q["see"] = see[q["id"]]
         q["stem"] = render(q["stem"])
         q["explain"] = render(q["explain"])
         shown = q["stem"] + q["explain"] + "".join(o["text"] + o["why"] for o in q.get("options", []))
