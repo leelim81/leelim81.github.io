@@ -7,7 +7,7 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 ## What is in it
 
 - **23 coding tasks** with realistic data files: joins and aggregations, leak-free preprocessing, and models that have to clear a metric bar. Each task has visible checks, hidden checks, three hints, and a reference solution.
-- **50 quiz questions**: numeric answers to three decimals, single choice, and select all that apply. Every question has a worked explanation and a note on each option.
+- **89 quiz questions** in 14 sets and 2 mocks, 39 of them in 7 harder sets of cases and multi-step questions: numeric answers to three decimals, single choice, and select all that apply. Every question has a worked explanation and a note on each option.
 - **2 mock tests**: 11 questions on a 90-minute clock. Quiz answers stay unmarked until the end. Submit on a coding task shows how many checks pass, hidden ones included, without the reasons.
 - **A coding-only run**: four linked coding questions on a 70-minute clock and no quiz, the shape that some candidates describe. It adds a short analysis question and a model that has to reach a recall bar while precision stays above a floor. The story, the data, and the wording are this site's own.
 - **A 12-lesson refresher** on the theory behind the quiz questions: probability, statistics, and machine learning fundamentals. Each lesson has worked examples, a few checks with the reasoning, and a Python snippet to run and change. Quiz feedback links back to the lesson that covers the question.

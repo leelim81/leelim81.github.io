@@ -21,7 +21,7 @@ export function libraryView(root) {
       for (const s of B().sets.filter((x) => x.module === m.id)) {
         const rec = st.sets[s.id];
         const last = rec?.runs?.at(-1);
-        list.append(row({ href: `#/set/${s.id}`, state: last ? "done" : rec?.cur ? "doing" : "todo", title: s.title, meta: `${plural(s.questions.length, "question")}, about ${setMinutes(s)} min`, detail: last ? `${last.correct} of ${last.total} right` : "" }));
+        list.append(row({ href: `#/set/${s.id}`, state: last ? "done" : rec?.cur ? "doing" : "todo", title: s.title, meta: `${s.level === "harder" ? "Harder. " : ""}${plural(s.questions.length, "question")}, about ${setMinutes(s)} min`, detail: last ? `${last.correct} of ${last.total} right` : "" }));
       }
     } else {
       for (const e of B().exercises.filter((x) => x.module === m.id)) {

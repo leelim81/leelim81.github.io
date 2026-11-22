@@ -109,6 +109,21 @@ function practiceDays(st) {
   return { dots, count: keys.length };
 }
 
+// The harder question sets sit outside the eight sessions, so the margin shows how far you are with them.
+function harderSets(st) {
+  const sets = B().sets.filter((s) => s.level === "harder");
+  if (!sets.length) return null;
+  const done = sets.filter((s) => st.sets[s.id]?.runs?.length);
+  const next = sets.find((s) => !st.sets[s.id]?.runs?.length);
+  return h(
+    "section",
+    null,
+    h("h2", { class: "h-note" }, "Harder quiz sets"),
+    h("p", null, `${done.length} of ${sets.length} done. These are cases and multi-step questions on probability and machine learning.`),
+    next ? h("p", null, "Next: ", h("a", { href: `#/set/${next.id}` }, next.title), ". ", h("a", { href: "#/library" }, "See all of them"), ".") : h("p", null, "All done. Repeat any of them from the ", h("a", { href: "#/library" }, "Library"), "."),
+  );
+}
+
 function build() {
   const st = S();
   const sessions = B().plan.map(sessionView);
@@ -170,6 +185,7 @@ function build() {
         h("section", null, h("h2", { class: "h-note" }, "Today"), h("p", null, todayText)),
         h("section", null, h("h2", { class: "h-note" }, "Practice days"), h("ol", { class: "pds" }, pd.dots), h("p", null, pd.count ? `${plural(pd.count, "day")} so far.` + (run >= 2 ? ` ${run} in a row.` : "") : "Your first one starts with the next task.")),
         h("section", null, h("h2", { class: "h-note" }, "To review"), misses ? h("p", null, h("a", { href: "#/review" }, plural(misses, "question")), " you missed. Each one you clear is a point back.") : h("p", null, "Nothing waiting. Questions you miss land here.")),
+        harderSets(st),
         B()
           .mocks.filter((m) => m.format === "coding")
           .map((m) => {
