@@ -6,6 +6,7 @@ import latex2mathml.converter as l2m
 
 import bank_extra
 import course
+import ex_sql
 import recall
 
 MODULES = [
@@ -637,7 +638,7 @@ def assemble(exercises):
     text = " ".join(str(v) for q in Q for v in (q["stem"], q["explain"], q["title"], q["ref"]) ) + " ".join(
         o["text"] + o["why"] for q in Q if "options" in q for o in q["options"]) + " ".join(
         e["desc"] + " ".join(e["hints"]) + e["title"] + e.get("notes", "") for e in exercises) + " ".join(
-        m["title"] + m["story"] + m.get("note", "") for m in MOCKS)
+        m["title"] + m["story"] + m.get("note", "") for m in MOCKS) + ex_sql.INTRO + ex_sql.REFERENCE + " ".join(g["title"] + g["blurb"] for g in ex_sql.GROUPS)
     for bad, name in (("–", "en dash"), ("—", "em dash"), ("!", "exclamation mark"), ("$", "dollar sign")):
         assert bad not in text, f"{name} found in content near: {text[max(0, text.index(bad) - 60):text.index(bad) + 20]!r}"
     see = {**course.SEE, **bank_extra.SEE}
@@ -654,4 +655,4 @@ def assemble(exercises):
         questions.append(q)
     assert "recall" not in {les["id"] for les in course.LESSONS}, "a lesson id clashes with the code recall page"
     return dict(version=3, modules=MODULES, questions=questions, sets=SETS, mocks=MOCKS, plan=PLAN, exercises=exercises,
-                course=course.build(render), recall=recall.build())
+                course=course.build(render), recall=recall.build(), sql=ex_sql.page())

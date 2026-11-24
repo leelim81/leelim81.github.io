@@ -224,6 +224,13 @@ a.it-row:hover, .it-check:hover { background: var(--paper); color: var(--ink); }
 /* ---- library and settings ------------------------------------------------------------------ */
 .library, .settings { padding-top: 34px; }
 .library .nb { margin-top: 28px; }
+.sql-intro { margin-top: 14px; color: var(--muted); font-size: 16px; }
+.sql-count { margin-left: 12px; font: 400 14px/1.3 var(--sans); }
+.sql-ref .prose { margin-top: 10px; max-width: none; }
+.sql-ref .prose > p, .sql-ref .prose > ul, .sql-ref .prose > pre { max-width: 70ch; }
+.sql-ref .prose pre.code code { white-space: pre; background: none; padding: 0; }
+.sql-ref table { display: block; overflow-x: auto; max-width: 100%; width: auto; }
+.sql-ref td code { white-space: nowrap; }
 .settings { max-width: 760px; }
 .field { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 18px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
 .settings .h-sec { padding-bottom: 8px; border-bottom: 1.5px solid var(--ink); }

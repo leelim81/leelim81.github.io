@@ -1,6 +1,6 @@
 // The coding workspace: task on the left, files and editor on the right, console and checks below.
 // The task page and the mock test both use it.
-import { payload } from "./content.js";
+import { B, payload } from "./content.js";
 import { parseCSV } from "./csv.js";
 import { add, ask, bytes, clear, h, icon, plural } from "./dom.js";
 import { createEditor, highlight } from "./editor.js";
@@ -44,6 +44,9 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   let preview = null;
   let alive = true;
 
+  const isSql = ex.lang === "sql";
+  const mainFile = isSql ? "query.sql" : "solution.py";
+
   // ---- left: the task, hints, the solution, and the task folder ------------------------------
   const sideBody = h("div", { class: "ws-side-body" });
   const sideTabs = tabs(practice ? [["task", "Task"], ["hints", "Hints"], ["solution", "Solution"], ["files", "Files"]] : [["task", "Task"], ["files", "Files"]], showSide);
@@ -76,7 +79,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
       add(
         sideBody,
         h("div", { class: "prose" }, h("p", null, progress.solved ? "You solved it. Compare your code with the reference: look for steps it does in fewer lines." : "Read it, close it, then write it again from memory."), ex.notes ? h("p", { html: ex.notes }) : null),
-        h("pre", { class: "code" }, h("code", { html: highlight(ex.solution) })),
+        h("pre", { class: "code" }, h("code", { html: highlight(ex.solution, ex.lang) })),
       );
     } else {
       add(
@@ -106,7 +109,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
     add(
       fileList,
       h("div", { class: "ws-files-head" }, "Task folder"),
-      h("button", { class: "file" + (!preview ? " is-open" : ""), type: "button", onclick: () => closePreview() }, icon("code"), h("span", { class: "file-name" }, "solution.py")),
+      h("button", { class: "file" + (!preview ? " is-open" : ""), type: "button", onclick: () => closePreview() }, icon("code"), h("span", { class: "file-name" }, mainFile)),
       ex.files.map((f) => fileButton(f, "input")),
     );
     if (outputs.length) add(fileList, h("div", { class: "ws-files-head" }, "Written by your code"), outputs.map((f) => fileButton(f, "output")));
@@ -120,6 +123,8 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
 
   const editor = createEditor({
     parent: editorHost,
+    lang: isSql ? "sql" : "python",
+    label: `${mainFile}, code editor`,
     doc: getCode(key) ?? ex.starter,
     autocomplete: settings.autocomplete,
     onChange: () => {
@@ -145,7 +150,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
 
   function renderFileTabs() {
     clear(fileTabs);
-    fileTabs.append(h("button", { class: "tab", type: "button", "aria-selected": String(!preview), onclick: () => closePreview() }, "solution.py"));
+    fileTabs.append(h("button", { class: "tab", type: "button", "aria-selected": String(!preview), onclick: () => closePreview() }, mainFile));
     if (preview) {
       fileTabs.append(
         h("span", { class: "tab tab-file", "aria-selected": "true" }, preview.path, h("button", { class: "tab-x", type: "button", "aria-label": `Close ${preview.path}`, onclick: () => closePreview() }, icon("x"))),
@@ -234,7 +239,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
 
   // ---- console ---------------------------------------------------------------------------
   const lines = h("div", { class: "console-lines" });
-  const replInput = h("input", { class: "repl-in", type: "text", spellcheck: false, autocomplete: "off", autocapitalize: "off", "aria-label": "Python console", placeholder: "Try df.head() after a run" });
+  const replInput = h("input", { class: "repl-in", type: "text", spellcheck: false, autocomplete: "off", autocapitalize: "off", "aria-label": "Python console", placeholder: isSql ? "Try result.describe() after a run" : "Try df.head() after a run" });
   const past = [];
   let pastAt = 0;
   const consoleEl = h("div", { class: "console", role: "log", "aria-label": "Console output" }, lines);
@@ -361,7 +366,9 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
       line("note", "The task files are still loading. Try again in a moment.");
       return;
     }
-    const code = editor.value;
+    // An SQL task runs its query through a small Python program that loads the CSV files as tables.
+    const source = editor.value;
+    const code = isSql ? B().sql.runner.replace("__QUERY__", () => JSON.stringify(source)) : source;
     const label = { run: "Run", test: "Test", submit: "Submit" }[kind];
     line("rule", `${label}, ${new Date().toLocaleTimeString("en-GB")}`);
     consoleEl.scrollTop = consoleEl.scrollHeight;
@@ -406,7 +413,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
         const wrote = outputs.map((f) => f.path);
         line("note", `Finished in ${res.seconds < 10 ? res.seconds.toFixed(1) : Math.round(res.seconds)} s.` + (wrote.length ? ` Wrote ${wrote.join(", ")}.` : ""));
         const missing = ex.outputs.filter((o) => !wrote.includes(o));
-        if (kind === "run" && missing.length) line("note", `Not written yet: ${missing.join(", ")}.`);
+        if (kind === "run" && missing.length && !isSql) line("note", `Not written yet: ${missing.join(", ")}.`);
       }
       if (kind !== "run") {
         if (!res.error) {
@@ -419,7 +426,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
         }
         if (kind === "submit") {
           const items = res.result?.items || [];
-          onSubmit?.({ error: res.error ? res.error.summary : null, items, notes: res.result?.notes || [], passed: items.filter((i) => i.status === "pass").length, total: items.length || ex.checks.length, code });
+          onSubmit?.({ error: res.error ? res.error.summary : null, items, notes: res.result?.notes || [], passed: items.filter((i) => i.status === "pass").length, total: items.length || ex.checks.length, code: source });
         }
       }
     } catch (err) {
@@ -490,7 +497,7 @@ export function workspace({ ex, key, mode, progress, onProgress, onSubmit, headi
   renderFiles();
   renderFileTabs();
   renderChecks();
-  line("note", `Output from Run appears here (${MOD}+Enter runs, ${MOD}+Shift+Enter tests). After a run, type Python at the prompt below to look at your variables.`);
+  line("note", `Output from Run appears here (${MOD}+Enter runs, ${MOD}+Shift+Enter tests). ${isSql ? "After a run, the prompt below takes Python: result holds your rows as a DataFrame." : "After a run, type Python at the prompt below to look at your variables."}`);
   payload(ex.id).then(
     (p) => {
       data = p;

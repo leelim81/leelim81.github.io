@@ -2,6 +2,7 @@
 import { acceptCompletion, autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { python, pythonLanguage } from "@codemirror/lang-python";
+import { SQLite, sql } from "@codemirror/lang-sql";
 import { bracketMatching, indentOnInput, indentUnit, syntaxHighlighting } from "@codemirror/language";
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
 import { Compartment, EditorState, Prec, StateEffect, StateField } from "@codemirror/state";
@@ -51,7 +52,8 @@ const errorLine = StateField.define({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, autocomplete = true, label = "solution.py, code editor" }) {
+// lang: "python" for solution.py, or "sql" for the query of an SQL task.
+export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, autocomplete = true, lang = "python", label = "solution.py, code editor" }) {
   const complete = new Compartment();
   const run = (fn) => () => {
     fn?.();
@@ -80,7 +82,7 @@ export function createEditor({ parent, doc, onChange, onRun, onTest, onSave, aut
         highlightSelectionMatches(),
         indentUnit.of("    "),
         EditorState.tabSize.of(4),
-        python(),
+        lang === "sql" ? sql({ dialect: SQLite, upperCaseKeywords: true }) : python(),
         syntaxHighlighting(classHighlighter),
         complete.of(autocomplete ? suggest() : []),
         errorLine,
@@ -125,10 +127,10 @@ export function tokenRanges(code) {
 }
 
 // Python source as highlighted HTML, for the reference solutions.
-export function highlight(code) {
+export function highlight(code, lang = "python") {
   let html = "";
   let at = 0;
-  highlightTree(pythonLanguage.parser.parse(code), classHighlighter, (from, to, cls) => {
+  highlightTree((lang === "sql" ? SQLite.language : pythonLanguage).parser.parse(code), classHighlighter, (from, to, cls) => {
     html += esc(code.slice(at, from)) + `<span class="${cls}">${esc(code.slice(from, to))}</span>`;
     at = to;
   });

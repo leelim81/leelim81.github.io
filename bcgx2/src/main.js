@@ -5,6 +5,7 @@ import { homeView } from "./home.js";
 import { learnView, lessonView } from "./learn.js";
 import { recallView, roundView } from "./recall.js";
 import { libraryView } from "./library.js";
+import { sqlView } from "./sql.js";
 import { mockView } from "./mock.js";
 import { reviewView, setView } from "./quiz.js";
 import { startOffline } from "./offline.js";
@@ -37,6 +38,7 @@ function route() {
   else if (hash === "#/learn") cleanup = learnView(view);
   else if (hash === "#/review") cleanup = reviewView(view);
   else if (hash === "#/library") cleanup = libraryView(view);
+  else if (hash === "#/sql") cleanup = sqlView(view);
   else if (hash === "#/settings") cleanup = settingsView(view);
   else cleanup = homeView(view);
   renderHeader(top);

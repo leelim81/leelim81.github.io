@@ -12,6 +12,7 @@ It is a personal practice tool. It is not affiliated with or endorsed by CodeSig
 - **A coding-only run**: four linked coding questions on a 70-minute clock and no quiz, the shape that some candidates describe. It adds a short analysis question and a model that has to reach a recall bar while precision stays above a floor. The story, the data, and the wording are this site's own.
 - **A 12-lesson refresher** on the theory behind the quiz questions: probability, statistics, and machine learning fundamentals. Each lesson has worked examples, a few checks with the reasoning, and a Python snippet to run and change. Quiz feedback links back to the lesson that covers the question.
 - **A code recall drill** for the three coding tasks: 55 one-line cards on the imports, method names, and arguments that are easy to blank on. You type the missing piece. A round is 10 cards, a card you miss comes back before the round ends, and a line counts as known after two first tries in a row are right.
+- **An SQL page** outside the plan: 14 drills on one bookstore database and 6 longer practice questions, from filters and joins to window functions and runs of days in a row. The current test framework is Python only, so this page is insurance. Each task is one SELECT statement, which runs on SQLite inside the same Python worker, with checks, hints, and a reference query.
 - **An eight-session plan** that orders the tasks, sets, and mocks, and a library for free practice.
 
 ## How it works

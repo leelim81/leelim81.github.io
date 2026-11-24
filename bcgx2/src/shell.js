@@ -112,7 +112,7 @@ export function renderHeader(el) {
   add(
     el,
     h("a", { class: "brand", href: "#/", "aria-label": "Ninety, home" }, h("span", { class: "brand-mark" }, "Ninety")),
-    h("nav", { class: "nav", "aria-label": "Main" }, link("#/", "Plan"), link("#/learn", "Refresher"), link("#/library", "Library"), link("#/review", "Review", misses ? h("span", { class: "nav-count" }, misses) : null), link("#/settings", "Settings")),
+    h("nav", { class: "nav", "aria-label": "Main" }, link("#/", "Plan"), link("#/learn", "Refresher"), link("#/library", "Library"), link("#/sql", "SQL"), link("#/review", "Review", misses ? h("span", { class: "nav-count" }, misses) : null), link("#/settings", "Settings")),
     h("div", { class: "top-end" }, chip.el, themeButton()),
   );
 }

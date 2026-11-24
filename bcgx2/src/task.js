@@ -1,6 +1,6 @@
 // One coding task in practice mode: the workspace, a clock against the module budget, and the pass moment.
 import { ninetyBar } from "./bar.js";
-import { X, moduleProgress, nextLink, sessionClosedBy, splitKey, unlocked } from "./content.js";
+import { B, X, moduleProgress, nextLink, sessionClosedBy, splitKey, taskPassed, unlocked } from "./content.js";
 import { ask, clock, h, icon } from "./dom.js";
 import { notice, runtimeChip, themeButton } from "./shell.js";
 import { logDay, save, setCode, task } from "./store.js";
@@ -15,6 +15,7 @@ export function taskView(root, key) {
   if (!unlocked(ex)) return notice(root, "This task is part of a mock test", `It opens for practice after you finish ${X.mock[ex.mock].title}, so the test stays unseen.`, `#/mock/${ex.mock}`, `Go to ${X.mock[ex.mock].title}`);
 
   document.body.classList.add("focus");
+  const isSql = ex.lang === "sql"; // SQL tasks sit outside the five modules and the plan
   const mod = X.mod[ex.module];
   const rec = task(key);
   if (!rec.started) {
@@ -38,7 +39,9 @@ export function taskView(root, key) {
     const idle = Date.now() - lastTouch > IDLE_MS;
     timer.replaceChildren(icon("clock"), `${clock(rec.seconds)} of ${ex.minutes} min`, idle ? " (paused)" : "");
     timer.classList.toggle("is-over", rec.seconds > ex.minutes * 60);
-    timer.title = `Time on this task. On the test, ${mod.name.toLowerCase()} gets about ${ex.minutes} minutes. The clock pauses when you leave the tab.`;
+    timer.title = isSql
+      ? `Time on this task. Aim for about ${ex.minutes} minutes. The clock pauses when you leave the tab.`
+      : `Time on this task. On the test, ${mod.name.toLowerCase()} gets about ${ex.minutes} minutes. The clock pauses when you leave the tab.`;
   }
 
   const ws = workspace({
@@ -73,29 +76,40 @@ export function taskView(root, key) {
     },
   });
 
+  // The next unsolved SQL task after this one, in page order.
+  function nextSql() {
+    const ids = B().sql.groups.flatMap((g) => g.tasks);
+    const rest = [...ids.slice(ids.indexOf(ex.id) + 1), ...ids.slice(0, ids.indexOf(ex.id))];
+    const id = rest.find((x) => !taskPassed(x));
+    return id ? { href: `#/task/${id}`, label: `Next: ${X.ex[id].title}` } : { href: "#/sql", label: "Back to the SQL page" };
+  }
+
   async function celebrate(before, prevBest) {
     const after = moduleProgress();
-    const bar = ninetyBar({ progress: before, size: "slim" });
+    const bar = isSql ? null : ninetyBar({ progress: before, size: "slim" });
     const spare = ex.minutes * 60 - rec.seconds;
     const lines = [
       spare >= 0
         ? `Your time: ${clock(rec.seconds)}. The budget is ${ex.minutes} minutes, so you had ${clock(spare)} in hand.`
         : `Your time: ${clock(rec.seconds)}. The budget is ${ex.minutes} minutes. Speed comes on the second pass, now that you know the steps.`,
-      rec.submits === 1 ? "Every hidden check passed on your first submit." : `Solved on submit ${rec.submits}.`,
+      rec.submits === 1 ? (ex.checks.some((c) => c.hidden) ? "Every hidden check passed on your first submit." : "Solved on your first submit.") : `Solved on submit ${rec.submits}.`,
     ];
     if (prevBest && rec.seconds < prevBest) lines.push(`That is ${clock(prevBest - rec.seconds)} faster than your last run.`);
     if (rec.peeked) lines.push("You read the reference solution on the way. Plan one more pass from a blank file.");
     const closed = sessionClosedBy("code", key);
     if (closed) lines.push(closed);
     const p = after[ex.module];
-    const next = nextLink();
-    setTimeout(() => bar.update(after), 450);
+    const next = isSql ? nextSql() : nextLink();
+    if (isSql) {
+      const all = B().sql.groups.flatMap((g) => g.tasks);
+      lines.push(`${all.filter(taskPassed).length} of ${all.length} SQL tasks solved.`);
+    } else setTimeout(() => bar.update(after), 450);
     const pick = await ask({
       title: `All ${rec.checks.total} checks pass`,
       body: [
         h("ul", { class: "pass-lines" }, lines.map((t) => h("li", null, t))),
         bar,
-        h("p", { class: "muted pass-mod" }, `${mod.name}: ${p.done} solved` + (p.done >= p.target ? ", target met." : `, aim for ${p.target}.`)),
+        isSql ? null : h("p", { class: "muted pass-mod" }, `${mod.name}: ${p.done} solved` + (p.done >= p.target ? ", target met." : `, aim for ${p.target}.`)),
       ],
       actions: [
         { label: "Stay here", value: "stay" },
@@ -111,7 +125,7 @@ export function taskView(root, key) {
   async function startOver() {
     const yes = await ask({
       title: "Redo from a blank file?",
-      body: h("p", null, `Your code is replaced with the starter file and the clock restarts. The task stays solved in your plan, and your best time of ${clock(rec.best)} is kept.`),
+      body: h("p", null, `Your code is replaced with the starter file and the clock restarts. The task stays solved, and your best time of ${clock(rec.best)} is kept.`),
       actions: [{ label: "Keep my code", value: false, focus: true }, { label: "Start again", value: true, kind: "btn-go" }],
     });
     if (!yes) return;
@@ -128,8 +142,8 @@ export function taskView(root, key) {
       h(
         "header",
         { class: "ws-bar" },
-        h("a", { class: "back", href: "#/" }, icon("back"), "Plan"),
-        h("div", { class: "ws-title" }, h("h1", null, ex.title), h("span", { class: "ws-mod" }, `Module ${mod.id}, ${mod.name}`), pass === 2 ? h("span", { class: "ws-pass" }, "Second pass") : null),
+        h("a", { class: "back", href: isSql ? "#/sql" : "#/" }, icon("back"), isSql ? "SQL" : "Plan"),
+        h("div", { class: "ws-title" }, h("h1", null, ex.title), h("span", { class: "ws-mod" }, isSql ? (ex.group === "drills" ? "SQL drill" : "SQL practice question") : `Module ${mod.id}, ${mod.name}`), pass === 2 ? h("span", { class: "ws-pass" }, "Second pass") : null),
         h("div", { class: "ws-bar-end" }, redo, timer, chip.el, themeButton()),
       ),
       ws.el,
