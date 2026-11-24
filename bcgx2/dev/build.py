@@ -32,7 +32,7 @@ sys.path.insert(0, str(DEV))
 sys.path.insert(0, str(ROOT / "py"))
 import ninety_check  # noqa: E402
 
-EX_MODULES = ["ex_houses", "ex_shop", "ex_cars", "ex_models", "ex_mock1", "ex_mock2", "ex_mock3"]
+EX_MODULES = ["ex_houses", "ex_shop", "ex_cars", "ex_models", "ex_mock1", "ex_mock2", "ex_mock3", "ex_sql"]
 
 
 def write_files(folder, files):
@@ -84,7 +84,7 @@ def build_exercise(ex, tmp):
     write_files(hidden, ex.get("hidden", {}))
 
     # 1. reference solution
-    out = run_code(ex["solution"], work, f"{eid}/solution")
+    out = run_code(ex.get("solution_run") or ex["solution"], work, f"{eid}/solution")      # an SQL task runs its query through a small program
     for rel in ex["outputs"]:
         assert (work / rel).is_file(), f"{eid}: the solution did not write {rel}"
     hidden_files = dict(ex.get("hidden", {}))
@@ -184,6 +184,9 @@ def build_exercise(ex, tmp):
     meta["files"] = [{"path": rel, "bytes": len(text.encode())} for rel, text in ex["inputs"].items()]
     meta["checks"] = [{"name": i["name"], "hidden": i["hidden"]} for i in res["items"]]
     meta["notes"] = ex.get("notes", "")
+    for extra in ("lang", "group"):
+        if extra in ex:
+            meta[extra] = ex[extra]
     size = len(json.dumps(payload)) / 1024
     print(f"  ok  {eid:24s} {len(names):2d} checks, {len(ex.get('variants', [])):2d} variants, {size:7.0f} KB, {time.time() - t0:5.1f}s"
           + (f"   stdout: {out.strip()[:70]!r}" if out.strip() else ""))
