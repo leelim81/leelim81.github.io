@@ -1,6 +1,6 @@
 # One Twenty
 
-A practice room for a two-hour panel case interview for a senior AI engineering role. It is a personal study tool. It names no company and no person, and it asks search engines not to list it.
+A practice room for a two-hour panel case interview for a senior AI engineering role. It is a personal study tool. It does not name the hiring company or any person, and it asks search engines not to list it.
 
 The design follows Ninety, the practice room in `../bcgx2`: the same paper, ink, and yellow marker, the same fonts, and no framework.
 

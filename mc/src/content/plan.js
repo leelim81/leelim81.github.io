@@ -18,7 +18,7 @@ export const SESSIONS = [
   {
     id: "s2",
     title: "Case 1, and the core AWS parts",
-    goal: "One full case cold, and two reference pictures you can draw.",
+    goal: "One full case cold, and one reference picture you can draw.",
     minutes: 75,
     items: [
       { kind: "case", ref: "scam-score" },

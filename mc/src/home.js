@@ -186,7 +186,7 @@ export function homeView(root) {
               ),
             ),
           ),
-          h("section", null, h("p", { class: "h-note" }, "Private by design"), h("p", { class: "muted" }, "Progress stays in this browser. The page names no company and no person, and search engines are asked not to list it.")),
+          h("section", null, h("p", { class: "h-note" }, "Private by design"), h("p", { class: "muted" }, "Progress stays in this browser. The site does not name the company you are meeting, or any person, and search engines are asked not to list it.")),
         ),
       ),
     );
