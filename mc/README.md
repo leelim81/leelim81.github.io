@@ -9,6 +9,7 @@ The design follows Ninety, the practice room in `../bcgx2`: the same paper, ink,
 - **Plan.** A countdown, five study sessions, and a checklist for the day.
 - **Playbook.** How to run the two hours: the arc, the opening, the whiteboard, and how to behave as the panel's future manager.
 - **Cases.** Four scenarios, each worked in full: questions, options, an architecture diagram that replays in draw order, numbers, trade-offs, the leadership layer, pushbacks, and a two-minute close. Each answer stays hidden until you have tried the case against a clock.
+- **Your case.** A workbook for presenting a case from your own experience: three lengths, a diagram, the probes to expect, and timed runs. Notes typed into it stay in the browser.
 - **AWS kit.** The parts to name at a whiteboard, by layer, with the equivalent on a Hadoop, Spark, or Databricks stack. Four reference diagrams.
 - **Q&A.** Questions outside the case, with draft answers to adapt.
 - **Drills.** Recall cards, drawing from memory, pushbacks against a clock, arithmetic aloud, and a 25-minute mock panel with a scoring rubric.

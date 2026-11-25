@@ -10,6 +10,14 @@ export function say(label, text, quiet) {
   return h("blockquote", { class: "say" + (quiet ? " say-quiet" : "") }, label ? h("span", { class: "say-label" }, label) : null, text);
 }
 
+// Text with its [gaps] marked. A gap is something only you know.
+export function gaps(text) {
+  return String(text)
+    .split(/(\[[^\]]+\])/)
+    .filter(Boolean)
+    .map((part) => (part.startsWith("[") ? h("mark", { class: "gap" }, part.slice(1, -1)) : part));
+}
+
 export const bullets = (items, cls = "plain") => h("ul", { class: cls }, items.map((t) => h("li", null, t)));
 
 // A sticky row of links to the sections of a long page. The router owns the hash, so these scroll.

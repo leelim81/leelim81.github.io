@@ -70,13 +70,13 @@ const BRITISH = /\b(behaviour|colour|favour|honour|labour|neighbour|organis|auth
 const DASH = new RegExp("[" + String.fromCharCode(8210, 8211, 8212, 8213) + "]");
 const MONEY = new RegExp("(?:US|S)?[$" + String.fromCharCode(8364, 163, 165) + "]\\s?\\d");
 const escape = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// Short names match as whole words in their own capitals. Longer names match anywhere, in any case.
+// Names match as whole words. Short names must also match in their own capitals.
 const banned = existsSync(join(root, "dev/banned.local.txt"))
   ? readFileSync(join(root, "dev/banned.local.txt"), "utf8")
       .split("\n")
       .map((t) => t.trim())
       .filter(Boolean)
-      .map((name) => [name, name.length <= 4 ? new RegExp("\\b" + escape(name) + "\\b") : new RegExp(escape(name), "i")])
+      .map((name) => [name, new RegExp("\\b" + escape(name) + "\\b", name.length <= 4 ? "" : "i")])
   : [];
 
 for (const file of walk(root)) {
@@ -109,6 +109,7 @@ const { SUMS, PERSONAL, UNSEEN, PHASES } = await load("src/content/drills.js");
 const { LESSONS } = await load("src/content/primer.js");
 const { VIDEOS } = await load("src/content/videos.js");
 const { SESSIONS } = await load("src/content/plan.js");
+const { MINE, BEATS } = await load("src/content/mine.js");
 
 function unique(what, ids) {
   const seen = new Set();
@@ -129,8 +130,12 @@ unique("kit card", LAYERS.flatMap((l) => l.cards.map((c) => c.id)));
 for (const c of CARDS) if (!TOPICS.some((t) => t.id === c.topic)) problems.push(`content  card ${c.id}: no topic "${c.topic}"`);
 for (const l of LESSONS) for (const c of l.checks) if (!(c.right >= 0 && c.right < c.options.length)) problems.push(`content  lesson ${l.id}, check ${c.id}: the right answer is out of range`);
 if (PHASES.reduce((n, p) => n + p.minutes, 0) !== 25) problems.push("content  the mock phases do not add up to 25 minutes");
+if (BEATS.reduce((n, b) => n + b.secs, 0) !== 600) problems.push("content  the beats of your own case do not add up to ten minutes");
+unique("own case", MINE.map((m) => m.id));
+unique("probe", MINE.flatMap((m) => m.probes.map((p) => p.id)));
+for (const m of MINE) for (const b of BEATS) if (!m.beats[b.id]?.say || !m.beats[b.id]?.ask?.length) problems.push(`content  own case ${m.id}: the beat "${b.id}" is missing a line or its questions`);
 
-const specs = [...CASES.flatMap((c) => c.diagrams.map((d) => [d.spec, d.notes || {}])), ...REFS.map((r) => [r.spec, r.notes || {}])];
+const specs = [...CASES.flatMap((c) => c.diagrams.map((d) => [d.spec, d.notes || {}])), ...REFS.map((r) => [r.spec, r.notes || {}]), ...MINE.flatMap((m) => m.diagrams.map((d) => [d.spec, d.notes || {}]))];
 unique("diagram", specs.map(([s]) => s.id));
 for (const [s, notes] of specs) {
   const where = `content  diagram ${s.id}:`;

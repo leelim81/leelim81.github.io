@@ -34,6 +34,7 @@ const LINKS = [
   ["#/", "Plan"],
   ["#/playbook", "Playbook"],
   ["#/cases", "Cases"],
+  ["#/mine", "Your case"],
   ["#/aws", "AWS kit"],
   ["#/qa", "Q&A"],
   ["#/drills", "Drills"],
@@ -50,7 +51,7 @@ export function renderHeader(el) {
     h("a", { class: "brand", href: "#/", "aria-label": "One Twenty, home" }, h("span", { class: "brand-mark" }, "One Twenty")),
     h(
       "nav",
-      { class: "nav nav-8", "aria-label": "Main" },
+      { class: "nav nav-many", "aria-label": "Main" },
       LINKS.map(([href, text]) => h("a", { href, class: "nav-link", "aria-current": on(href) ? "page" : null }, text)),
     ),
     h("div", { class: "top-end" }, h("a", { class: "icon-btn", href: "#/settings", "aria-label": "Settings", title: "Settings", "aria-current": here === "#/settings" ? "page" : null }, icon("gear")), themeButton()),

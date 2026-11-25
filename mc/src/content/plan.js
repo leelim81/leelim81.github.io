@@ -42,11 +42,12 @@ export const SESSIONS = [
   {
     id: "s4",
     title: "Case 4, and the questions about you",
-    goal: "The leadership case, and answers you can give without notes.",
-    minutes: 80,
+    goal: "The leadership case, your own case, and answers you can give without notes.",
+    minutes: 120,
     items: [
       { kind: "case", ref: "portfolio" },
       { kind: "todo", id: "s4-qa", title: "Say all the answers in Q&A aloud, and fix what isn't true", href: "#/qa", meta: "30 min" },
+      { kind: "todo", id: "s4-mine", title: "Pick your own case, and fill in its workbook", href: "#/mine", meta: "40 min" },
       { kind: "lesson", ref: "production" },
       { kind: "lesson", ref: "residency" },
       { kind: "todo", id: "s4-sums", title: "One round of numbers aloud", href: "#/drills/numbers", meta: "10 min" },
@@ -55,11 +56,12 @@ export const SESSIONS = [
   {
     id: "s5",
     title: "Dress rehearsal",
-    goal: "One timed run on a prompt you haven't seen, then rest.",
-    minutes: 60,
+    goal: "One timed run on a prompt you haven't seen, your own case against the clock, then rest.",
+    minutes: 80,
     items: [
       { kind: "todo", id: "s5-mock", title: "Run the mock panel on an unseen prompt, standing, with a pen", href: "#/drills/mock", meta: "25 min, then score" },
       { kind: "video", ref: "3PRJjNaqcdY" },
+      { kind: "todo", id: "s5-mine", title: "Present your own case: three minutes, then ten, with the picture", href: "#/mine", meta: "20 min" },
       { kind: "todo", id: "s5-close", title: "Say the two-minute close of each case against the clock", href: "#/cases", meta: "10 min" },
       { kind: "todo", id: "s5-missed", title: "A last recall round. Missed cards come up first", href: "#/drills/recall", meta: "5 min" },
     ],
@@ -67,6 +69,7 @@ export const SESSIONS = [
 ];
 
 export const WARMUP = [
+  ["#/mine", "Your own case, in 30 seconds"],
   ["#/drills/recall", "One recall round"],
   ["#/drills/draw", "One diagram from memory"],
   ["#/drills/pushback", "Three pushbacks, standing"],
