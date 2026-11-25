@@ -10,6 +10,7 @@ export const SESSIONS = [
     minutes: 60,
     items: [
       { kind: "todo", id: "s1-playbook", title: "Read the playbook from start to finish", href: "#/playbook", meta: "15 min" },
+      { kind: "todo", id: "s1-panel", title: "Put the people you will meet into the Panel page", href: "#/panel", meta: "5 min" },
       { kind: "lesson", ref: "payments" },
       { kind: "video", ref: "TFZQIZrK0YQ" },
       { kind: "todo", id: "s1-recall", title: "One recall round on your frameworks", href: "#/drills/recall", meta: "5 min" },

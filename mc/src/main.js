@@ -5,6 +5,7 @@ import { clear, h } from "./dom.js";
 import { drawListView, drawView, drillsView, mockView, numbersView, pushbackView, recallView, roundView } from "./drills.js";
 import { homeView } from "./home.js";
 import { mineCaseView, mineProbesView, mineView } from "./mine.js";
+import { panelRecallView, panelView } from "./panel.js";
 import { startOffline } from "./offline.js";
 import { playbookView } from "./playbook.js";
 import { lessonView, primerView } from "./primer.js";
@@ -31,6 +32,8 @@ function route() {
   if ((m = hash.match(/^#\/case\/([\w-]+)$/))) cleanup = caseView(view, m[1]);
   else if (hash === "#/cases") cleanup = casesView(view);
   else if (hash === "#/playbook") cleanup = playbookView(view);
+  else if (hash === "#/panel/recall") cleanup = panelRecallView(view);
+  else if (hash === "#/panel") cleanup = panelView(view);
   else if ((m = hash.match(/^#\/mine\/([\w-]+)\/probes$/))) cleanup = mineProbesView(view, m[1]);
   else if ((m = hash.match(/^#\/mine\/([\w-]+)$/))) cleanup = mineCaseView(view, m[1]);
   else if (hash === "#/mine") cleanup = mineView(view);

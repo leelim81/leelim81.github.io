@@ -1,21 +1,24 @@
 /* One Twenty: the pieces that Ninety's design system did not need.
    Same paper, same ink, same yellow. Yellow still means "yours": what you drew, what you said, what is next. */
 
-/* ---- header: nine links and a settings button ----------------------------------------------- */
+/* ---- header: ten links and a settings button ------------------------------------------------ */
 .nav-many .nav-link { padding: 5px 8px; }
 .top-end .icon-btn { text-decoration: none; }
 .top-end .icon-btn:hover { background: var(--paper); color: var(--ink); }
 .top-end .icon-btn[aria-current="page"] { border-color: var(--marker-edge); background: var(--marker); color: var(--marker-ink); }
-@media (max-width: 1080px) {
+@media (max-width: 1140px) {
   .top { flex-wrap: wrap; gap: 10px 16px; }
-  .nav-many { order: 3; width: 100%; display: grid; grid-template-columns: repeat(9, auto); justify-content: space-between; gap: 0; }
+  .nav-many { order: 3; width: 100%; display: grid; grid-template-columns: repeat(10, auto); justify-content: space-between; gap: 0; }
 }
 @media (max-width: 720px) {
   .top { padding: 14px 16px 10px; }
-  .nav-many { grid-template-columns: repeat(3, 1fr); gap: 2px 0; }
-  .nav-many .nav-link { text-align: center; padding: 6px 2px; font-size: 14.5px; }
+  .nav-many { grid-template-columns: repeat(5, 1fr); gap: 2px 0; }
+  .nav-many .nav-link { text-align: center; padding: 7px 0; font-size: 14px; white-space: nowrap; }
   #view { padding: 4px 16px 48px; }
   .foot { padding-inline: 16px; }
+}
+@media (max-width: 350px) {
+  .nav-many { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* ---- reading pages ---------------------------------------------------------------------------- */
@@ -311,3 +314,13 @@ mark.gap { background: var(--marker); color: var(--marker-ink); padding: 2px 5px
 .rehearse { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 14px 0 4px; }
 .qa-body .note-field { margin-top: 0; }
 .warn-box .plain > li:last-child { border-bottom: 0; }
+
+/* ---- the panel: a private notebook ----------------------------------------------------------------- */
+.text-in { display: block; width: 100%; padding: 9px 12px; border: 1.5px dashed var(--rule-strong); border-radius: 4px; background: var(--paper); color: var(--ink); font: 400 16px/1.4 var(--sans); }
+.text-in:focus { border-style: solid; border-color: var(--ink); outline: none; box-shadow: inset 5px 0 0 var(--marker); }
+.text-in::placeholder { color: var(--faint); }
+.people { margin-top: 16px; }
+.person .note-field { margin-top: 8px; max-width: none; }
+.person .note-in { min-height: 64px; }
+.mock-intro .chips { max-width: 100%; }
+.mock-intro .chip { white-space: normal; text-align: left; }

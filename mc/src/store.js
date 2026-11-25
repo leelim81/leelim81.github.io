@@ -34,6 +34,7 @@ function defaults() {
     mine: {}, // your own case id -> { notes: { field: text }, runs: [{ ts, len, secs }] }
     lead: null, // the case of your own that you plan to lead with
     probe: {}, // probe id -> { n, ok, ts }
+    panel: [], // the people you will meet, typed by you: { id, name, role, say, bg, lens, ask }
     days: {}, // yyyy-mm-dd -> actions that day
   };
 }
