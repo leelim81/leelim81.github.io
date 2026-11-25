@@ -1,0 +1,12 @@
+{
+  "name": "one-twenty-practice-room",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node dev/build.mjs",
+    "lint": "node dev/lint.mjs"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
