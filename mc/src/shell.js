@@ -33,6 +33,7 @@ export function themeButton() {
 const LINKS = [
   ["#/", "Plan"],
   ["#/playbook", "Playbook"],
+  ["#/panel", "Panel"],
   ["#/cases", "Cases"],
   ["#/mine", "Your case"],
   ["#/aws", "AWS kit"],

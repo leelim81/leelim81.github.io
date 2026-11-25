@@ -263,7 +263,7 @@ export function playbookView(root) {
       "room",
       "Six people, four lenses",
       "Who is listening for what",
-      h("p", { class: "body" }, "You won't know for certain who holds which lens. The first question each person asks will tell you. Answer the person, then check: \"Does that cover what you were asking?\""),
+      h("p", { class: "body" }, "You won't know for certain who holds which lens. The first question each person asks will tell you. Answer the person, then check: \"Does that cover what you were asking?\" Keep a name and a note for each person in ", h("a", { href: "#/panel" }, "the Panel page"), "."),
       h(
         "div",
         { class: "cards", style: "margin-top: 16px" },
