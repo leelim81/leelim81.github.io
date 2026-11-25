@@ -148,7 +148,7 @@ export function playbookView(root) {
         { class: "arc-rows" },
         ARC.map((p) => h("li", null, h("span", { class: "arc-l" }, p.l), h("span", { class: "arc-when" }, `${p.from} to ${p.to} min`), h("div", null, h("p", { class: "arc-name" }, p.name), h("p", { class: "arc-do" }, p.todo), h("p", { class: "arc-see" }, "They see: " + p.see)))),
       ),
-      h("div", { class: "note-box" }, h("p", { class: "h-note" }, "If they run it differently"), h("p", null, "They may lead with questions, or hand you a prompt in parts. Follow them. Use the arc to notice what hasn't been covered yet, and offer it: \"We haven't talked about how this is released. Shall I take that next?\"")),
+      h("div", { class: "note-box" }, h("p", { class: "h-note" }, "If they run it differently"), h("p", null, "They may lead with questions, or hand you a prompt in parts. Follow them. Use the arc to notice what hasn't been covered yet, and offer it: \"We haven't talked about how this is released. Shall I take that next?\""), h("p", null, "They may also ask you to present a case of your own. ", h("a", { href: "#/mine" }, "Prepare one in Your case"), ".")),
     ),
 
     sec(

@@ -31,6 +31,9 @@ function defaults() {
     lessons: {}, // lesson id -> { opened, done, answers: { check id: option index } }
     mocks: [], // finished mock panels: { ts, prompt, scores, total, secs }
     watched: {}, // video id -> time it was marked
+    mine: {}, // your own case id -> { notes: { field: text }, runs: [{ ts, len, secs }] }
+    lead: null, // the case of your own that you plan to lead with
+    probe: {}, // probe id -> { n, ok, ts }
     days: {}, // yyyy-mm-dd -> actions that day
   };
 }
@@ -122,8 +125,9 @@ export function panelTime() {
 // ---- small records ------------------------------------------------------------------------
 export const caseRec = (id) => (state.cases[id] ||= { opened: 0, tried: 0, revealed: 0, done: 0 });
 export const lessonRec = (id) => (state.lessons[id] ||= { opened: 0, done: 0, answers: {} });
+export const mineRec = (id) => (state.mine[id] ||= { notes: {}, runs: [] });
 
-// A self-marked attempt at a drill item: bucket is "push", "sums", "qa", or "draw".
+// A self-marked attempt at a drill item: bucket is "push", "sums", "qa", "draw", or "probe".
 export function mark(bucket, id, ok, extra) {
   const r = (state[bucket][id] ||= { n: 0, ok: 0, ts: 0 });
   r.n++;

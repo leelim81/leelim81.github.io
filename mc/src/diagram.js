@@ -400,7 +400,8 @@ function draw(spec, wide, cur, picked, onPick) {
 const lastStep = (spec) => Math.max(1, (spec.steps || []).length);
 
 // A diagram with its controls. opts.notes maps a box id to its notes, shown when the box is tapped.
-// opts.build starts in draw order. opts.onDone runs when the last step is reached.
+// opts.build starts in draw order. opts.onDone runs when the last step is reached. opts.hint replaces
+// the line that says what a tap on a box shows.
 export function diagram(spec, opts = {}) {
   const notes = opts.notes || {};
   const hasNotes = Object.keys(notes).length > 0;
@@ -448,7 +449,7 @@ export function diagram(spec, opts = {}) {
     const flip = h("button", { class: "btn btn-small", type: "button", onclick: () => ((wide = !wide), (S().settings.tall = !wide), save(), paint()) }, icon("swap"), wide ? "Tall view" : "Wide view");
     if (cur === 0) {
       add(bar, h("button", { class: "btn btn-small btn-go", type: "button", onclick: () => ((cur = 1), paint()) }, icon("pen"), "Build it in draw order"), flip);
-      if (hasNotes) cap.append(h("p", { class: "muted dg-hint" }, "Tap a box for what it does, why it is there, and what it is called outside AWS."));
+      if (hasNotes) cap.append(h("p", { class: "muted dg-hint" }, opts.hint || "Tap a box for what it does, why it is there, and what it is called outside AWS."));
     } else {
       add(
         bar,

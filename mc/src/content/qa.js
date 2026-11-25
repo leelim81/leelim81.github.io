@@ -13,6 +13,7 @@ export const QA_GROUPS = [
         q: "Walk us through a model you took to production, end to end.",
         a: "At the bank, I worked in the data science team for corporate banking. The models recommended which product to offer a company next, and which sales channel to use. The data sat in more than ten legacy systems, so the first job was plumbing: we consolidated them into a data lake and built one end-to-end pipeline, with PySpark jobs for company and transaction features. Each model was backtested on history before release and tracked against real outcomes afterwards. Over five years that pipeline carried more than 50 models into production, and I moved from data scientist to senior data scientist. What I'd do differently now is treat the feature layer as a shared product from day one, because similar features get rebuilt for every model. That is why I'd care about your feature platform.",
         add: "Pick one model and add its real detail: the metric, how you validated it, and what you monitored after release.",
+        more: ["#/mine/bank-pipeline", "Build the ten-minute version of this case"],
         why: "A real system, your part in it, a gate, and one thing you'd change. End on a link to their world.",
       },
       {
@@ -62,7 +63,7 @@ export const QA_GROUPS = [
       {
         id: "failure",
         q: "Tell us about something that went wrong.",
-        a: "When I started the AI unit, we said yes too often. We built prototypes fast, and many of them stayed prototypes. Each one worked in a demo and then stalled, for the usual reasons: nobody on the business side owned it, the data wasn't ready, or there was no route into production. So I changed the front door. I wrote an intake framework: no build starts without a named owner, a number it should move, data we can use, and a path to production. Over three years we built about 100 prototypes and shipped 30 into real use. I'd rather that ratio were higher, and the intake rule is how it improves. The lesson I carry is that an unfinished project costs more than the hours spent on it, because it uses up trust.",
+        a: "When I started the AI unit, we said yes too often. We built prototypes fast, and many of them stayed prototypes. Each one worked in a demo and then stalled, for the usual reasons: nobody on the business side owned it, the data wasn't ready, or there was no route into production. Looking back, I separate two things. A project that is stopped is a decision, and that is healthy. A project that is stuck has no sponsor who intends to fund it and no date for a decision, and that was a failure of governance on my part. So I changed the front door: an intake that scores value and risk, a plan for adoption before we build, readiness gates, and sign-off by the users who test. Over three years we built about 100 prototypes and shipped 30 into real use. The lesson I carry is that a stuck project costs more than the hours spent on it, because it uses up trust.",
         add: "Name one project that stalled, in a sentence, so the story is concrete.",
         why: "A real mistake, owned in the first person, with a mechanism that fixed it. No blame on others.",
       },

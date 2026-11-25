@@ -3,6 +3,7 @@ import { REFS } from "./content/aws.js";
 import { CARDS, TOPICS } from "./content/cards.js";
 import { CASES } from "./content/cases.js";
 import { CURVES, PERSONAL, PHASES, RUBRIC, SUMS, UNSEEN } from "./content/drills.js";
+import { MINE } from "./content/mine.js";
 import { diagram } from "./diagram.js";
 import { add, clear, clock, h, icon, shuffled, toast } from "./dom.js";
 import { notice, pageHead } from "./shell.js";
@@ -13,6 +14,7 @@ import { say, timer } from "./ui.js";
 export const DIAGRAMS = [
   ...CASES.flatMap((c) => c.diagrams.map((d) => ({ id: d.spec.id, title: d.spec.title, from: `Case ${c.n}`, href: "#/case/" + c.id, spec: d.spec, notes: d.notes }))),
   ...REFS.map((r) => ({ id: r.id, title: r.spec.title, from: "AWS kit", href: "#/aws/d/" + r.id, spec: r.spec, notes: r.notes })),
+  ...MINE.flatMap((m) => m.diagrams.map((d) => ({ id: d.spec.id, title: d.spec.title, from: "Your case", href: "#/mine/" + m.id, spec: d.spec, notes: d.notes, hint: d.hint }))),
 ];
 
 const PUSH = [
@@ -23,7 +25,7 @@ const PUSH = [
 const mix = (list) => shuffled(list.length, String(Date.now())).map((i) => list[i]);
 
 // Least practiced first: never tried, then missed last time, then the rest, oldest first.
-function pick(pool, bucket, n) {
+export function pick(pool, bucket, n) {
   const rank = (x) => {
     const r = S()[bucket][x.id];
     return !r ? 0 : r.last ? 2 : 1;
@@ -37,7 +39,7 @@ const tally = (pool, bucket) => pool.filter((x) => S()[bucket][x.id]?.last).leng
 
 // ---- a deck: one prompt at a time, answer aloud, reveal, mark yourself -----------------------------
 // cfg: { back: [href, label], title, items: [{ id, topic, q }], seconds, returnMissed, answer(item), onFirst(item, ok), again() }
-function runDeck(root, cfg) {
+export function runDeck(root, cfg) {
   const queue = cfg.items.slice();
   const first = new Map();
   const returns = new Map();
@@ -180,9 +182,10 @@ export function drillsView(root) {
         "div",
         { class: "drill-grid" },
         tile("#/drills/recall", "Recall cards", "Your frameworks, the figures, and the vocabulary. Rounds of ten. Missed cards come back.", `${known} of ${CARDS.length} known`),
-        tile("#/drills/draw", "Draw it", "Nine diagrams. Draw each from memory in five minutes, then compare box by box.", `${drawn} of ${DIAGRAMS.length} drawn`),
+        tile("#/drills/draw", "Draw it", `${DIAGRAMS.length} diagrams, with your own cases among them. Draw each from memory in five minutes, then compare box by box.`, `${drawn} of ${DIAGRAMS.length} drawn`),
         tile("#/drills/pushback", "Pushbacks", "A panelist disagrees. You have 60 seconds: take the point, test it, and land a decision.", `${tally(PUSH, "push")} of ${PUSH.length} handled`),
         tile("#/drills/numbers", "Numbers aloud", "Arithmetic at the board: load, storage, alerts, and people. The method matters more than the figure.", `${tally(SUMS, "sums")} of ${SUMS.length} right`),
+        tile("#/mine", "Your own case", "One case from your record, told in 30 seconds, in three minutes, and in ten. Then the probes, 60 seconds each.", `${Object.values(S().mine).reduce((n, r) => n + (r.runs || []).length, 0)} timed runs`),
         tile("#/drills/mock", "Mock panel", "25 minutes, six phases, and two curveballs. Score yourself against the rubric.", mocks.length ? `${mocks.length} run${mocks.length === 1 ? "" : "s"}, best ${best} of ${RUBRIC.length * 3}` : "Not run yet"),
       ),
     ),
@@ -353,7 +356,7 @@ export function drawListView(root) {
       "div",
       { class: "page has-head" },
       pageHead("#/drills", "Drills", "Draw it"),
-      h("h1", { class: "display lesson-title" }, "Nine diagrams, from memory"),
+      h("h1", { class: "display lesson-title" }, `${DIAGRAMS.length} diagrams, from memory`),
       h("p", { class: "lede" }, "Use paper or a whiteboard. Give yourself five minutes, number the flow, and say each step aloud as you draw. Then compare box by box."),
       h(
         "ol",
@@ -427,7 +430,7 @@ export function drawView(root, id) {
     const count = h("span", { class: "muted num" });
     const paintCount = () => (count.textContent = `${ticks.filter(Boolean).length} of ${boxes.length} ticked`);
     paintCount();
-    const dg = diagram(d.spec, { notes: d.notes });
+    const dg = diagram(d.spec, { notes: d.notes, hint: d.hint });
     add(
       page,
       h("p", { class: "lede" }, "Compare your drawing with this one. The names can differ. The jobs and the order should match."),

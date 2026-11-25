@@ -49,6 +49,7 @@ export function qaView(root) {
         draft,
         say("A draft, in your voice", x.a),
         x.add ? h("p", { class: "qa-why" }, h("b", null, "Make it yours. "), x.add) : null,
+        x.more ? h("p", { class: "qa-why" }, h("a", { href: x.more[0] }, x.more[1])) : null,
         h("p", { class: "qa-why" }, h("b", null, "What they listen for. "), x.why),
         grade((ok) => {
           mark("qa", x.id, ok);
