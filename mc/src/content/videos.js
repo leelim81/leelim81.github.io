@@ -66,16 +66,16 @@ export const VIDEO_GROUPS = [
   },
   {
     id: "aws",
-    title: "The AWS picture",
-    note: "One reference for the vocabulary, from AWS itself.",
+    title: "One design, in one vendor's names",
+    note: "A fraud design drawn with AWS products. Watch it for the order of the parts, then put each product back into a plain box.",
     items: [
       {
         id: "8k6OfLGsxZU",
         title: "AI/ML based Card Payment Fraud Detection on AWS using replicated data from mainframe",
         channel: "Amazon Web Services",
         date: "30 May 2024",
-        why: "A card payment fraud design in AWS's own words, starting from data that lives on a mainframe. Useful for the names of the parts and the order they connect in.",
-        watch: ["Which services carry the real-time path, and which carry the batch path.", "How data leaves the system of record.", "What you would draw differently for a network that scores on behalf of banks."],
+        why: "A card payment fraud design in one vendor's words, starting from data that lives on a mainframe. Useful for the order the parts connect in. As you watch, name the plain component behind each product.",
+        watch: ["Which components carry the real-time path, and which carry the batch path.", "How data leaves the system of record.", "What you would draw differently for a network that scores on behalf of banks."],
       },
     ],
   },

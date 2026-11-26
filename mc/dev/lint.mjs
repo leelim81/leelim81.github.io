@@ -1,7 +1,8 @@
 // Checks the words and the content before a build is published.
 //   node dev/lint.mjs
 // Style: no long dashes, no currency symbols, no exclamation marks in prose, no filler words, and
-// American spelling. Content: ids are unique, and every diagram refers to boxes that exist.
+// American spelling. Content: ids are unique, every diagram refers to boxes that exist, a diagram has
+// nine boxes or fewer, and a box is named for its job, with any product name in brackets underneath.
 // Names that must never appear on the site are read from dev/banned.local.txt, one per line.
 // That file is not committed, because the list itself would put the names in the repository.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -102,7 +103,7 @@ for (const file of walk(root)) {
 // ---- content ---------------------------------------------------------------------------------------
 const load = (p) => import(pathToFileURL(join(root, p)).href);
 const { CASES } = await load("src/content/cases.js");
-const { REFS, LAYERS } = await load("src/content/aws.js");
+const { REFS, LAYERS } = await load("src/content/kit.js");
 const { CARDS, TOPICS } = await load("src/content/cards.js");
 const { QA } = await load("src/content/qa.js");
 const { SUMS, PERSONAL, UNSEEN, PHASES } = await load("src/content/drills.js");
@@ -127,6 +128,11 @@ unique("prompt", [...UNSEEN.map((u) => u.id), ...CASES.map((c) => c.id)]);
 unique("lesson", LESSONS.map((l) => l.id));
 unique("video", VIDEOS.map((v) => v.id));
 unique("kit card", LAYERS.flatMap((l) => l.cards.map((c) => c.id)));
+// A component has a plain name. The product is an example, kept apart from the name.
+for (const c of LAYERS.flatMap((l) => l.cards)) {
+  if (!c.name || !c.aws || !c.eq) problems.push(`content  kit card ${c.id}: needs a plain name, an AWS example, and other examples`);
+  if (/\b(AWS|Amazon|SageMaker|Bedrock|Kinesis)\b/.test(c.name || "")) problems.push(`content  kit card ${c.id}: the name is a product. Name the component, and put the product in the example`);
+}
 for (const c of CARDS) if (!TOPICS.some((t) => t.id === c.topic)) problems.push(`content  card ${c.id}: no topic "${c.topic}"`);
 for (const l of LESSONS) for (const c of l.checks) if (!(c.right >= 0 && c.right < c.options.length)) problems.push(`content  lesson ${l.id}, check ${c.id}: the right answer is out of range`);
 if (PHASES.reduce((n, p) => n + p.minutes, 0) !== 25) problems.push("content  the mock phases do not add up to 25 minutes");
@@ -163,6 +169,13 @@ for (const [s, notes] of specs) {
   for (let k = 1; k <= steps; k++) {
     const any = Object.values(s.nodes).some((n) => (n.at || 1) === k) || s.edges.some((e) => (e.at || 1) === k) || (s.base || []).some((b) => (b.at || 1) === k);
     if (!any) problems.push(`${where} step ${k} draws nothing`);
+  }
+  // Keep a diagram small enough to draw from memory, and keep products out of the box names.
+  if (placed.length > 9) problems.push(`${where} has ${placed.length} boxes. Nine is the most a person redraws from memory`);
+  for (const n of Object.values(s.nodes)) {
+    if (/\b(AWS|Amazon|SageMaker|Bedrock|Kinesis|AgentCore|DynamoDB|EMR|EKS|S3)\b/.test(n.t)) problems.push(`${where} box "${n.t}" is named after a product. Put the product in brackets on the second line`);
+    if (n.s && n.s.startsWith("(") !== n.s.endsWith(")")) problems.push(`${where} box "${n.t}" has an example with one bracket missing`);
+    if (n.s && /\b(AWS|Amazon|SageMaker|Bedrock|Kinesis|AgentCore|DynamoDB|EMR|EKS|S3|Lake Formation|Athena|Glue)\b/.test(n.s) && !n.s.startsWith("(")) problems.push(`${where} box "${n.t}" names a product outside brackets`);
   }
   const nums = s.edges.filter((e) => e.n != null).map((e) => e.n);
   unique(`flow number in ${s.id}`, nums);

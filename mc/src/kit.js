@@ -1,5 +1,6 @@
-// The AWS kit: four reference pictures, the parts by layer, and a map to other stacks.
-import { LAYERS, LINE, REFS, STACK, refById } from "./content/aws.js";
+// The toolkit: four reference pictures, the components by layer, and a map of product names.
+// Every component has a plain name. A product name is only ever an example.
+import { LAYERS, LINE, REFS, STACK, refById } from "./content/kit.js";
 import { diagram, nodeList } from "./diagram.js";
 import { add, clear, h, icon } from "./dom.js";
 import { notice, pageHead } from "./shell.js";
@@ -12,10 +13,10 @@ function card(c) {
   return h(
     "div",
     { class: "card" + (c.trap ? " trap" : c.core ? " is-core" : "") },
-    h("div", { class: "kc-head" }, h("p", { class: "card-title" }, c.name), c.trap ? h("span", { class: "tag" }, "Avoid") : c.core ? h("span", { class: "tag tag-on" }, "Core") : null),
+    h("div", { class: "kc-head" }, h("p", { class: "card-title" }, c.name, " ", h("span", { class: "kc-aws" }, `(${c.aws})`)), c.trap ? h("span", { class: "tag" }, "Avoid") : c.core ? h("span", { class: "tag tag-on" }, "Core") : null),
     h("p", { class: "card-text" }, c.job),
-    h("dl", { class: "kv" }, h("dt", null, c.trap ? "At the board" : "Pick it when"), h("dd", null, c.pick), h("dt", null, "Say"), h("dd", null, c.say), h("dt", null, c.trap ? "What to use" : "Outside AWS"), h("dd", null, c.eq)),
-    c.num ? h("p", { class: "kc-num" }, h("b", null, "Figure: "), c.num) : null,
+    h("dl", { class: "kv" }, h("dt", null, c.trap ? "At the board" : "Pick it when"), h("dd", null, c.pick), h("dt", null, "Say"), h("dd", null, c.say), h("dt", null, c.trap ? "What to use" : "Other examples"), h("dd", null, c.eq)),
+    c.num ? h("p", { class: "kc-num" }, h("b", null, "On AWS. "), c.num) : null,
   );
 }
 
@@ -25,18 +26,18 @@ export function stackTable() {
     { class: "tbl-wrap" },
     h(
       "table",
-      { class: "tbl tbl-3" },
-      h("thead", null, h("tr", null, h("th", { scope: "col" }, "Job"), h("th", { scope: "col" }, "On AWS"), h("th", { scope: "col" }, "On a Hadoop, Spark, or Databricks stack"))),
+      { class: "tbl tbl-3 tbl-names" },
+      h("thead", null, h("tr", null, h("th", { scope: "col" }, "Component"), h("th", { scope: "col" }, "AWS example"), h("th", { scope: "col" }, "Other examples"))),
       h(
         "tbody",
         null,
-        STACK.map(([job, aws, other]) => h("tr", null, h("th", { scope: "row" }, job), h("td", { class: "v" }, aws), h("td", { class: "how" }, other))),
+        STACK.map(([job, aws, other]) => h("tr", null, h("th", { scope: "row" }, job), h("td", { class: "v", "data-l": "AWS example" }, aws), h("td", { class: "how", "data-l": "Others" }, other))),
       ),
     ),
   );
 }
 
-export function awsView(root) {
+export function kitView(root) {
   const page = h("div", { class: "page learn" });
   clear(root).append(page);
   const total = LAYERS.reduce((n, l) => n + l.cards.length, 0);
@@ -53,10 +54,10 @@ export function awsView(root) {
         h(
           "div",
           { class: "chips" },
-          h("button", { class: "chip", type: "button", "aria-pressed": String(!coreOnly), onclick: () => ((coreOnly = false), paintParts()) }, `All ${total} parts`),
-          h("button", { class: "chip", type: "button", "aria-pressed": String(coreOnly), onclick: () => ((coreOnly = true), paintParts()) }, `The ${core} core parts`),
+          h("button", { class: "chip", type: "button", "aria-pressed": String(!coreOnly), onclick: () => ((coreOnly = false), paintParts()) }, `All ${total} components`),
+          h("button", { class: "chip", type: "button", "aria-pressed": String(coreOnly), onclick: () => ((coreOnly = true), paintParts()) }, `The ${core} core components`),
         ),
-        h("p", { class: "muted" }, "If time is short, learn the core parts. They cover every diagram on this site."),
+        h("p", { class: "muted" }, "If time is short, learn the core components. They cover every diagram on this site. The name in brackets is an AWS example."),
       ),
       LAYERS.map((layer) => {
         const cards = layer.cards.filter((c) => !coreOnly || c.core || c.trap);
@@ -74,22 +75,22 @@ export function awsView(root) {
       h(
         "div",
         null,
-        h("h1", { class: "display" }, "The AWS kit"),
-        h("p", { class: "hero-sub" }, "You know basic AWS. This page gives you the names to say at the board, when to pick each part, and what the same part is called on the stack the panel runs."),
+        h("h1", { class: "display" }, "The toolkit"),
+        h("p", { class: "hero-sub" }, "Draw components, not products. This page gives each component a plain name, its job, and when to pick it. A product name is only an example: one from AWS in brackets, and others beside it."),
       ),
       h("div", { class: "next" }, h("span", { class: "next-where" }, "Say this before you draw"), h("p", { class: "next-title", style: "font: 400 21px/1.4 var(--serif)" }, LINE)),
     ),
     jump([
       ["pictures", "Four pictures"],
-      ["parts", "Parts by layer"],
-      ["map", "Stack map"],
+      ["parts", "Components by layer"],
+      ["map", "Name map"],
       ["rules", "Rules of thumb"],
     ]),
     sec(
       "pictures",
       "Start here",
       "Four reference pictures",
-      h("p", { class: "body" }, "Most answers are one of these four, or two of them joined. Replay each in draw order, then practice it from memory in the drills."),
+      h("p", { class: "body" }, "Most answers are one of these four, or two of them joined. Each has nine boxes or fewer. Replay each in draw order, then practice it from memory in the drills."),
       h(
         "ol",
         { class: "lessons" },
@@ -100,7 +101,7 @@ export function awsView(root) {
             { class: "les" },
             h(
               "a",
-              { class: "les-row", href: "#/aws/d/" + r.id },
+              { class: "les-row", href: "#/kit/d/" + r.id },
               h("span", { class: "les-n" }, i + 1),
               h("span", null, h("span", { class: "les-title" }, r.title), h("span", { class: "les-meta" }, r.use)),
               h("span", { class: "les-end" }, rec ? `Drawn ${rec.n} time${rec.n === 1 ? "" : "s"}` : "Not drawn yet"),
@@ -109,12 +110,12 @@ export function awsView(root) {
         }),
       ),
     ),
-    sec("parts", "Vocabulary", "The parts, by layer", parts),
+    sec("parts", "Vocabulary", "The components, by layer", parts),
     sec(
       "map",
       "When they say \"we don't use that\"",
-      "The same jobs on another stack",
-      h("p", { class: "body" }, "The jobs stay the same on every stack. Only the names change. If a panelist names their tool, repeat it once and keep using their word."),
+      "One component, many product names",
+      h("p", { class: "body" }, "The component stays the same on every stack. Only the product name changes. If a panelist names their tool, repeat it once and keep using their word."),
       stackTable(),
     ),
     sec(
@@ -129,7 +130,9 @@ export function awsView(root) {
           "Managed first. Run it yourself only when you need control of latency, cost, or a company standard.",
           "One definition of a feature, served two ways. That removes the skew between training and serving.",
           "Every arrow needs a budget or a schedule. Say the milliseconds or the hour.",
-          "Draw the security bar under everything: roles, keys, audit log, private network, and the Region.",
+          "Name the component first, and a product only as an example. A box that says \"event stream\" survives any stack.",
+          "Nine boxes or fewer. If a box does not change the answer, move it to the bar underneath.",
+          "Draw the security bar under everything: roles, keys, audit log, private network, and where the data lives.",
           "Raw data stays in its market. Approved aggregates and model artifacts travel.",
           "Nothing reaches production without a registry entry, an owner, and an alarm.",
           "For agents, put the controls outside the model: identity, policy on tool calls, guardrails, and evaluations.",
@@ -143,7 +146,7 @@ export function awsView(root) {
 
 export function refView(root, id) {
   const r = refById(id);
-  if (!r) return notice(root, "That picture is not here", "It may have been renamed.", "#/aws", "The AWS kit");
+  if (!r) return notice(root, "That picture is not here", "It may have been renamed.", "#/kit", "The toolkit");
   const i = REFS.indexOf(r);
   const next = REFS[i + 1];
   const dg = diagram(r.spec, { notes: r.notes });
@@ -151,7 +154,7 @@ export function refView(root, id) {
     h(
       "div",
       { class: "page has-head" },
-      pageHead("#/aws", "AWS kit", `Picture ${i + 1} of ${REFS.length}`),
+      pageHead("#/kit", "Toolkit", `Picture ${i + 1} of ${REFS.length}`),
       h("h1", { class: "display lesson-title" }, r.title),
       h("p", { class: "lede" }, r.use),
       say("How to use it", r.intro, true),
@@ -167,7 +170,7 @@ export function refView(root, id) {
           "div",
           { class: "btn-row" },
           h("a", { class: "btn btn-go", href: "#/drills/draw/" + r.id }, icon("pen"), "Draw it from memory"),
-          next ? h("a", { class: "btn", href: "#/aws/d/" + next.id }, "Next picture", icon("next")) : h("a", { class: "btn", href: "#/aws" }, "Back to the kit"),
+          next ? h("a", { class: "btn", href: "#/kit/d/" + next.id }, "Next picture", icon("next")) : h("a", { class: "btn", href: "#/kit" }, "Back to the toolkit"),
         ),
       ),
     ),

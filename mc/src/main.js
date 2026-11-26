@@ -1,9 +1,9 @@
 // One Twenty: a practice room for a two-hour panel case.
-import { awsView, refView } from "./aws.js";
 import { caseView, casesView } from "./cases.js";
 import { clear, h } from "./dom.js";
 import { drawListView, drawView, drillsView, mockView, numbersView, pushbackView, recallView, roundView } from "./drills.js";
 import { homeView } from "./home.js";
+import { kitView, refView } from "./kit.js";
 import { mineCaseView, mineProbesView, mineView } from "./mine.js";
 import { panelRecallView, panelView } from "./panel.js";
 import { startOffline } from "./offline.js";
@@ -20,6 +20,8 @@ const top = document.getElementById("top");
 let cleanup = null;
 
 function route() {
+  // The toolkit used to live at another address. Old links still work.
+  if (/^#\/aws(\/|$)/.test(location.hash)) return location.replace("#/kit" + location.hash.slice(5));
   const hash = location.hash || "#/";
   cleanup?.();
   cleanup = null;
@@ -37,8 +39,8 @@ function route() {
   else if ((m = hash.match(/^#\/mine\/([\w-]+)\/probes$/))) cleanup = mineProbesView(view, m[1]);
   else if ((m = hash.match(/^#\/mine\/([\w-]+)$/))) cleanup = mineCaseView(view, m[1]);
   else if (hash === "#/mine") cleanup = mineView(view);
-  else if ((m = hash.match(/^#\/aws\/d\/([\w-]+)$/))) cleanup = refView(view, m[1]);
-  else if (hash === "#/aws") cleanup = awsView(view);
+  else if ((m = hash.match(/^#\/kit\/d\/([\w-]+)$/))) cleanup = refView(view, m[1]);
+  else if (hash === "#/kit") cleanup = kitView(view);
   else if (hash === "#/qa") cleanup = qaView(view);
   else if (hash === "#/drills/recall/round") cleanup = roundView(view);
   else if (hash === "#/drills/recall") cleanup = recallView(view);

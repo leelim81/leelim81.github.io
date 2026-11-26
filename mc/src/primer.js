@@ -50,7 +50,7 @@ export function primerView(root) {
         h(
           "p",
           null,
-          "Service limits come from the AWS documentation. Spark defaults come from the Apache Spark documentation. The rules come from the Monetary Authority of Singapore and from the Reserve Bank of India's circular of 6 April 2018. Scam figures come from the Singapore Police Force. Payment volumes and timings are the published figures of one large card network. The other numbers in the cases and the drills are assumptions for practice.",
+          "Service limits are AWS examples, and come from the AWS documentation. Spark defaults come from the Apache Spark documentation. The rules come from the Monetary Authority of Singapore and from the Reserve Bank of India's circular of 6 April 2018. Scam figures come from the Singapore Police Force. Payment volumes and timings are the published figures of one large card network. The other numbers in the cases and the drills are assumptions for practice.",
         ),
         h("p", { class: "note-proof" }, "Limits and rules change. Check any figure you plan to quote on the day."),
       ),

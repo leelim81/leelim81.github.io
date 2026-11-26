@@ -190,7 +190,8 @@ export function playbookView(root) {
         h("div", { class: "wb-bot" }, h("b", null, "Decision and ask"), "Written last, read aloud at the close"),
       ),
       bullets([
-        "Use big boxes and few words. Number the main flow.",
+        "Use big boxes and few words. Nine boxes at most. Number the main flow.",
+        "Name each box for the job it does: event stream, feature store, model endpoint. If you name a product, put it in brackets as an example, and ask for theirs.",
         "Say the caption as you draw. Don't draw in silence for more than 20 seconds.",
         "Hand the pen over once: \"Would you draw how this works today?\"",
         "Use the parking lot. It shows that you heard a point, without losing your thread.",
@@ -255,7 +256,7 @@ export function playbookView(root) {
       "Scripts for your gaps",
       say("Payments", "I haven't worked in payments. I've learned the basics so that I can ask better questions, and I'll check my assumptions with you as I go."),
       say("Scale", "The largest volume I've worked with is about 100 million a year. Yours is more than a thousand times that. Where scale changes the answer, I'll say what I'd expect, and ask you what happens in practice."),
-      say("Their stack", "I'll sketch this in AWS terms, because it is a vocabulary we share. Tell me your equivalents as we go, and I'll switch to your names."),
+      say("Their stack", "I'll draw this with plain components, and name a product only as an example. Tell me what you run for each box, and I'll write your names in."),
       say("Anything else", "I don't know. Here is my guess, so that you can correct it, and here is how I'd find out.", true),
     ),
 

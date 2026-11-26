@@ -291,6 +291,8 @@ body.focus .nav, body.focus .foot { display: none; }
   .tbl-3 tbody tr { grid-template-columns: 1fr; }
   .tbl-3 th, .tbl-3 td { width: auto; }
   .tbl-3 tbody td.v { margin-top: 2px; }
+  /* with the column headings hidden, each line says which kind of name it holds */
+  .tbl-names td[data-l]::before { content: attr(data-l) ": "; color: var(--faint); font-size: 13px; }
   .wb { grid-template-columns: 1fr 1fr; grid-template-areas: "top top" "mid mid" "left right" "bot bot"; }
   .mk-top .clock-face { font-size: 38px; }
   .items { padding-left: 8px; }
@@ -324,3 +326,6 @@ mark.gap { background: var(--marker); color: var(--marker-ink); padding: 2px 5px
 .person .note-in { min-height: 64px; }
 .mock-intro .chips { max-width: 100%; }
 .mock-intro .chip { white-space: normal; text-align: left; }
+
+/* A product name beside a component name: lighter, so the component reads first. */
+.kc-aws { font-weight: 400; color: var(--muted); }

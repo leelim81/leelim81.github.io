@@ -1,5 +1,5 @@
 // The drills: recall cards, drawing from memory, pushbacks, arithmetic aloud, and a timed mock panel.
-import { REFS } from "./content/aws.js";
+import { REFS } from "./content/kit.js";
 import { CARDS, TOPICS } from "./content/cards.js";
 import { CASES } from "./content/cases.js";
 import { CURVES, PERSONAL, PHASES, RUBRIC, SUMS, UNSEEN } from "./content/drills.js";
@@ -13,7 +13,7 @@ import { say, timer } from "./ui.js";
 // ---- shared data ---------------------------------------------------------------------------------
 export const DIAGRAMS = [
   ...CASES.flatMap((c) => c.diagrams.map((d) => ({ id: d.spec.id, title: d.spec.title, from: `Case ${c.n}`, href: "#/case/" + c.id, spec: d.spec, notes: d.notes }))),
-  ...REFS.map((r) => ({ id: r.id, title: r.spec.title, from: "AWS kit", href: "#/aws/d/" + r.id, spec: r.spec, notes: r.notes })),
+  ...REFS.map((r) => ({ id: r.id, title: r.spec.title, from: "Toolkit", href: "#/kit/d/" + r.id, spec: r.spec, notes: r.notes })),
   ...MINE.flatMap((m) => m.diagrams.map((d) => ({ id: d.spec.id, title: d.spec.title, from: "Your case", href: "#/mine/" + m.id, spec: d.spec, notes: d.notes, hint: d.hint }))),
 ];
 
@@ -401,7 +401,7 @@ export function drawView(root, id) {
           "div",
           { class: "try" },
           h("p", { class: "try-title" }, "Draw it before you look"),
-          h("ol", null, h("li", null, "Start where the request or the data starts."), h("li", null, "Number the main flow as you go."), h("li", null, "Say one sentence for each step, aloud."), h("li", null, "Finish with the bar underneath: security, catalog, or evals.")),
+          h("ol", null, h("li", null, "Start where the request or the data starts."), h("li", null, "Name each box for the job it does. A product goes in brackets, as an example."), h("li", null, "Number the main flow as you go."), h("li", null, "Say one sentence for each step, aloud."), h("li", null, "Finish with the bar underneath: security, catalog, or evals.")),
           t.el,
           h(
             "div",
