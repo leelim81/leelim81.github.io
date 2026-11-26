@@ -59,6 +59,10 @@ function layout(spec, wide, extra = []) {
   const layerOf = {};
   spec.layers.forEach((layer, i) => layer.nodes.forEach((id) => (layerOf[id] = i)));
   const side = lanes(spec, layerOf);
+  // Neighbors in one layer sit close together. A flow number between them needs more room, and every
+  // layer with the same number of boxes gets the same room, so that the boxes still line up.
+  const wideGap = new Set(spec.edges.filter((e) => e.n != null && layerOf[e.a] === layerOf[e.b]).map((e) => spec.layers[layerOf[e.a]].nodes.length));
+  const roomy = (i) => wideGap.has(spec.layers[i].nodes.length);
   const nodes = {};
   const layers = [];
   const labels = [];
@@ -80,8 +84,9 @@ function layout(spec, wide, extra = []) {
         y += pre;
       }
       const m = layer.nodes.length;
-      const w = Math.min((mainW - (m - 1) * GX) / m, m === 1 ? 200 : 172);
-      let x = padL + (mainW - (m * w + (m - 1) * GX)) / 2;
+      const gx = roomy(i) ? 32 : GX;
+      const w = Math.min((mainW - (m - 1) * gx) / m, m === 1 ? 200 : 172);
+      let x = padL + (mainW - (m * w + (m - 1) * gx)) / 2;
       const row = layer.nodes.map((id, idx) => {
         const n = { id, ...spec.nodes[id], layer: i, idx, w };
         n.tl = wrap(n.t, Math.floor((w - 14) / 6.5));
@@ -93,7 +98,7 @@ function layout(spec, wide, extra = []) {
         n.x = x;
         n.y = y;
         n.h = hh;
-        x += w + GX;
+        x += w + gx;
         nodes[n.id] = n;
       }
       layers.push({ y, h: hh, pre });
@@ -122,17 +127,25 @@ function layout(spec, wide, extra = []) {
       n.h = boxHeight(n);
       return n;
     });
-    return { col, height: col.reduce((sum, n) => sum + n.h, 0) + (col.length - 1) * GY };
+    return { col, gy: roomy(i) ? 32 : GY };
   });
+  // Columns with the same number of boxes share their box heights, so that the boxes line up in rows
+  // and the arrows between them run straight.
+  const tallest = {};
+  for (const { col } of cols) col.forEach((n, k) => (tallest[col.length + ":" + k] = Math.max(tallest[col.length + ":" + k] || 0, n.h)));
+  for (const c of cols) {
+    c.col.forEach((n, k) => (n.h = tallest[c.col.length + ":" + k]));
+    c.height = c.col.reduce((sum, n) => sum + n.h, 0) + (c.col.length - 1) * c.gy;
+  }
   const maxCol = Math.max(...cols.map((c) => c.height));
   let x = 12;
-  cols.forEach(({ col, height }, i) => {
+  cols.forEach(({ col, gy, height }, i) => {
     let y = padT + (maxCol - height) / 2;
     if (spec.layers[i].label) labels.push({ x, y: 12, text: spec.layers[i].label });
     for (const n of col) {
       n.x = x;
       n.y = y;
-      y += n.h + GY;
+      y += n.h + gy;
       nodes[n.id] = n;
     }
     layers.push({ x, w: NW, pre: 0 });
@@ -231,51 +244,65 @@ function routes(spec, L) {
       const ends = members.flatMap((x) => [x.low, x.high]);
       groups.push({ members, lo: Math.min(...ends), hi: Math.max(...ends) });
     }
-    // groups whose runs do not overlap can sit on the same track
+    // Groups whose runs do not overlap can share a track. If that packing leaves a crossing, or two
+    // arrows on one line, try a track for every group and keep whichever reads cleaner.
     groups.sort((p, q) => p.lo - q.lo);
-    const tracks = [];
-    for (const grp of groups) {
-      let t = tracks.findIndex((list) => list.every((o) => o.hi + 8 < grp.lo || grp.hi + 8 < o.lo));
-      if (t < 0) t = tracks.push([]) - 1;
-      tracks[t].push(grp);
-      for (const x of grp.members) x.track = t;
-    }
-    const n = tracks.length;
-    const crossings = (pos) => {
-      let c = 0;
-      for (const p of items) {
-        const lo = Math.min(p.low, p.high) + 0.5;
-        const hi = Math.max(p.low, p.high) - 0.5;
-        for (const q of items) {
-          if (q === p || q.track === p.track) continue;
-          if (q.low > lo && q.low < hi && pos[q.track] > pos[p.track]) c++;
-          if (q.high > lo && q.high < hi && pos[q.track] < pos[p.track]) c++;
-        }
+    const arrange = (share) => {
+      const tracks = [];
+      for (const grp of groups) {
+        let t = share ? tracks.findIndex((list) => list.every((o) => o.hi + 8 < grp.lo || grp.hi + 8 < o.lo)) : -1;
+        if (t < 0) t = tracks.push([]) - 1;
+        tracks[t].push(grp);
       }
-      return c;
-    };
-    let best = tracks.map((_, i) => i);
-    if (n > 1 && n <= 6) {
-      let bestC = crossings(best);
-      const walk = (pos, left) => {
-        if (!left.length) {
-          const c = crossings(pos);
-          if (c < bestC) [best, bestC] = [pos.slice(), c];
-          return;
+      const n = tracks.length;
+      const track = new Map();
+      tracks.forEach((list, t) => list.forEach((grp) => grp.members.forEach((x) => track.set(x, t))));
+      const crossings = (pos) => {
+        let c = 0;
+        for (const p of items) {
+          const lo = Math.min(p.low, p.high) + 0.5;
+          const hi = Math.max(p.low, p.high) - 0.5;
+          const pp = pos[track.get(p)];
+          for (const q of items) {
+            if (q === p || track.get(q) === track.get(p)) continue;
+            const qp = pos[track.get(q)];
+            if (q.low > lo && q.low < hi && qp > pp) c++;
+            if (q.high > lo && q.high < hi && qp < pp) c++;
+            // p drops to the next layer where q drops from the layer before: one line would hide the other
+            if (Math.abs(q.low - p.high) < 6 && qp > pp) c += 2;
+          }
         }
-        for (const t of left) {
-          pos[t] = n - left.length;
-          walk(pos, left.filter((x) => x !== t));
-        }
+        return c;
       };
-      walk([], best.slice());
+      let best = tracks.map((_, i) => i);
+      let bestC = crossings(best);
+      if (n > 1 && n <= 6) {
+        const walk = (pos, left) => {
+          if (!left.length) {
+            const c = crossings(pos);
+            if (c < bestC) [best, bestC] = [pos.slice(), c];
+            return;
+          }
+          for (const t of left) {
+            pos[t] = n - left.length;
+            walk(pos, left.filter((x) => x !== t));
+          }
+        };
+        walk([], best.slice());
+      }
+      return { n, track, best, c: bestC };
+    };
+    let plan = arrange(true);
+    if (plan.c > 0 && groups.length > plan.n && groups.length <= 6) {
+      const loose = arrange(false);
+      if (loose.c < plan.c) plan = loose;
     }
     for (const it of items) {
-      const where = [+g, best[it.track], n];
+      const where = [+g, plan.best[plan.track.get(it)], plan.n];
       if (it.part === "t") it.e._t = where;
       else it.e["_" + it.part] = where;
     }
-    counts[+g] = n;
+    counts[+g] = plan.n;
   }
   // Where a track sits in its gap. The gap ends where the next layer's label begins.
   const at = ([g, i, n]) => {
@@ -399,12 +426,16 @@ function draw(spec, wide, cur, picked, onPick) {
 
 const lastStep = (spec) => Math.max(1, (spec.steps || []).length);
 
+// The second line of a box, as it reads after the title: " (an example)" or " · a note".
+const sub = (text) => (text.startsWith("(") ? " " + text : " · " + text);
+
 // A diagram with its controls. opts.notes maps a box id to its notes, shown when the box is tapped.
 // opts.build starts in draw order. opts.onDone runs when the last step is reached. opts.hint replaces
 // the line that says what a tap on a box shows.
 export function diagram(spec, opts = {}) {
   const notes = opts.notes || {};
   const hasNotes = Object.keys(notes).length > 0;
+  const hasAws = Object.values(spec.nodes).some((n) => (n.s || "").startsWith("("));
   const total = lastStep(spec);
   let cur = opts.build ? 1 : 0;
   let picked = null;
@@ -429,7 +460,7 @@ export function diagram(spec, opts = {}) {
     const meta = spec.nodes[picked];
     add(
       note,
-      h("p", { class: "dg-note-title" }, meta.t, meta.s ? h("span", { class: "muted" }, " · " + meta.s) : null),
+      h("p", { class: "dg-note-title" }, meta.t, meta.s ? h("span", { class: "muted" }, sub(meta.s)) : null),
       typeof n === "string"
         ? h("p", null, n)
         : h(
@@ -438,7 +469,7 @@ export function diagram(spec, opts = {}) {
             n.what ? [h("dt", null, "What it does"), h("dd", null, n.what)] : null,
             n.why ? [h("dt", null, "Why this one"), h("dd", null, n.why)] : null,
             n.alt ? [h("dt", null, "What you passed on"), h("dd", null, n.alt)] : null,
-            n.eq ? [h("dt", null, "Outside AWS"), h("dd", null, n.eq)] : null,
+            n.eq ? [h("dt", null, "Other examples"), h("dd", null, n.eq)] : null,
           ),
     );
   }
@@ -449,7 +480,9 @@ export function diagram(spec, opts = {}) {
     const flip = h("button", { class: "btn btn-small", type: "button", onclick: () => ((wide = !wide), (S().settings.tall = !wide), save(), paint()) }, icon("swap"), wide ? "Tall view" : "Wide view");
     if (cur === 0) {
       add(bar, h("button", { class: "btn btn-small btn-go", type: "button", onclick: () => ((cur = 1), paint()) }, icon("pen"), "Build it in draw order"), flip);
-      if (hasNotes) cap.append(h("p", { class: "muted dg-hint" }, opts.hint || "Tap a box for what it does, why it is there, and what it is called outside AWS."));
+      const legend = hasAws ? "A name in brackets is an AWS example." : "";
+      const hint = hasNotes ? opts.hint || "Tap a box for what it does, why it is there, and other examples." : "";
+      if (hint || legend) cap.append(h("p", { class: "muted dg-hint" }, [hint, legend].filter(Boolean).join(" ")));
     } else {
       add(
         bar,
@@ -492,10 +525,10 @@ export function nodeList(spec, notes) {
         return h(
           "li",
           null,
-          h("p", { class: "dg-list-title" }, meta.t, meta.s ? h("span", { class: "muted" }, " · " + meta.s) : null),
+          h("p", { class: "dg-list-title" }, meta.t, meta.s ? h("span", { class: "muted" }, sub(meta.s)) : null),
           typeof n === "string"
             ? h("p", null, n)
-            : [n.what ? h("p", null, n.what) : null, n.why ? h("p", null, h("b", null, "Why this one. "), n.why) : null, n.alt ? h("p", null, h("b", null, "What you passed on. "), n.alt) : null, n.eq ? h("p", null, h("b", null, "Outside AWS. "), n.eq) : null],
+            : [n.what ? h("p", null, n.what) : null, n.why ? h("p", null, h("b", null, "Why this one. "), n.why) : null, n.alt ? h("p", null, h("b", null, "What you passed on. "), n.alt) : null, n.eq ? h("p", null, h("b", null, "Other examples. "), n.eq) : null],
         );
       }),
   );

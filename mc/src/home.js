@@ -72,7 +72,7 @@ export function homeView(root) {
           "div",
           null,
           h("h1", { class: "display" }, "Two hours with the team you would lead"),
-          h("p", { class: "hero-sub" }, "A practice room for a panel case. Four worked scenarios with diagrams, a workbook for a case of your own, the AWS vocabulary, and drills to make all of it stick."),
+          h("p", { class: "hero-sub" }, "A practice room for a panel case. Four worked scenarios with diagrams, a workbook for a case of your own, a toolkit of plain components, and drills to make all of it stick."),
           h("div", { class: "count", style: "margin-top: 22px" }, h("span", { class: "count-n" }, cd.n), h("span", { class: "count-u" }, cd.unit)),
           h("p", { class: "muted", style: "font-size: 14.5px" }, `${cd.when}, Singapore time. `, h("a", { href: "#/settings" }, "Change")),
         ),

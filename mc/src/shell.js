@@ -36,7 +36,7 @@ const LINKS = [
   ["#/panel", "Panel"],
   ["#/cases", "Cases"],
   ["#/mine", "Your case"],
-  ["#/aws", "AWS kit"],
+  ["#/kit", "Toolkit"],
   ["#/qa", "Q&A"],
   ["#/drills", "Drills"],
   ["#/primer", "Primer"],

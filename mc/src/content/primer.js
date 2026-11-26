@@ -140,7 +140,7 @@ export const LESSONS = [
       { p: "The lesson is that residency is a condition for operating at all, so it belongs in the first version of a design." },
       { h: "Designing for it" },
       { ul: ["One stack for each market that requires it, built from the same code.", "Raw data, features, and scoring stay in the market.", "Approved aggregates and model artifacts move.", "If raw data can't leave, train inside the market and send back only the model.", "Keys and access are managed for each market."] },
-      { p: "AWS has Regions in Singapore, Mumbai, Hyderabad, Jakarta, Malaysia, Thailand, Hong Kong, Taipei, Tokyo, Seoul, Osaka, Sydney, Melbourne, and New Zealand." },
+      { p: "Where the stack runs is a separate choice: your own data center in the country, or a cloud provider's. As one example, AWS has Regions in Singapore, Mumbai, Hyderabad, Jakarta, Malaysia, Thailand, Hong Kong, Taipei, Tokyo, Seoul, Osaka, Sydney, Melbourne, and New Zealand." },
       { h: "Singapore: AI risk management" },
       { p: "The Monetary Authority of Singapore issued its Guidelines on AI Risk Management for financial institutions on 7 October 2026, after a consultation in November 2025. They apply to all financial institutions and to all AI, including generative AI and agents. They build on the earlier FEAT principles: fairness, ethics, accountability, and transparency." },
       { ul: ["The board and senior management are expected to oversee AI risk.", "How much control a use needs depends on its materiality: impact, complexity, and reliance.", "Using a third party's AI does not transfer accountability."] },

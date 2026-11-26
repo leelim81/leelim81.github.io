@@ -18,13 +18,13 @@ export const SESSIONS = [
   },
   {
     id: "s2",
-    title: "Case 1, and the core AWS parts",
+    title: "Case 1, and the core components",
     goal: "One full case cold, and one reference picture you can draw.",
     minutes: 75,
     items: [
       { kind: "case", ref: "scam-score" },
       { kind: "lesson", ref: "fraud-models" },
-      { kind: "todo", id: "s2-kit", title: "Read the core parts of the AWS kit", href: "#/aws", meta: "15 min" },
+      { kind: "todo", id: "s2-kit", title: "Read the core components in the toolkit", href: "#/kit", meta: "15 min" },
       { kind: "todo", id: "s2-draw", title: "Draw the real-time scoring picture from memory", href: "#/drills/draw/ref-realtime", meta: "10 min" },
     ],
   },

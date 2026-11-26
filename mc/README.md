@@ -11,7 +11,7 @@ The design follows Ninety, the practice room in `../bcgx2`: the same paper, ink,
 - **Panel.** A private notebook for the people you will meet. The reader types the names and notes, and they are kept in the browser. No person is named in the code.
 - **Cases.** Four scenarios, each worked in full: questions, options, an architecture diagram that replays in draw order, numbers, trade-offs, the leadership layer, pushbacks, and a two-minute close. Each answer stays hidden until you have tried the case against a clock.
 - **Your case.** A workbook for presenting a case from your own experience: three lengths, a diagram, the probes to expect, and timed runs. Notes typed into it stay in the browser.
-- **AWS kit.** The parts to name at a whiteboard, by layer, with the equivalent on a Hadoop, Spark, or Databricks stack. Four reference diagrams.
+- **Toolkit.** The components to draw at a whiteboard, by layer. Each has a plain name, with an AWS example in brackets and other examples beside it. Four reference diagrams.
 - **Q&A.** Questions outside the case, with draft answers to adapt.
 - **Drills.** Recall cards, drawing from memory, pushbacks against a clock, arithmetic aloud, and a 25-minute mock panel with a scoring rubric.
 - **Primer.** Five short lessons with checks.
@@ -43,6 +43,7 @@ python3 -m http.server 8000
 - No long dashes, currency symbols, exclamation marks, or filler words. American spelling.
 - Ids are unique.
 - Every diagram refers to boxes that exist, every arrow appears no earlier than its boxes, and every draw step draws something.
+- A diagram has nine boxes or fewer. A box is named for its job. A product name goes on the second line, in brackets.
 
 Names that must never appear on the site are read from `dev/banned.local.txt`, one per line. That file is ignored by git, because the list itself would put the names in the repository.
 
@@ -74,6 +75,8 @@ A diagram is data. `src/diagram.js` lays it out tall for a phone or wide for a l
   steps: ["What to say while drawing step 1.", "What to say while drawing step 2."],
 }
 ```
+
+A box is named for the job it does. If you want to name a product, write it as the second line in brackets, such as `s: "(Kinesis Data Streams)"`. The page then explains that a name in brackets is an example.
 
 `k` is the kind of box: a service by default, `store` for data, `ext` for something outside your control, and `human` for a person. `at` is the step a box or an arrow appears in. `n` is the flow number. An arrow that skips a layer, or runs backwards, travels in a lane at the side. Set `via` to `"left"` or `"right"` to choose the side.
 
