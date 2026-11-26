@@ -78,7 +78,7 @@ function layout(spec, wide, extra = []) {
     const GY = 38;
     let y = 6;
     spec.layers.forEach((layer, i) => {
-      const pre = layer.label ? 15 : 0;
+      const pre = layer.label ? 17 : 0;
       if (layer.label) {
         labels.push({ x: padL, y: y + 9, text: layer.label });
         y += pre;
@@ -375,13 +375,19 @@ function draw(spec, wide, cur, picked, onPick) {
     );
   }
 
+  // Lines first, then the layer labels, then the arrowheads. A label masks the line behind it, and the
+  // arrowhead is drawn over the label, so a long label never hides where an arrow lands.
+  const heads = [];
   for (const { e, pts } of paths) {
     const end = pts.length - 1;
     const d = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
-    svg.append(el("g", { class: "dg-edge" + (e.dash ? " is-dash" : "") + vis(e.at) }, el("path", { d }), el("polygon", { points: arrowHead(pts[end - 1], pts[end]) })));
+    const cls = "dg-edge" + (e.dash ? " is-dash" : "") + vis(e.at);
+    svg.append(el("g", { class: cls }, el("path", { d })));
+    heads.push(el("g", { class: cls }, el("polygon", { points: arrowHead(pts[end - 1], pts[end]) })));
   }
 
   for (const lab of L.labels) svg.append(el("text", { x: lab.x, y: lab.y, class: "dg-lab" }, lab.text));
+  for (const head of heads) svg.append(head);
 
   for (const n of Object.values(L.nodes)) {
     const kind = n.k || "svc";
