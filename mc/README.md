@@ -8,7 +8,7 @@ The design follows Ninety, the practice room in `../bcgx2`: the same paper, ink,
 
 - **Plan.** A countdown, five study sessions, and a checklist for the day.
 - **Playbook.** How to run the two hours: the arc, the opening, the whiteboard, and how to behave as the panel's future manager.
-- **Panel.** A private notebook for the people you will meet. The reader types the names and notes, and they are kept in the browser. No person is named in the code.
+- **Panel.** A private notebook for the people you will meet: a face, a name, a role, and a line on each. The reader types the notes, adds photos from their own device, or loads both from a panel file. All of it is kept in the browser. No person is named or pictured in the code, and no panel file belongs in this repository.
 - **Cases.** Four scenarios, each worked in full: questions, options, an architecture diagram that replays in draw order, numbers, trade-offs, the leadership layer, pushbacks, and a two-minute close. Each answer stays hidden until you have tried the case against a clock.
 - **Your case.** A workbook for presenting a case from your own experience: three lengths, a diagram, the probes to expect, and timed runs. Notes typed into it stay in the browser.
 - **Toolkit.** The components to draw at a whiteboard, by layer. Each has a plain name, with an AWS example in brackets and other examples beside it. Four reference diagrams.
@@ -79,6 +79,20 @@ A diagram is data. `src/diagram.js` lays it out tall for a phone or wide for a l
 A box is named for the job it does. If you want to name a product, write it as the second line in brackets, such as `s: "(Kinesis Data Streams)"`. The page then explains that a name in brackets is an example.
 
 `k` is the kind of box: a service by default, `store` for data, `ext` for something outside your control, and `human` for a person. `at` is the step a box or an arrow appears in. `n` is the flow number. An arrow that skips a layer, or runs backwards, travels in a lane at the side. Set `via` to `"left"` or `"right"` to choose the side.
+
+## Panel files
+
+A panel file fills the Panel page in one step, photos included. It is read in the browser and never uploaded. Keep it out of this repository, because it names real people.
+
+```json
+{
+  "app": "onetwenty-panel",
+  "v": 1,
+  "people": [{ "name": "A name", "role": "A title", "say": "", "bg": "One or two lines.", "lens": "platform", "ask": "", "photo": "data:image/jpeg;base64,..." }]
+}
+```
+
+Only `name` is required. `lens` is `platform`, `model`, `govern`, `deliver`, or empty. A photo must be a small JPEG, PNG, or WebP held as a data URL. The page accepts no other kind, so a photo can never point at another site.
 
 ## Fonts
 

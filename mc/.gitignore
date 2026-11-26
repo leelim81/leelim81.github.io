@@ -2,3 +2,5 @@ node_modules/
 __pycache__/
 *.pyc
 *.local.txt
+# A panel file names real people and holds their photos. It never belongs here.
+*panel*.json

@@ -101,7 +101,7 @@ export function runDeck(root, cfg) {
         "div",
         { class: "fc" },
         h("p", { class: "fc-topic" }, item.topic, again ? " · again" : ""),
-        h("p", { class: "fc-q" }, item.q),
+        item.face ? h("img", { class: "fc-face", src: item.face, alt: item.q, width: 168, height: 168 }) : h("p", { class: "fc-q" }, item.q),
         revealed ? cfg.answer(item) : null,
       ),
       !revealed && t ? h("div", { style: "margin-top: 16px" }, t.el) : null,
@@ -126,7 +126,7 @@ export function runDeck(root, cfg) {
       pageHead(cfg.back[0], cfg.back[1], cfg.title),
       h("div", { class: "quiz-results" }, h("h1", { class: "display" }, hits === n ? "A clean round" : "Round done"), h("p", { class: "res-line" }, `You got ${hits} of ${n} on the first try.`), missed.length ? h("p", { class: "res-line muted" }, "The ones you missed come up first next time.") : null),
       h("div", { class: "res-actions" }, h("button", { class: "btn btn-go", type: "button", onclick: cfg.again }, icon("redo"), "Another round"), h("a", { class: "btn", href: cfg.back[0] }, cfg.back[1])),
-      missed.length ? [h("h2", { class: "h-sec" }, "Read these once more"), h("ul", { class: "rows" }, missed.map((x) => h("li", null, h("p", { class: "row-main" }, x.q), h("div", { style: "margin-top: 8px" }, cfg.answer(x)))))] : null,
+      missed.length ? [h("h2", { class: "h-sec" }, "Read these once more"), h("ul", { class: "rows" }, missed.map((x) => h("li", null, x.face ? h("img", { class: "face", src: x.face, alt: x.q, width: 64, height: 64 }) : h("p", { class: "row-main" }, x.q), h("div", { style: "margin-top: 8px" }, cfg.answer(x)))))] : null,
     );
   }
 
