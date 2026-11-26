@@ -324,6 +324,18 @@ mark.gap { background: var(--marker); color: var(--marker-ink); padding: 2px 5px
 .people { margin-top: 16px; }
 .person .note-field { margin-top: 8px; max-width: none; }
 .person .note-in { min-height: 64px; }
+/* a face: a photo the reader added, or initials when there is none */
+.face { flex: none; display: block; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #fff; border: 1.5px solid var(--ink); }
+.face-none { display: grid; place-items: center; background: var(--desk); border-style: dashed; border-color: var(--rule-strong); font: 600 20px/1 var(--sans); color: var(--muted); }
+.roster { list-style: none; padding: 0; margin: 18px 0 8px; max-width: 78ch; border-top: 1.5px solid var(--ink); }
+.roster[hidden] { display: none; }
+.roster-row { display: flex; gap: 14px; align-items: flex-start; padding: 13px 0 14px; border-bottom: 1px solid var(--rule); }
+.roster-name { font: 600 17px/1.3 var(--sans); }
+.roster-role { font-size: 14.5px; color: var(--muted); }
+.roster-bg { margin-top: 5px; font-size: 15.5px; line-height: 1.45; }
+.person-top { display: flex; gap: 12px; align-items: center; margin-bottom: 4px; }
+.person-photo { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 3px; }
+.fc-face { display: block; width: 168px; height: 168px; border-radius: 50%; object-fit: cover; background: #fff; border: 1.5px solid var(--ink); }
 .mock-intro .chips { max-width: 100%; }
 .mock-intro .chip { white-space: normal; text-align: left; }
 
